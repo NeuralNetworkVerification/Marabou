@@ -163,6 +163,8 @@ class ONNXParser:
             self.constant(node)
         elif node.op_type == 'Identity':
             self.identity(node)
+        elif node.op_type == 'Dropout':
+            self.dropout(node)
         elif node.op_type == 'Cast':
             self.cast(node)
         elif node.op_type == 'Reshape':
@@ -295,6 +297,19 @@ class ONNXParser:
             self.varMap[nodeName] = self.varMap[inputName]
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName]
+
+    def dropout(self, node):
+        """Function representing dropout
+
+        Args:
+            node (node): ONNX node representing dropout operation
+
+        :meta private:
+        """
+        if len(node.input) == 3 and self.constantMap[node.input[2]]:
+            raise RuntimeError("Marabou only supports training_mode=False in dropout")
+        else:
+            self.identity(node)
 
     def cast(self, node):
         """Function representing cast

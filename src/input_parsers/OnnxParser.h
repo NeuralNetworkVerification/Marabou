@@ -60,6 +60,7 @@ private:
     Map<String, Vector<Variable>> _varMap;
     Map<String, const Vector<int64_t>> _constantIntTensors;
     Map<String, const Vector<double>> _constantFloatTensors;
+    Map<String, const Vector<int32_t>> _constantInt32Tensors;
     Set<String> _processedNodes;
     unsigned _numberOfFoundInputs;
 
@@ -88,6 +89,7 @@ private:
 
     void constant( onnx::NodeProto &node );
     void identity( onnx::NodeProto &node );
+    void dropout( onnx::NodeProto &node );
     void cast( onnx::NodeProto &node );
     void reshape( onnx::NodeProto &node );
     void squeeze( onnx::NodeProto &node );

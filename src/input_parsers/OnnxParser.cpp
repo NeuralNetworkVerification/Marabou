@@ -462,9 +462,37 @@ Vector<int64_t> getTensorIntValues( const onnx::TensorProto &tensor, const Tenso
     return result;
 }
 
+Vector<int32_t> getTensorInt32Values( const onnx::TensorProto &tensor, const TensorShape shape )
+{
+    int size = tensorSize( shape );
+    std::string raw_data = tensor.raw_data();
+    Vector<int32_t> result;
+    if ( raw_data.size() != 0 )
+    {
+        checkEndianness();
+        const char *bytes = raw_data.c_str();
+        const int32_t *int32 = reinterpret_cast<const int32_t *>( bytes );
+        for ( int i = 0; i < size; i++ )
+        {
+            int32_t value = *( int32 + i );
+            result.append( value );
+        }
+    }
+    else
+    {
+        for ( int i = 0; i < size; i++ )
+        {
+            int32_t value = tensor.int32_data( i );
+            result.append( value );
+        }
+    }
+    return result;
+}
+
 bool OnnxParser::isConstantNode( String name )
 {
-    return _constantIntTensors.exists( name ) || _constantFloatTensors.exists( name );
+    return _constantIntTensors.exists( name ) || _constantFloatTensors.exists( name ) ||
+           _constantInt32Tensors.exists( name );
 }
 
 void OnnxParser::insertConstant( String name,
@@ -482,6 +510,14 @@ void OnnxParser::insertConstant( String name,
     else if ( dataType == onnx::TensorProto_DataType_FLOAT )
     {
         _constantFloatTensors.insert( name, getTensorFloatValues( tensor, shape ) );
+    }
+    else if ( dataType == onnx::TensorProto_DataType_BOOL )
+    {
+        // NOTE: INT32, INT16, INT8, INT4, UINT16, UINT8, UINT4, BOOL, FLOAT16,
+        // BFLOAT16, FLOAT8E4M3FN, FLOAT8E4M3FNUZ, FLOAT8E5M2, FLOAT8E5M2FNUZ
+        // are all represented as an int32. Support for those should be added later
+        // when there is a practical need.
+        _constantInt32Tensors.insert( name, getTensorInt32Values( tensor, shape ) );
     }
     else
     {
@@ -502,6 +538,10 @@ void OnnxParser::transferValues( String oldName, String newName )
     else if ( _constantFloatTensors.exists( oldName ) )
     {
         _constantFloatTensors.insert( newName, _constantFloatTensors[oldName] );
+    }
+    else if ( _constantInt32Tensors.exists( oldName ) )
+    {
+        _constantInt32Tensors.insert( newName, _constantInt32Tensors[oldName] );
     }
     else
     {
@@ -845,6 +885,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         identity( node );
     }
+    else if ( strcmp( nodeType, "Dropout" ) == 0 )
+    {
+        dropout( node );
+    }
     else if ( strcmp( nodeType, "Cast" ) == 0 )
     {
         cast( node );
@@ -950,6 +994,31 @@ void OnnxParser::identity( onnx::NodeProto &node )
     transferValues( inputNodeName, outputNodeName );
 }
 
+/**
+ * @brief Processes a dropout node in the network.
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Dropout
+ *
+ * @param node The ONNX node
+ */
+void OnnxParser::dropout( onnx::NodeProto &node )
+{
+    if ( node.input().size() == 3 )
+    {
+        String trainingModeName = node.input()[2];
+        if ( !_constantInt32Tensors.exists( trainingModeName ) )
+        {
+            missingNodeError( trainingModeName );
+        }
+        else if ( _constantInt32Tensors[trainingModeName][0] )
+        {
+            // training mode is set to true
+            throw MarabouError( MarabouError::ONNX_PARSER_ERROR,
+                                "Marabou only supports training_mode=false in Dropout" );
+        }
+    }
+
+    identity( node );
+}
 
 /**
  * @brief Processes a cast node in the network.
