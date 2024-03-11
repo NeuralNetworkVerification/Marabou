@@ -18,13 +18,13 @@
 * Changes to command-line ONNX support:
   - Fixed bug with variable lower bounds not being set correctly.
   - Fixed bug with sigmoid operators not being parsed correctly.
-  - Added support for `Tanh`, `Unsqueeze`, `Squeeze`, `LeakyRelu` and `Cast` operators.
+  - Added support for `Tanh`, `Unsqueeze`, `Squeeze`, `LeakyRelu`, `Dropout`, and `Cast` operators.
   - Added support for networks with multiple outputs
 
 * Added command-line support for properties in the VNNLIB format.
 
 * Changes to Python ONNX support:
-  - Added support for `Softmax`, `Bilinear` and `LeakyRelu` operators.
+  - Added support for `Softmax`, `Bilinear`, `Dropout`, and `LeakyRelu` operators.
   - `MarabouONNXNetwork` no longer exposes the fields `madeGraphEquations`, `varMap`, `constantMap`, `shapeMap`
     as these were supposed to be internal implementation details.
   - `MarabouONNXNetwork` no longer has a `shallowCopy` method. Instead of calling this method,
