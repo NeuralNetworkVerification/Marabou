@@ -156,7 +156,7 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
 
     setLowerBound( variable, bound );
 
-    // Proofs are currenly not supporting case elimination
+    // Proofs currently don't support case elimination
     if ( !_boundManager || !_boundManager->shouldProduceProofs() )
         updateFeasibleDisjuncts();
 }
@@ -172,7 +172,7 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
 
     setUpperBound( variable, bound );
 
-    // Proofs are currenly not supporting case elimination
+    // Proofs currently don't support case elimination
     if ( !_boundManager || !_boundManager->shouldProduceProofs() )
         updateFeasibleDisjuncts();
 }
