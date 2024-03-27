@@ -82,7 +82,7 @@ include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
 # Avoid using deprecated operations
 add_definitions(-DBOOST_NO_CXX98_FUNCTION_BASE)
-set(BOOST_VERSION 1.80.0)
+set(BOOST_VERSION 1.74.0)
 set(BOOST_DIR "${TOOLS_DIR}/boost-${BOOST_VERSION}")
 if (MSVC)
   set(BOOST_ROOT "${BOOST_DIR}/win_installed")
@@ -482,4 +482,3 @@ add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
 add_subdirectory(${REGRESS_DIR})
-
