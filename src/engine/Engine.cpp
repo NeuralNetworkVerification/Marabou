@@ -2838,11 +2838,14 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( strategy == DivideStrategy::LargestInterval &&
+    else if ( !_produceUNSATProofs && strategy == DivideStrategy::LargestInterval &&
               ( ( _smtCore.getStackDepth() + 1 ) %
                     GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
                 0 ) )
     {
+        // NOTE: the benefit of input splitting is minimal with abstract intepretation disabled.
+        // Therefore, since the proof production mode does not currently support that, we do
+        // not perform input-splitting in proof production mode.
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
     }
