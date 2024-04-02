@@ -2694,7 +2694,8 @@ void Engine::decideBranchingHeuristics()
     DivideStrategy divideStrategy = Options::get()->getDivideStrategy();
     if ( divideStrategy == DivideStrategy::Auto )
     {
-        if ( !_preprocessedQuery->getInputVariables().empty() &&
+        if ( !_produceUNSATProofs &&
+             !_preprocessedQuery->getInputVariables().empty() &&
              _preprocessedQuery->getInputVariables().size() <
                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
@@ -2838,7 +2839,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( !_produceUNSATProofs && strategy == DivideStrategy::LargestInterval &&
+    else if ( strategy == DivideStrategy::LargestInterval &&
               ( ( _smtCore.getStackDepth() + 1 ) %
                     GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
                 0 ) )
