@@ -2694,11 +2694,13 @@ void Engine::decideBranchingHeuristics()
     DivideStrategy divideStrategy = Options::get()->getDivideStrategy();
     if ( divideStrategy == DivideStrategy::Auto )
     {
-        if ( !_produceUNSATProofs &&
-             !_preprocessedQuery->getInputVariables().empty() &&
+        if ( !_produceUNSATProofs && !_preprocessedQuery->getInputVariables().empty() &&
              _preprocessedQuery->getInputVariables().size() <
                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
+            // NOTE: the benefit of input splitting is minimal with abstract intepretation disabled.
+            // Therefore, since the proof production mode does not currently support that, we do
+            // not perform input-splitting in proof production mode.
             divideStrategy = DivideStrategy::LargestInterval;
             if ( _verbosity >= 2 )
                 printf( "Branching heuristics set to LargestInterval\n" );
@@ -2844,9 +2846,6 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
                     GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
                 0 ) )
     {
-        // NOTE: the benefit of input splitting is minimal with abstract intepretation disabled.
-        // Therefore, since the proof production mode does not currently support that, we do
-        // not perform input-splitting in proof production mode.
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
     }
