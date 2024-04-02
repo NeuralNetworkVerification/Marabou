@@ -156,7 +156,9 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
 
     setLowerBound( variable, bound );
 
-    updateFeasibleDisjuncts();
+    // Proofs currently don't support case elimination
+    if ( !_boundManager || !_boundManager->shouldProduceProofs() )
+        updateFeasibleDisjuncts();
 }
 
 void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -170,7 +172,9 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
 
     setUpperBound( variable, bound );
 
-    updateFeasibleDisjuncts();
+    // Proofs currently don't support case elimination
+    if ( !_boundManager || !_boundManager->shouldProduceProofs() )
+        updateFeasibleDisjuncts();
 }
 
 bool DisjunctionConstraint::participatingVariable( unsigned variable ) const
