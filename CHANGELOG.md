@@ -2,6 +2,8 @@
 
 ## Next Release
 
+## Version 2.0.0
+
 * Changes in core solving module:
   - Added proof producing versions of `Sign`, `Max`, `Absolute Value` and `Disjunction` constraints.
   - Added support for `LeakyRelu`, `Clip`, `Round`, `Softmax`.

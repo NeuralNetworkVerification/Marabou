@@ -4,19 +4,18 @@ institutions at the time of their contributions (note that some authors have
 had more than one affiliated institution). See the file COPYING for details on
 the copyright and licensing of Marabou.
 
-The core designers and authors of Marabou are:
+The current core designers and authors of Marabou are:
 
 Current:
-
-  Guy Amir, Hebrew University of Jerusalem
   Clark Barrett, Stanford University
   Guy Katz, Hebrew University of Jerusalem
+  Omri Isac, Hebrew University of Jerusalem
+  Idan Rafaeli, Hebrew University of Jerusalem
   Teruhiro Tagamori, NRI SecureTechnologies, Ltd.
-  Haoze Andrew Wu, Stanford University
-  Aleksandar Zeljic, Stanford University
+  Andrew (Haoze) Wu, Stanford University
 
 Alumni:
-
+  Guy Amir, Hebrew University of Jerusalem
   Ben Goldberg, Hebrew University of Jerusalem
   Derek A. Huang, Stanford University
   Duligur Ibeling, Stanford University
@@ -29,12 +28,12 @@ Alumni:
   Parth Shah, Stanford University
   Shantanu Thakoor, Stanford University
   Alex Usvyatsov, Hebrew University of Jerusalem
-
+  Aleksandar Zeljic, Stanford University
 
 Other contributors to the Marabou codebase are listed in the THANKS file.
 
-Marabou is new implementation of the Reluplex algorithm, but does not
-incorporate any code from the Reluplex codebase.
+Marabou implements the Reluplex algorithm, but does not incorporate any code
+from the Reluplex codebase.
 
 Marabou incorporates context-dependent structures of the CVC4/cvc5 SMT solver
 and project materials such as authorship policy, development and coding
