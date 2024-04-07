@@ -45,7 +45,7 @@ The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 The build process uses CMake version 3.16 (or later).
 You can get CMake [here](https://cmake.org/download/).
 
-Marabou depends on the Boost and the OpenBLAS libraries, which is automatically 
+Marabou depends on the Boost and the OpenBLAS libraries, which are automatically 
 downloaded and built when you run make. Library CXXTEST comes included in the 
 repository.
 
