@@ -87,6 +87,7 @@ jobs:
         with:
           name: wheelhouse
           path: wheelhouse
+          merge-multiple: true
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v1
@@ -107,7 +108,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/vehicle-lang
+      url: https://pypi.org/p/maraboupy
 
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
@@ -118,6 +119,7 @@ jobs:
         with:
           name: wheelhouse
           path: wheelhouse
+          merge-multiple: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
