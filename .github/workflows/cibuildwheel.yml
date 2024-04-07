@@ -108,7 +108,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/project/maraboupy-NeuralNetworkVerification/
+      url: https://pypi.org/p/maraboupy
 
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
