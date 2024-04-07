@@ -239,12 +239,7 @@ In the future we will run other levels of regression weekly / monthly.
 
 ## Acknowledgments
 
-The Marabou project is partially supported by grants from the Binational Science
-Foundation (2017662), the Defense Advanced Research Projects Agency
-(FA8750-18-C-0099), the Semiconductor Research Corporation (2019-AU-2898), the
-Federal Aviation Administration, Ford Motor Company, Intel Corporation, the
-Israel Science Foundation (683/18), the National Science Foundation (1814369,
-DGE-1656518), Siemens Corporation, General Electric, and the Stanford CURIS program.
+The Marabou project acknowledges support from the Binational Science Foundation (BSF) (2017662, 2021769, 2020250), the Defense Advanced Research Projects Agency (DARPA) (FA8750-18-C-0099), the European Union (ERC, VeriDeL, 101112713), the Federal Aviation Administration (FAA), Ford Motor Company (Alliance award 199909), General Electric (GE) Global Research, Intel Corporation, International Business Machines (IBM), the Israel Science Foundation (ISF) (683/18, 3420/21), the National Science Foundation (NSF) (1814369, 2211505, DGE-1656518), the Semiconductor Research Corporation (SRC) (2019-AU-2898), Siemens Corporation, the Stanford Center for AI Safety, the Stanford CURIS program, and the Stanford Institute for Human-Centered Artificial Intelligence (HAI).
 
 
 Marabou is used in a number of flagship projects at [Stanford's AISafety
