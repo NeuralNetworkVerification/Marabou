@@ -50,6 +50,7 @@
 
 #include <atomic>
 #include <context/context.h>
+#include <cadical.hpp>
 
 
 #ifdef _WIN32
@@ -895,6 +896,9 @@ private:
       Writes the details of a contradiction to the UNSAT certificate node
     */
     void writeContradictionToCertificate( unsigned infeasibleVar ) const;
+
+    std::unique_ptr<CaDiCaL::Solver> d_solver;
+    std::unique_ptr<CaDiCaL::Terminator> d_terminator;
 };
 
 #endif // __Engine_h__

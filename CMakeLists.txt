@@ -209,6 +209,26 @@ if (NOT MSVC AND ${ENABLE_OPENBLAS})
   target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
 endif()
 
+##########
+## CaDiCaL ##
+##########
+
+if (NOT CADICAL_DIR)
+    set(CADICAL_DIR "${TOOLS_DIR}/cadical")
+endif()
+
+if(NOT EXISTS "${CADICAL_DIR}/build")
+    message("building CaDiCaL SAT Solver")
+    execute_process(COMMAND ${TOOLS_DIR}/build_cadical.sh)
+endif()
+
+set(CADICAL_LIB cadical)
+add_library(${CADICAL_LIB} SHARED IMPORTED)
+set_property(TARGET ${CADICAL_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(${CADICAL_LIB} PROPERTIES IMPORTED_LOCATION ${CADICAL_DIR}/build/libcadical.a)
+target_include_directories(${CADICAL_LIB} INTERFACE ${CADICAL_DIR}/src)
+list(APPEND LIBS ${CADICAL_LIB})
+
 ###########
 ## Build ##
 ###########
