@@ -9,7 +9,7 @@ authors = [{ name = "The Marabou Development Team" }]
 description = "A package wrapping the Marabou Neural Network Verification tool."
 readme = "README.md"
 license = { file = "COPYING" }
-requires-python = ">=3.8,<3.12"
+requires-python = ">=3.8,<=3.12"
 
 [project.optional-dependencies]
 test = [
@@ -59,18 +59,13 @@ skip = [
 before-test = ["python {package}/setup.py build_ext --inplace"]
 test-command = "pytest {package}/maraboupy/test"
 test-extras = ["test"]
-test-skip = [
-  # 2023-04-15: onnxruntime does not support Python 3.11
-  "cp311-*"
-]
+test-skip = []
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y wget"
 
 [tool.cibuildwheel.macos]
 test-skip = [
-  # 2023-04-15: onnxruntime does not support Python 3.11
-  "cp311-*",
   # 2023-04-15: Skip trying to test arm64 builds on Intel Macs
   "*-macosx_arm64",
   "*-macosx_universal2:arm64"
