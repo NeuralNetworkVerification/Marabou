@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "maraboupy"
-version = "1.0.0"
+version = "2.0.0"
 authors = [{ name = "The Marabou Development Team" }]
 description = "A package wrapping the Marabou Neural Network Verification tool."
 readme = "README.md"
@@ -32,7 +32,7 @@ Marabou = "maraboupy.MarabouMain:main"
 packages = ["maraboupy"]
 
 [tool.bumpver]
-current_version = "v1.0.0"
+current_version = "v2.0.0"
 version_pattern = "vMAJOR.MINOR.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
