@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "v*"
 
   # Run CI when a PR is openend or changes are pushed to the PR
   pull_request:
