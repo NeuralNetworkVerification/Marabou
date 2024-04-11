@@ -87,12 +87,12 @@ jobs:
       - name: Download wheelhouse
         uses: actions/download-artifact@v4
         with:
-          name: wheelhouse
+          pattern: wheelhouse-*-*
           path: wheelhouse
           merge-multiple: true
 
       - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: wheelhouse/*.whl
           fail_on_unmatched_files: true
@@ -119,7 +119,7 @@ jobs:
       - name: Download wheelhouse
         uses: actions/download-artifact@v4
         with:
-          name: wheelhouse
+          pattern: wheelhouse-*-*
           path: wheelhouse
           merge-multiple: true
 
