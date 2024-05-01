@@ -33,24 +33,14 @@
 #endif
 
 LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f, double slope )
-    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
-    , _b( b )
-    , _f( f )
-    , _slope( slope )
-    , _auxVarsInUse( false )
-    , _activeTighteningRow( NULL )
-    , _inactiveTighteningRow( NULL )
-    , _direction( PHASE_NOT_FIXED )
-    , _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT ), _b( b ), _f( f ), _slope( slope ), _auxVarsInUse( false ), _activeTighteningRow( NULL ), _inactiveTighteningRow( NULL ), _direction( PHASE_NOT_FIXED ), _haveEliminatedVariables( false )
 {
     if ( _slope <= 0 )
         throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
 }
 
 LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
-    : _activeTighteningRow( NULL )
-    , _inactiveTighteningRow( NULL )
-    , _haveEliminatedVariables( false )
+    : _activeTighteningRow( NULL ), _inactiveTighteningRow( NULL ), _haveEliminatedVariables( false )
 {
     String constraintType = serializedLeakyRelu.substring( 0, 10 );
     ASSERT( constraintType == String( "leaky_relu" ) );
@@ -216,7 +206,7 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
             }
         }
 
-        // A positive lower bound for activeAux means we're inactive: _inactiveAux <= 0
+            // A positive lower bound for activeAux means we're inactive: _inactiveAux <= 0
         else if ( _auxVarsInUse && variable == _activeAux && bound > 0 )
         {
             // Inactive phase
@@ -227,7 +217,7 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
                 _boundManager->tightenUpperBound( _inactiveAux, 0 );
         }
 
-        // A positive lower bound for inactiveAux means we're active: _activeAux <= 0
+            // A positive lower bound for inactiveAux means we're active: _activeAux <= 0
         else if ( _auxVarsInUse && variable == _inactiveAux && bound > 0 )
         {
             // Active phase
@@ -576,11 +566,11 @@ void LeakyReluConstraint::dump( String &output ) const
         output += Stringf( ". Inactive aux var: %u. Range: [%s, %s]\n",
                            _inactiveAux,
                            existsLowerBound( _inactiveAux )
-                               ? Stringf( "%lf", getLowerBound( _inactiveAux ) ).ascii()
-                               : "-inf",
+                           ? Stringf( "%lf", getLowerBound( _inactiveAux ) ).ascii()
+                           : "-inf",
                            existsUpperBound( _inactiveAux )
-                               ? Stringf( "%lf", getUpperBound( _inactiveAux ) ).ascii()
-                               : "inf" );
+                           ? Stringf( "%lf", getUpperBound( _inactiveAux ) ).ascii()
+                           : "inf" );
     }
 }
 
@@ -621,33 +611,33 @@ void LeakyReluConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigne
 {
     ASSERT( participatingVariable( variable ) );
     DEBUG( {
-        if ( variable == _f || variable == _b )
-        {
-            if ( FloatUtils::gt( fixedValue, 0 ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
-            }
-            else if ( FloatUtils::lt( fixedValue, 0 ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
-            }
-        }
-        else if ( variable == _activeAux )
-        {
-            if ( FloatUtils::isPositive( fixedValue ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
-            }
-        }
-        else
-        {
-            // This is the inactive aux variable
-            if ( FloatUtils::isPositive( fixedValue ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
-            }
-        }
-    } );
+               if ( variable == _f || variable == _b )
+               {
+                   if ( FloatUtils::gt( fixedValue, 0 ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
+                   }
+                   else if ( FloatUtils::lt( fixedValue, 0 ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                   }
+               }
+               else if ( variable == _activeAux )
+               {
+                   if ( FloatUtils::isPositive( fixedValue ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                   }
+               }
+               else
+               {
+                   // This is the inactive aux variable
+                   if ( FloatUtils::isPositive( fixedValue ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
+                   }
+               }
+           } );
 
     // In a Leaky ReLU constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
@@ -754,17 +744,17 @@ String LeakyReluConstraint::phaseToString( PhaseStatus phase )
 {
     switch ( phase )
     {
-    case PHASE_NOT_FIXED:
-        return "PHASE_NOT_FIXED";
+        case PHASE_NOT_FIXED:
+            return "PHASE_NOT_FIXED";
 
-    case RELU_PHASE_ACTIVE:
-        return "RELU_PHASE_ACTIVE";
+        case RELU_PHASE_ACTIVE:
+            return "RELU_PHASE_ACTIVE";
 
-    case RELU_PHASE_INACTIVE:
-        return "RELU_PHASE_INACTIVE";
+        case RELU_PHASE_INACTIVE:
+            return "RELU_PHASE_INACTIVE";
 
-    default:
-        return "UNKNOWN";
+        default:
+            return "UNKNOWN";
     }
 };
 
@@ -866,13 +856,13 @@ bool LeakyReluConstraint::haveOutOfBoundVariables() const
     double fValue = getAssignment( _f );
 
     if ( FloatUtils::gt(
-             getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+        getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
          FloatUtils::lt(
              getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     if ( FloatUtils::gt(
-             getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+        getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
          FloatUtils::lt(
              getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
@@ -1012,6 +1002,6 @@ void
 LeakyReluConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /* cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append(idx);
-    cadicalVarToPlc.insert( idx, this);
+    _cadicalVars.append( idx );
+    cadicalVarToPlc.insert( idx, this );
 }

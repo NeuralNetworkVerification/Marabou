@@ -32,16 +32,7 @@
 #endif
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
-    : PiecewiseLinearConstraint( elements.size() )
-    , _f( f )
-    , _elements( elements )
-    , _initialElements( elements )
-    , _obsolete( false )
-    , _maxLowerBound( FloatUtils::negativeInfinity() )
-    , _haveFeasibleEliminatedPhases( false )
-    , _maxValueOfEliminatedPhases( FloatUtils::negativeInfinity() )
-    , _elementsToCadicalVars()
-    , _cadicalVarsToElements()
+    : PiecewiseLinearConstraint( elements.size() ), _f( f ), _elements( elements ), _initialElements( elements ), _obsolete( false ), _maxLowerBound( FloatUtils::negativeInfinity() ), _haveFeasibleEliminatedPhases( false ), _maxValueOfEliminatedPhases( FloatUtils::negativeInfinity() ), _elementsToCadicalVars(), _cadicalVarsToElements()
 {
 }
 
@@ -349,14 +340,14 @@ unsigned MaxConstraint::getF() const
 bool MaxConstraint::satisfied() const
 {
     DEBUG( {
-        if ( !( existsAssignment( _f ) ) )
-            throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
-                                Stringf( "f(x%u) assignment missing.", _f ).ascii() );
-        for ( const auto &element : _elements )
-            if ( !( existsAssignment( element ) ) )
-                throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
-                                    Stringf( "input(x%u) assignment missing.", element ).ascii() );
-    } );
+               if ( !( existsAssignment( _f ) ) )
+                   throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
+                                       Stringf( "f(x%u) assignment missing.", _f ).ascii() );
+               for ( const auto &element : _elements )
+                   if ( !( existsAssignment( element ) ) )
+                       throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
+                                           Stringf( "input(x%u) assignment missing.", element ).ascii() );
+           } );
 
     double fValue = getAssignment( _f );
     double maxValue = _maxValueOfEliminatedPhases;
@@ -617,7 +608,8 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost, PhaseStatu
 PhaseStatus
 MaxConstraint::getPhaseStatusInAssignment( const Map<unsigned, double> &assignment ) const
 {
-    auto byAssignment = [&]( const unsigned &a, const unsigned &b ) {
+    auto byAssignment = [&]( const unsigned &a, const unsigned &b )
+    {
         return assignment[a] < assignment[b];
     };
     unsigned largestVariable =
@@ -803,16 +795,16 @@ void
 MaxConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx;
-    for (auto &element : _elements )
+    for ( auto &element : _elements )
     {
         idx = cadicalVarToPlc.size();
         _cadicalVars.append( idx );
         cadicalVarToPlc.insert( idx, this );
-        _elementsToCadicalVars.insert(element, idx);
-        _cadicalVarsToElements.insert(idx, element);
-        cadical_solver->add(idx);
+        _elementsToCadicalVars.insert( element, idx );
+        _cadicalVarsToElements.insert( idx, element );
+        cadical_solver->add( idx );
     }
-    cadical_solver->add(0);
+    cadical_solver->add( 0 );
 
     // TODO add additional clauses
 }

@@ -22,11 +22,7 @@
 #include "Statistics.h"
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
-    : PiecewiseLinearConstraint( disjuncts.size() )
-    , _disjuncts( disjuncts.begin(), disjuncts.end() )
-    , _feasibleDisjuncts( disjuncts.size(), 0 )
-    , _disjunctsToCadicalVars()
-    , _cadicalVarsToDisjuncts()
+    : PiecewiseLinearConstraint( disjuncts.size() ), _disjuncts( disjuncts.begin(), disjuncts.end() ), _feasibleDisjuncts( disjuncts.size(), 0 ), _disjunctsToCadicalVars(), _cadicalVarsToDisjuncts()
 {
     for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
@@ -35,9 +31,7 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
 }
 
 DisjunctionConstraint::DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts )
-    : PiecewiseLinearConstraint( disjuncts.size() )
-    , _disjuncts( disjuncts )
-    , _feasibleDisjuncts( disjuncts.size(), 0 )
+    : PiecewiseLinearConstraint( disjuncts.size() ), _disjuncts( disjuncts ), _feasibleDisjuncts( disjuncts.size(), 0 )
 {
     for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
@@ -301,21 +295,21 @@ void DisjunctionConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
 
             switch ( equation._type )
             {
-            case Equation::EQ:
-            {
-                ASSERT( false );
-                break;
-            }
-            case Equation::GE:
-            {
-                newDisjunct.storeBoundTightening( Tightening( aux, 0, Tightening::UB ) );
-                break;
-            }
-            case Equation::LE:
-            {
-                newDisjunct.storeBoundTightening( Tightening( aux, 0, Tightening::LB ) );
-                break;
-            }
+                case Equation::EQ:
+                {
+                    ASSERT( false );
+                    break;
+                }
+                case Equation::GE:
+                {
+                    newDisjunct.storeBoundTightening( Tightening( aux, 0, Tightening::UB ) );
+                    break;
+                }
+                case Equation::LE:
+                {
+                    newDisjunct.storeBoundTightening( Tightening( aux, 0, Tightening::LB ) );
+                    break;
+                }
             }
         }
         newDisjuncts.append( newDisjunct );
@@ -630,14 +624,14 @@ DisjunctionConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadi
     PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx;
-    for (auto &disjunct : _disjuncts )
+    for ( auto &disjunct : _disjuncts )
     {
         idx = cadicalVarToPlc.size();
         _cadicalVars.append( idx );
         cadicalVarToPlc.insert( idx, this );
-        _disjunctsToCadicalVars.insert(&disjunct, idx);
-        _cadicalVarsToDisjuncts.insert(idx, &disjunct);
-        cadical_solver->add(idx);
+        _disjunctsToCadicalVars.insert( &disjunct, idx );
+        _cadicalVarsToDisjuncts.insert( idx, &disjunct );
+        cadical_solver->add( idx );
     }
-    cadical_solver->add(0);
+    cadical_solver->add( 0 );
 }

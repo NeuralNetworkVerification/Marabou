@@ -18,38 +18,12 @@
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
-    : _numCases( 0 )
-    , _constraintActive( true )
-    , _phaseStatus( PHASE_NOT_FIXED )
-    , _boundManager( nullptr )
-    , _tableau( nullptr )
-    , _context( nullptr )
-    , _cdConstraintActive( nullptr )
-    , _cdPhaseStatus( nullptr )
-    , _cdInfeasibleCases( nullptr )
-    , _score( FloatUtils::negativeInfinity() )
-    , _statistics( NULL )
-    , _gurobi( NULL )
-    , _tableauAuxVars()
-    , _cadicalVars()
+    : _numCases( 0 ), _constraintActive( true ), _phaseStatus( PHASE_NOT_FIXED ), _boundManager( nullptr ), _tableau( nullptr ), _context( nullptr ), _cdConstraintActive( nullptr ), _cdPhaseStatus( nullptr ), _cdInfeasibleCases( nullptr ), _score( FloatUtils::negativeInfinity() ), _statistics( NULL ), _gurobi( NULL ), _tableauAuxVars(), _cadicalVars()
 {
 }
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
-    : _numCases( numCases )
-    , _constraintActive( true )
-    , _phaseStatus( PHASE_NOT_FIXED )
-    , _boundManager( nullptr )
-    , _tableau( nullptr )
-    , _context( nullptr )
-    , _cdConstraintActive( nullptr )
-    , _cdPhaseStatus( nullptr )
-    , _cdInfeasibleCases( nullptr )
-    , _score( FloatUtils::negativeInfinity() )
-    , _statistics( NULL )
-    , _gurobi( NULL )
-    , _tableauAuxVars()
-    , _cadicalVars()
+    : _numCases( numCases ), _constraintActive( true ), _phaseStatus( PHASE_NOT_FIXED ), _boundManager( nullptr ), _tableau( nullptr ), _context( nullptr ), _cdConstraintActive( nullptr ), _cdPhaseStatus( nullptr ), _cdInfeasibleCases( nullptr ), _score( FloatUtils::negativeInfinity() ), _statistics( NULL ), _gurobi( NULL ), _tableauAuxVars(), _cadicalVars()
 {
 }
 
@@ -89,21 +63,21 @@ void PiecewiseLinearConstraint::initializeCDInfeasibleCases()
 {
     ASSERT( _context != nullptr );
     ASSERT( _cdInfeasibleCases == nullptr );
-    _cdInfeasibleCases = new ( true ) CVC4::context::CDList<PhaseStatus>( _context );
+    _cdInfeasibleCases = new( true ) CVC4::context::CDList<PhaseStatus>( _context );
 }
 
 void PiecewiseLinearConstraint::initializeCDActiveStatus()
 {
     ASSERT( _context != nullptr );
     ASSERT( _cdConstraintActive == nullptr );
-    _cdConstraintActive = new ( true ) CVC4::context::CDO<bool>( _context, _constraintActive );
+    _cdConstraintActive = new( true ) CVC4::context::CDO<bool>( _context, _constraintActive );
 }
 
 void PiecewiseLinearConstraint::initializeCDPhaseStatus()
 {
     ASSERT( _context != nullptr );
     ASSERT( _cdPhaseStatus == nullptr );
-    _cdPhaseStatus = new ( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
+    _cdPhaseStatus = new( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
 }
 
 void PiecewiseLinearConstraint::cdoCleanup()

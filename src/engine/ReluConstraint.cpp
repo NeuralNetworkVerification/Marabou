@@ -33,19 +33,12 @@
 #endif
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
-    , _b( b )
-    , _f( f )
-    , _auxVarInUse( false )
-    , _direction( PHASE_NOT_FIXED )
-    , _haveEliminatedVariables( false )
-    , _tighteningRow( NULL )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT ), _b( b ), _f( f ), _auxVarInUse( false ), _direction( PHASE_NOT_FIXED ), _haveEliminatedVariables( false ), _tighteningRow( NULL )
 {
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _haveEliminatedVariables( false )
-    , _tighteningRow( NULL )
+    : _haveEliminatedVariables( false ), _tighteningRow( NULL )
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -182,7 +175,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                 _boundManager->tightenLowerBound( partner, bound, *_tighteningRow );
             }
 
-            // If b is non-negative, we're in the active phase
+                // If b is non-negative, we're in the active phase
             else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
             {
                 if ( proofs && _auxVarInUse )
@@ -192,8 +185,8 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                     _boundManager->tightenUpperBound( _aux, 0 );
             }
 
-            // A positive lower bound for aux means we're inactive: f is 0, b is
-            // non-positive When inactive, b = -aux
+                // A positive lower bound for aux means we're inactive: f is 0, b is
+                // non-positive When inactive, b = -aux
             else if ( _auxVarInUse && variable == _aux && bound > 0 )
             {
                 if ( proofs )
@@ -206,7 +199,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                 _boundManager->tightenUpperBound( _b, -bound, *_tighteningRow );
             }
 
-            // A negative lower bound for b could tighten aux's upper bound
+                // A negative lower bound for b could tighten aux's upper bound
             else if ( _auxVarInUse && variable == _b && bound < 0 )
             {
                 if ( proofs )
@@ -222,8 +215,8 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                     _boundManager->tightenUpperBound( _aux, -bound );
             }
 
-            // Also, if for some reason we only know a negative lower bound for
-            // f, we attempt to tighten it to 0
+                // Also, if for some reason we only know a negative lower bound for
+                // f, we attempt to tighten it to 0
             else if ( bound < 0 && variable == _f )
             {
                 if ( proofs )
@@ -274,7 +267,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                         if ( FloatUtils::isZero( bound ) )
                             _boundManager->addLemmaExplanationAndTightenBound(
                                 _b, 0, Tightening::UB, { variable }, Tightening::UB, getType() );
-                        // Bound cannot be negative if ReLU is inactive
+                            // Bound cannot be negative if ReLU is inactive
                         else if ( FloatUtils::isNegative( bound ) )
                             throw InfeasibleQueryException();
                     }
@@ -329,7 +322,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                         if ( FloatUtils::isZero( bound ) )
                             _boundManager->addLemmaExplanationAndTightenBound(
                                 _b, 0, Tightening::LB, { variable }, Tightening::UB, getType() );
-                        // Bound cannot be negative if ReLU is active
+                            // Bound cannot be negative if ReLU is active
                         else if ( FloatUtils::isNegative( bound ) )
                             throw InfeasibleQueryException();
                     }
@@ -746,31 +739,31 @@ void ReluConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned var
     ASSERT( variable == _b || variable == _f || ( _auxVarInUse && variable == _aux ) );
 
     DEBUG( {
-        if ( variable == _f )
-        {
-            ASSERT( FloatUtils::gte( fixedValue, 0.0 ) );
-        }
+               if ( variable == _f )
+               {
+                   ASSERT( FloatUtils::gte( fixedValue, 0.0 ) );
+               }
 
-        if ( variable == _f || variable == _b )
-        {
-            if ( FloatUtils::gt( fixedValue, 0 ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
-            }
-            else if ( FloatUtils::lt( fixedValue, 0 ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
-            }
-        }
-        else
-        {
-            // This is the aux variable
-            if ( FloatUtils::isPositive( fixedValue ) )
-            {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
-            }
-        }
-    } );
+               if ( variable == _f || variable == _b )
+               {
+                   if ( FloatUtils::gt( fixedValue, 0 ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
+                   }
+                   else if ( FloatUtils::lt( fixedValue, 0 ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                   }
+               }
+               else
+               {
+                   // This is the aux variable
+                   if ( FloatUtils::isPositive( fixedValue ) )
+                   {
+                       ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                   }
+               }
+           } );
 
     // In a ReLU constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
@@ -876,17 +869,17 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
 {
     switch ( phase )
     {
-    case PHASE_NOT_FIXED:
-        return "PHASE_NOT_FIXED";
+        case PHASE_NOT_FIXED:
+            return "PHASE_NOT_FIXED";
 
-    case RELU_PHASE_ACTIVE:
-        return "RELU_PHASE_ACTIVE";
+        case RELU_PHASE_ACTIVE:
+            return "RELU_PHASE_ACTIVE";
 
-    case RELU_PHASE_INACTIVE:
-        return "RELU_PHASE_INACTIVE";
+        case RELU_PHASE_INACTIVE:
+            return "RELU_PHASE_INACTIVE";
 
-    default:
-        return "UNKNOWN";
+        default:
+            return "UNKNOWN";
     }
 };
 
@@ -981,13 +974,13 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     double fValue = getAssignment( _f );
 
     if ( FloatUtils::gt(
-             getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+        getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
          FloatUtils::lt(
              getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     if ( FloatUtils::gt(
-             getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+        getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
          FloatUtils::lt(
              getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
@@ -1090,11 +1083,11 @@ void ReluConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrai
 }
 
 void
-ReluConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/,  Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+ReluConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append(idx);
-    cadicalVarToPlc.insert( idx, this);
+    _cadicalVars.append( idx );
+    cadicalVarToPlc.insert( idx, this );
 }
 
 //

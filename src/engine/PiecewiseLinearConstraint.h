@@ -73,7 +73,8 @@ class String;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
-enum PhaseStatus : unsigned {
+enum PhaseStatus : unsigned
+{
     PHASE_NOT_FIXED = 0,
     RELU_PHASE_ACTIVE = 1,
     RELU_PHASE_INACTIVE = 2,
@@ -99,8 +100,7 @@ public:
     {
     public:
         Fix( unsigned variable, double value )
-            : _variable( variable )
-            , _value( value )
+            : _variable( variable ), _value( value )
         {
         }
 
@@ -250,7 +250,8 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ){};
+    virtual void transformToUseAuxVariables( InputQuery & )
+    {};
 
     void setStatistics( Statistics *statistics );
 
@@ -328,7 +329,6 @@ public:
     {
         return _score;
     }
-
 
     virtual void updateScoreBasedOnPolarity()
     {
@@ -490,12 +490,12 @@ public:
         return _tableauAuxVars;
     }
 
-    virtual void booleanAbstraction ( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int,
-        PiecewiseLinearConstraint*> &cadicalVarToPlc) = 0;
+    virtual void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int,
+        PiecewiseLinearConstraint *> &cadicalVarToPlc ) = 0;
 
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
-                        // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
+    // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
     bool _constraintActive;
     PhaseStatus _phaseStatus;
     Map<unsigned, double> _assignment;
