@@ -49,8 +49,8 @@
 #include "UnsatCertificateNode.h"
 
 #include <atomic>
-#include <context/context.h>
 #include <cadical.hpp>
+#include <context/context.h>
 
 
 #ifdef _WIN32
