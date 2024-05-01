@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "v*"
 
   # Run CI when a PR is openend or changes are pushed to the PR
   pull_request:
@@ -55,16 +57,16 @@ jobs:
         run: docker system prune -a -f
 
       - name: Build wheel
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.17.0
         with:
           output-dir: "./wheelhouse"
           config-file: "{package}/pyproject.toml"
         env:
           MACOSX_DEPLOYMENT_TARGET: "10.9"
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: wheelhouse
+          name: wheelhouse-${{ runner.os }}
           path: ./wheelhouse/*.whl
 
   ################################################################################
@@ -85,12 +87,12 @@ jobs:
       - name: Download wheelhouse
         uses: actions/download-artifact@v4
         with:
-          name: wheelhouse
+          pattern: wheelhouse-*
           path: wheelhouse
           merge-multiple: true
 
       - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: wheelhouse/*.whl
           fail_on_unmatched_files: true
@@ -117,7 +119,7 @@ jobs:
       - name: Download wheelhouse
         uses: actions/download-artifact@v4
         with:
-          name: wheelhouse
+          pattern: wheelhouse-*
           path: wheelhouse
           merge-multiple: true
 
