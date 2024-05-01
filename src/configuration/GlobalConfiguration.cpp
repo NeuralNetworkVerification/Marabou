@@ -20,6 +20,7 @@
 
 #include <cstdio>
 
+
 // The exponential moving average is calculated as
 //     ema = current * alpha + previous * (1 - alpha)
 const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
@@ -97,7 +98,7 @@ const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
 const GlobalConfiguration::ExplicitBasisBoundTighteningType
     GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
-    GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
+        GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 const double GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT = 1e-6;
 
@@ -187,17 +188,17 @@ void GlobalConfiguration::print()
     String basisBoundTighteningType;
     switch ( EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
-        case COMPUTE_INVERTED_BASIS_MATRIX:
-            basisBoundTighteningType = "Compute inverted basis matrix";
-            break;
+    case COMPUTE_INVERTED_BASIS_MATRIX:
+        basisBoundTighteningType = "Compute inverted basis matrix";
+        break;
 
-        case USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-            basisBoundTighteningType = "Use implicit inverted basis matrix";
-            break;
+    case USE_IMPLICIT_INVERTED_BASIS_MATRIX:
+        basisBoundTighteningType = "Use implicit inverted basis matrix";
+        break;
 
-        default:
-            basisBoundTighteningType = "Unknown";
-            break;
+    default:
+        basisBoundTighteningType = "Unknown";
+        break;
     }
 
     printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n",

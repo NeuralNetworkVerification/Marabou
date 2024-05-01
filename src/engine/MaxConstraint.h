@@ -123,6 +123,7 @@ public:
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const override;
 
+
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
     */
@@ -237,19 +238,18 @@ public:
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
         return ( variable == MAX_PHASE_ELIMINATED )
-               ? MAX_PHASE_ELIMINATED
-               : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
         return ( phase == MAX_PHASE_ELIMINATED )
-               ? MAX_PHASE_ELIMINATED
-               : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
-    void
-    booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
+    void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
 
 private:
     unsigned _f;
@@ -284,6 +284,7 @@ private:
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
+
 
     /*
       Eliminate the case corresponding to the given input variable to Max.

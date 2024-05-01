@@ -174,8 +174,7 @@ public:
       Explicit (Reluplex-style) bound tightening options
     */
 
-    enum ExplicitBasisBoundTighteningType
-    {
+    enum ExplicitBasisBoundTighteningType {
         // Compute the inverse basis matrix and use it
         COMPUTE_INVERTED_BASIS_MATRIX = 0,
         // Use the inverted basis matrix without using it, via transformations
@@ -221,8 +220,7 @@ public:
     static const unsigned REFACTORIZATION_THRESHOLD;
 
     // The kind of basis factorization algorithm in use
-    enum BasisFactorizationType
-    {
+    enum BasisFactorizationType {
         LU_FACTORIZATION,
         SPARSE_LU_FACTORIZATION,
         FORREST_TOMLIN_FACTORIZATION,

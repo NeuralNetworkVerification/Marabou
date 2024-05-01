@@ -24,12 +24,17 @@
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
-    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT ), _b( b ), _f( f ), _auxVarsInUse( false ), _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
+    , _f( f )
+    , _auxVarsInUse( false )
+    , _haveEliminatedVariables( false )
 {
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
-    : _auxVarsInUse( false ), _haveEliminatedVariables( false )
+    : _auxVarsInUse( false )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedAbs.substring( 0, 13 );
     ASSERT( constraintType == String( "absoluteValue" ) );
@@ -491,7 +496,7 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
 
 void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fixedValue */ )
 {
-    (void) variable;
+    (void)variable;
     ASSERT( ( variable == _f ) || ( variable == _b ) ||
             ( _auxVarsInUse && ( variable == _posAux || variable == _negAux ) ) );
 
@@ -902,17 +907,17 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
 {
     switch ( phase )
     {
-        case PHASE_NOT_FIXED:
-            return "PHASE_NOT_FIXED";
+    case PHASE_NOT_FIXED:
+        return "PHASE_NOT_FIXED";
 
-        case ABS_PHASE_POSITIVE:
-            return "ABS_PHASE_POSITIVE";
+    case ABS_PHASE_POSITIVE:
+        return "ABS_PHASE_POSITIVE";
 
-        case ABS_PHASE_NEGATIVE:
-            return "ABS_PHASE_NEGATIVE";
+    case ABS_PHASE_NEGATIVE:
+        return "ABS_PHASE_NEGATIVE";
 
-        default:
-            return "UNKNOWN";
+    default:
+        return "UNKNOWN";
     }
 };
 
@@ -978,6 +983,6 @@ void
 AbsoluteValueConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append( idx );
-    cadicalVarToPlc.insert( idx, this );
+    _cadicalVars.append(idx);
+    cadicalVarToPlc.insert( idx, this);
 }

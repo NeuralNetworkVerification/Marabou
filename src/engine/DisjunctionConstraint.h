@@ -34,8 +34,7 @@
 class DisjunctionConstraint : public PiecewiseLinearConstraint
 {
 public:
-    ~DisjunctionConstraint()
-    {};
+    ~DisjunctionConstraint(){};
     DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const String &serializedDisjunction );
@@ -190,8 +189,7 @@ public:
     */
     bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
 
-    void
-    booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint
+    void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint
     *> &cadicalVarToPlc ) override;
 private:
     /*

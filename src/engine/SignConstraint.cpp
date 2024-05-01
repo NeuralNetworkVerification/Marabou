@@ -31,7 +31,11 @@
 #endif
 
 SignConstraint::SignConstraint( unsigned b, unsigned f )
-    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT ), _b( b ), _f( f ), _direction( PHASE_NOT_FIXED ), _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
+    , _f( f )
+    , _direction( PHASE_NOT_FIXED )
+    , _haveEliminatedVariables( false )
 {
 }
 
@@ -341,13 +345,13 @@ bool SignConstraint::haveOutOfBoundVariables() const
     double fValue = getAssignment( _f );
 
     if ( FloatUtils::gt(
-        getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+             getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
          FloatUtils::lt(
              getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     if ( FloatUtils::gt(
-        getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+             getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
          FloatUtils::lt(
              getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
@@ -359,17 +363,17 @@ String SignConstraint::phaseToString( PhaseStatus phase )
 {
     switch ( phase )
     {
-        case PHASE_NOT_FIXED:
-            return "PHASE_NOT_FIXED";
+    case PHASE_NOT_FIXED:
+        return "PHASE_NOT_FIXED";
 
-        case SIGN_PHASE_POSITIVE:
-            return "SIGN_PHASE_POSITIVE";
+    case SIGN_PHASE_POSITIVE:
+        return "SIGN_PHASE_POSITIVE";
 
-        case SIGN_PHASE_NEGATIVE:
-            return "SIGN_PHASE_NEGATIVE";
+    case SIGN_PHASE_NEGATIVE:
+        return "SIGN_PHASE_NEGATIVE";
 
-        default:
-            return "UNKNOWN";
+    default:
+        return "UNKNOWN";
     }
 };
 
@@ -561,32 +565,32 @@ void SignConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned var
     ASSERT( variable == _b || variable == _f );
 
     DEBUG( {
-               if ( variable == _f )
-               {
-                   ASSERT( ( FloatUtils::areEqual( fixedValue, 1 ) ) ||
-                           ( FloatUtils::areEqual( fixedValue, -1 ) ) );
+        if ( variable == _f )
+        {
+            ASSERT( ( FloatUtils::areEqual( fixedValue, 1 ) ) ||
+                    ( FloatUtils::areEqual( fixedValue, -1 ) ) );
 
-                   if ( FloatUtils::areEqual( fixedValue, 1 ) )
-                   {
-                       ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
-                   }
-                   else if ( FloatUtils::areEqual( fixedValue, -1 ) )
-                   {
-                       ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
-                   }
-               }
-               else if ( variable == _b )
-               {
-                   if ( FloatUtils::gte( fixedValue, 0 ) )
-                   {
-                       ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
-                   }
-                   else if ( FloatUtils::lt( fixedValue, 0 ) )
-                   {
-                       ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
-                   }
-               }
-           } );
+            if ( FloatUtils::areEqual( fixedValue, 1 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+            }
+            else if ( FloatUtils::areEqual( fixedValue, -1 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+            }
+        }
+        else if ( variable == _b )
+        {
+            if ( FloatUtils::gte( fixedValue, 0 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+            }
+            else if ( FloatUtils::lt( fixedValue, 0 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+            }
+        }
+    } );
 
     // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
@@ -662,9 +666,8 @@ void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
 {
 }
 void
-SignConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
-{
+SignConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/,  Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append( idx );
-    cadicalVarToPlc.insert( idx, this );
+    _cadicalVars.append(idx);
+    cadicalVarToPlc.insert( idx, this);
 }
