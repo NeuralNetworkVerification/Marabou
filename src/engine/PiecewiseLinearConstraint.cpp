@@ -31,6 +31,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _statistics( NULL )
     , _gurobi( NULL )
     , _tableauAuxVars()
+    , _cadicalVars()
 {
 }
 
@@ -47,6 +48,8 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _score( FloatUtils::negativeInfinity() )
     , _statistics( NULL )
     , _gurobi( NULL )
+    , _tableauAuxVars()
+    , _cadicalVars()
 {
 }
 

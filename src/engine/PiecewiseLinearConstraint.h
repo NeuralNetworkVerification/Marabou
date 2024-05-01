@@ -63,6 +63,8 @@
 #include "context/cdo.h"
 #include "context/context.h"
 
+#include <cadical.hpp>
+
 class Equation;
 class BoundManager;
 class ITableau;
@@ -488,6 +490,9 @@ public:
         return _tableauAuxVars;
     }
 
+    virtual void booleanAbstraction ( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int,
+        PiecewiseLinearConstraint*> &cadicalVarToPlc) = 0;
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -634,6 +639,7 @@ protected:
     }
 
     List<unsigned> _tableauAuxVars;
+    List<unsigned> _cadicalVars;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

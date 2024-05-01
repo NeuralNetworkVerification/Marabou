@@ -40,6 +40,8 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _haveFeasibleEliminatedPhases( false )
     , _maxValueOfEliminatedPhases( FloatUtils::negativeInfinity() )
+    , _elementsToCadicalVars()
+    , _cadicalVarsToElements()
 {
 }
 
@@ -796,4 +798,21 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
                 _boundManager->tightenUpperBound( tightening._variable, tightening._value );
         }
     }
+}
+void
+MaxConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx;
+    for (auto &element : _elements )
+    {
+        idx = cadicalVarToPlc.size();
+        _cadicalVars.append( idx );
+        cadicalVarToPlc.insert( idx, this );
+        _elementsToCadicalVars.insert(element, idx);
+        _cadicalVarsToElements.insert(idx, element);
+        cadical_solver->add(idx);
+    }
+    cadical_solver->add(0);
+
+    // TODO add additional clauses
 }

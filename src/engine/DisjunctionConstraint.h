@@ -189,6 +189,8 @@ public:
     */
     bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
 
+    void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint
+    *> &cadicalVarToPlc ) override;
 private:
     /*
       The disjuncts that form this PL constraint
@@ -245,6 +247,10 @@ private:
     */
     double getMinLowerBound( unsigned int var ) const;
     double getMaxUpperBound( unsigned int var ) const;
+
+    Map<PiecewiseLinearCaseSplit *, unsigned> _disjunctsToCadicalVars;
+    Map<unsigned, PiecewiseLinearCaseSplit *> _cadicalVarsToDisjuncts;
+
 };
 
 #endif // __DisjunctionConstraint_h__

@@ -241,6 +241,8 @@ public:
 
     const List<unsigned> getNativeAuxVars() const override;
 
+    void booleanAbstraction ( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint*> &cadicalVarToPlc) override;
+
 private:
     unsigned _b, _f;
     bool _auxVarInUse;

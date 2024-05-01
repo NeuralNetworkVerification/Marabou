@@ -897,8 +897,10 @@ private:
     */
     void writeContradictionToCertificate( unsigned infeasibleVar ) const;
 
-    std::unique_ptr<CaDiCaL::Solver> d_solver;
+    std::shared_ptr<CaDiCaL::Solver> d_solver;
     std::unique_ptr<CaDiCaL::Terminator> d_terminator;
+
+    Map<unsigned, PiecewiseLinearConstraint*> _cadicalVarToPlc;
 };
 
 #endif // __Engine_h__

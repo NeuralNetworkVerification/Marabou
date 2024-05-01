@@ -72,6 +72,8 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
+    , d_solver(new CaDiCaL::Solver())
+    , _cadicalVarToPlc()
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1562,6 +1564,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             // Some variable bounds are invalid, so the query is unsat
             throw InfeasibleQueryException();
         }
+
+        if ( GlobalConfiguration::CDCL )
+            for (auto &plConstraint : _plConstraints)
+                plConstraint->booleanAbstraction( d_solver, _cadicalVarToPlc);
     }
     catch ( const InfeasibleQueryException & )
     {

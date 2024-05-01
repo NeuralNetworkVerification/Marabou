@@ -1007,3 +1007,11 @@ void LeakyReluConstraint::createInactiveTighteningRow()
     _inactiveTighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVars.back(), 1 );
     _inactiveTighteningRow->_scalar = 0;
 }
+
+void
+LeakyReluConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /* cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx = cadicalVarToPlc.size();
+    _cadicalVars.append(idx);
+    cadicalVarToPlc.insert( idx, this);
+}

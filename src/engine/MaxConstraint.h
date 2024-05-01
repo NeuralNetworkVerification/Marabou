@@ -249,6 +249,8 @@ public:
                  : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
+    void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
+
 private:
     unsigned _f;
     Set<unsigned> _elements;
@@ -302,6 +304,9 @@ private:
       Apply tightenings in the list, discovered by getEntailedTightenings
     */
     void applyTightenings( const List<Tightening> &tightenings ) const;
+
+    Map<unsigned, unsigned> _elementsToCadicalVars;
+    Map<unsigned, unsigned> _cadicalVarsToElements;
 };
 
 #endif // __MaxConstraint_h__

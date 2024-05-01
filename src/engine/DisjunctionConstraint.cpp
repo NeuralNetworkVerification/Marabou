@@ -25,6 +25,8 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
     : PiecewiseLinearConstraint( disjuncts.size() )
     , _disjuncts( disjuncts.begin(), disjuncts.end() )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
+    , _disjunctsToCadicalVars()
+    , _cadicalVarsToDisjuncts()
 {
     for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
@@ -622,4 +624,20 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
     }
 
     return maxUpperBound;
+}
+void
+DisjunctionConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int,
+    PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx;
+    for (auto &disjunct : _disjuncts )
+    {
+        idx = cadicalVarToPlc.size();
+        _cadicalVars.append( idx );
+        cadicalVarToPlc.insert( idx, this );
+        _disjunctsToCadicalVars.insert(&disjunct, idx);
+        _cadicalVarsToDisjuncts.insert(idx, &disjunct);
+        cadical_solver->add(idx);
+    }
+    cadical_solver->add(0);
 }
