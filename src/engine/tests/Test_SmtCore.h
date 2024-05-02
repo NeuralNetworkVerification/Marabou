@@ -176,6 +176,10 @@ public:
         void addTableauAuxVar( unsigned /*tableauAuxVar*/, unsigned /*constraintAuxVar*/ )
         {
         }
+
+        void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &/*cadicalVarToPlc*/ )
+        {
+        }
     };
 
     void setUp()
