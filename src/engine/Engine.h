@@ -72,8 +72,7 @@ class Engine
     , public SignalHandler::Signalable
 {
 public:
-    enum
-    {
+    enum {
         MICROSECONDS_TO_SECONDS = 1000000,
     };
 
