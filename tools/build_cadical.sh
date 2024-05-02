@@ -6,7 +6,13 @@ echo $mydir
 cd $mydir
 cd cadical
 echo "building cadical"
-./configure
-make
+mkdir build
+cd build
+for f in ../src/*.cpp; do g++ -O3 -DNDEBUG -DNBUILD -fPIC -c $f; done
+ar rc libcadical.a `ls *.o | grep -v ical.o`
+g++ -fPIC -o cadical cadical.o -L. -lcadical
+g++ -fPIC -o mobical mobical.o -L. -lcadical
+#./configure
+#make
 
 cd $curdir
