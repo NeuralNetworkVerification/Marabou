@@ -72,7 +72,7 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
-    , d_solver(new CaDiCaL::Solver())
+    , d_solver( new CaDiCaL::Solver() )
     , _cadicalVarToPlc()
 {
     _smtCore.setStatistics( &_statistics );
@@ -1566,8 +1566,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         }
 
         if ( GlobalConfiguration::CDCL )
-            for (auto &plConstraint : _plConstraints)
-                plConstraint->booleanAbstraction( d_solver, _cadicalVarToPlc);
+            for ( auto &plConstraint : _plConstraints )
+                plConstraint->booleanAbstraction( d_solver, _cadicalVarToPlc );
     }
     catch ( const InfeasibleQueryException & )
     {

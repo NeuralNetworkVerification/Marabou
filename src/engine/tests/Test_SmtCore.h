@@ -177,7 +177,9 @@ public:
         {
         }
 
-        void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &/*cadicalVarToPlc*/ )
+        void
+        booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/,
+                            Map<unsigned int, PiecewiseLinearConstraint *> & /*cadicalVarToPlc*/ )
         {
         }
     };

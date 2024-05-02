@@ -1008,10 +1008,11 @@ void LeakyReluConstraint::createInactiveTighteningRow()
     _inactiveTighteningRow->_scalar = 0;
 }
 
-void
-LeakyReluConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> /* cadical_solver*/, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+void LeakyReluConstraint::booleanAbstraction(
+    std::shared_ptr<CaDiCaL::Solver> /* cadical_solver*/,
+    Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append(idx);
-    cadicalVarToPlc.insert( idx, this);
+    _cadicalVars.append( idx );
+    cadicalVarToPlc.insert( idx, this );
 }

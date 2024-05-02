@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.13)
 project(Marabou)
 
 set(MARABOU_VERSION 2.0.0)
@@ -82,7 +82,7 @@ include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
 # Avoid using deprecated operations
 add_definitions(-DBOOST_NO_CXX98_FUNCTION_BASE)
-set(BOOST_VERSION 1.84.0)
+set(BOOST_VERSION 1.67.0)
 set(BOOST_DIR "${TOOLS_DIR}/boost-${BOOST_VERSION}")
 if (MSVC)
   set(BOOST_ROOT "${BOOST_DIR}/win_installed")

@@ -1,4 +1,4 @@
-CADICALBUILD=/home/idan0610/Marabou_dev/Marabou/tools/cadical/build
+CADICALBUILD=/cs/labs/guykatz/omrii99/CDCL/Marabou/tools/cadical/build
 all:
 	$(MAKE) -C "$(CADICALBUILD)"
 clean:
@@ -11,8 +11,8 @@ clean:
 	  fi; \
 	  rm -rf "$(CADICALBUILD)"; \
 	fi
-	rm -f "/home/idan0610/Marabou_dev/Marabou/tools/cadical/src/makefile"
-	rm -f "/home/idan0610/Marabou_dev/Marabou/tools/cadical/makefile"
+	rm -f "/cs/labs/guykatz/omrii99/CDCL/Marabou/tools/cadical/src/makefile"
+	rm -f "/cs/labs/guykatz/omrii99/CDCL/Marabou/tools/cadical/makefile"
 test:
 	$(MAKE) -C "$(CADICALBUILD)" test
 cadical:

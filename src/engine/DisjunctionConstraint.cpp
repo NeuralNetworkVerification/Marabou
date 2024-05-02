@@ -625,19 +625,19 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
 
     return maxUpperBound;
 }
-void
-DisjunctionConstraint::booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int,
-    PiecewiseLinearConstraint *> &cadicalVarToPlc )
+void DisjunctionConstraint::booleanAbstraction(
+    std::shared_ptr<CaDiCaL::Solver> cadical_solver,
+    Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx;
-    for (auto &disjunct : _disjuncts )
+    for ( auto &disjunct : _disjuncts )
     {
         idx = cadicalVarToPlc.size();
         _cadicalVars.append( idx );
         cadicalVarToPlc.insert( idx, this );
-        _disjunctsToCadicalVars.insert(&disjunct, idx);
-        _cadicalVarsToDisjuncts.insert(idx, &disjunct);
-        cadical_solver->add(idx);
+        _disjunctsToCadicalVars.insert( &disjunct, idx );
+        _cadicalVarsToDisjuncts.insert( idx, &disjunct );
+        cadical_solver->add( idx );
     }
-    cadical_solver->add(0);
+    cadical_solver->add( 0 );
 }

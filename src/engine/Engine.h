@@ -72,7 +72,8 @@ class Engine
     , public SignalHandler::Signalable
 {
 public:
-    enum {
+    enum
+    {
         MICROSECONDS_TO_SECONDS = 1000000,
     };
 
@@ -301,13 +302,15 @@ public:
     void propagateBoundManagerTightenings();
 
 private:
-    enum BasisRestorationRequired {
+    enum BasisRestorationRequired
+    {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,
         WEAK_RESTORATION_NEEDED = 2
     };
 
-    enum BasisRestorationPerformed {
+    enum BasisRestorationPerformed
+    {
         NO_RESTORATION_PERFORMED = 0,
         PERFORMED_STRONG_RESTORATION = 1,
         PERFORMED_WEAK_RESTORATION = 2,
@@ -900,7 +903,7 @@ private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;
     std::unique_ptr<CaDiCaL::Terminator> d_terminator;
 
-    Map<unsigned, PiecewiseLinearConstraint*> _cadicalVarToPlc;
+    Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 };
 
 #endif // __Engine_h__

@@ -239,7 +239,9 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
-    void booleanAbstraction ( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint*> &cadicalVarToPlc) override;
+    void
+    booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver,
+                        Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
 
 private:
     unsigned _b, _f;
@@ -284,7 +286,6 @@ private:
       inactive phase stored in _inactiveTighteningRow
     */
     void createInactiveTighteningRow();
-
 };
 
 #endif // __LeakyReluConstraint_h__

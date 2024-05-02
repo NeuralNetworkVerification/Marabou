@@ -249,7 +249,9 @@ public:
                  : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
-    void booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver, Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
+    void
+    booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver,
+                        Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
 
 private:
     unsigned _f;
