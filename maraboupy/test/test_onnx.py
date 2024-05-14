@@ -60,6 +60,13 @@ def test_split_onnx_error():
 
     os.remove(presplit_filename)
 
+def test_concat_const_and_gather_network():
+    """
+    Test an onnx file that actually contains two disjoint network
+    """
+    filename =  "test_gather.onnx"
+    evaluateFile(filename)
+
 def test_concat_network():
     """
     Test an onnx file that actually contains two disjoint network
