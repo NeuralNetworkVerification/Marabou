@@ -73,7 +73,8 @@ class String;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
-enum PhaseStatus : unsigned {
+enum PhaseStatus : unsigned
+{
     PHASE_NOT_FIXED = 0,
     RELU_PHASE_ACTIVE = 1,
     RELU_PHASE_INACTIVE = 2,
@@ -490,9 +491,18 @@ public:
         return _tableauAuxVars;
     }
 
+    /*
+     Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
+   */
     virtual void
     booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver,
                         Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) = 0;
+
+    /*
+     Returns a literal representing a boolean propagation
+     Returns 0 if no propagation can be deduced
+    */
+    virtual int propagatePhaseAsLit() = 0;
 
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint

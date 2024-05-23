@@ -673,3 +673,14 @@ void SignConstraint::booleanAbstraction(
     _cadicalVars.append( idx );
     cadicalVarToPlc.insert( idx, this );
 }
+
+int SignConstraint::propagatePhaseAsLit()
+{
+    ASSERT( _cadicalVars.size() == 1 )
+    if ( _phaseStatus == SIGN_PHASE_POSITIVE )
+        return _cadicalVars.back();
+    else if ( _phaseStatus == SIGN_PHASE_NEGATIVE )
+        return -_cadicalVars.back();
+    else
+        return 0;
+}

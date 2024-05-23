@@ -641,3 +641,13 @@ void DisjunctionConstraint::booleanAbstraction(
     }
     cadical_solver->add( 0 );
 }
+
+int DisjunctionConstraint::propagatePhaseAsLit( )
+{
+    if ( phaseFixed() )
+    {
+        PiecewiseLinearCaseSplit onlyDisjunct = _disjuncts.get( _feasibleDisjuncts.back() );
+        return _disjunctsToCadicalVars.at( &onlyDisjunct );
+    }
+    return 0;
+}

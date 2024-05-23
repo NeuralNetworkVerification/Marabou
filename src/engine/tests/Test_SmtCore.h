@@ -182,6 +182,11 @@ public:
                             Map<unsigned int, PiecewiseLinearConstraint *> & /*cadicalVarToPlc*/ )
         {
         }
+
+        int propagatePhaseAsLit()
+        {
+            return 0;
+        }
     };
 
     void setUp()

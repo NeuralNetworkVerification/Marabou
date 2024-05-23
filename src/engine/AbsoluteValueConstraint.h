@@ -217,9 +217,18 @@ public:
 
     const List<unsigned> getNativeAuxVars() const override;
 
+    /*
+     Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
+    */
     void
     booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver,
                         Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
+
+    /*
+     Returns a literal representing a boolean propagation
+     Returns 0 if no propagation can be deduced
+    */
+    int propagatePhaseAsLit();
 
 private:
     /*

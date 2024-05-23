@@ -817,3 +817,13 @@ void MaxConstraint::booleanAbstraction(
 
     // TODO add additional clauses
 }
+
+int MaxConstraint::propagatePhaseAsLit( )
+{
+    if ( phaseFixed() && !_elements.empty() )
+            return _elementsToCadicalVars.at( *_elements.begin() );
+    // If no elements exist, then constraint is constant and abstraction is irrelevant
+    // Assumption - phases are not eliminated in CDCL
+
+    return 0;
+}
