@@ -642,7 +642,7 @@ void DisjunctionConstraint::booleanAbstraction(
     cadical_solver->add( 0 );
 }
 
-int DisjunctionConstraint::propagatePhaseAsLit( )
+int DisjunctionConstraint::propagatePhaseAsLit()
 {
     if ( phaseFixed() )
     {
