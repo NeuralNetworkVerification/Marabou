@@ -63,7 +63,7 @@ void Options::initializeDefaultValues()
     _intOptions[NUM_INITIAL_DIVIDES] = 0;
     _intOptions[NUM_ONLINE_DIVIDES] = 2;
     _intOptions[INITIAL_TIMEOUT] = 5;
-    _intOptions[VERBOSITY] = 1 ;
+    _intOptions[VERBOSITY] = 1;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
     _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 2;
