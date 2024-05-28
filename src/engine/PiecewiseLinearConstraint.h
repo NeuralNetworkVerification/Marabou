@@ -73,7 +73,8 @@ class String;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
-enum PhaseStatus : unsigned {
+enum PhaseStatus : unsigned
+{
     PHASE_NOT_FIXED = 0,
     RELU_PHASE_ACTIVE = 1,
     RELU_PHASE_INACTIVE = 2,
@@ -502,6 +503,12 @@ public:
      Returns 0 if no propagation can be deduced
     */
     virtual int propagatePhaseAsLit() = 0;
+
+    // TODO implement, use context dependency?
+    unsigned getDecisionLevel()
+    {
+        return 0;
+    }
 
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint

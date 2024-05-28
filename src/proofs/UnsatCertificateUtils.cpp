@@ -70,8 +70,7 @@ double UNSATCertificateUtils::computeBound( unsigned var,
     return derivedBound;
 }
 
-void UNSATCertificateUtils::getExplanationRowCombination( unsigned var,
-                                                          const SparseUnsortedList &explanation,
+void UNSATCertificateUtils::getExplanationRowCombination( const SparseUnsortedList &explanation,
                                                           Vector<double> &explanationRowCombination,
                                                           const SparseMatrix *initialTableau,
                                                           unsigned numberOfVariables )
@@ -100,7 +99,16 @@ void UNSATCertificateUtils::getExplanationRowCombination( unsigned var,
         if ( FloatUtils::isZero( explanationRowCombination[i] ) )
             explanationRowCombination[i] = 0;
     }
+}
 
+void UNSATCertificateUtils::getExplanationRowCombination( unsigned var,
+                                                          const SparseUnsortedList &explanation,
+                                                          Vector<double> &explanationRowCombination,
+                                                          const SparseMatrix *initialTableau,
+                                                          unsigned numberOfVariables )
+{
+    UNSATCertificateUtils::getExplanationRowCombination( explanation, explanationRowCombination,
+    initialTableau, numberOfVariables );
     // Since: 0 = Sum (ci * xi) + c * var = Sum (ci * xi) + (c + 1) * var - var
     // We have: var = Sum (ci * xi) + (c + 1) * var
     ++explanationRowCombination[var];
