@@ -3382,7 +3382,9 @@ void Engine::explainSimplexFailure()
     writeContradictionToCertificate( infeasibleVar );
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
-    Set<int> clause = clauseFromContradictionVector( ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(), _smtCore.getStackDepth() );
+    Set<int> clause = clauseFromContradictionVector(
+        ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
+        _smtCore.getStackDepth() );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -3825,19 +3827,18 @@ void Engine::extractBounds( InputQuery &inputQuery )
     }
 }
 
-Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned decisionLevel ) const
+Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
+                                                unsigned decisionLevel ) const
 {
     ASSERT( _nlConstraints.empty() );
     Vector<double> linearCombination( 0 );
-    UNSATCertificateUtils::getExplanationRowCombination( explanation,
-                                                         linearCombination,
-                                                         _tableau->getSparseA(),
-                                                         _tableau->getN() );
+    UNSATCertificateUtils::getExplanationRowCombination(
+        explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
     Set<int> clause = Set<int>();
     List<unsigned> vars;
     Vector<unsigned> conVars( 0 );
 
-    for ( const auto& constraint: _plConstraints )
+    for ( const auto &constraint : _plConstraints )
     {
         // TODO use decision levels to skip on constraints fixed "below" the current decision level
         if ( !constraint->phaseFixed() || constraint->getDecisionLevel() > decisionLevel )

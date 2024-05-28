@@ -107,8 +107,8 @@ void UNSATCertificateUtils::getExplanationRowCombination( unsigned var,
                                                           const SparseMatrix *initialTableau,
                                                           unsigned numberOfVariables )
 {
-    UNSATCertificateUtils::getExplanationRowCombination( explanation, explanationRowCombination,
-    initialTableau, numberOfVariables );
+    UNSATCertificateUtils::getExplanationRowCombination(
+        explanation, explanationRowCombination, initialTableau, numberOfVariables );
     // Since: 0 = Sum (ci * xi) + c * var = Sum (ci * xi) + (c + 1) * var - var
     // We have: var = Sum (ci * xi) + (c + 1) * var
     ++explanationRowCombination[var];
