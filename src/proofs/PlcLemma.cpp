@@ -14,6 +14,8 @@
 
 #include "PlcLemma.h"
 
+unsigned PLCLemma::idCounter = 0;
+
 PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     unsigned affectedVar,
                     double bound,
@@ -27,6 +29,7 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
     , _causingVarBound( causingVarBound )
     , _affectedVarBound( affectedVarBound )
     , _constraintType( constraintType )
+    , _id( idCounter )
 {
     if ( explanations.empty() )
         _explanations = List<SparseUnsortedList>();
@@ -52,6 +55,8 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
             expl = explanations[i];
             _explanations.append( expl );
         }
+
+        ++idCounter;
     }
 }
 
@@ -60,6 +65,7 @@ PLCLemma::~PLCLemma()
     if ( !_explanations.empty() )
         for ( auto &expl : _explanations )
             expl.clear();
+    --idCounter;
 }
 
 const List<unsigned> &PLCLemma::getCausingVars() const
