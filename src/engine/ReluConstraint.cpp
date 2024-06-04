@@ -1090,7 +1090,7 @@ void ReluConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrai
 }
 
 void ReluConstraint::booleanAbstraction(
-    std::shared_ptr<CaDiCaL::Solver> /*cadical_solver*/,
+    CadicalWrapper /*cadical*/ &,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();

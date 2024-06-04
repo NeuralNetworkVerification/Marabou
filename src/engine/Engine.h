@@ -22,6 +22,7 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "BoundManager.h"
+#include "CadicalWrapper.h"
 #include "Checker.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
@@ -49,7 +50,6 @@
 #include "UnsatCertificateNode.h"
 
 #include <atomic>
-#include <cadical.hpp>
 #include <context/context.h>
 
 
@@ -832,6 +832,8 @@ private:
     BoundManager _groundBoundManager;
     UnsatCertificateNode *_UNSATCertificate;
     CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
+    CadicalWrapper _cadicalWrapper;
+    Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 
     /*
       Returns true iff there is a variable with bounds that can explain infeasibility of the tableau
@@ -902,11 +904,6 @@ private:
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned decisionLevel ) const;
-
-    std::shared_ptr<CaDiCaL::Solver> d_solver;
-    std::unique_ptr<CaDiCaL::Terminator> d_terminator;
-
-    Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 };
 
 #endif // __Engine_h__

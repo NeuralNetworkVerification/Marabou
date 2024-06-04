@@ -47,6 +47,7 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
+#include "CadicalWrapper.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
 #include "IBoundManager.h"
@@ -62,8 +63,6 @@
 #include "context/cdlist.h"
 #include "context/cdo.h"
 #include "context/context.h"
-
-#include <cadical.hpp>
 
 class Equation;
 class BoundManager;
@@ -494,7 +493,7 @@ public:
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
    */
     virtual void
-    booleanAbstraction( std::shared_ptr<CaDiCaL::Solver> cadical_solver,
+    booleanAbstraction( CadicalWrapper &cadical,
                         Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) = 0;
 
     /*

@@ -72,7 +72,7 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
-    , d_solver( new CaDiCaL::Solver() )
+    , _cadicalWrapper()
     , _cadicalVarToPlc()
 {
     _smtCore.setStatistics( &_statistics );
@@ -1569,7 +1569,21 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         {
             _cadicalVarToPlc.insert( 0, NULL );
             for ( auto &plConstraint : _plConstraints )
-                plConstraint->booleanAbstraction( d_solver, _cadicalVarToPlc );
+                plConstraint->booleanAbstraction( _cadicalWrapper, _cadicalVarToPlc );
+
+            int res = _cadicalWrapper.solve();
+            std::cout << res << std::endl;
+
+            Map<int, int> model = _cadicalWrapper.getModel();
+            for (const auto &p : _cadicalVarToPlc) {
+                unsigned int var = p.first;
+                if (var == 0) {
+                    continue;
+                }
+                std::cout << "var " << var << ": " << model[var] << std::endl;
+            }
+
+            std::cout << std::endl;
         }
     }
     catch ( const InfeasibleQueryException & )
@@ -3385,6 +3399,19 @@ void Engine::explainSimplexFailure()
     Set<int> clause = clauseFromContradictionVector(
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
         _smtCore.getStackDepth() );
+
+    _cadicalWrapper.addClause(clause);
+    int res = _cadicalWrapper.solve();
+    std::cout << res << std::endl;
+    Map<int, int> model = _cadicalWrapper.getModel();
+
+    for (const auto &p : _cadicalVarToPlc) {
+        unsigned int var = p.first;
+        if (var == 0) {
+            continue;
+        }
+        std::cout << "var " << var << ": " << model[var] << std::endl;
+    }
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const

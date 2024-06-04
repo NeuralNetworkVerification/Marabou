@@ -800,7 +800,7 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
     }
 }
 void MaxConstraint::booleanAbstraction(
-    std::shared_ptr<CaDiCaL::Solver> cadical_solver,
+    CadicalWrapper &cadical,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx;
@@ -811,9 +811,9 @@ void MaxConstraint::booleanAbstraction(
         cadicalVarToPlc.insert( idx, this );
         _elementsToCadicalVars.insert( element, idx );
         _cadicalVarsToElements.insert( idx, element );
-        cadical_solver->add( idx );
+        cadical.addLiteral( (int)idx );
     }
-    cadical_solver->add( 0 );
+    cadical.addLiteral( 0 );
 
     // TODO add additional clauses
 }
