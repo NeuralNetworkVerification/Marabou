@@ -28,6 +28,7 @@
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
 #include "GlobalConfiguration.h"
+#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "InputQuery.h"
@@ -299,6 +300,11 @@ public:
       Propagate bound tightenings stored in the BoundManager
     */
     void propagateBoundManagerTightenings();
+
+    /*
+     Add ground bound entry using a lemma
+    */
+    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma );
 
 private:
     enum BasisRestorationRequired {
@@ -825,11 +831,11 @@ private:
     void checkGurobiBoundConsistency() const;
 
     /*
-      Proof Production data structes
+      Proof Production data structures
      */
 
     bool _produceUNSATProofs;
-    BoundManager _groundBoundManager;
+    GroundBoundManager _groundBoundManager;
     UnsatCertificateNode *_UNSATCertificate;
     CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
     CadicalWrapper _cadicalWrapper;
@@ -904,6 +910,8 @@ private:
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned decisionLevel ) const;
+
+
 };
 
 #endif // __Engine_h__

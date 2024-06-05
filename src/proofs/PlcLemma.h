@@ -26,7 +26,6 @@
 */
 class PLCLemma
 {
-    static unsigned idCounter;
 
 public:
     PLCLemma( const List<unsigned> &causingVars,
@@ -58,7 +57,6 @@ private:
     Tightening::BoundType _affectedVarBound;
     List<SparseUnsortedList> _explanations;
     PiecewiseLinearFunctionType _constraintType;
-    unsigned _id;
 };
 
 #endif //__PlcExplanation_h__

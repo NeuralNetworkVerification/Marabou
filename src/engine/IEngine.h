@@ -19,6 +19,7 @@
 #include "BoundExplainer.h"
 #include "DivideStrategy.h"
 #include "List.h"
+#include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
 #include "TableauStateStorageLevel.h"
 #include "Vector.h"
@@ -34,6 +35,7 @@ class PiecewiseLinearCaseSplit;
 class SmtState;
 class String;
 class PiecewiseLinearConstraint;
+class PLCLemma;
 class UnsatCertificateNode;
 
 class IEngine
@@ -41,7 +43,8 @@ class IEngine
 public:
     virtual ~IEngine(){};
 
-    enum ExitCode {
+    enum ExitCode
+    {
         UNSAT = 0,
         SAT = 1,
         ERROR = 2,
@@ -184,6 +187,11 @@ public:
       Propagate bound tightenings stored in the BoundManager
     */
     virtual void propagateBoundManagerTightenings() = 0;
+
+    /*
+     Add ground bound entry using a lemma
+    */
+    virtual void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma ) = 0;
 };
 
 #endif // __IEngine_h__

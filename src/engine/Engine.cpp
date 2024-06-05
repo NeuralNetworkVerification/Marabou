@@ -86,7 +86,6 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
-    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -1513,8 +1512,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
                 for ( unsigned i = 0; i < n; ++i )
                 {
-                    _groundBoundManager.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
-                    _groundBoundManager.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+                    _groundBoundManager.addGroundBound(
+                        i, _preprocessedQuery->getUpperBound( i ), Tightening::UB );
+                    _groundBoundManager.addGroundBound(
+                        i, _preprocessedQuery->getLowerBound( i ), Tightening::LB );
                 }
             }
         }
@@ -1570,20 +1571,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _cadicalVarToPlc.insert( 0, NULL );
             for ( auto &plConstraint : _plConstraints )
                 plConstraint->booleanAbstraction( _cadicalWrapper, _cadicalVarToPlc );
-
-            int res = _cadicalWrapper.solve();
-            std::cout << res << std::endl;
-
-            Map<int, int> model = _cadicalWrapper.getModel();
-            for (const auto &p : _cadicalVarToPlc) {
-                unsigned int var = p.first;
-                if (var == 0) {
-                    continue;
-                }
-                std::cout << "var " << var << ": " << model[var] << std::endl;
-            }
-
-            std::cout << std::endl;
         }
     }
     catch ( const InfeasibleQueryException & )
@@ -2555,8 +2542,8 @@ void Engine::preContextPushHook()
 {
     struct timespec start = TimeUtils::sampleMicro();
     _boundManager.storeLocalBounds();
-    if ( _produceUNSATProofs )
-        _groundBoundManager.storeLocalBounds();
+    //    if ( _produceUNSATProofs )
+    //        _groundBoundManager.storeLocalBounds();
     struct timespec end = TimeUtils::sampleMicro();
 
     _statistics.incLongAttribute( Statistics::TIME_CONTEXT_PUSH_HOOK,
@@ -2568,8 +2555,8 @@ void Engine::postContextPopHook()
     struct timespec start = TimeUtils::sampleMicro();
 
     _boundManager.restoreLocalBounds();
-    if ( _produceUNSATProofs )
-        _groundBoundManager.restoreLocalBounds();
+    //    if ( _produceUNSATProofs )
+    //        _groundBoundManager.restoreLocalBounds();
     _tableau->postContextPopHook();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -3338,22 +3325,21 @@ InputQuery Engine::buildQueryFromCurrentState() const
 void Engine::updateGroundUpperBound( const unsigned var, const double value )
 {
     ASSERT( var < _tableau->getN() && _produceUNSATProofs );
-    if ( FloatUtils::lt( value, _groundBoundManager.getUpperBound( var ) ) )
-        _groundBoundManager.setUpperBound( var, value );
+    if ( FloatUtils::lt( value, _groundBoundManager.getGroundBound( var, Tightening::UB ) ) )
+        _groundBoundManager.addGroundBound( var, value, Tightening::UB );
 }
 
 void Engine::updateGroundLowerBound( const unsigned var, const double value )
 {
     ASSERT( var < _tableau->getN() && _produceUNSATProofs );
-    if ( FloatUtils::gt( value, _groundBoundManager.getLowerBound( var ) ) )
-        _groundBoundManager.setLowerBound( var, value );
+    if ( FloatUtils::gt( value, _groundBoundManager.getGroundBound( var, Tightening::LB ) ) )
+        _groundBoundManager.addGroundBound( var, value, Tightening::LB );
 }
 
 double Engine::getGroundBound( unsigned var, bool isUpper ) const
 {
     ASSERT( var < _tableau->getN() && _produceUNSATProofs );
-    return isUpper ? _groundBoundManager.getUpperBound( var )
-                   : _groundBoundManager.getLowerBound( var );
+    return getGroundBound( var, isUpper ? Tightening::UB : Tightening::LB );
 }
 
 bool Engine::shouldProduceProofs() const
@@ -3400,18 +3386,7 @@ void Engine::explainSimplexFailure()
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
         _smtCore.getStackDepth() );
 
-    _cadicalWrapper.addClause(clause);
-    int res = _cadicalWrapper.solve();
-    std::cout << res << std::endl;
-    Map<int, int> model = _cadicalWrapper.getModel();
-
-    for (const auto &p : _cadicalVarToPlc) {
-        unsigned int var = p.first;
-        if (var == 0) {
-            continue;
-        }
-        std::cout << "var " << var << ": " << model[var] << std::endl;
-    }
+    _cadicalWrapper.addClause( clause );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -3421,8 +3396,8 @@ bool Engine::certifyInfeasibility( unsigned var ) const
     Vector<double> contradiction = computeContradiction( var );
 
     if ( contradiction.empty() )
-        return FloatUtils::isNegative( _groundBoundManager.getUpperBound( var ) -
-                                       _groundBoundManager.getLowerBound( var ) );
+        return FloatUtils::isNegative( _groundBoundManager.getGroundBound( var, Tightening::UB ) -
+                                       _groundBoundManager.getGroundBound( var, Tightening::LB ) );
 
     SparseUnsortedList sparseContradiction = SparseUnsortedList();
 
@@ -3432,15 +3407,15 @@ bool Engine::certifyInfeasibility( unsigned var ) const
 
     // In case contradiction is a vector of zeros
     if ( sparseContradiction.empty() )
-        return FloatUtils::isNegative( _groundBoundManager.getUpperBound( var ) -
-                                       _groundBoundManager.getLowerBound( var ) );
+        return FloatUtils::isNegative( _groundBoundManager.getGroundBound( var, Tightening::UB ) -
+                                       _groundBoundManager.getGroundBound( var, Tightening::LB ) );
 
-    double derivedBound =
-        UNSATCertificateUtils::computeCombinationUpperBound( sparseContradiction,
-                                                             _tableau->getSparseA(),
-                                                             _groundBoundManager.getUpperBounds(),
-                                                             _groundBoundManager.getLowerBounds(),
-                                                             _tableau->getN() );
+    double derivedBound = UNSATCertificateUtils::computeCombinationUpperBound(
+        sparseContradiction,
+        _tableau->getSparseA(),
+        _groundBoundManager.getAllGroundBounds( Tightening::UB ).data(),
+        _groundBoundManager.getAllGroundBounds( Tightening::LB ).data(),
+        _tableau->getN() );
     return FloatUtils::isNegative( derivedBound );
 }
 
@@ -3454,16 +3429,16 @@ double Engine::explainBound( unsigned var, bool isUpper ) const
         explanation = _boundManager.getExplanation( var, isUpper );
 
     if ( explanation.empty() )
-        return isUpper ? _groundBoundManager.getUpperBound( var )
-                       : _groundBoundManager.getLowerBound( var );
+        return _groundBoundManager.getGroundBound( var, isUpper ? Tightening::UB : Tightening::LB );
 
-    return UNSATCertificateUtils::computeBound( var,
-                                                isUpper,
-                                                explanation,
-                                                _tableau->getSparseA(),
-                                                _groundBoundManager.getUpperBounds(),
-                                                _groundBoundManager.getLowerBounds(),
-                                                _tableau->getN() );
+    return UNSATCertificateUtils::computeBound(
+        var,
+        isUpper,
+        explanation,
+        _tableau->getSparseA(),
+        _groundBoundManager.getAllGroundBounds( Tightening::UB ).data(),
+        _groundBoundManager.getAllGroundBounds( Tightening::LB ).data(),
+        _tableau->getN() );
 }
 
 bool Engine::validateBounds( unsigned var, double epsilon, bool isUpper ) const
@@ -3521,9 +3496,9 @@ bool Engine::checkGroundBounds() const
 
     for ( unsigned i = 0; i < _tableau->getN(); ++i )
     {
-        if ( FloatUtils::gt( _groundBoundManager.getLowerBound( i ),
+        if ( FloatUtils::gt( _groundBoundManager.getGroundBound( i, Tightening::UB ),
                              _boundManager.getLowerBound( i ) ) ||
-             FloatUtils::lt( _groundBoundManager.getUpperBound( i ),
+             FloatUtils::lt( _groundBoundManager.getGroundBound( i, Tightening::LB ),
                              _boundManager.getUpperBound( i ) ) )
             return false;
     }
@@ -3685,8 +3660,8 @@ bool Engine::certifyUNSATCertificate()
 
     for ( unsigned i = 0; i < _tableau->getN(); ++i )
     {
-        groundUpperBounds[i] = _groundBoundManager.getUpperBound( i );
-        groundLowerBounds[i] = _groundBoundManager.getLowerBound( i );
+        groundUpperBounds[i] = _groundBoundManager.getGroundBound( i, Tightening::UB );
+        groundLowerBounds[i] = _groundBoundManager.getGroundBound( i, Tightening::LB );
     }
 
     if ( GlobalConfiguration::WRITE_JSON_PROOF )
@@ -3887,4 +3862,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     }
 
     return clause;
+}
+
+void Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma )
+{
+    _groundBoundManager.addGroundBound( lemma );
 }

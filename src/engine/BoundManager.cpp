@@ -470,8 +470,7 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         allExplanations,
                                                                         constraintType );
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
-        affectedVarBound == Tightening::UB ? _engine->updateGroundUpperBound( var, value )
-                                           : _engine->updateGroundLowerBound( var, value );
+        _engine->setGroundBoundFromLemma( PLCExpl );
         resetExplanation( var, affectedVarBound );
     }
     return true;

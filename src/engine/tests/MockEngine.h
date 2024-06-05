@@ -286,6 +286,10 @@ public:
     {
         return true;
     }
+
+    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma )
+    {
+    }
 };
 
 #endif // __MockEngine_h__
