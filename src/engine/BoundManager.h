@@ -260,7 +260,8 @@ private:
                                              Tightening::BoundType affectedVarBound,
                                              const List<unsigned> &causingVars,
                                              Tightening::BoundType causingVarBound,
-                                             PiecewiseLinearFunctionType constraintType );
+                                             PiecewiseLinearFunctionType constraintType,
+                                             bool isPhaseFixing );
 
     /*
       Explainer of all bounds

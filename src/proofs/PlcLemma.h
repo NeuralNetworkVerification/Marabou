@@ -26,7 +26,6 @@
 */
 class PLCLemma
 {
-
 public:
     PLCLemma( const List<unsigned> &causingVars,
               unsigned affectedVar,

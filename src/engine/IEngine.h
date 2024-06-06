@@ -43,8 +43,7 @@ class IEngine
 public:
     virtual ~IEngine(){};
 
-    enum ExitCode
-    {
+    enum ExitCode {
         UNSAT = 0,
         SAT = 1,
         ERROR = 2,

@@ -1,9 +1,10 @@
 #ifndef MARABOU_CADICALWRAPPER_H
 #define MARABOU_CADICALWRAPPER_H
 
+#include "SatSolverWrapper.h"
+
 #include <cadical.hpp>
 #include <memory>
-#include "SatSolverWrapper.h"
 
 
 class CadicalWrapper : SatSolverWrapper

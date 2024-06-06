@@ -73,7 +73,8 @@ class Engine
     , public SignalHandler::Signalable
 {
 public:
-    enum {
+    enum
+    {
         MICROSECONDS_TO_SECONDS = 1000000,
     };
 
@@ -307,13 +308,15 @@ public:
     void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma );
 
 private:
-    enum BasisRestorationRequired {
+    enum BasisRestorationRequired
+    {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,
         WEAK_RESTORATION_NEEDED = 2
     };
 
-    enum BasisRestorationPerformed {
+    enum BasisRestorationPerformed
+    {
         NO_RESTORATION_PERFORMED = 0,
         PERFORMED_STRONG_RESTORATION = 1,
         PERFORMED_WEAK_RESTORATION = 2,
@@ -910,8 +913,6 @@ private:
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned decisionLevel ) const;
-
-
 };
 
 #endif // __Engine_h__

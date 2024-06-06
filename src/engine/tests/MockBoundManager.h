@@ -268,7 +268,8 @@ private:
                                              Tightening::BoundType /* affectedVarBound */,
                                              const List<unsigned> & /* causingVar */,
                                              Tightening::BoundType /* causingVarBound */,
-                                             PiecewiseLinearFunctionType /* constraintType */ )
+                                             PiecewiseLinearFunctionType /* constraintType */,
+                                             bool /* isPhaseFixing*/ )
     {
         return true;
     }

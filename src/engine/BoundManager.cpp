@@ -417,7 +417,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        Tightening::BoundType affectedVarBound,
                                                        const List<unsigned> &causingVars,
                                                        Tightening::BoundType causingVarBound,
-                                                       PiecewiseLinearFunctionType constraintType )
+                                                       PiecewiseLinearFunctionType constraintType,
+                                                       bool isPhaseFixing )
 {
     if ( !shouldProduceProofs() )
         return false;
@@ -470,7 +471,13 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         allExplanations,
                                                                         constraintType );
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
-        _engine->setGroundBoundFromLemma( PLCExpl );
+
+        if ( !isPhaseFixing )
+            _engine->setGroundBoundFromLemma( PLCExpl );
+        else
+            affectedVarBound == Tightening::UB ? _engine->updateGroundUpperBound( var, value )
+                                               : _engine->updateGroundLowerBound( var, value );
+
         resetExplanation( var, affectedVarBound );
     }
     return true;
