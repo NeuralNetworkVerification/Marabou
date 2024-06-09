@@ -3385,7 +3385,7 @@ void Engine::explainSimplexFailure()
     Set<int> clause = clauseFromContradictionVector(
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
         _smtCore.getStackDepth() );
-
+    printf( "size :%d, stack depth %d", clause.size(), _smtCore.getStackDepth() );
     _cadicalWrapper.addClause( clause );
 }
 
@@ -3830,7 +3830,7 @@ void Engine::extractBounds( InputQuery &inputQuery )
 }
 
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
-                                                unsigned decisionLevel ) const
+                                                unsigned id ) const
 {
     ASSERT( _nlConstraints.empty() );
     Vector<double> linearCombination( 0 );
@@ -3839,27 +3839,70 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     Set<int> clause = Set<int>();
     List<unsigned> vars;
     Vector<unsigned> conVars( 0 );
+    unsigned lit = 0;
 
     for ( const auto &constraint : _plConstraints )
     {
-        // TODO use decision levels to skip on constraints fixed "below" the current decision level
-        if ( !constraint->phaseFixed() || constraint->getDecisionLevel() > decisionLevel )
-            continue;
-
         vars = constraint->getParticipatingVariables();
+        conVars = Vector<unsigned>( vars.begin(), vars.end() );
 
         // TODO support max and disjunction
         ASSERT( constraint->getType() != DISJUNCTION && constraint->getType() != MAX );
+        if ( constraint->getType() == RELU )
+        {
+            ASSERT( conVars.size() == 3 );
+            unsigned b = conVars[0];
+            unsigned f = conVars[1];
+            unsigned aux = conVars[2];
 
-        for ( unsigned var : vars )
-            if ( !FloatUtils::isZero( linearCombination[var] ) )
+            // active phase
+            if ( ( !FloatUtils::isZero( linearCombination[f] ) &&
+                   !FloatUtils::isNegative(
+                       _groundBoundManager.getGroundBoundUpToId( f, Tightening::LB, id ) ) ) ||
+                 ( !FloatUtils::isZero( linearCombination[b] ) &&
+                   !FloatUtils::isNegative(
+                       _groundBoundManager.getGroundBoundUpToId( b, Tightening::LB, id ) ) ) ||
+                 ( !FloatUtils::isZero( linearCombination[aux] ) &&
+                   !FloatUtils::isPositive(
+                       _groundBoundManager.getGroundBoundUpToId( aux, Tightening::UB, id ) ) ) )
             {
-                int lit = constraint->propagatePhaseAsLit();
+                ASSERT( constraint->getCadicalVars().size() == 1 );
+                lit = constraint->getCadicalVars().front();
                 ASSERT( lit && !clause.exists( -lit ) );
                 clause.insert( lit );
-                break;
             }
+            else if ( ( !FloatUtils::isZero( linearCombination[f] ) &&
+                        !FloatUtils::isPositive(
+                            _groundBoundManager.getGroundBoundUpToId( f, Tightening::UB, id ) ) ) ||
+                      ( !FloatUtils::isZero( linearCombination[b] ) &&
+                        !FloatUtils::isPositive(
+                            _groundBoundManager.getGroundBoundUpToId( b, Tightening::UB, id ) ) ) ||
+                      ( !FloatUtils::isZero( linearCombination[aux] ) &&
+                        !FloatUtils::isNegative( _groundBoundManager.getGroundBoundUpToId(
+                            aux, Tightening::LB, id ) ) ) )
+            {
+                ASSERT( constraint->getCadicalVars().size() == 1 );
+                lit = -constraint->getCadicalVars().front();
+                ASSERT( lit && !clause.exists( -lit ) );
+                clause.insert( lit );
+            }
+        } //TODO apply to additional types of PLCs
     }
+    List<GroundBoundManager::GroundBoundEntry> entries;
+
+    for ( unsigned var : linearCombination )
+        if ( !FloatUtils::isZero( linearCombination[var] ) )
+        {
+            Tightening::BoundType btype = FloatUtils::isPositive( linearCombination[var] ) ? Tightening::UB : Tightening::LB;
+            GroundBoundManager::GroundBoundEntry entry = _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
+
+            if ( entry.lemma )
+                entries.append( entry );
+        }
+
+    // TODO support other constraints
+    for ( GroundBoundManager::GroundBoundEntry entry : entries )
+        clause.insert( clauseFromContradictionVector( entry.lemma->getExplanations().back(), entry.id ) );
 
     return clause;
 }

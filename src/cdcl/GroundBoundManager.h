@@ -26,6 +26,8 @@ public:
     void addGroundBound( const std::shared_ptr<PLCLemma> lemma );
 
     double getGroundBound( unsigned index, Tightening::BoundType isUpper ) const;
+    GroundBoundEntry getGroundBoundEntryUpToId( unsigned index, Tightening::BoundType isUpper, unsigned id ) const;
+
     double getGroundBoundUpToId( unsigned index, Tightening::BoundType isUpper, unsigned id ) const;
     const Vector<double> getAllGroundBounds( Tightening::BoundType isUpper ) const;
 

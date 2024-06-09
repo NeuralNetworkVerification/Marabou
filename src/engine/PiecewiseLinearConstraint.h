@@ -508,6 +508,11 @@ public:
         return 0;
     }
 
+    virtual List<unsigned> getCadicalVars()
+    {
+        return _cadicalVars;
+    }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
