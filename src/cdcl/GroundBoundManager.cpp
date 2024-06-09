@@ -35,11 +35,11 @@ void GroundBoundManager::initialize( unsigned size )
 
 void GroundBoundManager::addGroundBound( unsigned index,
                                          double value,
-                                         Tightening::BoundType isUpper )
+                                         Tightening::BoundType boundType )
 {
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> temp =
-        isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
-    temp[index]->push_back( { _counter->get(), value, NULL } );
+    const Vector<CVC4::context::CDList<GroundBoundEntry> *> &temp =
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+    temp[index]->push_back( { _counter->get(), value, NULL, Set<int>() } );
     _counter->set( _counter->get() + 1 );
 }
 
@@ -47,44 +47,51 @@ void GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> lemma )
 {
     Tightening::BoundType isUpper = lemma->getAffectedVarBound();
     unsigned index = lemma->getAffectedVar();
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> temp =
+    const Vector<CVC4::context::CDList<GroundBoundEntry> *> &temp =
         isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
-    temp[index]->push_back( { _counter->get(), lemma->getBound(), lemma } );
+    temp[index]->push_back( { _counter->get(), lemma->getBound(), lemma, Set<int>() } );
     _counter->set( _counter->get() + 1 );
 }
 
-double GroundBoundManager::getGroundBound( unsigned index, Tightening::BoundType isUpper ) const
+double GroundBoundManager::getGroundBound( unsigned index, Tightening::BoundType boundType ) const
 {
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> temp =
-        isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+    const Vector<CVC4::context::CDList<GroundBoundEntry> *> &temp =
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     return temp[index]->back().val;
 }
 
-GroundBoundManager::GroundBoundEntry GroundBoundManager::getGroundBoundEntryUpToId( unsigned index, Tightening::BoundType isUpper, unsigned id ) const
+const GroundBoundManager::GroundBoundEntry &
+GroundBoundManager::getGroundBoundEntryUpToId( unsigned index,
+                                               Tightening::BoundType boundType,
+                                               unsigned id ) const
 {
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> temp =
-        isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
-    for ( auto entry = temp[index]->end(); entry != temp[index]->begin(); --entry )
+    const Vector<CVC4::context::CDList<GroundBoundEntry> *> &temp =
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+
+    for ( int i = temp[index]->size() - 1; i >= 0; --i )
     {
-        if ( ( *entry ).id <= id )
-            return ( *entry );
+        const GroundBoundEntry &entry = temp[index]->operator[]( i );
+        if ( entry.id < id )
+            return entry;
     }
+
     ASSERT( false );
-    printf("\noops. current id is %d\n", id);
-    return {0,0, NULL};
+    printf( "\noops. current id is %d\n", id );
+    return temp[index]->operator[]( ( 0 ) );
 }
+
 double GroundBoundManager::getGroundBoundUpToId( unsigned index,
-                                                 Tightening::BoundType isUpper,
+                                                 Tightening::BoundType boundType,
                                                  unsigned id ) const
 {
-    return getGroundBoundEntryUpToId( index,isUpper, id ).val;
+    return getGroundBoundEntryUpToId( index, boundType, id ).val;
 }
 
-const Vector<double> GroundBoundManager::getAllGroundBounds( Tightening::BoundType isUpper ) const
+const Vector<double> GroundBoundManager::getAllGroundBounds( Tightening::BoundType boundType ) const
 {
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> temp =
+    const Vector<CVC4::context::CDList<GroundBoundEntry> *> &temp =
 
-        isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     Vector<double> tops = Vector<double>( 0 );
 
     for ( const auto &GBList : temp )
@@ -92,8 +99,39 @@ const Vector<double> GroundBoundManager::getAllGroundBounds( Tightening::BoundTy
 
     return tops;
 }
+
 unsigned GroundBoundManager::getCounter() const
 {
     return _counter->get();
 }
 
+void GroundBoundManager::addClauseToGroundBoundEntry( unsigned int index,
+                                                      Tightening::BoundType boundType,
+                                                      unsigned int id,
+                                                      const Set<int> &clause )
+{
+    const Vector<CVC4::context::CDList<GroundBoundEntry> *> &temp =
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+
+    unsigned indexToModify = 0;
+    for ( unsigned int i = 0; i < temp[index]->size(); ++i )
+    {
+        if ( ( i + 1 == temp[index]->size() ) || ( temp[index]->operator[]( i + 1 ).id >= id ) )
+        {
+            indexToModify = i;
+            break;
+        }
+    }
+
+    unsigned countToIdx = 0;
+    for ( auto entry : *temp[index] )
+    {
+        if ( countToIdx == indexToModify )
+        {
+            entry.clause = clause;
+            return;
+        }
+
+        ++countToIdx;
+    }
+}

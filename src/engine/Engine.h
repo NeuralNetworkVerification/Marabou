@@ -908,8 +908,7 @@ private:
     /*
       Creates a boolean-abstracted claus from an explanation
     */
-    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
-                                            unsigned decisionLevel ) const;
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id );
 };
 
 #endif // __Engine_h__

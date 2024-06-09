@@ -3382,10 +3382,11 @@ void Engine::explainSimplexFailure()
     writeContradictionToCertificate( infeasibleVar );
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
+    std::cout << "gb counter: " << _groundBoundManager.getCounter() << std::endl;
     Set<int> clause = clauseFromContradictionVector(
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
         _groundBoundManager.getCounter() );
-    printf( "size :%d, stack depth %d", clause.size(), _smtCore.getStackDepth() );
+    printf( "size :%d, stack depth %d\n", clause.size(), _smtCore.getStackDepth() );
     _cadicalWrapper.addClause( clause );
 }
 
@@ -3829,13 +3830,14 @@ void Engine::extractBounds( InputQuery &inputQuery )
     }
 }
 
-Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
-                                                unsigned id ) const
+Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id )
 {
     ASSERT( _nlConstraints.empty() );
     Vector<double> linearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
-        explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
+            explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
+
+
     Set<int> clause = Set<int>();
     List<unsigned> vars;
     Vector<unsigned> conVars( 0 );
@@ -3886,24 +3888,46 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                 ASSERT( lit && !clause.exists( -lit ) );
                 clause.insert( lit );
             }
-        } //TODO apply to additional types of PLCs
+        } // TODO apply to additional types of PLCs
     }
-    List<GroundBoundManager::GroundBoundEntry> entries;
+    List<GroundBoundManager::GroundBoundEntry> entries =
+        List<GroundBoundManager::GroundBoundEntry>();
 
-    for ( unsigned var : linearCombination )
+    for ( unsigned var = 0; var < linearCombination.size(); ++var )
         if ( !FloatUtils::isZero( linearCombination[var] ) )
         {
-            Tightening::BoundType btype = FloatUtils::isPositive( linearCombination[var] ) ? Tightening::UB : Tightening::LB;
-            GroundBoundManager::GroundBoundEntry entry = _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
+            Tightening::BoundType btype =
+                FloatUtils::isPositive( linearCombination[var] ) ? Tightening::UB : Tightening::LB;
+            const GroundBoundManager::GroundBoundEntry &entry =
+                _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
-            if ( entry.lemma )
+            if ( entry.lemma != nullptr )
                 entries.append( entry );
         }
 
     // TODO support other constraints
-    printf("\nhere\n");
-    for ( GroundBoundManager::GroundBoundEntry entry : entries )
-        clause.insert( clauseFromContradictionVector( entry.lemma->getExplanations().back(), entry.id ) );
+    //    std::cout << "size " << entries.size() << std::endl;
+
+    for ( GroundBoundManager::GroundBoundEntry &entry : entries )
+    {
+        Set<int> minorClause;
+        if ( entry.clause.empty() )
+        {
+            minorClause =
+                clauseFromContradictionVector( entry.lemma->getExplanations().back(), entry.id );
+            _groundBoundManager.addClauseToGroundBoundEntry( entry.lemma->getAffectedVar(),
+                                                             entry.lemma->getAffectedVarBound(),
+                                                             id,
+                                                             minorClause );
+        }
+        else
+        {
+            minorClause = entry.clause;
+            std::cout << "else minor" << std::endl;
+        }
+
+        clause.insert( minorClause );
+    }
 
     return clause;
 }
