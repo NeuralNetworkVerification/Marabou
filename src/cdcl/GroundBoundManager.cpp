@@ -92,3 +92,8 @@ const Vector<double> GroundBoundManager::getAllGroundBounds( Tightening::BoundTy
 
     return tops;
 }
+unsigned GroundBoundManager::getCounter() const
+{
+    return _counter->get();
+}
+

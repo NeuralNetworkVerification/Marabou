@@ -31,6 +31,8 @@ public:
     double getGroundBoundUpToId( unsigned index, Tightening::BoundType isUpper, unsigned id ) const;
     const Vector<double> getAllGroundBounds( Tightening::BoundType isUpper ) const;
 
+    unsigned getCounter() const;
+
 
 private:
     CVC4::context::CDO<unsigned> *_counter;

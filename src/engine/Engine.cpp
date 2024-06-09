@@ -3384,7 +3384,7 @@ void Engine::explainSimplexFailure()
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
     Set<int> clause = clauseFromContradictionVector(
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
-        _smtCore.getStackDepth() );
+        _groundBoundManager.getCounter() );
     printf( "size :%d, stack depth %d", clause.size(), _smtCore.getStackDepth() );
     _cadicalWrapper.addClause( clause );
 }
@@ -3901,6 +3901,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         }
 
     // TODO support other constraints
+    printf("\nhere\n");
     for ( GroundBoundManager::GroundBoundEntry entry : entries )
         clause.insert( clauseFromContradictionVector( entry.lemma->getExplanations().back(), entry.id ) );
 
