@@ -15,7 +15,7 @@ public:
     {
         GroundBoundEntry( unsigned id,
                           double val,
-                          const std::shared_ptr<PLCLemma>& lemma,
+                          const std::shared_ptr<PLCLemma> &lemma,
                           const Set<int> &clause )
             : id( id )
             , val( val )
@@ -34,7 +34,7 @@ public:
 
     void initialize( unsigned size );
     void addGroundBound( unsigned index, double value, Tightening::BoundType boundType );
-    void addGroundBound( const std::shared_ptr<PLCLemma>& lemma );
+    void addGroundBound( const std::shared_ptr<PLCLemma> &lemma );
 
     double getGroundBound( unsigned index, Tightening::BoundType boundType ) const;
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>

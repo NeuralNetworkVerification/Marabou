@@ -3835,7 +3835,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     ASSERT( _nlConstraints.empty() );
     Vector<double> linearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
-            explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
+        explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
 
 
     Set<int> clause = Set<int>();
@@ -3923,7 +3923,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         else
         {
             minorClause = entry->clause;
-//            std::cout << "else minor" << std::endl;
+            //            std::cout << "else minor" << std::endl;
         }
 
         clause.insert( minorClause );

@@ -121,7 +121,7 @@ void GroundBoundManager::addClauseToGroundBoundEntry( unsigned int index,
     {
         if ( ( i + 1 == temp[index]->size() ) || ( ( *temp[index] )[i + 1]->id >= id ) )
         {
-            (*temp[index])[i]->clause = clause;
+            ( *temp[index] )[i]->clause = clause;
             return;
         }
     }
