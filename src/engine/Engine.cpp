@@ -3890,40 +3890,40 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             }
         } // TODO apply to additional types of PLCs
     }
-    List<GroundBoundManager::GroundBoundEntry> entries =
-        List<GroundBoundManager::GroundBoundEntry>();
+    List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
+        List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>();
 
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
         if ( !FloatUtils::isZero( linearCombination[var] ) )
         {
             Tightening::BoundType btype =
                 FloatUtils::isPositive( linearCombination[var] ) ? Tightening::UB : Tightening::LB;
-            const GroundBoundManager::GroundBoundEntry &entry =
+            std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
-            if ( entry.lemma != nullptr )
+            if ( entry->lemma != nullptr )
                 entries.append( entry );
         }
 
     // TODO support other constraints
     //    std::cout << "size " << entries.size() << std::endl;
 
-    for ( GroundBoundManager::GroundBoundEntry &entry : entries )
+    for ( std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry : entries )
     {
         Set<int> minorClause;
-        if ( entry.clause.empty() )
+        if ( entry->clause.empty() )
         {
             minorClause =
-                clauseFromContradictionVector( entry.lemma->getExplanations().back(), entry.id );
-            _groundBoundManager.addClauseToGroundBoundEntry( entry.lemma->getAffectedVar(),
-                                                             entry.lemma->getAffectedVarBound(),
+                clauseFromContradictionVector( entry->lemma->getExplanations().back(), entry->id );
+            _groundBoundManager.addClauseToGroundBoundEntry( entry->lemma->getAffectedVar(),
+                                                             entry->lemma->getAffectedVarBound(),
                                                              id,
                                                              minorClause );
         }
         else
         {
-            minorClause = entry.clause;
-            std::cout << "else minor" << std::endl;
+            minorClause = entry->clause;
+//            std::cout << "else minor" << std::endl;
         }
 
         clause.insert( minorClause );

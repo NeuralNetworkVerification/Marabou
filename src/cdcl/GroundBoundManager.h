@@ -13,6 +13,16 @@ class GroundBoundManager
 public:
     struct GroundBoundEntry
     {
+        GroundBoundEntry( unsigned id,
+                          double val,
+                          const std::shared_ptr<PLCLemma>& lemma,
+                          const Set<int> &clause )
+            : id( id )
+            , val( val )
+            , lemma( lemma )
+            , clause( clause )
+        {
+        }
         unsigned id;
         double val;
         const std::shared_ptr<PLCLemma> lemma;
@@ -24,15 +34,15 @@ public:
 
     void initialize( unsigned size );
     void addGroundBound( unsigned index, double value, Tightening::BoundType boundType );
-    void addGroundBound( const std::shared_ptr<PLCLemma> lemma );
+    void addGroundBound( const std::shared_ptr<PLCLemma>& lemma );
 
     double getGroundBound( unsigned index, Tightening::BoundType boundType ) const;
-    const GroundBoundEntry &
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
     getGroundBoundEntryUpToId( unsigned index, Tightening::BoundType boundType, unsigned id ) const;
 
     double
     getGroundBoundUpToId( unsigned index, Tightening::BoundType boundType, unsigned id ) const;
-    const Vector<double> getAllGroundBounds( Tightening::BoundType boundType ) const;
+    Vector<double> getAllGroundBounds( Tightening::BoundType boundType ) const;
 
     unsigned getCounter() const;
 
@@ -47,8 +57,8 @@ private:
     CVC4::context::Context &_context;
     unsigned _size;
 
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> _upperGroundBounds;
-    Vector<CVC4::context::CDList<GroundBoundEntry> *> _lowerGroundBounds;
+    Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> _upperGroundBounds;
+    Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> _lowerGroundBounds;
 };
 
 
