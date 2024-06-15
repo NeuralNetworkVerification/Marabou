@@ -1427,7 +1427,7 @@ void Engine::initializeNetworkLevelReasoning()
     }
 }
 
-bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
+bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
 {
     ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();

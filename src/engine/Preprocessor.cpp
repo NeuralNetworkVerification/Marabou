@@ -26,6 +26,7 @@
 #include "PiecewiseLinearFunctionType.h"
 #include "Statistics.h"
 #include "Tightening.h"
+#include "attack/PGD_Linf_Rand/"
 
 #ifdef _WIN32
 #undef INFINITE
@@ -173,6 +174,12 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query,
 
     ASSERT( _preprocessed->getLowerBounds().size() == _preprocessed->getNumberOfVariables() );
     ASSERT( _preprocessed->getUpperBounds().size() == _preprocessed->getNumberOfVariables() );
+
+    // run the attack
+    String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
+
+
+
 
     return std::move( _preprocessed );
 }
