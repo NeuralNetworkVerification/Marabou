@@ -1513,9 +1513,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 for ( unsigned i = 0; i < n; ++i )
                 {
                     _groundBoundManager.addGroundBound(
-                        i, _preprocessedQuery->getUpperBound( i ), Tightening::UB );
+                        i, _preprocessedQuery->getUpperBound( i ), Tightening::UB, false );
                     _groundBoundManager.addGroundBound(
-                        i, _preprocessedQuery->getLowerBound( i ), Tightening::LB );
+                        i, _preprocessedQuery->getLowerBound( i ), Tightening::LB, false );
                 }
             }
         }
@@ -2106,7 +2106,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                  FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
             {
                 _boundManager.resetExplanation( variable, Tightening::LB );
-                updateGroundLowerBound( variable, bound._value );
+                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
                 _boundManager.tightenLowerBound( variable, bound._value );
             }
             else if ( !_produceUNSATProofs )
@@ -2120,7 +2120,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                  FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {
                 _boundManager.resetExplanation( variable, Tightening::UB );
-                updateGroundUpperBound( variable, bound._value );
+                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
                 _boundManager.tightenUpperBound( variable, bound._value );
             }
             else if ( !_produceUNSATProofs )
@@ -3322,20 +3322,6 @@ InputQuery Engine::buildQueryFromCurrentState() const
     return query;
 }
 
-void Engine::updateGroundUpperBound( const unsigned var, const double value )
-{
-    ASSERT( var < _tableau->getN() && _produceUNSATProofs );
-    if ( FloatUtils::lt( value, _groundBoundManager.getGroundBound( var, Tightening::UB ) ) )
-        _groundBoundManager.addGroundBound( var, value, Tightening::UB );
-}
-
-void Engine::updateGroundLowerBound( const unsigned var, const double value )
-{
-    ASSERT( var < _tableau->getN() && _produceUNSATProofs );
-    if ( FloatUtils::gt( value, _groundBoundManager.getGroundBound( var, Tightening::LB ) ) )
-        _groundBoundManager.addGroundBound( var, value, Tightening::LB );
-}
-
 double Engine::getGroundBound( unsigned var, bool isUpper ) const
 {
     ASSERT( var < _tableau->getN() && _produceUNSATProofs );
@@ -3385,7 +3371,7 @@ void Engine::explainSimplexFailure()
     std::cout << "gb counter: " << _groundBoundManager.getCounter() << std::endl;
     Set<int> clause = clauseFromContradictionVector(
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
-        _groundBoundManager.getCounter() );
+        _groundBoundManager.getCounter(), -1 );
     printf( "size :%d, stack depth %d\n", clause.size(), _smtCore.getStackDepth() );
     _cadicalWrapper.addClause( clause );
 }
@@ -3830,21 +3816,27 @@ void Engine::extractBounds( InputQuery &inputQuery )
     }
 }
 
-Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id )
+Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar )
 {
     ASSERT( _nlConstraints.empty() );
     Vector<double> linearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
         explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
 
+    if ( explainedVar >= 0 )
+        linearCombination[explainedVar]++;
 
     Set<int> clause = Set<int>();
     List<unsigned> vars;
     Vector<unsigned> conVars( 0 );
     unsigned lit = 0;
 
+    // Iterate through all constraint, check whether their phase was involved in the explanation
+    // Propagate literals accordingly
+    // Currently works only for ReLU constraints
     for ( const auto &constraint : _plConstraints )
     {
+        lit = 0;
         vars = constraint->getParticipatingVariables();
         conVars = Vector<unsigned>( vars.begin(), vars.end() );
 
@@ -3857,9 +3849,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             unsigned f = conVars[1];
             unsigned aux = conVars[2];
 
-            // active phase
+            // Active phase
             if ( ( !FloatUtils::isZero( linearCombination[f] ) &&
-                   !FloatUtils::isNegative(
+                   FloatUtils::isPositive(
                        _groundBoundManager.getGroundBoundUpToId( f, Tightening::LB, id ) ) ) ||
                  ( !FloatUtils::isZero( linearCombination[b] ) &&
                    !FloatUtils::isNegative(
@@ -3870,9 +3862,8 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             {
                 ASSERT( constraint->getCadicalVars().size() == 1 );
                 lit = constraint->getCadicalVars().front();
-                ASSERT( lit && !clause.exists( -lit ) );
-                clause.insert( lit );
             }
+            // Inactive phase
             else if ( ( !FloatUtils::isZero( linearCombination[f] ) &&
                         !FloatUtils::isPositive(
                             _groundBoundManager.getGroundBoundUpToId( f, Tightening::UB, id ) ) ) ||
@@ -3880,18 +3871,25 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                         !FloatUtils::isPositive(
                             _groundBoundManager.getGroundBoundUpToId( b, Tightening::UB, id ) ) ) ||
                       ( !FloatUtils::isZero( linearCombination[aux] ) &&
-                        !FloatUtils::isNegative( _groundBoundManager.getGroundBoundUpToId(
+                        FloatUtils::isPositive( _groundBoundManager.getGroundBoundUpToId(
                             aux, Tightening::LB, id ) ) ) )
             {
                 ASSERT( constraint->getCadicalVars().size() == 1 );
                 lit = -constraint->getCadicalVars().front();
-                ASSERT( lit && !clause.exists( -lit ) );
-                clause.insert( lit );
             }
-        } // TODO apply to additional types of PLCs
+        } // TODO apply to additional PLC types
+
+        if ( lit )
+        {
+            ASSERT( !clause.exists( -lit ) );
+            clause.insert( lit );
+        }
     }
+
     List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
         List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>();
+
+    // Iterate through all lemmas learned, check which participated in the explanation
 
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
         if ( !FloatUtils::isZero( linearCombination[var] ) )
@@ -3901,38 +3899,101 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
-            if ( entry->lemma != nullptr )
+            if ( entry->lemma != nullptr && !entry->isPhaseFixing )
                 entries.append( entry );
         }
 
-    // TODO support other constraints
-    //    std::cout << "size " << entries.size() << std::endl;
-
+    // Recursively repeat the process for all non phase fixing lemmas,
+    // and add their explaining literals to the clause
     for ( std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry : entries )
     {
         Set<int> minorClause;
         if ( entry->clause.empty() )
         {
             minorClause =
-                clauseFromContradictionVector( entry->lemma->getExplanations().back(), entry->id );
+                clauseFromContradictionVector( entry->lemma->getExplanations().back(), entry->id, entry->lemma->getCausingVars().back() );
             _groundBoundManager.addClauseToGroundBoundEntry( entry->lemma->getAffectedVar(),
                                                              entry->lemma->getAffectedVarBound(),
                                                              id,
                                                              minorClause );
         }
         else
-        {
             minorClause = entry->clause;
-            //            std::cout << "else minor" << std::endl;
-        }
+//         TODO delete
+//        DEBUG( {
+//            ASSERT( clauseFromContradictionVector( entry->lemma->getExplanations().back(),
+//                                                   entry->id,  entry->lemma->getCausingVars().back() ) == entry->clause );
+//        } )
 
-        clause.insert( minorClause );
+        for ( int literal : minorClause )
+        {
+            ASSERT( literal && !clause.exists( -literal ) );
+            clause.insert( literal );
+        }
     }
 
     return clause;
 }
 
-void Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma )
+void Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing )
 {
-    _groundBoundManager.addGroundBound( lemma );
+    _groundBoundManager.addGroundBound( lemma, isPhaseFixing );
+}
+
+Set<int> Engine::explainLiteral( int lit )
+{
+    ASSERT( lit );
+    Set<int> clause;
+
+    // Get corresponding constraints, and its participating variables
+    PiecewiseLinearConstraint *litConstraint = _cadicalVarToPlc.get( abs( lit ) );
+    ASSERT( litConstraint );
+    List<unsigned> vars = litConstraint->getParticipatingVariables();
+    Vector<unsigned> conVars = Vector<unsigned>( vars.begin(), vars.end() );
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry> tempEntry;
+
+    // Search for a phase fixing GroundBound entry, depending on the sign
+    // Currently works only for ReLU constraints
+    if ( litConstraint->getType() == RELU )
+    {
+        ASSERT( conVars.size() == 3 );
+        unsigned b = conVars[0];
+        unsigned f = conVars[1];
+        unsigned aux = conVars[2];
+
+        if ( lit > 0 )
+        {
+            // Active phase
+            tempEntry =
+                _groundBoundManager.getGroundBoundEntryUpToId( f, Tightening::LB, MAX_INPUT );
+
+            if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
+                tempEntry =
+                    _groundBoundManager.getGroundBoundEntryUpToId( b, Tightening::LB, MAX_INPUT );
+            if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
+                tempEntry =
+                    _groundBoundManager.getGroundBoundEntryUpToId( aux, Tightening::UB, MAX_INPUT );
+        }
+        else
+        {
+            // Inactive phase
+            tempEntry =
+                _groundBoundManager.getGroundBoundEntryUpToId( f, Tightening::UB, MAX_INPUT );
+
+            if ( !( tempEntry->isPhaseFixing && FloatUtils::isNegative( tempEntry->val ) ) )
+                tempEntry =
+                    _groundBoundManager.getGroundBoundEntryUpToId( b, Tightening::UB, MAX_INPUT );
+            if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
+                tempEntry =
+                    _groundBoundManager.getGroundBoundEntryUpToId( aux, Tightening::UB, MAX_INPUT );
+        }
+
+        // Return a clause explaining the phase-fixing GroundBound entry
+        ASSERT( tempEntry && tempEntry->lemma );
+        clause = clauseFromContradictionVector( tempEntry->lemma->getExplanations().back(),
+                                                tempEntry->id,  tempEntry->lemma->getCausingVars().back() );
+
+    } // TODO apply to additional types of PLCs
+    ASSERT( clause.size() );
+    return clause;
 }

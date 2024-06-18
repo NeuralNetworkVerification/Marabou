@@ -16,25 +16,28 @@ public:
         GroundBoundEntry( unsigned id,
                           double val,
                           const std::shared_ptr<PLCLemma> &lemma,
-                          const Set<int> &clause )
+                          const Set<int> &clause,
+                          bool isPhaseFixing )
             : id( id )
             , val( val )
             , lemma( lemma )
             , clause( clause )
+            , isPhaseFixing( isPhaseFixing )
         {
         }
         unsigned id;
         double val;
         const std::shared_ptr<PLCLemma> lemma;
         Set<int> clause;
+        bool isPhaseFixing;
     };
 
     GroundBoundManager( CVC4::context::Context &ctx );
     ~GroundBoundManager();
 
     void initialize( unsigned size );
-    void addGroundBound( unsigned index, double value, Tightening::BoundType boundType );
-    void addGroundBound( const std::shared_ptr<PLCLemma> &lemma );
+    void addGroundBound( unsigned index, double value, Tightening::BoundType boundType, bool isPhaseFixing );
+    void addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool isPhaseFixing );
 
     double getGroundBound( unsigned index, Tightening::BoundType boundType ) const;
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>

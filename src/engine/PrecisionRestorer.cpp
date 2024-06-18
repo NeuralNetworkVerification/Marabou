@@ -49,16 +49,12 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     engine.storeState( targetEngineState, TableauStateStorageLevel::STORE_NONE );
 
     BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
-    Vector<double> groundUpperBoundsBackup;
-    Vector<double> groundLowerBoundsBackup;
 
     Vector<double> upperBoundsBackup;
     Vector<double> lowerBoundsBackup;
 
     if ( engine.shouldProduceProofs() )
     {
-        groundUpperBoundsBackup = Vector<double>( targetN, 0 );
-        groundLowerBoundsBackup = Vector<double>( targetN, 0 );
 
         upperBoundsBackup = Vector<double>( targetN, 0 );
         lowerBoundsBackup = Vector<double>( targetN, 0 );
@@ -69,9 +65,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         {
             lowerBoundsBackup[i] = tableau.getLowerBound( i );
             upperBoundsBackup[i] = tableau.getUpperBound( i );
-
-            groundUpperBoundsBackup[i] = engine.getGroundBound( i, Tightening::UB );
-            groundLowerBoundsBackup[i] = engine.getGroundBound( i, Tightening::LB );
         }
     }
 
@@ -137,12 +130,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     if ( engine.shouldProduceProofs() )
     {
         engine.setBoundExplainerContent( &boundExplainerBackup );
-
-        for ( unsigned i = 0; i < targetN; ++i )
-        {
-            engine.updateGroundUpperBound( i, groundUpperBoundsBackup[i] );
-            engine.updateGroundLowerBound( i, groundLowerBoundsBackup[i] );
-        }
 
         for ( unsigned i = 0; i < targetN; ++i )
         {

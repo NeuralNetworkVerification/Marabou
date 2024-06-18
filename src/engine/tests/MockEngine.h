@@ -287,8 +287,13 @@ public:
         return true;
     }
 
-    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma )
+    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,  bool /*isPhaseFixing*/ )
     {
+    }
+
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList &/*explanation*/, unsigned /*id*/, int /*explainedVar*/ )
+    {
+        return Set<int>();
     }
 };
 

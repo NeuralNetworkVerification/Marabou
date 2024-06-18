@@ -1103,6 +1103,7 @@ void ReluConstraint::booleanAbstraction(
     CadicalWrapper /*cadical*/ &,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
+    ASSERT( !cadicalVarToPlc.empty() );
     unsigned int idx = cadicalVarToPlc.size();
     _cadicalVars.append( idx );
     cadicalVarToPlc.insert( idx, this );

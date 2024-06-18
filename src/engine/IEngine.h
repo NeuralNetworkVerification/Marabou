@@ -121,12 +121,6 @@ public:
     */
     virtual double explainBound( unsigned var, bool isUpper ) const = 0;
 
-    /*
-     * Update the ground bounds
-     */
-    virtual void updateGroundUpperBound( unsigned var, double value ) = 0;
-    virtual void updateGroundLowerBound( unsigned var, double value ) = 0;
-
     virtual void applyAllBoundTightenings() = 0;
 
     virtual bool applyAllValidConstraintCaseSplits() = 0;
@@ -190,7 +184,9 @@ public:
     /*
      Add ground bound entry using a lemma
     */
-    virtual void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma ) = 0;
+    virtual void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) = 0;
+
+    virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar ) = 0;
 };
 
 #endif // __IEngine_h__

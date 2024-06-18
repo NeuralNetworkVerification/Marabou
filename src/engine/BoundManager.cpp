@@ -472,12 +472,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         constraintType );
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
 
-        if ( !isPhaseFixing )
-            _engine->setGroundBoundFromLemma( PLCExpl );
-        else
-            affectedVarBound == Tightening::UB ? _engine->updateGroundUpperBound( var, value )
-                                               : _engine->updateGroundLowerBound( var, value );
-
+        // Add ground bound entry to the GroundBoundManager
+        _engine->setGroundBoundFromLemma( PLCExpl, isPhaseFixing );
         resetExplanation( var, affectedVarBound );
     }
     return true;

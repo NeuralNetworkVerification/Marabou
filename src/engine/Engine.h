@@ -256,12 +256,6 @@ public:
     bool shouldProduceProofs() const;
 
     /*
-      Update the ground bounds
-    */
-    void updateGroundUpperBound( unsigned var, double value );
-    void updateGroundLowerBound( unsigned var, double value );
-
-    /*
       Return all ground bounds as a vector
     */
     double getGroundBound( unsigned var, bool isUpper ) const;
@@ -304,7 +298,7 @@ public:
     /*
      Add ground bound entry using a lemma
     */
-    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma );
+    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing );
 
 private:
     enum BasisRestorationRequired {
@@ -906,9 +900,14 @@ private:
     void writeContradictionToCertificate( unsigned infeasibleVar ) const;
 
     /*
-      Creates a boolean-abstracted claus from an explanation
+      Creates a boolean-abstracted clause from an explanation
     */
-    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id );
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar );
+
+    /*
+      Creates a boolean-abstracted clause explaining a boolean-abstracted literal
+    */
+    Set<int> explainLiteral( int lit );
 };
 
 #endif // __Engine_h__
