@@ -13,6 +13,12 @@
 
  **/
 
+#include <torch/torch.h>  
+
+#ifdef LOG
+#undef LOG
+#endif
+
 #include "Preprocessor.h"
 
 #include "Debug.h"
@@ -26,8 +32,8 @@
 #include "PiecewiseLinearFunctionType.h"
 #include "Statistics.h"
 #include "Tightening.h"
-#include "attack/PGD_Linf_Rand/"
-
+#include "attack/CustomDNN.h"
+#include "attack/PGD.h"
 #ifdef _WIN32
 #undef INFINITE
 #endif
@@ -175,7 +181,12 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query,
     ASSERT( _preprocessed->getLowerBounds().size() == _preprocessed->getNumberOfVariables() );
     ASSERT( _preprocessed->getUpperBounds().size() == _preprocessed->getNumberOfVariables() );
 
-    // run the attack
+    attack::CustomDNNImpl network = attack::CustomDNNImpl(*(_preprocessed->_networkLevelReasoner));
+    torch::Tensor input = torch::tensor({{0.1300, -0.6401,  0.3475, -0.0579, -0.9246,  0.7567,  0.2141, -1.1153, 0.8332,  0.0851}}); 
+    int target = 0;  
+    torch::Device device(torch::kCPU);
+    attack::displayAdversarialExample(network, input, target, device);
+    
     String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
 
 

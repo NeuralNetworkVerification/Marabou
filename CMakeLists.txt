@@ -7,6 +7,17 @@ add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if (NOT MSVC)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations -Wno-unused-but-set-variable -Wno-dangling-reference)
+    elseif (CMAKE_BUILD_TYPE MATCHES "Release")
+        set(COMPILE_FLAGS  -Wall -Wno-dangling-reference)
+    else()
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Wno-dangling-reference) #-Wno-deprecated
+    endif()
+    set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
+endif()
+
 ##################
 ## User options ##
 ##################
@@ -326,6 +337,13 @@ target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 # Build marabou executable
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
+
+# libtorch 
+list(APPEND CMAKE_PREFIX_PATH "~/libtorch/libtorch/share/cmake/Torch")
+find_package(Torch REQUIRED)
+target_link_libraries(${MARABOU_LIB} "${TORCH_LIBRARIES}")
+target_include_directories(${MARABOU_LIB} PRIVATE "${TORCH_INCLUDE_DIRS}")
+set(CMAKE_PREFIX_PATH "~/libtorch/libtorch")
 
 ######################
 ## Build Python API ##
