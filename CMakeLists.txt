@@ -7,16 +7,6 @@ add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (NOT MSVC)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations -Wno-unused-but-set-variable -Wno-dangling-reference)
-    elseif (CMAKE_BUILD_TYPE MATCHES "Release")
-        set(COMPILE_FLAGS  -Wall -Wno-dangling-reference)
-    else()
-        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Wno-dangling-reference) #-Wno-deprecated
-    endif()
-    set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
-endif()
 
 ##################
 ## User options ##
