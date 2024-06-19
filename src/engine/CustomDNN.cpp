@@ -3,10 +3,9 @@
 #include "CustomDNN.h"
 #include "NetworkLevelReasoner.h"
 
-namespace attack{
 CustomDNNImpl::CustomDNNImpl(const std::vector<int>& layerSizes, const std::vector<std::string>& activationFunctions, 
                              const std::vector<std::vector<std::vector<float>>>& weights, const std::vector<std::vector<float>>& biases){
-        for (size_t i = 0; i < layerSizes.size() - 1; ++i) {
+        for (int i = 0; i < layerSizes.size() - 1; ++i) {
         auto layer = register_module("fc" + std::to_string(i), torch::nn::Linear(layerSizes[i], layerSizes[i+1]));
         linearLayers.push_back(layer);
         activations.push_back(activationFunctions[i]);
@@ -33,7 +32,7 @@ CustomDNNImpl::CustomDNNImpl(NLR::NetworkLevelReasoner& nlr){
     std::vector<std::vector<float>> biases;
 
     int numLayers = nlr.getNumberOfLayers();
-    for (unsigned i = 0; i < numLayers; ++i){
+    for (int i = 0; i < numLayers; ++i){
         const NLR::Layer* layer = nlr.getLayer(i);
         layerSizes.push_back(layer->getSize());
 
@@ -97,6 +96,4 @@ torch::Tensor CustomDNNImpl::forward(torch::Tensor x) {
         }
     }
     return x;
-}
-
 }

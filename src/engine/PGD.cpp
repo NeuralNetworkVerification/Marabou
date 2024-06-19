@@ -1,7 +1,7 @@
 #include "PGD.h"
 #include <iostream>
 
-namespace attack {
+
 
 torch::Tensor findDelta(CustomDNNImpl& model, const torch::Tensor& X, int y, float epsilon, float alpha, int num_iter, torch::Device device) {
     torch::Tensor delta = torch::zeros_like(X).uniform_(-epsilon, epsilon).to(device);
@@ -11,7 +11,7 @@ torch::Tensor findDelta(CustomDNNImpl& model, const torch::Tensor& X, int y, flo
 
     torch::optim::SGD optimizer(model.parameters(), torch::optim::SGDOptions(0.01).momentum(0.9));
 
-    for (unsigned i = 0; i < num_iter; ++i) {
+    for (int i = 0; i < num_iter; ++i) {
         optimizer.zero_grad();
         if (delta.grad().defined()) {
             delta.grad().zero_();
@@ -50,4 +50,4 @@ bool displayAdversarialExample(CustomDNNImpl& model, const torch::Tensor& input,
     return is_fooled;
 }
 
-} // namespace attack
+

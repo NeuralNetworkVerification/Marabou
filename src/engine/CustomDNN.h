@@ -3,16 +3,13 @@
 
 #include <torch/torch.h> 
 
-#ifdef LOG
-#undef LOG
-#endif
+
 
 
 #include <vector>
 #include <string>
 #include "NetworkLevelReasoner.h"
 
-namespace attack {
 
 class CustomDNNImpl : public torch::nn::Module {
 public:
@@ -24,13 +21,9 @@ public:
 
     CustomDNNImpl(const std::vector<int>& layer_sizes, const std::vector<std::string>& activationFunctions, 
                   const std::vector<std::vector<std::vector<float>>>& weights, const std::vector<std::vector<float>>& biases);
-    CustomDNNImpl(const NLR::NetworkLevelReasoner& nlr);
+    CustomDNNImpl(NLR::NetworkLevelReasoner& nlr);
 
     torch::Tensor forward(torch::Tensor x);
 };
 
-TORCH_MODULE(CustomDNN);
-
-} 
-
-#endif // CUSTOM_DNN_H
+#endif 
