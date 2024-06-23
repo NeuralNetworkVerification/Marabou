@@ -235,6 +235,7 @@ public:
      assuming the literal is part of the boolean abstraction
     */
     PiecewiseLinearCaseSplit propagateLitAsSplit( int lit );
+
 private:
     /*
       The variables that make up this constraint; _f = | _b |.

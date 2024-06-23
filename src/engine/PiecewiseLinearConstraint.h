@@ -72,8 +72,7 @@ class String;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
-enum PhaseStatus : unsigned
-{
+enum PhaseStatus : unsigned {
     PHASE_NOT_FIXED = 0,
     RELU_PHASE_ACTIVE = 1,
     RELU_PHASE_INACTIVE = 2,
