@@ -305,6 +305,12 @@ public:
     {
         return Set<int>();
     }
+
+    Vector<int> explainPhase( const PiecewiseLinearConstraint * /*litConstraint*/,
+                              bool /*isLiteralPositive*/ )
+    {
+        return Vector<int>();
+    }
 };
 
 #endif // __MockEngine_h__

@@ -998,3 +998,17 @@ int AbsoluteValueConstraint::propagatePhaseAsLit() const
     else
         return 0;
 }
+
+PiecewiseLinearCaseSplit  AbsoluteValueConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( !phaseFixed() );
+
+    if ( lit > 0 )
+    {
+        setPhaseStatus( ABS_PHASE_POSITIVE );
+        return getPositiveSplit();
+    }
+    setPhaseStatus( ABS_PHASE_NEGATIVE );
+    return getNegativeSplit();
+}

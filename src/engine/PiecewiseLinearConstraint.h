@@ -72,7 +72,8 @@ class String;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
-enum PhaseStatus : unsigned {
+enum PhaseStatus : unsigned
+{
     PHASE_NOT_FIXED = 0,
     RELU_PHASE_ACTIVE = 1,
     RELU_PHASE_INACTIVE = 2,
@@ -502,11 +503,12 @@ public:
     */
     virtual int propagatePhaseAsLit() const = 0;
 
-    // TODO implement, use context dependency?
-    unsigned getDecisionLevel()
-    {
-        return 0;
-    }
+    /*
+      Returns a phase status corresponding to a literal,
+      assuming the literal is part of the boolean abstraction
+      propagation includes phase fixing
+    */
+    virtual PiecewiseLinearCaseSplit propagateLitAsSplit( int lit ) = 0;
 
     virtual List<unsigned> getCadicalVars()
     {

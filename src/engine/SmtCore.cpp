@@ -47,6 +47,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _notifiedLiterals( &_engine->getContext() )
     , _reasonClauseLiterals()
     , _isReasonClauseInitialized( false )
+    , _fixedCadicalVars()
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -653,6 +654,10 @@ bool SmtCore::isLiteralNotified( int literal ) const
 
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
+    if ( is_fixed )
+        _fixedCadicalVars.insert( lit );
+    _engine->applySplit(
+        _cadicalVarToPlc.at( FloatUtils::abs( lit ) )->propagateLitAsSplit( lit ) );
 }
 
 void SmtCore::notify_new_decision_level()
@@ -700,6 +705,14 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     popContextTo( new_level );
     _engine->postContextPopHook();
+    for ( const auto &lit : _fixedCadicalVars )
+    {
+        PiecewiseLinearConstraint *constraint = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+        if ( !constraint->phaseFixed() )
+            _engine->applySplit( constraint->propagateLitAsSplit( lit ) );
+
+        ASSERT( constraint->phaseFixed() );
+    }
 
     if ( _statistics )
     {
@@ -713,9 +726,11 @@ void SmtCore::notify_backtrack( size_t new_level )
     }
 }
 
-bool SmtCore::cb_check_found_model( const std::vector<int> & /*model*/ )
+bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
-    return false;
+    for ( const auto &lit : model )
+        notify_assignment( lit, false );
+    return _engine->solve( 0 );
 }
 
 int SmtCore::cb_decide()

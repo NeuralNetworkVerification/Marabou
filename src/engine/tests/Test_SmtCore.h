@@ -187,6 +187,11 @@ public:
         {
             return 0;
         }
+
+        PiecewiseLinearCaseSplit propagateLitAsSplit( int /*lit*/ )
+        {
+            return getCaseSplits().back();
+        }
     };
 
     void setUp()

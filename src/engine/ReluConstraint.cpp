@@ -1120,6 +1120,20 @@ int ReluConstraint::propagatePhaseAsLit() const
         return 0;
 }
 
+PiecewiseLinearCaseSplit ReluConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( !phaseFixed() );
+
+    if ( lit > 0 )
+    {
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+        return getActiveSplit();
+    }
+    setPhaseStatus( RELU_PHASE_INACTIVE );
+    return getInactiveSplit();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

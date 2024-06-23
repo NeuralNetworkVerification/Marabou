@@ -651,3 +651,13 @@ int DisjunctionConstraint::propagatePhaseAsLit() const
     }
     return 0;
 }
+
+PiecewiseLinearCaseSplit DisjunctionConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
+    ASSERT( !phaseFixed() );
+
+    PiecewiseLinearCaseSplit disjunct = *_cadicalVarsToDisjuncts.at( lit );
+    setPhaseStatus( indToPhaseStatus( _disjuncts.getIndex( disjunct ) ) );
+    return disjunct;
+}

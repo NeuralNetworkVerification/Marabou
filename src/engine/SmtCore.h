@@ -293,6 +293,7 @@ private:
 
 
     bool isLiteralNotified( int literal ) const;
+    Set<int> _fixedCadicalVars;
 };
 
 #endif // __SmtCore_h__

@@ -684,3 +684,17 @@ int SignConstraint::propagatePhaseAsLit() const
     else
         return 0;
 }
+
+PiecewiseLinearCaseSplit SignConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( !phaseFixed() );
+
+    if ( lit > 0 )
+    {
+        setPhaseStatus( SIGN_PHASE_POSITIVE );
+        return getPositiveSplit();
+    }
+    setPhaseStatus( SIGN_PHASE_NEGATIVE );
+    return getNegativeSplit();
+}
