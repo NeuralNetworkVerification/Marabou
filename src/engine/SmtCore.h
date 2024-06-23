@@ -121,6 +121,11 @@ public:
     void popContext();
 
     /*
+         Pop _context to given level, record statistics
+     */
+    void popContextTo( unsigned level );
+
+    /*
          Push _context, record statistics
      */
     void pushContext();

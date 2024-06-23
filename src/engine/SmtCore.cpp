@@ -254,6 +254,21 @@ void SmtCore::popContext()
     }
 }
 
+void SmtCore::popContextTo( unsigned int level )
+{
+    struct timespec start = TimeUtils::sampleMicro();
+    unsigned int prevLevel = _context.getLevel();
+    _context.popto( level );
+    struct timespec end = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+    {
+        _statistics->incUnsignedAttribute( Statistics::NUM_CONTEXT_POPS, prevLevel - level );
+        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_POP,
+                                       TimeUtils::timePassed( start, end ) );
+    }
+}
+
 void SmtCore::pushContext()
 {
     struct timespec start = TimeUtils::sampleMicro();
@@ -636,16 +651,66 @@ bool SmtCore::isLiteralNotified( int literal ) const
     return false;
 }
 
-void SmtCore::notify_assignment( int /*lit*/, bool /*is_fixed*/ )
+void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
 }
 
 void SmtCore::notify_new_decision_level()
 {
+    _numRejectedPhasePatternProposal = 0;
+
+    struct timespec start = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+    {
+        _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+    }
+
+    // Obtain the current state of the engine
+    EngineState *stateBeforeSplits = new EngineState;
+    stateBeforeSplits->_stateId = _stateId;
+    ++_stateId;
+    _engine->storeState( *stateBeforeSplits, TableauStateStorageLevel::STORE_BOUNDS_ONLY );
+    _engine->preContextPushHook();
+    pushContext();
+
+    if ( _statistics )
+    {
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
 }
 
-void SmtCore::notify_backtrack( size_t /*new_level*/ )
+void SmtCore::notify_backtrack( size_t new_level )
 {
+    SMT_LOG( "Performing a pop" );
+
+    struct timespec start = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+        // A pop always sends us to a state that we haven't seen before - whether
+        // from a sibling split, or from a lower level of the tree.
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+
+    popContextTo( new_level );
+    _engine->postContextPopHook();
+
+    if ( _statistics )
+    {
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
 }
 
 bool SmtCore::cb_check_found_model( const std::vector<int> & /*model*/ )
@@ -656,7 +721,12 @@ bool SmtCore::cb_check_found_model( const std::vector<int> & /*model*/ )
 int SmtCore::cb_decide()
 {
     if ( pickSplitPLConstraint() )
-        return _constraintForSplitting->propagatePhaseAsLit();
+    {
+        _constraintForSplitting->setActiveConstraint( false );
+        int lit = _constraintForSplitting->propagatePhaseAsLit();
+        _constraintForSplitting = NULL;
+        return lit;
+    }
 
     return 0;
 }
