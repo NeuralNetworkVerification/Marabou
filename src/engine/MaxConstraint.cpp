@@ -833,6 +833,7 @@ PiecewiseLinearCaseSplit MaxConstraint::propagateLitAsSplit( int lit )
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
     ASSERT( !phaseFixed() );
 
+    setActiveConstraint( false );
     PhaseStatus phaseToFix = variableToPhase( _cadicalVarsToElements.at( lit ) );
     setPhaseStatus( phaseToFix );
     return getCaseSplit( phaseToFix );

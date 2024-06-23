@@ -1125,6 +1125,7 @@ PiecewiseLinearCaseSplit ReluConstraint::propagateLitAsSplit( int lit )
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
     ASSERT( !phaseFixed() );
 
+    setActiveConstraint( false );
     if ( lit > 0 )
     {
         setPhaseStatus( RELU_PHASE_ACTIVE );

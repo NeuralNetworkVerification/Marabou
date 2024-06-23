@@ -657,6 +657,7 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::propagateLitAsSplit( int lit )
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
     ASSERT( !phaseFixed() );
 
+    setActiveConstraint( false );
     PiecewiseLinearCaseSplit disjunct = *_cadicalVarsToDisjuncts.at( lit );
     setPhaseStatus( indToPhaseStatus( _disjuncts.getIndex( disjunct ) ) );
     return disjunct;

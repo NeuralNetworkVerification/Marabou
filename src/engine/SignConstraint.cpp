@@ -690,6 +690,7 @@ PiecewiseLinearCaseSplit SignConstraint::propagateLitAsSplit( int lit )
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
     ASSERT( !phaseFixed() );
 
+    setActiveConstraint( false );
     if ( lit > 0 )
     {
         setPhaseStatus( SIGN_PHASE_POSITIVE );

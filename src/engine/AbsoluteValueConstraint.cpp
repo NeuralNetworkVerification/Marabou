@@ -1004,6 +1004,7 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::propagateLitAsSplit( int lit )
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
     ASSERT( !phaseFixed() );
 
+    setActiveConstraint( false );
     if ( lit > 0 )
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
