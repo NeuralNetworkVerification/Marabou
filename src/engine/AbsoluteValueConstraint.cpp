@@ -988,7 +988,7 @@ void AbsoluteValueConstraint::booleanAbstraction(
     cadicalVarToPlc.insert( idx, this );
 }
 
-int AbsoluteValueConstraint::propagatePhaseAsLit()
+int AbsoluteValueConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
     if ( _phaseStatus == ABS_PHASE_POSITIVE )

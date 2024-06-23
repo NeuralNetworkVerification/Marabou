@@ -300,6 +300,11 @@ public:
     */
     void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing );
 
+    /*
+      Creates a boolean-abstracted clause explaining a boolean-abstracted literal
+    */
+    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint, bool isLiteralPositive );
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -832,8 +837,6 @@ private:
     GroundBoundManager _groundBoundManager;
     UnsatCertificateNode *_UNSATCertificate;
     CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
-    CadicalWrapper _cadicalWrapper;
-    Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 
     /*
       Returns true iff there is a variable with bounds that can explain infeasibility of the tableau
@@ -903,11 +906,6 @@ private:
       Creates a boolean-abstracted clause from an explanation
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar );
-
-    /*
-      Creates a boolean-abstracted clause explaining a boolean-abstracted literal
-    */
-    Set<int> explainLiteral( int lit );
 };
 
 #endif // __Engine_h__

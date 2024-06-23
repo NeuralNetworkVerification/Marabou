@@ -1109,7 +1109,7 @@ void ReluConstraint::booleanAbstraction(
     cadicalVarToPlc.insert( idx, this );
 }
 
-int ReluConstraint::propagatePhaseAsLit()
+int ReluConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
     if ( _phaseStatus == RELU_PHASE_ACTIVE )

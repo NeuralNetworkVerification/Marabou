@@ -1017,7 +1017,7 @@ void LeakyReluConstraint::booleanAbstraction(
     cadicalVarToPlc.insert( idx, this );
 }
 
-int LeakyReluConstraint::propagatePhaseAsLit()
+int LeakyReluConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
     if ( _phaseStatus == RELU_PHASE_ACTIVE )

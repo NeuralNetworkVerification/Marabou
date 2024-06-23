@@ -818,7 +818,7 @@ void MaxConstraint::booleanAbstraction(
     // TODO add additional clauses
 }
 
-int MaxConstraint::propagatePhaseAsLit()
+int MaxConstraint::propagatePhaseAsLit() const
 {
     if ( phaseFixed() && !_elements.empty() )
         return _elementsToCadicalVars.at( *_elements.begin() );

@@ -642,7 +642,7 @@ void DisjunctionConstraint::booleanAbstraction(
     cadical.addLiteral( 0 );
 }
 
-int DisjunctionConstraint::propagatePhaseAsLit()
+int DisjunctionConstraint::propagatePhaseAsLit() const
 {
     if ( phaseFixed() )
     {

@@ -228,7 +228,7 @@ public:
      Returns a literal representing a boolean propagation
      Returns 0 if no propagation can be deduced
     */
-    int propagatePhaseAsLit() override;
+    int propagatePhaseAsLit() const override;
 
 private:
     /*

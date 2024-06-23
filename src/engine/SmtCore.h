@@ -24,8 +24,10 @@
 #include "SmtState.h"
 #include "Stack.h"
 #include "Statistics.h"
+#include "context/cdlist.h"
 #include "context/context.h"
 
+#include <cadical.hpp>
 #include <memory>
 
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
@@ -36,7 +38,7 @@ class String;
 
 using CVC4::context::Context;
 
-class SmtCore
+class SmtCore : CaDiCaL::ExternalPropagator
 {
 public:
     SmtCore( IEngine *engine );
@@ -180,6 +182,24 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
+    /*
+     *
+     */
+    void initBooleanAbstraction( PiecewiseLinearConstraint *plc );
+
+    void notify_assignment( int lit, bool is_fixed ) override;
+    void notify_new_decision_level() override;
+    void notify_backtrack( size_t new_level ) override;
+
+    bool cb_check_found_model( const std::vector<int> &model ) override;
+    int cb_decide() override;
+    int cb_propagate() override;
+    int cb_add_reason_clause_lit( int propagated_lit ) override;
+    bool cb_has_external_clause() override;
+    int cb_add_external_clause_lit() override;
+
+    void addExternalClause(const Set<int> &clause);
+
 private:
     /*
       Valid splits that were implied by level 0 of the stack.
@@ -254,6 +274,21 @@ private:
       current search state.
     */
     unsigned _numRejectedPhasePatternProposal;
+
+    CadicalWrapper _cadicalWrapper;
+    Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
+
+    Vector<int> _literalsToPropagate;
+    CVC4::context::CDList<int> _notifiedLiterals;
+
+    Vector<int> _reasonClauseLiterals;
+    bool _isReasonClauseInitialized;
+
+    Vector<Vector<int>> _externalClausesToAdd;
+
+
+    bool isLiteralNotified( int literal ) const;
+
 };
 
 #endif // __SmtCore_h__

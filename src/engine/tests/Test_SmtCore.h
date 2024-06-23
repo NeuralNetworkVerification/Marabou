@@ -183,7 +183,7 @@ public:
         {
         }
 
-        int propagatePhaseAsLit()
+        int propagatePhaseAsLit() const
         {
             return 0;
         }

@@ -184,9 +184,15 @@ public:
     /*
      Add ground bound entry using a lemma
     */
-    virtual void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) = 0;
+    virtual void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma,
+                                          bool isPhaseFixing ) = 0;
 
-    virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar ) = 0;
+    virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
+                                                    unsigned id,
+                                                    int explainedVar ) = 0;
+
+    virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint,
+                                      bool isLiteralPositive ) = 0;
 };
 
 #endif // __IEngine_h__

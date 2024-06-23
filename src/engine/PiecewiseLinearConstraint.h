@@ -500,7 +500,7 @@ public:
      Returns a literal representing a boolean propagation
      Returns 0 if no propagation can be deduced
     */
-    virtual int propagatePhaseAsLit() = 0;
+    virtual int propagatePhaseAsLit() const = 0;
 
     // TODO implement, use context dependency?
     unsigned getDecisionLevel()

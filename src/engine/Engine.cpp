@@ -72,8 +72,6 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
-    , _cadicalWrapper()
-    , _cadicalVarToPlc()
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1568,9 +1566,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::CDCL )
         {
-            _cadicalVarToPlc.insert( 0, NULL );
             for ( auto &plConstraint : _plConstraints )
-                plConstraint->booleanAbstraction( _cadicalWrapper, _cadicalVarToPlc );
+                _smtCore.initBooleanAbstraction( plConstraint );
         }
     }
     catch ( const InfeasibleQueryException & )
@@ -3371,9 +3368,51 @@ void Engine::explainSimplexFailure()
     std::cout << "gb counter: " << _groundBoundManager.getCounter() << std::endl;
     Set<int> clause = clauseFromContradictionVector(
         ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
-        _groundBoundManager.getCounter(), -1 );
+        _groundBoundManager.getCounter(),
+        -1 );
     printf( "size :%d, stack depth %d\n", clause.size(), _smtCore.getStackDepth() );
-    _cadicalWrapper.addClause( clause );
+    _smtCore.addExternalClause(clause);
+
+    //    // TODO: delete the following
+    //    // Create input query for each conflict clause for testing the clause
+    //    InputQuery ipq( *_preprocessedQuery );
+    //    for ( int lit : clause )
+    //    {
+    //        ASSERT( lit != 0 );
+    //        if ( lit > 0 )
+    //        {
+    //            const ReluConstraint *relu = (ReluConstraint *)_cadicalVarToPlc[lit];
+    //            unsigned int b = relu->getB();
+    //            unsigned int f = relu->getF();
+    //            unsigned int aux = relu->getAux();
+    //
+    //            Equation eq( Equation::EQ );
+    //            eq.addAddend( 1, b );
+    //            eq.addAddend( -1, f );
+    //            eq.setScalar( 0 );
+    //            ipq.addEquation( eq );
+    //
+    //            ipq.setLowerBound( b, 0 );
+    //            ipq.setLowerBound( f, 0 );
+    //            ipq.setUpperBound( aux, 0 );
+    //        }
+    //        else
+    //        {
+    //            const ReluConstraint *relu = (ReluConstraint *)_cadicalVarToPlc[-lit];
+    //            unsigned int b = relu->getB();
+    //            unsigned int f = relu->getF();
+    //            unsigned int aux = relu->getAux();
+    //
+    //            ipq.setUpperBound( b, 0 );
+    //            ipq.setUpperBound( f, 0 );
+    //            ipq.setLowerBound( aux, 0 );
+    //        }
+    //    }
+    //    ipq.saveQuery(
+    //        "test_query_" +
+    //        std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) )
+    //        +
+    //        ".ipq" );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -3816,7 +3855,9 @@ void Engine::extractBounds( InputQuery &inputQuery )
     }
 }
 
-Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar )
+Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
+                                                unsigned id,
+                                                int explainedVar )
 {
     ASSERT( _nlConstraints.empty() );
     Vector<double> linearCombination( 0 );
@@ -3910,8 +3951,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         Set<int> minorClause;
         if ( entry->clause.empty() )
         {
-            minorClause =
-                clauseFromContradictionVector( entry->lemma->getExplanations().back(), entry->id, entry->lemma->getCausingVars().back() );
+            minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
+                                                         entry->id,
+                                                         entry->lemma->getCausingVars().back() );
             _groundBoundManager.addClauseToGroundBoundEntry( entry->lemma->getAffectedVar(),
                                                              entry->lemma->getAffectedVarBound(),
                                                              id,
@@ -3919,11 +3961,13 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         }
         else
             minorClause = entry->clause;
-//         TODO delete
-//        DEBUG( {
-//            ASSERT( clauseFromContradictionVector( entry->lemma->getExplanations().back(),
-//                                                   entry->id,  entry->lemma->getCausingVars().back() ) == entry->clause );
-//        } )
+        //         TODO delete
+        //        DEBUG( {
+        //            ASSERT( clauseFromContradictionVector( entry->lemma->getExplanations().back(),
+        //                                                   entry->id,
+        //                                                   entry->lemma->getCausingVars().back() )
+        //                                                   == entry->clause );
+        //        } )
 
         for ( int literal : minorClause )
         {
@@ -3940,14 +3984,13 @@ void Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, boo
     _groundBoundManager.addGroundBound( lemma, isPhaseFixing );
 }
 
-Set<int> Engine::explainLiteral( int lit )
+Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint,
+                                  bool isLiteralPositive )
 {
-    ASSERT( lit );
+    ASSERT( litConstraint );
     Set<int> clause;
 
     // Get corresponding constraints, and its participating variables
-    PiecewiseLinearConstraint *litConstraint = _cadicalVarToPlc.get( abs( lit ) );
-    ASSERT( litConstraint );
     List<unsigned> vars = litConstraint->getParticipatingVariables();
     Vector<unsigned> conVars = Vector<unsigned>( vars.begin(), vars.end() );
     std::shared_ptr<GroundBoundManager::GroundBoundEntry> tempEntry;
@@ -3961,7 +4004,7 @@ Set<int> Engine::explainLiteral( int lit )
         unsigned f = conVars[1];
         unsigned aux = conVars[2];
 
-        if ( lit > 0 )
+        if ( isLiteralPositive )
         {
             // Active phase
             tempEntry =
@@ -3991,9 +4034,10 @@ Set<int> Engine::explainLiteral( int lit )
         // Return a clause explaining the phase-fixing GroundBound entry
         ASSERT( tempEntry && tempEntry->lemma );
         clause = clauseFromContradictionVector( tempEntry->lemma->getExplanations().back(),
-                                                tempEntry->id,  tempEntry->lemma->getCausingVars().back() );
+                                                tempEntry->id,
+                                                tempEntry->lemma->getCausingVars().back() );
 
     } // TODO apply to additional types of PLCs
     ASSERT( clause.size() );
-    return clause;
+    return Vector<int>( clause.begin(), clause.end() );
 }

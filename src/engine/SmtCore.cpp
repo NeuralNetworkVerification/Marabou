@@ -41,7 +41,14 @@ SmtCore::SmtCore( IEngine *engine )
     , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
     , _numRejectedPhasePatternProposal( 0 )
+    , _cadicalWrapper()
+    , _cadicalVarToPlc()
+    , _literalsToPropagate()
+    , _notifiedLiterals( &_engine->getContext() )
+    , _reasonClauseLiterals()
+    , _isReasonClauseInitialized( false )
 {
+    _cadicalVarToPlc.insert( 0, NULL );
 }
 
 SmtCore::~SmtCore()
@@ -58,6 +65,7 @@ void SmtCore::freeMemory()
     }
 
     _stack.clear();
+//    _notifiedLiterals.deleteSelf(); // TODO: check if required
 }
 
 void SmtCore::reset()
@@ -607,4 +615,110 @@ bool SmtCore::pickSplitPLConstraint()
         _constraintForSplitting = _engine->pickSplitPLConstraint( _branchingHeuristic );
     }
     return _constraintForSplitting != NULL;
+}
+
+void SmtCore::initBooleanAbstraction( PiecewiseLinearConstraint *plc )
+{
+    plc->booleanAbstraction( _cadicalWrapper, _cadicalVarToPlc );
+}
+
+bool SmtCore::isLiteralNotified( int literal ) const
+{
+    for ( int curLiteral : _notifiedLiterals )
+    {
+        if ( curLiteral == literal )
+            return true;
+
+        else if ( curLiteral == -literal )
+            return false;
+    }
+
+    return false;
+}
+
+void SmtCore::notify_assignment( int /*lit*/, bool /*is_fixed*/ )
+{
+}
+
+void SmtCore::notify_new_decision_level()
+{
+}
+
+void SmtCore::notify_backtrack( size_t /*new_level*/ )
+{
+}
+
+bool SmtCore::cb_check_found_model( const std::vector<int> &/*model*/ )
+{
+    return false;
+}
+
+int SmtCore::cb_decide()
+{
+    if ( pickSplitPLConstraint() )
+        return _constraintForSplitting->propagatePhaseAsLit();
+
+    return 0;
+}
+
+int SmtCore::cb_propagate()
+{
+    if ( _literalsToPropagate.empty() )
+    {
+        int literal;
+        for ( const auto *plc : _cadicalVarToPlc.values() )
+        {
+            literal = plc->propagatePhaseAsLit();
+            if ( literal && !isLiteralNotified( literal ) )
+                _literalsToPropagate.append( literal );
+        }
+    }
+
+    if ( !_literalsToPropagate.empty() )
+        return _literalsToPropagate.popFirst(); // TODO: consider pop, if we dont care if we
+                                                // propagate literals from the last detected to
+                                                // the first one
+
+    return 0;
+}
+
+int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
+{
+    ASSERT( propagated_lit )
+
+    if ( !_isReasonClauseInitialized )
+    {
+        _reasonClauseLiterals =
+            _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )], propagated_lit > 0 );
+        _isReasonClauseInitialized = true;
+    }
+    else if ( _reasonClauseLiterals.empty() )
+    {
+        _isReasonClauseInitialized = false;
+        return 0;
+    }
+
+    return _reasonClauseLiterals.pop();
+}
+
+bool SmtCore::cb_has_external_clause()
+{
+    return !_externalClausesToAdd.empty();
+}
+
+int SmtCore::cb_add_external_clause_lit()
+{
+    ASSERT( cb_has_external_clause() );
+
+    Vector<int> &currentClause = _externalClausesToAdd[_externalClausesToAdd.size() - 1];
+    if ( !currentClause.empty() )
+        return currentClause.pop();
+
+    _externalClausesToAdd.pop();
+    return 0;
+}
+
+void SmtCore::addExternalClause( const Set<int> &clause )
+{
+    _externalClausesToAdd.append( Vector<int>( clause.begin(), clause.end() ) );
 }
