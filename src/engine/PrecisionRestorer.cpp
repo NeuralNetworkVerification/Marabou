@@ -55,7 +55,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
     if ( engine.shouldProduceProofs() )
     {
-
         upperBoundsBackup = Vector<double>( targetN, 0 );
         lowerBoundsBackup = Vector<double>( targetN, 0 );
 

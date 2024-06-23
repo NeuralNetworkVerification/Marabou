@@ -3371,7 +3371,7 @@ void Engine::explainSimplexFailure()
         _groundBoundManager.getCounter(),
         -1 );
     printf( "size :%d, stack depth %d\n", clause.size(), _smtCore.getStackDepth() );
-    _smtCore.addExternalClause(clause);
+    _smtCore.addExternalClause( clause );
 
     //    // TODO: delete the following
     //    // Create input query for each conflict clause for testing the clause

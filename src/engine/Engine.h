@@ -303,7 +303,8 @@ public:
     /*
       Creates a boolean-abstracted clause explaining a boolean-abstracted literal
     */
-    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint, bool isLiteralPositive );
+    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint,
+                              bool isLiteralPositive );
 
 private:
     enum BasisRestorationRequired {
@@ -905,7 +906,9 @@ private:
     /*
       Creates a boolean-abstracted clause from an explanation
     */
-    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation, unsigned id, int explainedVar );
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
+                                            unsigned id,
+                                            int explainedVar );
 };
 
 #endif // __Engine_h__

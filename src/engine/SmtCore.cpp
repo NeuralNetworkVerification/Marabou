@@ -65,7 +65,7 @@ void SmtCore::freeMemory()
     }
 
     _stack.clear();
-//    _notifiedLiterals.deleteSelf(); // TODO: check if required
+    //    _notifiedLiterals.deleteSelf(); // TODO: check if required
 }
 
 void SmtCore::reset()
@@ -648,7 +648,7 @@ void SmtCore::notify_backtrack( size_t /*new_level*/ )
 {
 }
 
-bool SmtCore::cb_check_found_model( const std::vector<int> &/*model*/ )
+bool SmtCore::cb_check_found_model( const std::vector<int> & /*model*/ )
 {
     return false;
 }

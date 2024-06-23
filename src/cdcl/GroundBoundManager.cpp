@@ -35,7 +35,8 @@ void GroundBoundManager::initialize( unsigned size )
 
 void GroundBoundManager::addGroundBound( unsigned index,
                                          double value,
-                                         Tightening::BoundType boundType, bool isPhaseFixing )
+                                         Tightening::BoundType boundType,
+                                         bool isPhaseFixing )
 {
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
@@ -45,14 +46,15 @@ void GroundBoundManager::addGroundBound( unsigned index,
     _counter->set( _counter->get() + 1 );
 }
 
-void GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool isPhaseFixing )
+void GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
+                                         bool isPhaseFixing )
 {
     Tightening::BoundType isUpper = lemma->getAffectedVarBound();
     unsigned index = lemma->getAffectedVar();
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
-    std::shared_ptr<GroundBoundEntry> groundBoundEntry(
-        new GroundBoundEntry( _counter->get(), lemma->getBound(), lemma, Set<int>(), isPhaseFixing ) );
+    std::shared_ptr<GroundBoundEntry> groundBoundEntry( new GroundBoundEntry(
+        _counter->get(), lemma->getBound(), lemma, Set<int>(), isPhaseFixing ) );
     temp[index]->push_back( groundBoundEntry );
     _counter->set( _counter->get() + 1 );
 }

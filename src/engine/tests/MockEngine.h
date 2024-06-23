@@ -92,8 +92,8 @@ public:
         }
     }
 
-    void postContextPopHook(){};
-    void preContextPushHook(){};
+    void postContextPopHook() {};
+    void preContextPushHook() {};
 
     mutable EngineState *lastStoredState;
     void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
@@ -211,7 +211,7 @@ public:
         return _snc;
     }
 
-    void applyAllBoundTightenings(){};
+    void applyAllBoundTightenings() {};
 
     bool applyAllValidConstraintCaseSplits()
     {
@@ -287,11 +287,14 @@ public:
         return true;
     }
 
-    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,  bool /*isPhaseFixing*/ )
+    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
+                                  bool /*isPhaseFixing*/ )
     {
     }
 
-    Set<int> clauseFromContradictionVector( const SparseUnsortedList &/*explanation*/, unsigned /*id*/, int /*explainedVar*/ )
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList & /*explanation*/,
+                                            unsigned /*id*/,
+                                            int /*explainedVar*/ )
     {
         return Set<int>();
     }

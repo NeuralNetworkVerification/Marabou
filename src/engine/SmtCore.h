@@ -198,7 +198,7 @@ public:
     bool cb_has_external_clause() override;
     int cb_add_external_clause_lit() override;
 
-    void addExternalClause(const Set<int> &clause);
+    void addExternalClause( const Set<int> &clause );
 
 private:
     /*
@@ -288,7 +288,6 @@ private:
 
 
     bool isLiteralNotified( int literal ) const;
-
 };
 
 #endif // __SmtCore_h__
