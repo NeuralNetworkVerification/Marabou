@@ -100,6 +100,11 @@ public:
     virtual ExitCode getExitCode() const = 0;
 
     /*
+      Retrieve the exit code.
+    */
+    virtual void setExitCode( ExitCode exitCode ) = 0;
+
+    /*
       Methods for DnC: reset the engine state for re-use,
       get input variables.
     */
@@ -193,6 +198,8 @@ public:
 
     virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint,
                                       bool isLiteralPositive ) = 0;
+
+    virtual void solveWithCadical() = 0;
 };
 
 #endif // __IEngine_h__

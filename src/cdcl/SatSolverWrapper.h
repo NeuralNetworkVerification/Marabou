@@ -4,6 +4,8 @@
 #include "Map.h"
 #include "Set.h"
 
+#include <cadical.hpp>
+
 class SatSolverWrapper
 {
 public:
@@ -45,7 +47,8 @@ public:
     /*
       Add call-back which allows to learn, propagate and backtrack based on external constraints.
     */
-    virtual void connectTheorySolver() = 0; // TODO: add parameter representing the theory solver
+    virtual void
+    connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator ) = 0; // TODO: add parameter representing the theory solver
 
     /*
       Disconnect the theory solver, resets all the observed variables.

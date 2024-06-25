@@ -753,9 +753,12 @@ int SmtCore::cb_propagate()
         int literal;
         for ( const auto *plc : _cadicalVarToPlc.values() )
         {
-            literal = plc->propagatePhaseAsLit();
-            if ( literal && !isLiteralNotified( literal ) )
-                _literalsToPropagate.append( literal );
+            if ( plc )
+            {
+                literal = plc->propagatePhaseAsLit();
+                if ( literal && !isLiteralNotified( literal ) )
+                    _literalsToPropagate.append( literal );
+            }
         }
     }
 
@@ -806,4 +809,20 @@ int SmtCore::cb_add_external_clause_lit()
 void SmtCore::addExternalClause( const Set<int> &clause )
 {
     _externalClausesToAdd.append( Vector<int>( clause.begin(), clause.end() ) );
+}
+
+void SmtCore::solveWithCadical()
+{
+    _cadicalWrapper.connectTheorySolver( this );
+    int result = _cadicalWrapper.solve();
+    _cadicalWrapper.disconnectTheorySolver();
+
+    if ( result == 0 )
+        _engine->setExitCode( IEngine::ExitCode::UNKNOWN );
+    else if ( result == 10 )
+        _engine->setExitCode( IEngine::ExitCode::SAT );
+    else if ( result == 20 )
+        _engine->setExitCode( IEngine::ExitCode::UNSAT );
+    else
+        ASSERT( false );
 }
