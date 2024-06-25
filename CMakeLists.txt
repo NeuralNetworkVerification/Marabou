@@ -104,6 +104,43 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 list(APPEND LIBS ${Boost_LIBRARIES})
 
+###########
+## torch ##
+###########
+
+# set(TORCH_VERSION 1.10.0)
+# set(TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools")
+# set(Torch_DIR "${TOOLS_DIR}/libtorch/libtorch/share/cmake/Torch")
+
+# find_package(Torch QUIET PATHS ${Torch_DIR} NO_DEFAULT_PATH)
+# if(NOT Torch_FOUND)
+#     message(STATUS "Libtorch not found, attempting to download...")
+#     execute_process(
+#         COMMAND "${TOOLS_DIR}/download_libtorch.${SCRIPT_EXTENSION}" ${TORCH_VERSION}
+#         RESULT_VARIABLE SCRIPT_RESULT
+#         WORKING_DIRECTORY ${TOOLS_DIR}
+#         OUTPUT_VARIABLE DOWNLOAD_OUTPUT
+#         ERROR_VARIABLE DOWNLOAD_ERRORS)
+
+#     find_package(Torch REQUIRED PATHS ${Torch_DIR} NO_DEFAULT_PATH)
+# endif()
+
+# include_directories(${TORCH_INCLUDE_DIRS})
+# link_libraries(APPEND LIBS ${TORCH_LIBRARIES})
+
+if (NOT TORCH_DIR)
+    set(TORCH_DIR "${TOOLS_DIR}/libtorch/libtorch")
+endif()
+
+
+set(TORCH_LIB torch)
+add_library(${TORCH_LIB} SHARED IMPORTED)
+set_property(TARGET ${TORCH_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(${TORCH_LIB} PROPERTIES IMPORTED_LOCATION ${TORCH_DIR}/lib/libtorch.so)
+target_include_directories(${TORCH_LIB} INTERFACE ${TORCH_DIR}/include/torch/csrc/api/include)
+list(APPEND LIBS ${TORCH_LIB})
+
+
 ##############
 ## Protobuf ##
 ##############
@@ -328,12 +365,7 @@ target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
 
-# libtorch 
-list(APPEND CMAKE_PREFIX_PATH "~/libtorch/libtorch/share/cmake/Torch")
-find_package(Torch REQUIRED)
-target_link_libraries(${MARABOU_LIB} "${TORCH_LIBRARIES}")
-target_include_directories(${MARABOU_LIB} PRIVATE "${TORCH_INCLUDE_DIRS}")
-set(CMAKE_PREFIX_PATH "~/libtorch/libtorch")
+
 
 ######################
 ## Build Python API ##

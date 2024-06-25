@@ -29,7 +29,7 @@
 #include "SymbolicBoundTighteningType.h"
 
 #define INPUT_QUERY_LOG( x, ... )                                                                  \
-    LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
 
 InputQuery::InputQuery()
     : _ensureSameSourceLayerInNLR( Options::get()->getSymbolicBoundTighteningType() ==

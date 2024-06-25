@@ -27,7 +27,7 @@
 namespace NLR {
 
 #define IterativePropagator_LOG( x, ... )                                                          \
-    LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "Iterativepropagator: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "Iterativepropagator: %s\n", x )
 
 class IterativePropagator : public ParallelSolver
 {

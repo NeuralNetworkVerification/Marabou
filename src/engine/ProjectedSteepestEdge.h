@@ -20,7 +20,7 @@
 #include "SparseUnsortedList.h"
 
 #define PSE_LOG( x, ... )                                                                          \
-    LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
 
 class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {

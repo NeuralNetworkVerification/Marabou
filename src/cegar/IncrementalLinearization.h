@@ -20,7 +20,7 @@
 #include "Map.h"
 
 #define INCREMENTAL_LINEARIZATION_LOG( x, ... )                                                    \
-    LOG( GlobalConfiguration::CEGAR_LOGGING, "IncrementalLinearization: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::CEGAR_LOGGING, "IncrementalLinearization: %s\n", x )
 
 class Engine;
 class InputQuery;

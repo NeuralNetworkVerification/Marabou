@@ -25,7 +25,7 @@
 #include <atomic>
 
 #define DNC_MANAGER_LOG( x, ... )                                                                  \
-    LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
 
 class DnCManager
 {
