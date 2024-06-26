@@ -205,6 +205,8 @@ public:
 
     void addExternalClause( const Set<int> &clause );
 
+    const PiecewiseLinearConstraint *getConstraintFromLit( int lit ) const;
+
 private:
     /*
       Valid splits that were implied by level 0 of the stack.

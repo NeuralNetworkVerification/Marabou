@@ -901,7 +901,8 @@ private:
     /*
       Writes the details of a contradiction to the UNSAT certificate node
     */
-    void writeContradictionToCertificate( unsigned infeasibleVar ) const;
+    void writeContradictionToCertificate( const Vector<double> &contradiction,
+                                          unsigned infeasibleVar ) const;
 
     /*
       Creates a boolean-abstracted clause from an explanation
@@ -909,6 +910,37 @@ private:
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned id,
                                             int explainedVar );
+
+    /*
+      Attempts to reduce a conflict clause, while explanation can still be used to prove UNSAT
+    */
+    Set<int> reduceClauseWithProof( const SparseUnsortedList &explanation,
+                                    const Vector<int> &clause ) const;
+
+    /*
+      Attempts to reduce a conflict clause, while linear combination can still be used to prove
+      UNSAT linearCombination should be created using an explanation and the tableau
+    */
+    Vector<int> reduceClauseWithLinearCombination( const Vector<double> &linearCombination,
+                                                   const Vector<double> &groundUpperBounds,
+                                                   const Vector<double> &groundLowerBounds,
+                                                   Vector<int> &support,
+                                                   const Vector<int> &clause ) const;
+
+    /*
+      Checks if a clause is conflicting with a linear combination of the tableau and ground bounds
+      ASSUMPTION - clause currently uses ReLU constraints only
+    */
+    bool checkLinearCombinationForClause( const Vector<double> &linearCombination,
+                                          Vector<double> groundUpperBounds,
+                                          Vector<double> groundLowerBounds,
+                                          const Vector<int> &clause ) const;
+
+    /*
+      Checks if an explanation indeed shows the clause is conflicting
+    */
+    bool checkClauseWithProof( const SparseUnsortedList &explanation,
+                               const Set<int> &clause ) const;
 };
 
 #endif // __Engine_h__

@@ -807,3 +807,10 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 {
     _externalClausesToAdd.append( Vector<int>( clause.begin(), clause.end() ) );
 }
+
+const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
+{
+    if ( _cadicalVarToPlc.exists( FloatUtils::abs( lit ) ) )
+        return _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+    return NULL;
+}

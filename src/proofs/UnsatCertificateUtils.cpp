@@ -139,17 +139,31 @@ double UNSATCertificateUtils::computeCombinationUpperBound( const SparseUnsorted
         }
     }
 
+    return computeCombinationUpperBound(
+        explanationRowCombination, groundUpperBounds, groundLowerBounds, numberOfVariables );
+}
+
+const Set<PiecewiseLinearFunctionType> UNSATCertificateUtils::getSupportedActivations()
+{
+    return { RELU, SIGN, ABSOLUTE_VALUE, MAX, DISJUNCTION, LEAKY_RELU };
+}
+
+double UNSATCertificateUtils::computeCombinationUpperBound( const Vector<double> &combination,
+                                                            const double *groundUpperBounds,
+                                                            const double *groundLowerBounds,
+                                                            unsigned numberOfVariables )
+{
     double derivedBound = 0;
     double temp;
 
     // Set the bound derived from the linear combination, using original bounds.
     for ( unsigned i = 0; i < numberOfVariables; ++i )
     {
-        temp = explanationRowCombination[i];
+        temp = combination[i];
         if ( !FloatUtils::isZero( temp ) )
         {
-            temp *= FloatUtils::isPositive( explanationRowCombination[i] ) ? groundUpperBounds[i]
-                                                                           : groundLowerBounds[i];
+            temp *= FloatUtils::isPositive( combination[i] ) ? groundUpperBounds[i]
+                                                             : groundLowerBounds[i];
 
             if ( !FloatUtils::isZero( temp ) )
                 derivedBound += temp;
@@ -157,9 +171,4 @@ double UNSATCertificateUtils::computeCombinationUpperBound( const SparseUnsorted
     }
 
     return derivedBound;
-}
-
-const Set<PiecewiseLinearFunctionType> UNSATCertificateUtils::getSupportedActivations()
-{
-    return { RELU, SIGN, ABSOLUTE_VALUE, MAX, DISJUNCTION, LEAKY_RELU };
 }

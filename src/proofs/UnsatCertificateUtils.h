@@ -59,6 +59,11 @@ public:
                                                 const double *groundLowerBounds,
                                                 unsigned numberOfVariables );
 
+    static double computeCombinationUpperBound( const Vector<double> &combination,
+                                                const double *groundUpperBounds,
+                                                const double *groundLowerBounds,
+                                                unsigned numberOfVariables );
+
     static const Set<PiecewiseLinearFunctionType> getSupportedActivations();
 };
 

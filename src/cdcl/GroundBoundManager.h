@@ -49,6 +49,7 @@ public:
     double
     getGroundBoundUpToId( unsigned index, Tightening::BoundType boundType, unsigned id ) const;
     Vector<double> getAllGroundBounds( Tightening::BoundType boundType ) const;
+    Vector<double> getAllInitialGroundBounds( Tightening::BoundType boundType ) const;
 
     unsigned getCounter() const;
 

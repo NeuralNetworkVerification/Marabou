@@ -96,7 +96,6 @@ double GroundBoundManager::getGroundBoundUpToId( unsigned index,
 Vector<double> GroundBoundManager::getAllGroundBounds( Tightening::BoundType boundType ) const
 {
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
-
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     Vector<double> tops = Vector<double>( 0 );
 
@@ -127,4 +126,17 @@ void GroundBoundManager::addClauseToGroundBoundEntry( unsigned int index,
             return;
         }
     }
+}
+
+Vector<double>
+GroundBoundManager::getAllInitialGroundBounds( Tightening::BoundType boundType ) const
+{
+    const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+    Vector<double> bots = Vector<double>( 0 );
+
+    for ( const auto &GBList : temp )
+        bots.append( ( *GBList->begin() )->val );
+
+    return bots;
 }
