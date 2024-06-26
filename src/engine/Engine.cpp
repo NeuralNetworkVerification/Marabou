@@ -299,7 +299,8 @@ bool Engine::solve( double timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                ASSERT( false ); // TODO: should not get here with CDCL, needs to be removed
+                //                ASSERT( false ); // TODO: should not get here with CDCL, needs to
+                //                be removed
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -1570,7 +1571,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             for ( auto &plConstraint : _plConstraints )
             {
                 _smtCore.initBooleanAbstraction( plConstraint );
-                plConstraint->initializeCDOs( &_context );
+                //                plConstraint->initializeCDOs( &_context );
             }
         }
     }
@@ -3395,46 +3396,45 @@ void Engine::explainSimplexFailure()
 
     // TODO: delete the following or move to a different function
     // Create input query for each conflict clause for testing the clause
-//    InputQuery ipq( *_preprocessedQuery );
-//    if ( !newClause.empty() )
-//    {
-//        for ( int lit : newClause )
-//        {
-//            ASSERT( lit != 0 );
-//            if ( lit > 0 )
-//            {
-//                const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
-//                unsigned int b = relu->getB();
-//                unsigned int f = relu->getF();
-//                unsigned int aux = relu->getAux();
-//
-//                Equation eq( Equation::EQ );
-//                eq.addAddend( 1, b );
-//                eq.addAddend( -1, f );
-//                eq.setScalar( 0 );
-//                ipq.addEquation( eq );
-//
-//                ipq.setLowerBound( b, 0 );
-//                ipq.setLowerBound( f, 0 );
-//                ipq.setUpperBound( aux, 0 );
-//            }
-//            else
-//            {
-//                const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
-//                unsigned int b = relu->getB();
-//                unsigned int f = relu->getF();
-//                unsigned int aux = relu->getAux();
-//
-//                ipq.setUpperBound( b, 0 );
-//                ipq.setUpperBound( f, 0 );
-//                ipq.setLowerBound( aux, 0 );
-//            }
-//        }
-//        ipq.saveQuery(
-//            "test_query_" +
-//            std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) ) +
-//            ".ipq" );
-//    }
+    //    InputQuery ipq( *_preprocessedQuery );
+    //    if ( !newClause.empty() )
+    //    {
+    //        for ( int lit : newClause )
+    //        {
+    //            ASSERT( lit != 0 );
+    //            if ( lit > 0 )
+    //            {
+    //                const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit(
+    //                lit ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned
+    //                int aux = relu->getAux();
+    //
+    //                Equation eq( Equation::EQ );
+    //                eq.addAddend( 1, b );
+    //                eq.addAddend( -1, f );
+    //                eq.setScalar( 0 );
+    //                ipq.addEquation( eq );
+    //
+    //                ipq.setLowerBound( b, 0 );
+    //                ipq.setLowerBound( f, 0 );
+    //                ipq.setUpperBound( aux, 0 );
+    //            }
+    //            else
+    //            {
+    //                const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit(
+    //                lit ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned
+    //                int aux = relu->getAux();
+    //
+    //                ipq.setUpperBound( b, 0 );
+    //                ipq.setUpperBound( f, 0 );
+    //                ipq.setLowerBound( aux, 0 );
+    //            }
+    //        }
+    //        ipq.saveQuery(
+    //            "test_query_" +
+    //            std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES
+    //            ) ) +
+    //            ".ipq" );
+    //    }
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -4084,6 +4084,7 @@ Set<int> Engine::reduceClauseWithProof( const SparseUnsortedList &explanation,
     Vector<int> toReturn = reduceClauseWithLinearCombination(
         explanationLinearCombination, gub, glb, support, clause );
 
+    ASSERT( !toReturn.empty() );
     Set<int> newClause = Set<int>();
     for ( int lit : toReturn )
         newClause.insert( lit );
@@ -4106,6 +4107,7 @@ Vector<int> Engine::reduceClauseWithLinearCombination( const Vector<double> &lin
 
     Vector<int> l = Vector<int>( clause.begin(), clause.begin() + size );
     Vector<int> r = Vector<int>( clause.begin() + size, clause.end() );
+    ASSERT( l.size() + r.size() == clause.size() );
 
     if ( checkLinearCombinationForClause(
              linearCombination, groundUpperBounds, groundLowerBounds, support + l ) )
@@ -4118,10 +4120,10 @@ Vector<int> Engine::reduceClauseWithLinearCombination( const Vector<double> &lin
             linearCombination, groundUpperBounds, groundLowerBounds, support, r );
 
     Vector<int> can1 = support + r;
-    Vector<int> can2 = support + l;
-
     Vector<int> newL = reduceClauseWithLinearCombination(
         linearCombination, groundUpperBounds, groundLowerBounds, can1, l );
+
+    Vector<int> can2 = support + newL;
     Vector<int> newR = reduceClauseWithLinearCombination(
         linearCombination, groundUpperBounds, groundLowerBounds, can2, r );
 

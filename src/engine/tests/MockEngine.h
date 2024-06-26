@@ -311,6 +311,10 @@ public:
     {
         return Vector<int>();
     }
+
+    void solveWithCadical()
+    {
+    }
 };
 
 #endif // __MockEngine_h__
