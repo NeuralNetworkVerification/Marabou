@@ -56,7 +56,7 @@
 #undef ERROR
 #endif
 
-#define ENGINE_LOG( x, ... ) LOG( GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x )
+#define ENGINE_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x )
 
 class EngineState;
 class InputQuery;
