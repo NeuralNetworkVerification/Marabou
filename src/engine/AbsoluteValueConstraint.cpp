@@ -980,7 +980,7 @@ void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned
 }
 
 void AbsoluteValueConstraint::booleanAbstraction(
-    CadicalWrapper /*cadical*/ &,
+    CadicalWrapper &/*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();

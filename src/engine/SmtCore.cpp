@@ -656,8 +656,10 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
-    _engine->applySplit(
-        _cadicalVarToPlc.at( FloatUtils::abs( lit ) )->propagateLitAsSplit( lit ) );
+
+    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+    _engine->applySplit( plc->propagateLitAsSplit( lit ) );
+    plc->setActiveConstraint( false );
 }
 
 void SmtCore::notify_new_decision_level()
@@ -820,6 +822,11 @@ const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
 void SmtCore::solveWithCadical()
 {
     _cadicalWrapper.connectTheorySolver( this );
+    for ( unsigned var : _cadicalVarToPlc.keys() )
+        if ( var != 0 )
+            _cadicalWrapper.addObservedVar( var );
+
+    std::cout << "number of vars: " << _cadicalWrapper.vars() << std::endl;
     int result = _cadicalWrapper.solve();
     _cadicalWrapper.disconnectTheorySolver();
 

@@ -1009,7 +1009,7 @@ void LeakyReluConstraint::createInactiveTighteningRow()
 }
 
 void LeakyReluConstraint::booleanAbstraction(
-    CadicalWrapper /* cadical*/ &,
+    CadicalWrapper &/*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();

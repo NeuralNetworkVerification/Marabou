@@ -80,6 +80,11 @@ public:
     */
     bool isDecision( int observedVar ) override;
 
+    /*
+      Return the number of vars;
+     */
+    int vars();
+
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;
     std::unique_ptr<CaDiCaL::Terminator> d_terminator;

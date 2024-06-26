@@ -76,3 +76,8 @@ bool CadicalWrapper::isDecision( int observedVar )
 {
     return d_solver->is_decision( observedVar );
 }
+
+int CadicalWrapper::vars()
+{
+    return d_solver->vars();
+}

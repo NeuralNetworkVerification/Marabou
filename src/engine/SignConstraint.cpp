@@ -666,7 +666,7 @@ void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
 {
 }
 void SignConstraint::booleanAbstraction(
-    CadicalWrapper /*cadical*/ &,
+    CadicalWrapper &/*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
