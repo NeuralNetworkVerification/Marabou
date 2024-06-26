@@ -192,6 +192,11 @@ public:
      */
     void initBooleanAbstraction( PiecewiseLinearConstraint *plc );
 
+    /*
+     *
+     */
+    void solveWithCadical();
+
     void notify_assignment( int lit, bool is_fixed ) override;
     void notify_new_decision_level() override;
     void notify_backtrack( size_t new_level ) override;

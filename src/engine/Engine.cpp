@@ -299,6 +299,7 @@ bool Engine::solve( double timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
+                ASSERT( false ); // TODO: should not get here with CDCL, needs to be removed
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -1567,7 +1568,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( GlobalConfiguration::CDCL )
         {
             for ( auto &plConstraint : _plConstraints )
+            {
                 _smtCore.initBooleanAbstraction( plConstraint );
+                plConstraint->initializeCDOs( &_context );
+            }
         }
     }
     catch ( const InfeasibleQueryException & )
@@ -2400,6 +2404,11 @@ void Engine::quitSignal()
 Engine::ExitCode Engine::getExitCode() const
 {
     return _exitCode;
+}
+
+void Engine::setExitCode( IEngine::ExitCode exitCode )
+{
+    _exitCode = exitCode;
 }
 
 std::atomic_bool *Engine::getQuitRequested()
@@ -4054,6 +4063,12 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     ASSERT( clause.size() );
     return Vector<int>( clause.begin(), clause.end() );
 }
+
+void Engine::solveWithCadical()
+{
+    _smtCore.solveWithCadical();
+}
+
 
 Set<int> Engine::reduceClauseWithProof( const SparseUnsortedList &explanation,
                                         const Vector<int> &clause ) const

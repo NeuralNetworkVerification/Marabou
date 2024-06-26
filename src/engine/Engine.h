@@ -153,6 +153,11 @@ public:
     Engine::ExitCode getExitCode() const;
 
     /*
+      Set the exit code
+     */
+    void setExitCode( IEngine::ExitCode exitCode );
+
+    /*
       Get the quitRequested flag
     */
     std::atomic_bool *getQuitRequested();
@@ -305,6 +310,8 @@ public:
     */
     Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint,
                               bool isLiteralPositive );
+
+    void solveWithCadical();
 
 private:
     enum BasisRestorationRequired {

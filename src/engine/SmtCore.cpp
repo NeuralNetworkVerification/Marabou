@@ -753,9 +753,12 @@ int SmtCore::cb_propagate()
         int literal;
         for ( const auto *plc : _cadicalVarToPlc.values() )
         {
-            literal = plc->propagatePhaseAsLit();
-            if ( literal && !isLiteralNotified( literal ) )
-                _literalsToPropagate.append( literal );
+            if ( plc )
+            {
+                literal = plc->propagatePhaseAsLit();
+                if ( literal && !isLiteralNotified( literal ) )
+                    _literalsToPropagate.append( literal );
+            }
         }
     }
 
@@ -813,4 +816,19 @@ const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
     if ( _cadicalVarToPlc.exists( FloatUtils::abs( lit ) ) )
         return _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
     return NULL;
+}
+void SmtCore::solveWithCadical()
+{
+    _cadicalWrapper.connectTheorySolver( this );
+    int result = _cadicalWrapper.solve();
+    _cadicalWrapper.disconnectTheorySolver();
+
+    if ( result == 0 )
+        _engine->setExitCode( IEngine::ExitCode::UNKNOWN );
+    else if ( result == 10 )
+        _engine->setExitCode( IEngine::ExitCode::SAT );
+    else if ( result == 20 )
+        _engine->setExitCode( IEngine::ExitCode::UNSAT );
+    else
+        ASSERT( false );
 }

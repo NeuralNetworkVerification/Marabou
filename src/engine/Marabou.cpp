@@ -221,7 +221,8 @@ void Marabou::solveQuery()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     if ( _engine->processInputQuery( _inputQuery ) )
     {
-        _engine->solve( timeoutInSeconds );
+//        _engine->solve( timeoutInSeconds );
+        _engine->solveWithCadical();
         if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
             _engine->certifyUNSATCertificate();
     }

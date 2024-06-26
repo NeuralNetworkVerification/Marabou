@@ -52,9 +52,9 @@ void CadicalWrapper::flip( int lit )
     d_solver->flip( lit );
 }
 
-void CadicalWrapper::connectTheorySolver()
+void CadicalWrapper::connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator )
 {
-    d_solver->connect_external_propagator( nullptr ); // TODO: add Theory Solver
+    d_solver->connect_external_propagator( externalPropagator );
 }
 
 void CadicalWrapper::disconnectTheorySolver()
