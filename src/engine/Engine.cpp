@@ -4202,7 +4202,7 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
                                    const std::shared_ptr<PLCLemma> lemma ) const
 {
     // TODO apply to additional PLC types
-    ASSERT( !lemma || lemma->getConstraintType() == RELU);
+    ASSERT( !lemma || lemma->getConstraintType() == RELU );
     Vector<double> explanationLinearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
         explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
