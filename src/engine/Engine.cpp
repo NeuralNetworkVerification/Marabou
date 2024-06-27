@@ -299,7 +299,8 @@ bool Engine::solve( double timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                ASSERT( false ); // TODO: should not get here with CDCL, needs to be removed
+                //                ASSERT( false ); // TODO: should not get here with CDCL, needs to
+                //                be removed
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -1570,7 +1571,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             for ( auto &plConstraint : _plConstraints )
             {
                 _smtCore.initBooleanAbstraction( plConstraint );
-                plConstraint->initializeCDOs( &_context );
+                //                plConstraint->initializeCDOs( &_context );
             }
         }
     }
@@ -3371,57 +3372,64 @@ void Engine::explainSimplexFailure()
             !( **_UNSATCertificateCurrentPointer ).getContradiction() );
     _statistics.incUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
 
-    writeContradictionToCertificate( infeasibleVar );
+    Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
+    writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
-    std::cout << "gb counter: " << _groundBoundManager.getCounter() << std::endl;
-    Set<int> clause = clauseFromContradictionVector(
-        ( **_UNSATCertificateCurrentPointer ).getContradiction()->getContradiction(),
-        _groundBoundManager.getCounter(),
-        -1 );
-    printf( "size :%d, stack depth %d\n", clause.size(), _smtCore.getStackDepth() );
-    _smtCore.addExternalClause( clause );
 
-    //    // TODO: delete the following
-    //    // Create input query for each conflict clause for testing the clause
+    SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
+                                            leafContradictionVec.size() );
+    Set<int> clause =
+        clauseFromContradictionVector( sparseContradiction, _groundBoundManager.getCounter(), -1 );
+
+    // If possible, attempt to reduce the caluse size
+    if ( checkClauseWithProof( sparseContradiction, clause ) )
+        _smtCore.addExternalClause( reduceClauseWithProof(
+            sparseContradiction, Vector<int>( clause.begin(), clause.end() ) ) );
+    else
+        _smtCore.addExternalClause( clause );
+
+    // TODO: delete the following or move to a different function
+    // Create input query for each conflict clause for testing the clause
     //    InputQuery ipq( *_preprocessedQuery );
-    //    for ( int lit : clause )
+    //    if ( !newClause.empty() )
     //    {
-    //        ASSERT( lit != 0 );
-    //        if ( lit > 0 )
+    //        for ( int lit : newClause )
     //        {
-    //            const ReluConstraint *relu = (ReluConstraint *)_cadicalVarToPlc[lit];
-    //            unsigned int b = relu->getB();
-    //            unsigned int f = relu->getF();
-    //            unsigned int aux = relu->getAux();
+    //            ASSERT( lit != 0 );
+    //            if ( lit > 0 )
+    //            {
+    //                const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit(
+    //                lit ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned
+    //                int aux = relu->getAux();
     //
-    //            Equation eq( Equation::EQ );
-    //            eq.addAddend( 1, b );
-    //            eq.addAddend( -1, f );
-    //            eq.setScalar( 0 );
-    //            ipq.addEquation( eq );
+    //                Equation eq( Equation::EQ );
+    //                eq.addAddend( 1, b );
+    //                eq.addAddend( -1, f );
+    //                eq.setScalar( 0 );
+    //                ipq.addEquation( eq );
     //
-    //            ipq.setLowerBound( b, 0 );
-    //            ipq.setLowerBound( f, 0 );
-    //            ipq.setUpperBound( aux, 0 );
+    //                ipq.setLowerBound( b, 0 );
+    //                ipq.setLowerBound( f, 0 );
+    //                ipq.setUpperBound( aux, 0 );
+    //            }
+    //            else
+    //            {
+    //                const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit(
+    //                lit ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned
+    //                int aux = relu->getAux();
+    //
+    //                ipq.setUpperBound( b, 0 );
+    //                ipq.setUpperBound( f, 0 );
+    //                ipq.setLowerBound( aux, 0 );
+    //            }
     //        }
-    //        else
-    //        {
-    //            const ReluConstraint *relu = (ReluConstraint *)_cadicalVarToPlc[-lit];
-    //            unsigned int b = relu->getB();
-    //            unsigned int f = relu->getF();
-    //            unsigned int aux = relu->getAux();
-    //
-    //            ipq.setUpperBound( b, 0 );
-    //            ipq.setUpperBound( f, 0 );
-    //            ipq.setLowerBound( aux, 0 );
-    //        }
+    //        ipq.saveQuery(
+    //            "test_query_" +
+    //            std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES
+    //            ) ) +
+    //            ".ipq" );
     //    }
-    //    ipq.saveQuery(
-    //        "test_query_" +
-    //        std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) )
-    //        +
-    //        ".ipq" );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -3795,15 +3803,13 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
     return contradiction;
 }
 
-void Engine::writeContradictionToCertificate( unsigned infeasibleVar ) const
+void Engine::writeContradictionToCertificate( const Vector<double> &contradiction,
+                                              unsigned infeasibleVar ) const
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
-
-    Contradiction *leafContradiction = leafContradictionVec.empty()
-                                         ? new Contradiction( infeasibleVar )
-                                         : new Contradiction( leafContradictionVec );
+    Contradiction *leafContradiction = contradiction.empty() ? new Contradiction( infeasibleVar )
+                                                             : new Contradiction( contradiction );
     ( **_UNSATCertificateCurrentPointer ).setContradiction( leafContradiction );
 }
 
@@ -3932,6 +3938,8 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         if ( lit )
         {
             ASSERT( !clause.exists( -lit ) );
+            ASSERT( constraint && constraint->getType() == RELU );
+            ASSERT( constraint->phaseFixed() || !constraint->isActive() )
             clause.insert( lit );
         }
     }
@@ -4039,19 +4047,124 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                 tempEntry =
                     _groundBoundManager.getGroundBoundEntryUpToId( aux, Tightening::UB, MAX_INPUT );
         }
-
-        // Return a clause explaining the phase-fixing GroundBound entry
-        ASSERT( tempEntry && tempEntry->lemma );
-        clause = clauseFromContradictionVector( tempEntry->lemma->getExplanations().back(),
-                                                tempEntry->id,
-                                                tempEntry->lemma->getCausingVars().back() );
-
     } // TODO apply to additional types of PLCs
+
     ASSERT( clause.size() );
+    // Return a clause explaining the phase-fixing GroundBound entry
+    ASSERT( tempEntry && tempEntry->lemma );
+    SparseUnsortedList tempExpl = tempEntry->lemma->getExplanations().back();
+    clause = clauseFromContradictionVector(
+        tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
+
     return Vector<int>( clause.begin(), clause.end() );
 }
 
 void Engine::solveWithCadical()
 {
     _smtCore.solveWithCadical();
+}
+
+Set<int> Engine::reduceClauseWithProof( const SparseUnsortedList &explanation,
+                                        const Vector<int> &clause ) const
+{
+    Vector<double> explanationLinearCombination( 0 );
+    UNSATCertificateUtils::getExplanationRowCombination(
+        explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
+
+    Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
+    Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
+
+    Vector<int> support( 0 );
+    Vector<int> toReturn = reduceClauseWithLinearCombination(
+        explanationLinearCombination, gub, glb, support, clause );
+
+    ASSERT( !toReturn.empty() );
+    Set<int> newClause = Set<int>();
+    for ( int lit : toReturn )
+        newClause.insert( lit );
+
+    DEBUG( ASSERT( checkClauseWithProof( explanation, newClause ) ) );
+
+    return newClause;
+}
+
+Vector<int> Engine::reduceClauseWithLinearCombination( const Vector<double> &linearCombination,
+                                                       const Vector<double> &groundUpperBounds,
+                                                       const Vector<double> &groundLowerBounds,
+                                                       Vector<int> &support,
+                                                       const Vector<int> &clause ) const
+{
+    ASSERT( !clause.empty() );
+
+    if ( clause.size() == 1 )
+        return clause;
+
+    unsigned size = clause.size() / 2;
+
+    Vector<int> l = Vector<int>( clause.begin(), clause.begin() + size );
+    Vector<int> r = Vector<int>( clause.begin() + size, clause.end() );
+    ASSERT( l.size() + r.size() == clause.size() );
+
+    if ( checkLinearCombinationForClause(
+             linearCombination, groundUpperBounds, groundLowerBounds, support + l ) )
+        return reduceClauseWithLinearCombination(
+            linearCombination, groundUpperBounds, groundLowerBounds, support, l );
+
+    if ( checkLinearCombinationForClause(
+             linearCombination, groundUpperBounds, groundLowerBounds, support + r ) )
+        return reduceClauseWithLinearCombination(
+            linearCombination, groundUpperBounds, groundLowerBounds, support, r );
+
+    Vector<int> can1 = support + r;
+    Vector<int> newL = reduceClauseWithLinearCombination(
+        linearCombination, groundUpperBounds, groundLowerBounds, can1, l );
+
+    Vector<int> can2 = support + newL;
+    Vector<int> newR = reduceClauseWithLinearCombination(
+        linearCombination, groundUpperBounds, groundLowerBounds, can2, r );
+
+    return newL + newR;
+}
+
+bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombination,
+                                              Vector<double> groundUpperBounds,
+                                              Vector<double> groundLowerBounds,
+                                              const Vector<int> &clause ) const
+{
+    const PiecewiseLinearConstraint *constraint;
+
+    for ( int lit : clause )
+    {
+        constraint = _smtCore.getConstraintFromLit( lit );
+        ASSERT( constraint && constraint->getType() == RELU );
+        ASSERT( constraint->phaseFixed() || !constraint->isActive() );
+        ASSERT( constraint->phaseFixed() || !constraint->isActive() );
+        if ( lit > 0 )
+        {
+            groundLowerBounds[( (ReluConstraint *)constraint )->getB()] = 0;
+            groundUpperBounds[( (ReluConstraint *)constraint )->getAux()] = 0;
+        }
+        else
+        {
+            groundUpperBounds[( (ReluConstraint *)constraint )->getB()] = 0;
+            groundUpperBounds[( (ReluConstraint *)constraint )->getF()] = 0;
+        }
+    }
+
+    return FloatUtils::isNegative( UNSATCertificateUtils::computeCombinationUpperBound(
+        linearCombination, groundUpperBounds.data(), groundLowerBounds.data(), _tableau->getN() ) );
+}
+
+bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
+                                   const Set<int> &clause ) const
+{
+    Vector<double> explanationLinearCombination( 0 );
+    UNSATCertificateUtils::getExplanationRowCombination(
+        explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
+    Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
+    Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
+
+    Vector<int> clauseVec( clause.begin(), clause.end() );
+
+    return checkLinearCombinationForClause( explanationLinearCombination, gub, glb, clauseVec );
 }
