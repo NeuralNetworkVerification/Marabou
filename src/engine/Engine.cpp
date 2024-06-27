@@ -3382,10 +3382,10 @@ void Engine::explainSimplexFailure()
     Set<int> clause =
         clauseFromContradictionVector( sparseContradiction, _groundBoundManager.getCounter(), -1 );
 
-    // If possible, attempt to reduce the caluse size
-    if ( checkClauseWithProof( sparseContradiction, clause ) )
-        _smtCore.addExternalClause( reduceClauseWithProof(
-            sparseContradiction, Vector<int>( clause.begin(), clause.end() ) ) );
+    // If possible, attempt to reduce the clause size
+    if ( checkClauseWithProof( sparseContradiction, clause, NULL ) )
+        _smtCore.addExternalClause( reduceClauseSizeWithProof(
+            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL ) );
     else
         _smtCore.addExternalClause( clause );
 
@@ -4056,6 +4056,10 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     clause = clauseFromContradictionVector(
         tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
 
+    if ( checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
+        clause = reduceClauseSizeWithProof(
+            tempExpl, Vector<int>( clause.begin(), clause.end() ), tempEntry->lemma );
+
     return Vector<int>( clause.begin(), clause.end() );
 }
 
@@ -4064,35 +4068,52 @@ void Engine::solveWithCadical()
     _smtCore.solveWithCadical();
 }
 
-Set<int> Engine::reduceClauseWithProof( const SparseUnsortedList &explanation,
-                                        const Vector<int> &clause ) const
+Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
+                                            const Vector<int> &clause,
+                                            const std::shared_ptr<PLCLemma> lemma ) const
 {
-    Vector<double> explanationLinearCombination( 0 );
-    UNSATCertificateUtils::getExplanationRowCombination(
-        explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
+    Vector<int> toReturn = clause;
+    // TODO apply to additional types of PLCs
+    if ( !lemma || lemma->getConstraintType() == RELU )
+    {
+        Vector<double> explanationLinearCombination( 0 );
+        UNSATCertificateUtils::getExplanationRowCombination(
+            explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
 
-    Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
-    Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
+        if ( lemma )
+        {
+            ASSERT( lemma->getCausingVars().size() == 1 );
+            explanationLinearCombination[lemma->getCausingVars().front()]++;
+        }
 
-    Vector<int> support( 0 );
-    Vector<int> toReturn = reduceClauseWithLinearCombination(
-        explanationLinearCombination, gub, glb, support, clause );
+        Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
+        Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
+
+        Vector<int> support( 0 );
+        toReturn = reduceClauseSizeWithLinearCombination(
+            explanationLinearCombination, gub, glb, support, clause, lemma );
+    }
 
     ASSERT( !toReturn.empty() );
     Set<int> newClause = Set<int>();
     for ( int lit : toReturn )
         newClause.insert( lit );
 
-    DEBUG( ASSERT( checkClauseWithProof( explanation, newClause ) ) );
+    DEBUG( {
+        if ( !lemma || lemma->getConstraintType() == RELU )
+            ASSERT( checkClauseWithProof( explanation, newClause, lemma ) )
+    } );
 
     return newClause;
 }
 
-Vector<int> Engine::reduceClauseWithLinearCombination( const Vector<double> &linearCombination,
-                                                       const Vector<double> &groundUpperBounds,
-                                                       const Vector<double> &groundLowerBounds,
-                                                       Vector<int> &support,
-                                                       const Vector<int> &clause ) const
+Vector<int>
+Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombination,
+                                               const Vector<double> &groundUpperBounds,
+                                               const Vector<double> &groundLowerBounds,
+                                               Vector<int> &support,
+                                               const Vector<int> &clause,
+                                               const std::shared_ptr<PLCLemma> lemma ) const
 {
     ASSERT( !clause.empty() );
 
@@ -4106,22 +4127,22 @@ Vector<int> Engine::reduceClauseWithLinearCombination( const Vector<double> &lin
     ASSERT( l.size() + r.size() == clause.size() );
 
     if ( checkLinearCombinationForClause(
-             linearCombination, groundUpperBounds, groundLowerBounds, support + l ) )
-        return reduceClauseWithLinearCombination(
-            linearCombination, groundUpperBounds, groundLowerBounds, support, l );
+             linearCombination, groundUpperBounds, groundLowerBounds, support + l, lemma ) )
+        return reduceClauseSizeWithLinearCombination(
+            linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
 
     if ( checkLinearCombinationForClause(
-             linearCombination, groundUpperBounds, groundLowerBounds, support + r ) )
-        return reduceClauseWithLinearCombination(
-            linearCombination, groundUpperBounds, groundLowerBounds, support, r );
+             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
+        return reduceClauseSizeWithLinearCombination(
+            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
     Vector<int> can1 = support + r;
-    Vector<int> newL = reduceClauseWithLinearCombination(
-        linearCombination, groundUpperBounds, groundLowerBounds, can1, l );
+    Vector<int> newL = reduceClauseSizeWithLinearCombination(
+        linearCombination, groundUpperBounds, groundLowerBounds, can1, l, lemma );
 
     Vector<int> can2 = support + newL;
-    Vector<int> newR = reduceClauseWithLinearCombination(
-        linearCombination, groundUpperBounds, groundLowerBounds, can2, r );
+    Vector<int> newR = reduceClauseSizeWithLinearCombination(
+        linearCombination, groundUpperBounds, groundLowerBounds, can2, r, lemma );
 
     return newL + newR;
 }
@@ -4129,7 +4150,8 @@ Vector<int> Engine::reduceClauseWithLinearCombination( const Vector<double> &lin
 bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombination,
                                               Vector<double> groundUpperBounds,
                                               Vector<double> groundLowerBounds,
-                                              const Vector<int> &clause ) const
+                                              const Vector<int> &clause,
+                                              const std::shared_ptr<PLCLemma> lemma ) const
 {
     const PiecewiseLinearConstraint *constraint;
 
@@ -4151,12 +4173,33 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
         }
     }
 
-    return FloatUtils::isNegative( UNSATCertificateUtils::computeCombinationUpperBound(
-        linearCombination, groundUpperBounds.data(), groundLowerBounds.data(), _tableau->getN() ) );
+    if ( !lemma )
+        return FloatUtils::isNegative(
+            UNSATCertificateUtils::computeCombinationUpperBound( linearCombination,
+                                                                 groundUpperBounds.data(),
+                                                                 groundLowerBounds.data(),
+                                                                 _tableau->getN() ) );
+
+    // Currently works for bound lemmas only
+    ASSERT( lemma->getCausingVars().size() == 1 );
+    double explainedBound =
+        lemma->getCausingVarBound()
+            ? UNSATCertificateUtils::computeCombinationUpperBound( linearCombination,
+                                                                   groundUpperBounds.data(),
+                                                                   groundLowerBounds.data(),
+                                                                   _tableau->getN() )
+            : UNSATCertificateUtils::computeCombinationLowerBound( linearCombination,
+                                                                   groundUpperBounds.data(),
+                                                                   groundLowerBounds.data(),
+                                                                   _tableau->getN() );
+
+    return lemma->getCausingVarBound() ? FloatUtils::lt( explainedBound, lemma->getBound() )
+                                       : FloatUtils::gt( explainedBound, lemma->getBound() );
 }
 
 bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
-                                   const Set<int> &clause ) const
+                                   const Set<int> &clause,
+                                   const std::shared_ptr<PLCLemma> lemma ) const
 {
     Vector<double> explanationLinearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
@@ -4164,7 +4207,13 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
     Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
     Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
 
+    if ( lemma )
+    {
+        ASSERT( lemma->getCausingVars().size() == 1 );
+        explanationLinearCombination[lemma->getCausingVars().front()]++;
+    }
     Vector<int> clauseVec( clause.begin(), clause.end() );
 
-    return checkLinearCombinationForClause( explanationLinearCombination, gub, glb, clauseVec );
+    return checkLinearCombinationForClause(
+        explanationLinearCombination, gub, glb, clauseVec, lemma );
 }

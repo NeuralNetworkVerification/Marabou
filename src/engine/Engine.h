@@ -921,18 +921,21 @@ private:
     /*
       Attempts to reduce a conflict clause, while explanation can still be used to prove UNSAT
     */
-    Set<int> reduceClauseWithProof( const SparseUnsortedList &explanation,
-                                    const Vector<int> &clause ) const;
+    Set<int> reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
+                                        const Vector<int> &clause,
+                                        const std::shared_ptr<PLCLemma> lemma ) const;
 
     /*
-      Attempts to reduce a conflict clause, while linear combination can still be used to prove
-      UNSAT linearCombination should be created using an explanation and the tableau
+      Attempts to reduce a conflict clause's size, while linear combination can still be used to
+      prove UNSAT linearCombination should be created using an explanation and the tableau
     */
-    Vector<int> reduceClauseWithLinearCombination( const Vector<double> &linearCombination,
-                                                   const Vector<double> &groundUpperBounds,
-                                                   const Vector<double> &groundLowerBounds,
-                                                   Vector<int> &support,
-                                                   const Vector<int> &clause ) const;
+    Vector<int>
+    reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombination,
+                                           const Vector<double> &groundUpperBounds,
+                                           const Vector<double> &groundLowerBounds,
+                                           Vector<int> &support,
+                                           const Vector<int> &clause,
+                                           const std::shared_ptr<PLCLemma> lemma ) const;
 
     /*
       Checks if a clause is conflicting with a linear combination of the tableau and ground bounds
@@ -941,13 +944,15 @@ private:
     bool checkLinearCombinationForClause( const Vector<double> &linearCombination,
                                           Vector<double> groundUpperBounds,
                                           Vector<double> groundLowerBounds,
-                                          const Vector<int> &clause ) const;
+                                          const Vector<int> &clause,
+                                          const std::shared_ptr<PLCLemma> lemma ) const;
 
     /*
       Checks if an explanation indeed shows the clause is conflicting
     */
     bool checkClauseWithProof( const SparseUnsortedList &explanation,
-                               const Set<int> &clause ) const;
+                               const Set<int> &clause,
+                               const std::shared_ptr<PLCLemma> lemma ) const;
 };
 
 #endif // __Engine_h__

@@ -24,9 +24,6 @@ double UNSATCertificateUtils::computeBound( unsigned var,
 {
     ASSERT( var < numberOfVariables );
 
-    double derivedBound = 0;
-    double temp;
-
     if ( explanation.empty() )
         return isUpper ? groundUpperBounds[var] : groundLowerBounds[var];
 
@@ -47,27 +44,7 @@ double UNSATCertificateUtils::computeBound( unsigned var,
     UNSATCertificateUtils::getExplanationRowCombination(
         var, explanation, explanationRowCombination, initialTableau, numberOfVariables );
 
-    // Set the bound derived from the linear combination, using original bounds.
-    for ( unsigned i = 0; i < numberOfVariables; ++i )
-    {
-        temp = explanationRowCombination[i];
-        if ( !FloatUtils::isZero( temp ) )
-        {
-            if ( isUpper )
-                temp *= FloatUtils::isPositive( explanationRowCombination[i] )
-                          ? groundUpperBounds[i]
-                          : groundLowerBounds[i];
-            else
-                temp *= FloatUtils::isPositive( explanationRowCombination[i] )
-                          ? groundLowerBounds[i]
-                          : groundUpperBounds[i];
-
-            if ( !FloatUtils::isZero( temp ) )
-                derivedBound += temp;
-        }
-    }
-
-    return derivedBound;
+    return isUpper ? computeCombinationUpperBound( explanationRowCombination, groundUpperBounds, groundLowerBounds, numberOfVariables ) : computeCombinationLowerBound( explanationRowCombination, groundUpperBounds, groundLowerBounds, numberOfVariables );
 }
 
 void UNSATCertificateUtils::getExplanationRowCombination( const SparseUnsortedList &explanation,
@@ -163,6 +140,31 @@ double UNSATCertificateUtils::computeCombinationUpperBound( const Vector<double>
         if ( !FloatUtils::isZero( temp ) )
         {
             temp *= FloatUtils::isPositive( combination[i] ) ? groundUpperBounds[i]
+                                                             : groundLowerBounds[i];
+
+            if ( !FloatUtils::isZero( temp ) )
+                derivedBound += temp;
+        }
+    }
+
+    return derivedBound;
+}
+
+double UNSATCertificateUtils::computeCombinationLowerBound( const Vector<double> &combination,
+                                                            const double *groundUpperBounds,
+                                                            const double *groundLowerBounds,
+                                                            unsigned numberOfVariables )
+{
+    double derivedBound = 0;
+    double temp;
+
+    // Set the bound derived from the linear combination, using original bounds.
+    for ( unsigned i = 0; i < numberOfVariables; ++i )
+    {
+        temp = combination[i];
+        if ( !FloatUtils::isZero( temp ) )
+        {
+            temp *= FloatUtils::isNegative( combination[i] ) ? groundUpperBounds[i]
                                                              : groundLowerBounds[i];
 
             if ( !FloatUtils::isZero( temp ) )
