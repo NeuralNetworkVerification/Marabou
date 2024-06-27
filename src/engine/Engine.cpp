@@ -186,7 +186,7 @@ void Engine::exportInputQueryWithError( String errorMessage )
             ipqFileName.ascii() );
 }
 
-bool Engine::solve( double timeoutInSeconds )
+void Engine::preSolve()
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -199,9 +199,6 @@ bool Engine::solve( double timeoutInSeconds )
 
     // Before encoding, make sure all valid constraints are applied.
     applyAllValidConstraintCaseSplits();
-
-    if ( _solveWithMILP )
-        return solveWithMILPEncoding( timeoutInSeconds );
 
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
@@ -216,6 +213,12 @@ bool Engine::solve( double timeoutInSeconds )
         _milpEncoder->encodeInputQuery( *_gurobi, *_preprocessedQuery, true );
         ENGINE_LOG( "Encoding convex relaxation into Gurobi - done" );
     }
+}
+
+bool Engine::solve( double timeoutInSeconds )
+{
+    if ( _solveWithMILP )
+        return solveWithMILPEncoding( timeoutInSeconds );
 
     mainLoopStatistics();
     if ( _verbosity > 0 )
@@ -301,9 +304,10 @@ bool Engine::solve( double timeoutInSeconds )
             {
                 //                ASSERT( false ); // TODO: should not get here with CDCL, needs to
                 //                be removed
-                _smtCore.performSplit();
-                splitJustPerformed = true;
-                continue;
+                //                _smtCore.performSplit(); splitJustPerformed = true;
+                //                continue;
+
+                return false;
             }
 
             if ( !_tableau->allBoundsValid() )
@@ -324,6 +328,10 @@ bool Engine::solve( double timeoutInSeconds )
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound = adjustAssignmentToSatisfyNonLinearConstraints();
+
+                if ( _stopConditionFlag )
+                    return false;
+
                 if ( solutionFound )
                 {
                     if ( allNonlinearConstraintsHold() )
@@ -1568,10 +1576,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::CDCL )
         {
-            for ( auto &plConstraint : _plConstraints )
+            for ( auto plConstraint = _plConstraints.rbegin();
+                  plConstraint != _plConstraints.rend();
+                  ++plConstraint )
             {
-                _smtCore.initBooleanAbstraction( plConstraint );
-                //                plConstraint->initializeCDOs( &_context );
+                _smtCore.initBooleanAbstraction( *plConstraint );
+                ( *plConstraint )->initializeCDOs( &_context );
             }
         }
     }
@@ -3368,8 +3378,8 @@ void Engine::explainSimplexFailure()
     }
 
     ASSERT( infeasibleVar < _tableau->getN() );
-    ASSERT( _UNSATCertificateCurrentPointer &&
-            !( **_UNSATCertificateCurrentPointer ).getContradiction() );
+    //    ASSERT( _UNSATCertificateCurrentPointer &&
+    //            !( **_UNSATCertificateCurrentPointer ).getContradiction() );
     _statistics.incUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
 
     Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
@@ -4216,4 +4226,9 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
 
     return checkLinearCombinationForClause(
         explanationLinearCombination, gub, glb, clauseVec, lemma );
+}
+
+void Engine::setStopConditionFlag( bool value )
+{
+    _stopConditionFlag = value;
 }

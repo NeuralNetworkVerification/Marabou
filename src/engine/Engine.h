@@ -81,6 +81,11 @@ public:
     ~Engine();
 
     /*
+      Required initialization before starting the solving loop.
+     */
+    void preSolve();
+
+    /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
@@ -953,6 +958,10 @@ private:
     bool checkClauseWithProof( const SparseUnsortedList &explanation,
                                const Set<int> &clause,
                                const std::shared_ptr<PLCLemma> lemma ) const;
+
+    bool _stopConditionFlag = false;
+
+    void setStopConditionFlag( bool value ) override;
 };
 
 #endif // __Engine_h__

@@ -641,13 +641,8 @@ void SmtCore::initBooleanAbstraction( PiecewiseLinearConstraint *plc )
 bool SmtCore::isLiteralNotified( int literal ) const
 {
     for ( int curLiteral : _notifiedLiterals )
-    {
-        if ( curLiteral == literal )
+        if ( curLiteral == literal || curLiteral == -literal )
             return true;
-
-        else if ( curLiteral == -literal )
-            return false;
-    }
 
     return false;
 }
@@ -660,6 +655,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
     _engine->applySplit( plc->propagateLitAsSplit( lit ) );
     plc->setActiveConstraint( false );
+    _notifiedLiterals.push_back( lit );
 }
 
 void SmtCore::notify_new_decision_level()
@@ -672,6 +668,14 @@ void SmtCore::notify_new_decision_level()
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+    }
+
+    _needToSplit = false;
+    if ( _constraintForSplitting && !_constraintForSplitting->isActive() )
+    {
+        _constraintToViolationCount[_constraintForSplitting] = 0;
+        _constraintForSplitting = NULL;
+        return;
     }
 
     // Obtain the current state of the engine
@@ -731,8 +735,15 @@ void SmtCore::notify_backtrack( size_t new_level )
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
     for ( const auto &lit : model )
-        notify_assignment( lit, false );
-    return _engine->solve( 0 );
+    {
+        //        std::cout << lit << " ";
+        if ( !isLiteralNotified( lit ) )
+            notify_assignment( lit, false );
+    }
+    _engine->setStopConditionFlag( false );
+    bool result = _engine->solve( 0 );
+    //    std::cout << result << std::endl;
+    return result;
 }
 
 int SmtCore::cb_decide()
@@ -752,6 +763,8 @@ int SmtCore::cb_propagate()
 {
     if ( _literalsToPropagate.empty() )
     {
+        _engine->setStopConditionFlag( false );
+        _engine->solve( 0 );
         int literal;
         for ( const auto *plc : _cadicalVarToPlc.values() )
         {
@@ -765,10 +778,13 @@ int SmtCore::cb_propagate()
     }
 
     if ( !_literalsToPropagate.empty() )
+    {
+        std::cout << "return from propagate 1, propagate " << _literalsToPropagate.first()
+                  << std::endl;
         return _literalsToPropagate.popFirst(); // TODO: consider pop, if we dont care if we
-                                                // propagate literals from the last detected to
-                                                // the first one
-
+        // propagate literals from the last detected to
+        // the first one
+    }
     return 0;
 }
 
@@ -810,7 +826,10 @@ int SmtCore::cb_add_external_clause_lit()
 
 void SmtCore::addExternalClause( const Set<int> &clause )
 {
-    _externalClausesToAdd.append( Vector<int>( clause.begin(), clause.end() ) );
+    Vector<int> toAdd( 0 );
+    for ( int lit : clause )
+        toAdd.append( -lit );
+    _externalClausesToAdd.append( toAdd );
 }
 
 const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
@@ -819,6 +838,7 @@ const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
         return _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
     return NULL;
 }
+
 void SmtCore::solveWithCadical()
 {
     _cadicalWrapper.connectTheorySolver( this );
@@ -827,6 +847,7 @@ void SmtCore::solveWithCadical()
             _cadicalWrapper.addObservedVar( var );
 
     std::cout << "number of vars: " << _cadicalWrapper.vars() << std::endl;
+    _engine->preSolve();
     int result = _cadicalWrapper.solve();
     _cadicalWrapper.disconnectTheorySolver();
 

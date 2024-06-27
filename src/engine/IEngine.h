@@ -90,6 +90,11 @@ public:
     virtual bool restoreSmtState( SmtState &smtState ) = 0;
 
     /*
+      Required initialization before starting the solving loop.
+     */
+    virtual void preSolve() = 0;
+
+    /*
       Solve the encoded query.
     */
     virtual bool solve( double timeoutInSeconds ) = 0;
@@ -200,6 +205,8 @@ public:
                                       bool isLiteralPositive ) = 0;
 
     virtual void solveWithCadical() = 0;
+
+    virtual void setStopConditionFlag( bool value ) = 0;
 };
 
 #endif // __IEngine_h__

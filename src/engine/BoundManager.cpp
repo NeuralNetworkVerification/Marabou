@@ -475,6 +475,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
         // Add ground bound entry to the GroundBoundManager
         _engine->setGroundBoundFromLemma( PLCExpl, isPhaseFixing );
         resetExplanation( var, affectedVarBound );
+        if ( isPhaseFixing )
+            _engine->setStopConditionFlag( true );
     }
     return true;
 }
