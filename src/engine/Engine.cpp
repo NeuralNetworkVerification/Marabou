@@ -3948,7 +3948,6 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>();
 
     // Iterate through all lemmas learned, check which participated in the explanation
-
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
         if ( !FloatUtils::isZero( linearCombination[var] ) )
         {
@@ -4183,7 +4182,7 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
     // Currently works for bound lemmas only
     ASSERT( lemma->getCausingVars().size() == 1 );
     double explainedBound =
-        lemma->getCausingVarBound()
+        lemma->getCausingVarBound() == Tightening::UB
             ? UNSATCertificateUtils::computeCombinationUpperBound( linearCombination,
                                                                    groundUpperBounds.data(),
                                                                    groundLowerBounds.data(),
@@ -4193,14 +4192,17 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
                                                                    groundLowerBounds.data(),
                                                                    _tableau->getN() );
 
-    return lemma->getCausingVarBound() ? FloatUtils::lt( explainedBound, lemma->getBound() )
-                                       : FloatUtils::gt( explainedBound, lemma->getBound() );
+    return lemma->getCausingVarBound() == Tightening::UB
+             ? FloatUtils::lt( explainedBound, lemma->getBound() )
+             : FloatUtils::gt( explainedBound, lemma->getBound() );
 }
 
 bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
                                    const Set<int> &clause,
                                    const std::shared_ptr<PLCLemma> lemma ) const
 {
+    // TODO apply to additional PLC types
+    ASSERT( !lemma || lemma->getConstraintType() == RELU);
     Vector<double> explanationLinearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
         explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
@@ -4208,10 +4210,8 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
     Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
 
     if ( lemma )
-    {
-        ASSERT( lemma->getCausingVars().size() == 1 );
         explanationLinearCombination[lemma->getCausingVars().front()]++;
-    }
+
     Vector<int> clauseVec( clause.begin(), clause.end() );
 
     return checkLinearCombinationForClause(
