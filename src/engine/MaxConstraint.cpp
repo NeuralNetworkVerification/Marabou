@@ -535,8 +535,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 
     if ( phaseFixed() )
-       setPhaseStatus( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                      : variableToPhase( *_elements.begin() ) );
 
     if ( _elements.size() == 0 )
         _obsolete = true;
