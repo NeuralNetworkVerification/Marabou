@@ -4038,25 +4038,39 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
             // Active phase
             tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::LB );
 
-            if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
+            if ( !( tempEntry->isPhaseFixing && FloatUtils::isPositive( tempEntry->val ) ) )
+            {
                 tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::LB );
-            if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
-                tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
+                if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
+                {
+                    tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
+                    ASSERT(  FloatUtils::isZero( tempEntry->val ) );
+                }
+            }
         }
         else
         {
             // Inactive phase
             tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::UB );
 
-            if ( !( tempEntry->isPhaseFixing && FloatUtils::isNegative( tempEntry->val ) ) )
-                tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::UB );
             if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
-                tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
+            {
+                tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::UB );
+                if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
+                {
+                    tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::LB );
+                    ASSERT(  !FloatUtils::isPositive( tempEntry->val ) );
+                }
+            }
         }
     } // TODO apply to additional types of PLCs
 
     // Return a clause explaining the phase-fixing GroundBound entry
-    ASSERT( tempEntry && tempEntry->lemma );
+    ASSERT( tempEntry );
+    if (!tempEntry->lemma)
+        return Vector<int>(0);
+
+//    ASSERT( tempEntry->isPhaseFixing );
     SparseUnsortedList tempExpl = tempEntry->lemma->getExplanations().back();
     clause = clauseFromContradictionVector(
         tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
