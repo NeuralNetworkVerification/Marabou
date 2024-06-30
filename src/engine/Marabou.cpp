@@ -213,8 +213,7 @@ void Marabou::exportAssignment() const
 
 void Marabou::solveQuery()
 {
-    enum
-    {
+    enum {
         MICROSECONDS_IN_SECOND = 1000000
     };
 
