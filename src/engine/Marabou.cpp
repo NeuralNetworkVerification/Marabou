@@ -223,8 +223,8 @@ void Marabou::solveQuery()
     {
 //        _engine->solve( timeoutInSeconds );
         _engine->solveWithCadical();
-        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
-            _engine->certifyUNSATCertificate();
+//        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
+//            _engine->certifyUNSATCertificate();
     }
 
     if ( _engine->getExitCode() == Engine::UNKNOWN )

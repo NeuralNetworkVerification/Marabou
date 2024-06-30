@@ -315,6 +315,14 @@ public:
     void solveWithCadical()
     {
     }
+
+    void setStopConditionFlag( bool /*value*/ )
+    {
+    }
+
+    void preSolve()
+    {
+    }
 };
 
 #endif // __MockEngine_h__

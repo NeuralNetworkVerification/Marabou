@@ -3395,7 +3395,7 @@ void Engine::explainSimplexFailure()
         clauseFromContradictionVector( sparseContradiction, _groundBoundManager.getCounter(), -1 );
 
     // If possible, attempt to reduce the clause size
-    if ( checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    if ( !clause.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
         _smtCore.addExternalClause( reduceClauseSizeWithProof(
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL ) );
     else
@@ -4062,7 +4062,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
         tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
 
 //    ASSERT( clause.size() );
-    if ( clause.size() && checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
+    if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
             tempExpl, Vector<int>( clause.begin(), clause.end() ), tempEntry->lemma );
 

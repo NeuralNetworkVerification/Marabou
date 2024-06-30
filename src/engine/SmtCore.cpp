@@ -779,8 +779,6 @@ int SmtCore::cb_propagate()
 
     if ( !_literalsToPropagate.empty() )
     {
-        std::cout << "return from propagate 1, propagate " << _literalsToPropagate.first()
-                  << std::endl;
         return _literalsToPropagate.popFirst(); // TODO: consider pop, if we dont care if we
         // propagate literals from the last detected to
         // the first one
@@ -798,7 +796,8 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
             _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )], propagated_lit > 0 );
         _isReasonClauseInitialized = true;
     }
-    else if ( _reasonClauseLiterals.empty() )
+
+    if ( _reasonClauseLiterals.empty() )
     {
         _isReasonClauseInitialized = false;
         return 0;
