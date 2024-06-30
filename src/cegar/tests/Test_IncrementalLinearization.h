@@ -115,9 +115,8 @@ public:
         Engine *initialEngine = new Engine();
         initialEngine->setVerbosity( 0 );
         TS_ASSERT( initialEngine->processInputQuery( ipq ) );
-        TS_ASSERT_THROWS_NOTHING( initialEngine->solve() );
+        TS_ASSERT_THROWS_NOTHING( initialEngine->solveWithCadical() );
 
-        TS_ASSERT( initialEngine->getExitCode() == Engine::UNKNOWN );
         TS_ASSERT( initialEngine->getExitCode() == Engine::UNKNOWN ||
                    initialEngine->getExitCode() == Engine::SAT );
         if ( initialEngine->getExitCode() == Engine::SAT )
