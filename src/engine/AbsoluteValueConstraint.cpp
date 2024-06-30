@@ -406,7 +406,7 @@ AbsoluteValueConstraint::getSmartFixes( ITableau * /* tableau */ ) const
 
 List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 {
-    ASSERT( _phaseStatus == PhaseStatus::PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() == PhaseStatus::PHASE_NOT_FIXED );
 
     List<PiecewiseLinearCaseSplit> splits;
     splits.append( getNegativeSplit() );
@@ -476,14 +476,14 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const
 
 bool AbsoluteValueConstraint::phaseFixed() const
 {
-    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
+    return getPhaseStatus() != PhaseStatus::PHASE_NOT_FIXED;
 }
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == ABS_PHASE_POSITIVE )
+    if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
@@ -512,8 +512,8 @@ void AbsoluteValueConstraint::dump( String &output ) const
                  _f,
                  _b,
                  _constraintActive ? "Yes" : "No",
-                 _phaseStatus,
-                 phaseToString( _phaseStatus ).ascii() );
+                 getPhaseStatus(),
+                 phaseToString( getPhaseStatus() ).ascii() );
 
     output +=
         Stringf( "b in [%s, %s], ",
@@ -980,7 +980,7 @@ void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned
 }
 
 void AbsoluteValueConstraint::booleanAbstraction(
-    CadicalWrapper &/*cadical*/,
+    CadicalWrapper & /*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
@@ -991,9 +991,9 @@ void AbsoluteValueConstraint::booleanAbstraction(
 int AbsoluteValueConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
-    if ( _phaseStatus == ABS_PHASE_POSITIVE )
+    if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
         return _cadicalVars.back();
-    else if ( _phaseStatus == ABS_PHASE_NEGATIVE )
+    else if ( getPhaseStatus() == ABS_PHASE_NEGATIVE )
         return -_cadicalVars.back();
     else
         return 0;
@@ -1007,9 +1007,14 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::propagateLitAsSplit( int lit )
     setActiveConstraint( false );
     if ( lit > 0 )
     {
+        if ( phaseFixed() )
+            ASSERT( getPhaseStatus() == ABS_PHASE_POSITIVE );
         setPhaseStatus( ABS_PHASE_POSITIVE );
         return getPositiveSplit();
     }
+
+    if ( phaseFixed() )
+        ASSERT( getPhaseStatus() == ABS_PHASE_NEGATIVE );
     setPhaseStatus( ABS_PHASE_NEGATIVE );
     return getNegativeSplit();
 }

@@ -4035,6 +4035,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 
         if ( isLiteralPositive )
         {
+            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_ACTIVE || !litConstraint->isActive() );
             // Active phase
             tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::LB );
 
@@ -4044,12 +4045,14 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                 if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
                 {
                     tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
-                    ASSERT(  FloatUtils::isZero( tempEntry->val ) );
+                    ASSERT( !FloatUtils::isPositive( tempEntry->val ) );
                 }
             }
         }
         else
         {
+            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_INACTIVE || !litConstraint->isActive() );
+
             // Inactive phase
             tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::UB );
 

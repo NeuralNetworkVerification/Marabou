@@ -188,8 +188,8 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                        : variableToPhase( *_elements.begin() ) ) );
 
     if ( isActive() && _boundManager )
     {
@@ -249,8 +249,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                        : variableToPhase( *_elements.begin() ) ) );
 
     // There is no need to recompute the max lower bound and max index here.
 
@@ -483,8 +483,8 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _elementToAux[newIndex] = auxVar;
         _auxToElement[auxVar] = newIndex;
 
-        if ( _phaseStatus == variableToPhase( oldIndex ) )
-            _phaseStatus = variableToPhase( newIndex );
+        if ( getPhaseStatus() == variableToPhase( oldIndex ) )
+            setPhaseStatus( variableToPhase( newIndex ) );
     }
     else
     {
@@ -535,8 +535,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+       setPhaseStatus( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                       : variableToPhase( *_elements.begin() ) ) );
 
     if ( _elements.size() == 0 )
         _obsolete = true;
@@ -831,10 +831,14 @@ int MaxConstraint::propagatePhaseAsLit() const
 PiecewiseLinearCaseSplit MaxConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
-    ASSERT( !phaseFixed() );
 
     setActiveConstraint( false );
     PhaseStatus phaseToFix = variableToPhase( _cadicalVarsToElements.at( lit ) );
-    setPhaseStatus( phaseToFix );
+
+    if ( phaseFixed() )
+        ASSERT( getPhaseStatus() == phaseToFix )
+    else
+        setPhaseStatus( phaseToFix );
+
     return getCaseSplit( phaseToFix );
 }

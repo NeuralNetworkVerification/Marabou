@@ -123,7 +123,7 @@ bool SignConstraint::satisfied() const
 
 List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( getPhaseStatus() != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
@@ -168,7 +168,7 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
 
 List<PhaseStatus> SignConstraint::getAllCases() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( getPhaseStatus() != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     if ( _direction == SIGN_PHASE_NEGATIVE )
@@ -220,7 +220,7 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const
 
 bool SignConstraint::phaseFixed() const
 {
-    return _phaseStatus != PHASE_NOT_FIXED;
+    return getPhaseStatus() != PHASE_NOT_FIXED;
 }
 
 void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery )
@@ -276,9 +276,9 @@ void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQ
 
 PiecewiseLinearCaseSplit SignConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == PhaseStatus::SIGN_PHASE_POSITIVE )
+    if ( getPhaseStatus() == PhaseStatus::SIGN_PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
@@ -572,22 +572,22 @@ void SignConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned var
 
             if ( FloatUtils::areEqual( fixedValue, 1 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_NEGATIVE );
             }
             else if ( FloatUtils::areEqual( fixedValue, -1 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_POSITIVE );
             }
         }
         else if ( variable == _b )
         {
             if ( FloatUtils::gte( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_NEGATIVE );
             }
             else if ( FloatUtils::lt( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_POSITIVE );
             }
         }
     } );
@@ -612,8 +612,8 @@ void SignConstraint::dump( String &output ) const
                       _f,
                       _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus,
-                      phaseToString( _phaseStatus ).ascii() );
+                      getPhaseStatus(),
+                      phaseToString( getPhaseStatus() ).ascii() );
 
     output +=
         Stringf( "b in [%s, %s], ",
@@ -666,7 +666,7 @@ void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
 {
 }
 void SignConstraint::booleanAbstraction(
-    CadicalWrapper &/*cadical*/,
+    CadicalWrapper & /*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
@@ -677,9 +677,9 @@ void SignConstraint::booleanAbstraction(
 int SignConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
-    if ( _phaseStatus == SIGN_PHASE_POSITIVE )
+    if ( getPhaseStatus() == SIGN_PHASE_POSITIVE )
         return _cadicalVars.back();
-    else if ( _phaseStatus == SIGN_PHASE_NEGATIVE )
+    else if ( getPhaseStatus() == SIGN_PHASE_NEGATIVE )
         return -_cadicalVars.back();
     else
         return 0;
@@ -693,9 +693,14 @@ PiecewiseLinearCaseSplit SignConstraint::propagateLitAsSplit( int lit )
     setActiveConstraint( false );
     if ( lit > 0 )
     {
+        if ( phaseFixed() )
+            ASSERT( getPhaseStatus() == SIGN_PHASE_POSITIVE );
         setPhaseStatus( SIGN_PHASE_POSITIVE );
         return getPositiveSplit();
     }
+
+    if ( phaseFixed() )
+        ASSERT( getPhaseStatus() == SIGN_PHASE_NEGATIVE );
     setPhaseStatus( SIGN_PHASE_NEGATIVE );
     return getNegativeSplit();
 }

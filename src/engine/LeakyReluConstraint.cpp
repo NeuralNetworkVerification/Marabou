@@ -403,7 +403,7 @@ List<PiecewiseLinearConstraint::Fix> LeakyReluConstraint::getSmartFixes( ITablea
 
 List<PiecewiseLinearCaseSplit> LeakyReluConstraint::getCaseSplits() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( getPhaseStatus() != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
@@ -525,14 +525,14 @@ PiecewiseLinearCaseSplit LeakyReluConstraint::getActiveSplit() const
 
 bool LeakyReluConstraint::phaseFixed() const
 {
-    return _phaseStatus != PHASE_NOT_FIXED;
+    return getPhaseStatus() != PHASE_NOT_FIXED;
 }
 
 PiecewiseLinearCaseSplit LeakyReluConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == RELU_PHASE_ACTIVE )
+    if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
         return getActiveSplit();
 
     return getInactiveSplit();
@@ -551,8 +551,8 @@ void LeakyReluConstraint::dump( String &output ) const
                       _b,
                       _slope,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus,
-                      phaseToString( _phaseStatus ).ascii() );
+                      getPhaseStatus(),
+                      phaseToString( getPhaseStatus() ).ascii() );
 
     output +=
         Stringf( "b in [%s, %s], ",
@@ -625,18 +625,18 @@ void LeakyReluConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigne
         {
             if ( FloatUtils::gt( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_INACTIVE );
             }
             else if ( FloatUtils::lt( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_ACTIVE );
             }
         }
         else if ( variable == _activeAux )
         {
             if ( FloatUtils::isPositive( fixedValue ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_ACTIVE );
             }
         }
         else
@@ -644,7 +644,7 @@ void LeakyReluConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigne
             // This is the inactive aux variable
             if ( FloatUtils::isPositive( fixedValue ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_INACTIVE );
             }
         }
     } );
@@ -1020,25 +1020,30 @@ void LeakyReluConstraint::booleanAbstraction(
 int LeakyReluConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
-    if ( _phaseStatus == RELU_PHASE_ACTIVE )
+    if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
         return _cadicalVars.back();
-    else if ( _phaseStatus == RELU_PHASE_INACTIVE )
+    else if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
         return -_cadicalVars.back();
     else
         return 0;
 }
 
-PiecewiseLinearCaseSplit LeakyReluConstraint::propagateLitAsSplit( int lit )
+
+PiecewiseLinearCaseSplit ReluConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( !phaseFixed() );
 
     setActiveConstraint( false );
     if ( lit > 0 )
     {
+        if ( phaseFixed() )
+            ASSERT( getPhaseStatus() == RELU_PHASE_ACTIVE );
         setPhaseStatus( RELU_PHASE_ACTIVE );
         return getActiveSplit();
     }
+
+    if ( phaseFixed() )
+        ASSERT( getPhaseStatus() == RELU_PHASE_INACTIVE );
     setPhaseStatus( RELU_PHASE_INACTIVE );
     return getInactiveSplit();
 }
