@@ -213,7 +213,8 @@ void Marabou::exportAssignment() const
 
 void Marabou::solveQuery()
 {
-    enum {
+    enum
+    {
         MICROSECONDS_IN_SECOND = 1000000
     };
 
@@ -221,10 +222,10 @@ void Marabou::solveQuery()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     if ( _engine->processInputQuery( _inputQuery ) )
     {
-//        _engine->solve( timeoutInSeconds );
+        //        _engine->solve( timeoutInSeconds );
         _engine->solveWithCadical();
-//        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
-//            _engine->certifyUNSATCertificate();
+        //        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
+        //            _engine->certifyUNSATCertificate();
     }
 
     if ( _engine->getExitCode() == Engine::UNKNOWN )

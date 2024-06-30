@@ -1009,7 +1009,7 @@ void LeakyReluConstraint::createInactiveTighteningRow()
 }
 
 void LeakyReluConstraint::booleanAbstraction(
-    CadicalWrapper &/*cadical*/,
+    CadicalWrapper & /*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
@@ -1028,8 +1028,7 @@ int LeakyReluConstraint::propagatePhaseAsLit() const
         return 0;
 }
 
-
-PiecewiseLinearCaseSplit ReluConstraint::propagateLitAsSplit( int lit )
+PiecewiseLinearCaseSplit LeakyReluConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
 

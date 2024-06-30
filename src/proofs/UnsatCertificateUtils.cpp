@@ -44,7 +44,14 @@ double UNSATCertificateUtils::computeBound( unsigned var,
     UNSATCertificateUtils::getExplanationRowCombination(
         var, explanation, explanationRowCombination, initialTableau, numberOfVariables );
 
-    return isUpper ? computeCombinationUpperBound( explanationRowCombination, groundUpperBounds, groundLowerBounds, numberOfVariables ) : computeCombinationLowerBound( explanationRowCombination, groundUpperBounds, groundLowerBounds, numberOfVariables );
+    return isUpper ? computeCombinationUpperBound( explanationRowCombination,
+                                                   groundUpperBounds,
+                                                   groundLowerBounds,
+                                                   numberOfVariables )
+                   : computeCombinationLowerBound( explanationRowCombination,
+                                                   groundUpperBounds,
+                                                   groundLowerBounds,
+                                                   numberOfVariables );
 }
 
 void UNSATCertificateUtils::getExplanationRowCombination( const SparseUnsortedList &explanation,

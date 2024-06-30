@@ -4035,7 +4035,8 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 
         if ( isLiteralPositive )
         {
-            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_ACTIVE || !litConstraint->isActive() );
+            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_ACTIVE ||
+                    !litConstraint->isActive() );
             // Active phase
             tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::LB );
 
@@ -4051,7 +4052,8 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
         }
         else
         {
-            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_INACTIVE || !litConstraint->isActive() );
+            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_INACTIVE ||
+                    !litConstraint->isActive() );
 
             // Inactive phase
             tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::UB );
@@ -4062,7 +4064,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                 if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
                 {
                     tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::LB );
-                    ASSERT(  !FloatUtils::isPositive( tempEntry->val ) );
+                    ASSERT( !FloatUtils::isPositive( tempEntry->val ) );
                 }
             }
         }
@@ -4070,15 +4072,15 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( tempEntry );
-    if (!tempEntry->lemma)
-        return Vector<int>(0);
+    if ( !tempEntry->lemma )
+        return Vector<int>( 0 );
 
-//    ASSERT( tempEntry->isPhaseFixing );
+    //    ASSERT( tempEntry->isPhaseFixing );
     SparseUnsortedList tempExpl = tempEntry->lemma->getExplanations().back();
     clause = clauseFromContradictionVector(
         tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
 
-//    ASSERT( clause.size() );
+    //    ASSERT( clause.size() );
     if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
             tempExpl, Vector<int>( clause.begin(), clause.end() ), tempEntry->lemma );
