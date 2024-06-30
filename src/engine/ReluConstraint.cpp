@@ -212,9 +212,9 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                 if ( proofs )
                 {
                     // If already inactive, tightening is linear
-                    if ( _phaseStatus == RELU_PHASE_INACTIVE )
+                    if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
                         _boundManager->tightenUpperBound( _aux, -bound, *_tighteningRow );
-                    else if ( _phaseStatus == PHASE_NOT_FIXED )
+                    else if ( getPhaseStatus() == PHASE_NOT_FIXED )
                         _boundManager->addLemmaExplanationAndTightenBound(
                             _aux, -bound, Tightening::UB, { variable }, Tightening::LB, getType() );
                 }
@@ -267,7 +267,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
             {
                 if ( proofs )
                 {
-                    if ( _phaseStatus != RELU_PHASE_INACTIVE )
+                    if ( getPhaseStatus() != RELU_PHASE_INACTIVE )
                         _boundManager->tightenUpperBound( _b, bound, *_tighteningRow );
                     else
                     {
@@ -309,9 +309,9 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                     if ( proofs )
                     {
                         // If already inactive, tightening is linear
-                        if ( _phaseStatus == RELU_PHASE_ACTIVE )
+                        if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
                             _boundManager->tightenUpperBound( _f, bound, *_tighteningRow );
-                        else if ( _phaseStatus == PHASE_NOT_FIXED )
+                        else if ( getPhaseStatus() == PHASE_NOT_FIXED )
                             _boundManager->addLemmaExplanationAndTightenBound( _f,
                                                                                bound,
                                                                                Tightening::UB,
@@ -327,7 +327,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
             {
                 if ( proofs )
                 {
-                    if ( _phaseStatus != RELU_PHASE_ACTIVE )
+                    if ( getPhaseStatus() != RELU_PHASE_ACTIVE )
                         _boundManager->tightenLowerBound( _b, -bound, *_tighteningRow );
                     else
                     {
@@ -563,7 +563,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
 
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( getPhaseStatus() != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
@@ -673,14 +673,14 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
 
 bool ReluConstraint::phaseFixed() const
 {
-    return _phaseStatus != PHASE_NOT_FIXED;
+    return getPhaseStatus() != PHASE_NOT_FIXED;
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == RELU_PHASE_ACTIVE )
+    if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
         return getActiveSplit();
 
     return getInactiveSplit();
@@ -697,8 +697,8 @@ void ReluConstraint::dump( String &output ) const
                       _f,
                       _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus,
-                      phaseToString( _phaseStatus ).ascii() );
+                      getPhaseStatus(),
+                      phaseToString( getPhaseStatus() ).ascii() );
 
     output +=
         Stringf( "b in [%s, %s], ",
@@ -765,11 +765,11 @@ void ReluConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned var
         {
             if ( FloatUtils::gt( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_INACTIVE );
             }
             else if ( FloatUtils::lt( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_ACTIVE );
             }
         }
         else
@@ -777,7 +777,7 @@ void ReluConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned var
             // This is the aux variable
             if ( FloatUtils::isPositive( fixedValue ) )
             {
-                ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
+                ASSERT( getPhaseStatus() != RELU_PHASE_ACTIVE );
             }
         }
     } );
@@ -1112,9 +1112,9 @@ void ReluConstraint::booleanAbstraction(
 int ReluConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
-    if ( _phaseStatus == RELU_PHASE_ACTIVE )
+    if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
         return _cadicalVars.back();
-    else if ( _phaseStatus == RELU_PHASE_INACTIVE )
+    else if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
         return -_cadicalVars.back();
     else
         return 0;

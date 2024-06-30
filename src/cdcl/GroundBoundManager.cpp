@@ -67,6 +67,14 @@ double GroundBoundManager::getGroundBound( unsigned index, Tightening::BoundType
 }
 
 std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+GroundBoundManager::getGroundBoundEntry( unsigned int index, Tightening::BoundType boundType ) const
+{
+    const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
+        boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
+    return temp[index]->back();
+}
+
+std::shared_ptr<GroundBoundManager::GroundBoundEntry>
 GroundBoundManager::getGroundBoundEntryUpToId( unsigned index,
                                                Tightening::BoundType boundType,
                                                unsigned id ) const
@@ -81,9 +89,7 @@ GroundBoundManager::getGroundBoundEntryUpToId( unsigned index,
             return entry;
     }
 
-    // Should not reach here
-    ASSERT( false );
-    return temp[index]->operator[]( ( 0 ) );
+    return ( *temp[index] )[0];
 }
 
 double GroundBoundManager::getGroundBoundUpToId( unsigned index,

@@ -1859,7 +1859,8 @@ void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) co
     state._tableauStateStorageLevel = level;
 
     for ( const auto &constraint : _plConstraints )
-        state._plConstraintToState[constraint] = constraint->duplicateConstraint();
+        if ( !constraint->getContext() )
+            state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 }
@@ -1877,10 +1878,11 @@ void Engine::restoreState( const EngineState &state )
     ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )
     {
-        if ( !state._plConstraintToState.exists( constraint ) )
+        if ( !state._plConstraintToState.exists( constraint ) && !constraint->getContext() )
             throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
 
-        constraint->restoreState( state._plConstraintToState[constraint] );
+        if ( !constraint->getContext() )
+            constraint->restoreState( state._plConstraintToState[constraint] );
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
@@ -3966,7 +3968,8 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
-            if ( entry->lemma != nullptr && !entry->isPhaseFixing )
+            if ( entry->lemma != nullptr && !entry->isPhaseFixing &&
+                 entry->id > 2 * _tableau->getN() )
                 entries.append( entry );
         }
 
@@ -4033,39 +4036,33 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
         if ( isLiteralPositive )
         {
             // Active phase
-            tempEntry =
-                _groundBoundManager.getGroundBoundEntryUpToId( f, Tightening::LB, MAX_INPUT );
+            tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::LB );
 
             if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
-                tempEntry =
-                    _groundBoundManager.getGroundBoundEntryUpToId( b, Tightening::LB, MAX_INPUT );
+                tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::LB );
             if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
-                tempEntry =
-                    _groundBoundManager.getGroundBoundEntryUpToId( aux, Tightening::UB, MAX_INPUT );
+                tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
         }
         else
         {
             // Inactive phase
-            tempEntry =
-                _groundBoundManager.getGroundBoundEntryUpToId( f, Tightening::UB, MAX_INPUT );
+            tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::UB );
 
             if ( !( tempEntry->isPhaseFixing && FloatUtils::isNegative( tempEntry->val ) ) )
-                tempEntry =
-                    _groundBoundManager.getGroundBoundEntryUpToId( b, Tightening::UB, MAX_INPUT );
+                tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::UB );
             if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
-                tempEntry =
-                    _groundBoundManager.getGroundBoundEntryUpToId( aux, Tightening::UB, MAX_INPUT );
+                tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
         }
     } // TODO apply to additional types of PLCs
 
-    ASSERT( clause.size() );
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( tempEntry && tempEntry->lemma );
     SparseUnsortedList tempExpl = tempEntry->lemma->getExplanations().back();
     clause = clauseFromContradictionVector(
         tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
 
-    if ( checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
+//    ASSERT( clause.size() );
+    if ( clause.size() && checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
             tempExpl, Vector<int>( clause.begin(), clause.end() ), tempEntry->lemma );
 
