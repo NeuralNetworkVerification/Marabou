@@ -403,9 +403,9 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                     throw InfeasibleQueryException();
 
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, getType() );
+                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this );
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::LB, { variable }, Tightening::LB, getType() );
+                    _b, 0, Tightening::LB, { variable }, Tightening::LB, *this );
             }
             else
             {
@@ -421,7 +421,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
         {
             if ( _boundManager->shouldProduceProofs() )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, getType() );
+                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this );
             else
                 _boundManager->tightenLowerBound( _f, 1 );
         }
@@ -453,9 +453,9 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
                     throw InfeasibleQueryException();
 
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, getType() );
+                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this );
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::UB, { variable }, Tightening::UB, getType() );
+                    _b, 0, Tightening::UB, { variable }, Tightening::UB, *this );
             }
             else
             {
@@ -471,7 +471,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         {
             if ( _boundManager->shouldProduceProofs() )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, getType() );
+                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this );
             else
                 _boundManager->tightenUpperBound( _f, -1 );
         }

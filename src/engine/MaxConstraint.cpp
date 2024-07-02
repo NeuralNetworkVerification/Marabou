@@ -741,7 +741,7 @@ void MaxConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrain
     _elementToTighteningRow[element] = nullptr;
 }
 
-void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) const
+void MaxConstraint::applyTightenings( const List<Tightening> &tightenings )
 {
     bool proofs = _boundManager && _boundManager->shouldProduceProofs();
 
@@ -783,7 +783,7 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
                                                                        Tightening::UB,
                                                                        getElements(),
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this );
                 else
                 {
                     ASSERT( _elements.exists( tightening._variable ) );

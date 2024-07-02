@@ -291,7 +291,7 @@ private:
     Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 
     Vector<int> _literalsToPropagate;
-    CVC4::context::CDList<int> _notifiedLiterals;
+    CVC4::context::CDList<int> _assignedLiterals;
 
     Vector<int> _reasonClauseLiterals;
     bool _isReasonClauseInitialized;

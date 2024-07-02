@@ -308,13 +308,13 @@ public:
     /*
      Add ground bound entry using a lemma
     */
-    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing );
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing );
 
     /*
       Creates a boolean-abstracted clause explaining a boolean-abstracted literal
     */
-    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint,
-                              bool isLiteralPositive );
+    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint );
 
     void solveWithCadical();
 

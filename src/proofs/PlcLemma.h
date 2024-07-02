@@ -15,7 +15,6 @@
 #ifndef __PlcExplanation_h__
 #define __PlcExplanation_h__
 
-#include "PiecewiseLinearConstraint.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "SparseUnsortedList.h"
 #include "Tightening.h"

@@ -320,7 +320,7 @@ private:
     /*
       Apply tightenings in the list, discovered by getEntailedTightenings
     */
-    void applyTightenings( const List<Tightening> &tightenings ) const;
+    void applyTightenings( const List<Tightening> &tightenings );
 
     Map<unsigned, unsigned> _elementsToCadicalVars;
     Map<unsigned, unsigned> _cadicalVarsToElements;

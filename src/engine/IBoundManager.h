@@ -27,7 +27,6 @@
 #define __IBoundManager_h__
 
 #include "List.h"
-#include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
 #include "Vector.h"
 
@@ -38,6 +37,7 @@ class SparseUnsortedList;
 class TableauRow;
 class ITableau;
 class IRowBoundTightener;
+class PiecewiseLinearConstraint;
 class IBoundManager
 {
 public:
@@ -132,7 +132,7 @@ public:
                                                      Tightening::BoundType affectedVarBound,
                                                      const List<unsigned> &causingVars,
                                                      Tightening::BoundType causingVarBound,
-                                                     PiecewiseLinearFunctionType constraintType,
+                                                     PiecewiseLinearConstraint &constraint,
                                                      bool isPhaseFixing = false ) = 0;
 
     /*

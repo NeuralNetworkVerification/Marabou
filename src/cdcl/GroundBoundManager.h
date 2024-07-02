@@ -1,6 +1,8 @@
 #include "PlcLemma.h"
+#include "Set.h"
 #include "Tightening.h"
 #include "Vector.h"
+#include "context/cdlist.h"
 #include "context/cdo.h"
 #include "context/context.h"
 
@@ -36,11 +38,14 @@ public:
     ~GroundBoundManager();
 
     void initialize( unsigned size );
-    void addGroundBound( unsigned index,
-                         double value,
-                         Tightening::BoundType boundType,
-                         bool isPhaseFixing );
-    void addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool isPhaseFixing );
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    addGroundBound( unsigned index,
+                                            double value,
+                                            Tightening::BoundType boundType,
+                                            bool isPhaseFixing );
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
+                                            bool isPhaseFixing );
 
     double getGroundBound( unsigned index, Tightening::BoundType boundType ) const;
 

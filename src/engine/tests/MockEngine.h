@@ -294,7 +294,8 @@ public:
         return true;
     }
 
-    void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
                                   bool /*isPhaseFixing*/ )
     {
     }
@@ -306,8 +307,7 @@ public:
         return Set<int>();
     }
 
-    Vector<int> explainPhase( const PiecewiseLinearConstraint * /*litConstraint*/,
-                              bool /*isLiteralPositive*/ )
+    Vector<int> explainPhase( const PiecewiseLinearConstraint * )
     {
         return Vector<int>();
     }

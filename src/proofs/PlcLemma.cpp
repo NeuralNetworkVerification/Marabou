@@ -12,6 +12,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "Debug.h"
 #include "PlcLemma.h"
 
 

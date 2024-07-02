@@ -1521,9 +1521,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 for ( unsigned i = 0; i < n; ++i )
                 {
                     _groundBoundManager.addGroundBound(
-                        i, _boundManager.getUpperBound( i ), Tightening::UB, false );
+                        i, _preprocessedQuery->getUpperBound( i ), Tightening::UB, false );
                     _groundBoundManager.addGroundBound(
-                        i, _boundManager.getLowerBound( i ), Tightening::LB, false );
+                        i, _preprocessedQuery->getLowerBound( i ), Tightening::LB, false );
                 }
             }
         }
@@ -4011,13 +4011,13 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     return clause;
 }
 
-void Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing )
+std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing )
 {
-    _groundBoundManager.addGroundBound( lemma, isPhaseFixing );
+    return _groundBoundManager.addGroundBound( lemma, isPhaseFixing );
 }
 
-Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint,
-                                  bool isLiteralPositive )
+Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
 {
     ASSERT( litConstraint );
     Set<int> clause;
@@ -4027,64 +4027,19 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     // Get corresponding constraints, and its participating variables
     List<unsigned> vars = litConstraint->getParticipatingVariables();
     Vector<unsigned> conVars = Vector<unsigned>( vars.begin(), vars.end() );
-    std::shared_ptr<GroundBoundManager::GroundBoundEntry> tempEntry;
-
-    // Search for a phase fixing GroundBound entry, depending on the sign
-    // Currently works only for ReLU constraints
-    if ( litConstraint->getType() == RELU )
-    {
-        ASSERT( conVars.size() == 3 );
-        unsigned b = conVars[0];
-        unsigned f = conVars[1];
-        unsigned aux = conVars[2];
-
-        if ( isLiteralPositive )
-        {
-            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_ACTIVE ||
-                    !litConstraint->isActive() );
-            // Active phase
-            tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::LB );
-
-            if ( !( tempEntry->isPhaseFixing && FloatUtils::isPositive( tempEntry->val ) ) )
-            {
-                tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::LB );
-                if ( !( tempEntry->isPhaseFixing && !FloatUtils::isNegative( tempEntry->val ) ) )
-                {
-                    tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::UB );
-                    ASSERT( !FloatUtils::isPositive( tempEntry->val ) );
-                }
-            }
-        }
-        else
-        {
-            ASSERT( litConstraint->getPhaseStatus() == RELU_PHASE_INACTIVE ||
-                    !litConstraint->isActive() );
-
-            // Inactive phase
-            tempEntry = _groundBoundManager.getGroundBoundEntry( f, Tightening::UB );
-
-            if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
-            {
-                tempEntry = _groundBoundManager.getGroundBoundEntry( b, Tightening::UB );
-                if ( !( tempEntry->isPhaseFixing && !FloatUtils::isPositive( tempEntry->val ) ) )
-                {
-                    tempEntry = _groundBoundManager.getGroundBoundEntry( aux, Tightening::LB );
-                    ASSERT( !FloatUtils::isPositive( tempEntry->val ) );
-                }
-            }
-        }
-    } // TODO apply to additional types of PLCs
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
+        litConstraint->getPhaseFixingEntry();
 
     // Return a clause explaining the phase-fixing GroundBound entry
-    ASSERT( tempEntry && tempEntry->lemma && tempEntry->isPhaseFixing );
+    ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
-    SparseUnsortedList tempExpl = tempEntry->lemma->getExplanations().back();
+    SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
     clause = clauseFromContradictionVector(
-        tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
+        tempExpl, phaseFixingEntry->id, phaseFixingEntry->lemma->getCausingVars().back() );
 
-    if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
+    if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
-            tempExpl, Vector<int>( clause.begin(), clause.end() ), tempEntry->lemma );
+            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
     return Vector<int>( clause.begin(), clause.end() );
 }

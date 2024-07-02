@@ -1,3 +1,4 @@
+#include "FloatUtils.h"
 #include "GroundBoundManager.h"
 
 
@@ -33,7 +34,8 @@ void GroundBoundManager::initialize( unsigned size )
     }
 }
 
-void GroundBoundManager::addGroundBound( unsigned index,
+std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+GroundBoundManager::addGroundBound( unsigned index,
                                          double value,
                                          Tightening::BoundType boundType,
                                          bool isPhaseFixing )
@@ -49,9 +51,12 @@ void GroundBoundManager::addGroundBound( unsigned index,
 
     temp[index]->push_back( groundBoundEntry );
     _counter->set( _counter->get() + 1 );
+
+    return temp[index]->back();
 }
 
-void GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
+std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
                                          bool isPhaseFixing )
 {
     Tightening::BoundType isUpper = lemma->getAffectedVarBound();
@@ -68,6 +73,8 @@ void GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
 
     temp[index]->push_back( groundBoundEntry );
     _counter->set( _counter->get() + 1 );
+
+    return temp[index]->back();
 }
 
 double GroundBoundManager::getGroundBound( unsigned index, Tightening::BoundType boundType ) const

@@ -152,7 +152,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -232,7 +232,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -826,7 +826,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b }, Tightening::LB, getType() );
+                _posAux, 0, Tightening::UB, { _b }, Tightening::LB, *this );
         return;
     }
 
@@ -836,7 +836,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b }, Tightening::UB, getType() );
+                _negAux, 0, Tightening::UB, { _b }, Tightening::UB, *this );
         return;
     }
 
@@ -850,7 +850,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, getType() );
+                _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this );
         return;
     }
 
@@ -861,7 +861,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, getType() );
+                _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this );
         return;
     }
 
@@ -880,7 +880,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
             setPhaseStatus( ABS_PHASE_NEGATIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, getType() );
+                    _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this );
             return;
         }
 
@@ -897,7 +897,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
             setPhaseStatus( ABS_PHASE_POSITIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, getType() );
+                    _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this );
             return;
         }
     }

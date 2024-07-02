@@ -49,6 +49,7 @@
 
 #include "CadicalWrapper.h"
 #include "FloatUtils.h"
+#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IBoundManager.h"
 #include "ITableau.h"
@@ -249,7 +250,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ){};
+    virtual void transformToUseAuxVariables( InputQuery & ) {};
 
     void setStatistics( Statistics *statistics );
 
@@ -514,6 +515,17 @@ public:
         return _cadicalVars;
     }
 
+    inline std::shared_ptr<GroundBoundManager::GroundBoundEntry> getPhaseFixingEntry() const
+    {
+        return _cdPhaseFixingEntry->get();
+    }
+
+    inline void setPhaseFixingEntry(
+        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &groundBoundEntry )
+    {
+        _cdPhaseFixingEntry->set( groundBoundEntry );
+    }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -563,6 +575,7 @@ protected:
     void initializeCDActiveStatus();
     void initializeCDPhaseStatus();
     void initializeCDInfeasibleCases();
+    void initializeCDPhaseFixingEntry();
 
     /*
        Method provided to allow safe copying of the context-dependent members,
@@ -661,6 +674,8 @@ protected:
 
     List<unsigned> _tableauAuxVars;
     List<unsigned> _cadicalVars;
+
+    CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

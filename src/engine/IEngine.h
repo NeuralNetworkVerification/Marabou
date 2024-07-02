@@ -18,6 +18,7 @@
 
 #include "BoundExplainer.h"
 #include "DivideStrategy.h"
+#include "GroundBoundManager.h"
 #include "List.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
@@ -194,15 +195,15 @@ public:
     /*
      Add ground bound entry using a lemma
     */
-    virtual void setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma,
+    virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma,
                                           bool isPhaseFixing ) = 0;
 
     virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                     unsigned id,
                                                     int explainedVar ) = 0;
 
-    virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint,
-                                      bool isLiteralPositive ) = 0;
+    virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
 
     virtual void solveWithCadical() = 0;
 

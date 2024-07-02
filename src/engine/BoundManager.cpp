@@ -417,7 +417,7 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        Tightening::BoundType affectedVarBound,
                                                        const List<unsigned> &causingVars,
                                                        Tightening::BoundType causingVarBound,
-                                                       PiecewiseLinearFunctionType constraintType,
+                                                       PiecewiseLinearConstraint &constraint,
                                                        bool isPhaseFixing )
 {
     if ( !shouldProduceProofs() )
@@ -433,12 +433,13 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
 
     if ( tightened )
     {
-        if ( constraintType == RELU || constraintType == SIGN || constraintType == LEAKY_RELU )
+        if ( constraint.getType() == RELU || constraint.getType() == SIGN ||
+             constraint.getType() == LEAKY_RELU )
         {
             ASSERT( causingVars.size() == 1 );
             allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
         }
-        else if ( constraintType == ABSOLUTE_VALUE )
+        else if ( constraint.getType() == ABSOLUTE_VALUE )
         {
             if ( causingVars.size() == 1 )
                 allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
@@ -457,7 +458,7 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                 allExplanations.append( getExplanation( causingVars.back(), Tightening::LB ) );
             }
         }
-        else if ( constraintType == MAX )
+        else if ( constraint.getType() == MAX )
             for ( const auto &element : causingVars )
                 allExplanations.append( getExplanation( element, Tightening::UB ) );
         else
@@ -469,14 +470,19 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         causingVarBound,
                                                                         affectedVarBound,
                                                                         allExplanations,
-                                                                        constraintType );
+                                                                        constraint.getType() );
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
 
         // Add ground bound entry to the GroundBoundManager
-        _engine->setGroundBoundFromLemma( PLCExpl, isPhaseFixing );
+        std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
+            _engine->setGroundBoundFromLemma( PLCExpl, isPhaseFixing );
         resetExplanation( var, affectedVarBound );
         if ( isPhaseFixing )
+        {
+            ASSERT( constraint.getPhaseFixingEntry() == nullptr );
+            constraint.setPhaseFixingEntry( phaseFixingEntry );
             _engine->setStopConditionFlag( true );
+        }
     }
     return true;
 }

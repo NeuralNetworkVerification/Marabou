@@ -32,6 +32,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _gurobi( NULL )
     , _tableauAuxVars()
     , _cadicalVars()
+    , _cdPhaseFixingEntry( nullptr )
 {
 }
 
@@ -50,6 +51,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _gurobi( NULL )
     , _tableauAuxVars()
     , _cadicalVars()
+    , _cdPhaseFixingEntry( nullptr )
 {
 }
 
@@ -83,6 +85,7 @@ void PiecewiseLinearConstraint::initializeCDOs( CVC4::context::Context *context 
     initializeCDActiveStatus();
     initializeCDPhaseStatus();
     initializeCDInfeasibleCases();
+    initializeCDPhaseFixingEntry();
 }
 
 void PiecewiseLinearConstraint::initializeCDInfeasibleCases()
@@ -104,6 +107,14 @@ void PiecewiseLinearConstraint::initializeCDPhaseStatus()
     ASSERT( _context != nullptr );
     ASSERT( _cdPhaseStatus == nullptr );
     _cdPhaseStatus = new ( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
+}
+
+void PiecewiseLinearConstraint::initializeCDPhaseFixingEntry()
+{
+    ASSERT( _context != nullptr );
+    ASSERT( _cdPhaseFixingEntry == nullptr );
+    _cdPhaseFixingEntry = new ( true )
+        CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>( _context );
 }
 
 void PiecewiseLinearConstraint::cdoCleanup()

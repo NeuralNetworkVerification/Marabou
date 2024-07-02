@@ -40,9 +40,7 @@ Map<int, int> CadicalWrapper::getModel()
     Map<int, int> model;
     int numVars = d_solver->vars();
     for ( int var = 1; var <= numVars; ++var )
-    {
         model[var] = d_solver->val( var );
-    }
 
     return model;
 }

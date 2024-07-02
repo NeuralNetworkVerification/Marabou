@@ -31,7 +31,7 @@ AcasNeuralNetwork::~AcasNeuralNetwork()
 {
     if ( _network )
     {
-        destroy_network( _network );
+//        destroy_network( _network );
         _network = NULL;
     }
 }
