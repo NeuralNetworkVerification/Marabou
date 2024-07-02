@@ -134,6 +134,11 @@ void PiecewiseLinearConstraint::cdoCleanup()
 
     _cdInfeasibleCases = nullptr;
 
+    if ( _cdPhaseFixingEntry != nullptr )
+        _cdPhaseFixingEntry->deleteSelf();
+
+    _cdPhaseFixingEntry = nullptr;
+
     _context = nullptr;
 }
 

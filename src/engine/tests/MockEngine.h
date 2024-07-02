@@ -298,6 +298,7 @@ public:
     setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
                                   bool /*isPhaseFixing*/ )
     {
+        return nullptr;
     }
 
     Set<int> clauseFromContradictionVector( const SparseUnsortedList & /*explanation*/,
