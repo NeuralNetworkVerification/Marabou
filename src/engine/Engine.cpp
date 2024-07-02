@@ -1507,8 +1507,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             unsigned n = _preprocessedQuery->getNumberOfVariables();
             _boundManager.initialize( n );
 
-            initializeTableau( constraintMatrix, initialBasis );
             _boundManager.initializeBoundExplainer( n, _tableau->getM() );
+            initializeTableau( constraintMatrix, initialBasis );
             delete[] constraintMatrix;
 
             if ( _produceUNSATProofs )
@@ -1521,9 +1521,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 for ( unsigned i = 0; i < n; ++i )
                 {
                     _groundBoundManager.addGroundBound(
-                        i, _preprocessedQuery->getUpperBound( i ), Tightening::UB, false );
+                        i, _boundManager.getUpperBound( i ), Tightening::UB, false );
                     _groundBoundManager.addGroundBound(
-                        i, _preprocessedQuery->getLowerBound( i ), Tightening::LB, false );
+                        i, _boundManager.getLowerBound( i ), Tightening::LB, false );
                 }
             }
         }
@@ -3397,7 +3397,7 @@ void Engine::explainSimplexFailure()
     ASSERT( !clause.empty() );
 
     // If possible, attempt to reduce the clause size
-    if ( checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    if ( !sparseContradiction.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
         _smtCore.addExternalClause( reduceClauseSizeWithProof(
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL ) );
     else
@@ -3889,6 +3889,17 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                                                 int explainedVar )
 {
     ASSERT( _nlConstraints.empty() );
+    Set<int> clause = Set<int>();
+
+    // If explanation is empty, use the trivial clause
+    if ( explanation.empty() )
+    {
+        for ( const auto &constraint : _plConstraints )
+            if ( constraint->isActive() )
+                clause.insert( constraint->propagatePhaseAsLit() );
+        return clause;
+    }
+
     Vector<double> linearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
         explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
@@ -3896,7 +3907,6 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     if ( explainedVar >= 0 )
         linearCombination[explainedVar]++;
 
-    Set<int> clause = Set<int>();
     List<unsigned> vars;
     Vector<unsigned> conVars( 0 );
     unsigned lit = 0;
@@ -4020,6 +4030,8 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 {
     ASSERT( litConstraint );
     Set<int> clause;
+
+    _boundManager.propagateTightenings();
 
     // Get corresponding constraints, and its participating variables
     List<unsigned> vars = litConstraint->getParticipatingVariables();
