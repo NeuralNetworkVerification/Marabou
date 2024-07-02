@@ -3394,8 +3394,10 @@ void Engine::explainSimplexFailure()
     Set<int> clause =
         clauseFromContradictionVector( sparseContradiction, _groundBoundManager.getCounter(), -1 );
 
+    ASSERT( !clause.empty() );
+
     // If possible, attempt to reduce the clause size
-    if ( !clause.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    if ( checkClauseWithProof( sparseContradiction, clause, NULL ) )
         _smtCore.addExternalClause( reduceClauseSizeWithProof(
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL ) );
     else
@@ -4071,16 +4073,12 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     } // TODO apply to additional types of PLCs
 
     // Return a clause explaining the phase-fixing GroundBound entry
-    ASSERT( tempEntry );
-    if ( !tempEntry->lemma )
-        return Vector<int>( 0 );
+    ASSERT( tempEntry && tempEntry->lemma && tempEntry->isPhaseFixing );
 
-    //    ASSERT( tempEntry->isPhaseFixing );
     SparseUnsortedList tempExpl = tempEntry->lemma->getExplanations().back();
     clause = clauseFromContradictionVector(
         tempExpl, tempEntry->id, tempEntry->lemma->getCausingVars().back() );
 
-    //    ASSERT( clause.size() );
     if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, tempEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
             tempExpl, Vector<int>( clause.begin(), clause.end() ), tempEntry->lemma );
@@ -4097,6 +4095,8 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
                                             const Vector<int> &clause,
                                             const std::shared_ptr<PLCLemma> lemma ) const
 {
+    ASSERT( !clause.empty() && !explanation.empty() );
+
     Vector<int> toReturn = clause;
     // TODO apply to additional types of PLCs
     if ( !lemma || lemma->getConstraintType() == RELU )
@@ -4179,7 +4179,6 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
                                               const std::shared_ptr<PLCLemma> lemma ) const
 {
     const PiecewiseLinearConstraint *constraint;
-
     for ( int lit : clause )
     {
         constraint = _smtCore.getConstraintFromLit( lit );
@@ -4229,6 +4228,7 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
 {
     // TODO apply to additional PLC types
     ASSERT( !lemma || lemma->getConstraintType() == RELU );
+    ASSERT( !explanation.empty() && !clause.empty() );
     Vector<double> explanationLinearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
         explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );

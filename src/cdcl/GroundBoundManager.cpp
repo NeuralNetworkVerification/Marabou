@@ -42,6 +42,11 @@ void GroundBoundManager::addGroundBound( unsigned index,
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     std::shared_ptr<GroundBoundEntry> groundBoundEntry(
         new GroundBoundEntry( _counter->get(), value, nullptr, Set<int>(), isPhaseFixing ) );
+
+    if ( !temp[index]->empty() )
+        ASSERT( boundType == Tightening::UB ? FloatUtils::lte( value, temp[index]->back()->val )
+                                            : FloatUtils::gte( value, temp[index]->back()->val ) )
+
     temp[index]->push_back( groundBoundEntry );
     _counter->set( _counter->get() + 1 );
 }
@@ -55,6 +60,12 @@ void GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
         isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     std::shared_ptr<GroundBoundEntry> groundBoundEntry( new GroundBoundEntry(
         _counter->get(), lemma->getBound(), lemma, Set<int>(), isPhaseFixing ) );
+
+    if ( !temp[index]->empty() )
+        ASSERT( isUpper == Tightening::UB
+                    ? FloatUtils::lte( lemma->getBound(), temp[index]->back()->val )
+                    : FloatUtils::gte( lemma->getBound(), temp[index]->back()->val ) )
+
     temp[index]->push_back( groundBoundEntry );
     _counter->set( _counter->get() + 1 );
 }

@@ -736,13 +736,11 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
     for ( const auto &lit : model )
     {
-        //        std::cout << lit << " ";
         if ( !isLiteralNotified( lit ) )
             notify_assignment( lit, false );
     }
     _engine->setStopConditionFlag( false );
     bool result = _engine->solve( 0 );
-    //    std::cout << result << std::endl;
     return result;
 }
 
@@ -778,11 +776,8 @@ int SmtCore::cb_propagate()
     }
 
     if ( !_literalsToPropagate.empty() )
-    {
-        return _literalsToPropagate.popFirst(); // TODO: consider pop, if we dont care if we
-        // propagate literals from the last detected to
-        // the first one
-    }
+        return _literalsToPropagate.pop();
+
     return 0;
 }
 
@@ -792,8 +787,14 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
     if ( !_isReasonClauseInitialized )
     {
-        _reasonClauseLiterals =
+        Vector<int> toAdd =
             _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )], propagated_lit > 0 );
+
+        for ( int lit : toAdd )
+            _reasonClauseLiterals.append( -lit );
+
+        ASSERT( !_reasonClauseLiterals.exists( -propagated_lit ) );
+        _reasonClauseLiterals.append( propagated_lit );
         _isReasonClauseInitialized = true;
     }
 
@@ -845,7 +846,6 @@ void SmtCore::solveWithCadical()
         if ( var != 0 )
             _cadicalWrapper.addObservedVar( var );
 
-    std::cout << "number of vars: " << _cadicalWrapper.vars() << std::endl;
     _engine->preSolve();
     int result = _cadicalWrapper.solve();
     _cadicalWrapper.disconnectTheorySolver();
