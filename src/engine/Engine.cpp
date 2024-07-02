@@ -1507,8 +1507,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             unsigned n = _preprocessedQuery->getNumberOfVariables();
             _boundManager.initialize( n );
 
-            _boundManager.initializeBoundExplainer( n, _tableau->getM() );
             initializeTableau( constraintMatrix, initialBasis );
+            _boundManager.initializeBoundExplainer( n, _tableau->getM() );
             delete[] constraintMatrix;
 
             if ( _produceUNSATProofs )
@@ -3397,7 +3397,7 @@ void Engine::explainSimplexFailure()
     ASSERT( !clause.empty() );
 
     // If possible, attempt to reduce the clause size
-    if ( !sparseContradiction.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    if ( checkClauseWithProof( sparseContradiction, clause, NULL ) )
         _smtCore.addExternalClause( reduceClauseSizeWithProof(
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL ) );
     else
@@ -3888,17 +3888,8 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                                                 unsigned id,
                                                 int explainedVar )
 {
-    ASSERT( _nlConstraints.empty() );
+    ASSERT( _nlConstraints.empty() && !explanation.empty() );
     Set<int> clause = Set<int>();
-
-    // If explanation is empty, use the trivial clause
-    if ( explanation.empty() )
-    {
-        for ( const auto &constraint : _plConstraints )
-            if ( constraint->isActive() )
-                clause.insert( constraint->propagatePhaseAsLit() );
-        return clause;
-    }
 
     Vector<double> linearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
