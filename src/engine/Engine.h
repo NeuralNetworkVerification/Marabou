@@ -83,13 +83,13 @@ public:
     /*
       Required initialization before starting the solving loop.
      */
-    void preSolve();
+    void preSolve() override;
 
     /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( double timeoutInSeconds = 0 );
+    bool solve( double timeoutInSeconds = 0 ) override;
 
     /*
       Minimize the cost function with respect to the current set of linear constraints.
@@ -131,9 +131,9 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    void storeState( EngineState &state, TableauStateStorageLevel level ) const;
-    void restoreState( const EngineState &state );
-    void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
+    void storeState( EngineState &state, TableauStateStorageLevel level ) const override;
+    void restoreState( const EngineState &state ) override;
+    void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) override;
 
     /*
       Preprocessor access.
@@ -144,7 +144,7 @@ public:
     /*
       A request from the user to terminate
     */
-    void quitSignal();
+    void quitSignal() override;
 
     const Statistics *getStatistics() const;
 
@@ -155,12 +155,12 @@ public:
     /*
       Get the exit code
     */
-    Engine::ExitCode getExitCode() const;
+    Engine::ExitCode getExitCode() const override;
 
     /*
       Set the exit code
      */
-    void setExitCode( IEngine::ExitCode exitCode );
+    void setExitCode( IEngine::ExitCode exitCode ) override;
 
     /*
       Get the quitRequested flag
@@ -170,24 +170,24 @@ public:
     /*
       Get the list of input variables
     */
-    List<unsigned> getInputVariables() const;
+    List<unsigned> getInputVariables() const override;
 
     /*
       Add equations and tightenings from a split.
     */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
+    void applySplit( const PiecewiseLinearCaseSplit &split ) override;
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
-    void postContextPopHook();
-    void preContextPushHook();
+    void postContextPopHook() override;
+    void preContextPushHook() override;
 
     /*
       Reset the state of the engine, before solving a new query
       (as part of DnC mode).
     */
-    void reset();
+    void reset() override;
 
     /*
       Reset the statistics object
@@ -208,23 +208,23 @@ public:
       Apply the stack to the newly created SmtCore, returns false if UNSAT is
       found in this process.
     */
-    bool restoreSmtState( SmtState &smtState );
+    bool restoreSmtState( SmtState &smtState ) override;
 
     /*
       Store the current stack of the smtCore into smtState
     */
-    void storeSmtState( SmtState &smtState );
+    void storeSmtState( SmtState &smtState ) override;
 
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy ) override;
 
     /*
       Call-back from QueryDividers
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy ) override;
 
     /*
       PSA: The following two methods are for DnC only and should be used very
@@ -237,9 +237,9 @@ public:
     /*
        Register initial split when in SnC mode
      */
-    void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
+    void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId ) override;
 
-    bool inSnCMode() const;
+    bool inSnCMode() const override;
 
     /*
        Apply bound tightenings stored in the bound manager.
@@ -250,73 +250,73 @@ public:
       Apply all bound tightenings (row and matrix-based) in
       the queue.
     */
-    void applyAllBoundTightenings();
+    void applyAllBoundTightenings() override;
 
     /*
       Apply all valid case splits proposed by the constraints.
       Return true if a valid case split has been applied.
     */
-    bool applyAllValidConstraintCaseSplits();
+    bool applyAllValidConstraintCaseSplits() override;
 
     void setRandomSeed( unsigned seed );
 
     /*
       Returns true iff the engine is in proof production mode
     */
-    bool shouldProduceProofs() const;
+    bool shouldProduceProofs() const override;
 
     /*
       Return all ground bounds as a vector
     */
-    double getGroundBound( unsigned var, bool isUpper ) const;
+    double getGroundBound( unsigned var, bool isUpper ) const override;
 
     /*
       Get the current pointer of the UNSAT certificate
     */
-    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const;
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const override;
 
     /*
      Set the current pointer of the UNSAT certificate
     */
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode *node );
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode *node ) override;
 
     /*
       Get the pointer to the root of the UNSAT certificate
     */
-    const UnsatCertificateNode *getUNSATCertificateRoot() const;
+    const UnsatCertificateNode *getUNSATCertificateRoot() const override;
 
     /*
       Certify the UNSAT certificate
     */
-    bool certifyUNSATCertificate();
+    bool certifyUNSATCertificate() override;
 
     /*
       Get the boundExplainer
     */
-    const BoundExplainer *getBoundExplainer() const;
+    const BoundExplainer *getBoundExplainer() const override;
 
     /*
       Set the boundExplainer
     */
-    void setBoundExplainerContent( BoundExplainer *boundExplainer );
+    void setBoundExplainerContent( BoundExplainer *boundExplainer ) override;
 
     /*
       Propagate bound tightenings stored in the BoundManager
     */
-    void propagateBoundManagerTightenings();
+    void propagateBoundManagerTightenings() override;
 
     /*
      Add ground bound entry using a lemma
     */
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing );
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) override;
 
     /*
       Creates a boolean-abstracted clause explaining a boolean-abstracted literal
     */
-    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint );
+    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) override;
 
-    void solveWithCadical();
+    void solveWithCadical() override;
 
 private:
     enum BasisRestorationRequired {
@@ -826,7 +826,7 @@ private:
     /*
       Get Context reference
     */
-    Context &getContext()
+    Context &getContext() override
     {
         return _context;
     }
@@ -834,7 +834,7 @@ private:
     /*
        Checks whether the current bounds are consistent. Exposed for the SmtCore.
      */
-    bool consistentBounds() const;
+    bool consistentBounds() const override;
 
     /*
       DEBUG only
@@ -859,7 +859,7 @@ private:
     /*
       Returns the value of a variable bound, as explained by the BoundExplainer
     */
-    double explainBound( unsigned var, bool isUpper ) const;
+    double explainBound( unsigned var, bool isUpper ) const override;
 
     /*
      Returns true iff both bounds are epsilon close to their explained bounds
@@ -874,7 +874,7 @@ private:
     /*
       Finds the variable causing failure and updates its bounds explanations
     */
-    void explainSimplexFailure();
+    void explainSimplexFailure() override;
 
     /*
       Sanity check for ground bounds, returns true iff all bounds are at least as tight as their
@@ -921,7 +921,7 @@ private:
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned id,
-                                            int explainedVar );
+                                            int explainedVar ) override;
 
     /*
       Attempts to reduce a conflict clause, while explanation can still be used to prove UNSAT

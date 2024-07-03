@@ -1,5 +1,6 @@
-#include "FloatUtils.h"
 #include "GroundBoundManager.h"
+
+#include "FloatUtils.h"
 
 
 GroundBoundManager::GroundBoundManager( CVC4::context::Context &ctx )
@@ -36,9 +37,9 @@ void GroundBoundManager::initialize( unsigned size )
 
 std::shared_ptr<GroundBoundManager::GroundBoundEntry>
 GroundBoundManager::addGroundBound( unsigned index,
-                                         double value,
-                                         Tightening::BoundType boundType,
-                                         bool isPhaseFixing )
+                                    double value,
+                                    Tightening::BoundType boundType,
+                                    bool isPhaseFixing )
 {
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
@@ -56,8 +57,7 @@ GroundBoundManager::addGroundBound( unsigned index,
 }
 
 std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
-                                         bool isPhaseFixing )
+GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool isPhaseFixing )
 {
     Tightening::BoundType isUpper = lemma->getAffectedVarBound();
     unsigned index = lemma->getAffectedVar();

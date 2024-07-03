@@ -196,8 +196,7 @@ public:
      Add ground bound entry using a lemma
     */
     virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma,
-                                          bool isPhaseFixing ) = 0;
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) = 0;
 
     virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                     unsigned id,

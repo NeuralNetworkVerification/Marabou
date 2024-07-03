@@ -295,8 +295,7 @@ public:
     }
 
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
-                                  bool /*isPhaseFixing*/ )
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/, bool /*isPhaseFixing*/ )
     {
         return nullptr;
     }

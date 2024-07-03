@@ -12,8 +12,9 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "Debug.h"
 #include "PlcLemma.h"
+
+#include "Debug.h"
 
 
 PLCLemma::PLCLemma( const List<unsigned> &causingVars,

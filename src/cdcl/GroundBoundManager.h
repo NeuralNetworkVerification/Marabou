@@ -40,12 +40,11 @@ public:
     void initialize( unsigned size );
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>
     addGroundBound( unsigned index,
-                                            double value,
-                                            Tightening::BoundType boundType,
-                                            bool isPhaseFixing );
+                    double value,
+                    Tightening::BoundType boundType,
+                    bool isPhaseFixing );
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    addGroundBound( const std::shared_ptr<PLCLemma> &lemma,
-                                            bool isPhaseFixing );
+    addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool isPhaseFixing );
 
     double getGroundBound( unsigned index, Tightening::BoundType boundType ) const;
 
