@@ -9,7 +9,7 @@ cd $mydir
 # multiple lines
 echo "Downloading boost"
 underscore_version=${version//./_}
-wget -q https://sourceforge.net/projects/boost/files/boost/$version/boost_$underscore_version.tar.gz/download -O boost-$version.tar.gz
+wget https://sourceforge.net/projects/boost/files/boost/$version/boost_$underscore_version.tar.gz/download -O boost-$version.tar.gz -q --show-progress --progress=bar:force:noscroll
 
 echo "Unzipping boost"
 tar xzvf boost-$version.tar.gz >> /dev/null

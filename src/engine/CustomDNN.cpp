@@ -1,127 +1,116 @@
 #include "CustomDNN.h"
-
+#include "Vector.h"
 #include "NetworkLevelReasoner.h"
 
-CustomDNNImpl::CustomDNNImpl( const std::vector<int> &layerSizes,
-                              const std::vector<std::string> &activationFunctions,
-                              const std::vector<std::vector<std::vector<float>>> &weights,
-                              const std::vector<std::vector<float>> &biases )
-{
-    for ( size_t i = 0; i < layerSizes.size() - 1; ++i )
-    {
-        auto layer = register_module( "fc" + std::to_string( i ),
-                                      torch::nn::Linear( layerSizes[i], layerSizes[i + 1] ) );
-        linearLayers.push_back( layer );
-        activations.push_back( activationFunctions[i] );
+CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* networkLevelReasoner) {
+    unsigned totalVariables = 0;
+    unsigned linearLayersNum = 0;
 
-        std::vector<float> flattened_weights;
-        for ( const auto &weight : weights[i] )
-        {
-            flattened_weights.insert( flattened_weights.end(), weight.begin(), weight.end() );
-        }
+    std::cout << "----- Construct Custom Network -----" << std::endl;
 
+    // Iterate over layers
+    for (unsigned i = 0; i < networkLevelReasoner->getNumberOfLayers(); i++) {
+        const NLR::Layer* layer = networkLevelReasoner->getLayer(i);
+        layerSizes.append(layer->getSize());
+        totalVariables += layer->getSize();
+        NLR::Layer::Type layerType = layer->getLayerType();
 
-        torch::Tensor weightTensor = torch::tensor( flattened_weights, torch::kFloat );
-        weightTensor = weightTensor.view( { layerSizes[i + 1], layerSizes[i] } );
+        if (layerType == NLR::Layer::WEIGHTED_SUM) {
+            // Fully connected layer
+            linearLayersNum ++;
+            unsigned sourceLayer = i - 1;
+            const NLR::Layer *prevLayer = networkLevelReasoner->getLayer(sourceLayer);
+            unsigned inputSize = prevLayer->getSize();
+            unsigned outputSize = layer->getSize();
 
-        torch::Tensor biasTensor = torch::tensor( biases[i], torch::kFloat );
+            if (outputSize > 0) {
+                auto linearLayer = torch::nn::Linear(torch::nn::LinearOptions(inputSize, outputSize));
+                linearLayers.append(linearLayer);
+                register_module("linear" + std::to_string(i), linearLayer);
 
-        layer->weight.data().copy_( weightTensor );
-        layer->bias.data().copy_( biasTensor );
-    }
-}
+                Vector<Vector<float>> layerWeights(outputSize, Vector<float>(inputSize));
+                Vector<float> layerBiases(layer->getSize());
 
-
-CustomDNNImpl::CustomDNNImpl( NLR::NetworkLevelReasoner &nlr )
-{
-    std::vector<int> layerSizes;
-    std::vector<std::string> activationFunctions;
-    std::vector<std::vector<std::vector<float>>> weights;
-    std::vector<std::vector<float>> biases;
-
-    int numLayers = nlr.getNumberOfLayers();
-    for ( int i = 0; i < numLayers; ++i )
-    {
-        const NLR::Layer *layer = nlr.getLayer( i );
-        layerSizes.push_back( layer->getSize() );
-
-        switch ( layer->getLayerType() )
-        {
-        case NLR::Layer::RELU:
-            activationFunctions.push_back( "relu" );
-            break;
-        case NLR::Layer::SIGMOID:
-            activationFunctions.push_back( "sigmoid" );
-            break;
-        default:
-            activationFunctions.push_back( "none" );
-            break;
-        }
-
-        if ( i < numLayers - 1 )
-        {
-            const NLR::Layer *nextLayer = nlr.getLayer( i + 1 );
-            std::vector<std::vector<float>> layerWeights( nextLayer->getSize(),
-                                                          std::vector<float>( layer->getSize() ) );
-            std::vector<float> layerBiases( layer->getSize() );
-
-            for ( unsigned j = 0; j < nextLayer->getSize(); j++ )
-            {
-                for ( unsigned k = 0; k < layer->getSize(); ++k )
-                {
-                    layerWeights[j][k] =
-                        static_cast<float>( nlr.getLayer( i )->getWeight( i, k, j ) );
+                // Fetch weights and biases from the networkLevelReasoner
+                for (unsigned j = 0; j < outputSize; j++) {
+                    for (unsigned k = 0; k < inputSize; k++) {
+                        double weight_value = layer->getWeight(sourceLayer, k, j);
+                        layerWeights[j][k] = static_cast<float>(weight_value);
+                    }
+                    double bias_value = layer->getBias(j);
+                    layerBiases[j] = static_cast<float>(bias_value);
                 }
-            }
-            for ( unsigned j = 0; j < nextLayer->getSize(); ++j )
-            {
-                layerBiases[j] = static_cast<float>( layer->getBias( j ) );
+
+                Vector<float> flattenedWeights;
+                for (const auto& weight : layerWeights) {
+                    for (const auto& w : weight) {
+                        flattenedWeights.append(w);
+                    }
+                }
+
+                torch::Tensor weightTensor = torch::tensor(flattenedWeights.getContainer(), torch::kFloat)
+                    .view({ layer->getSize(), prevLayer->getSize() });
+                torch::Tensor biasTensor = torch::tensor(layerBiases.getContainer(), torch::kFloat);
+                torch::NoGradGuard no_grad;
+                linearLayer->weight.set_(weightTensor);
+                linearLayer->bias.set_(biasTensor);
             }
 
-            weights.push_back( layerWeights );
-            biases.push_back( layerBiases );
+        } else if (layerType == NLR::Layer::RELU || layerType == NLR::Layer::LEAKY_RELU ||
+                   layerType == NLR::Layer::SIGMOID || layerType == NLR::Layer::ABSOLUTE_VALUE ||
+                   layerType == NLR::Layer::MAX || layerType == NLR::Layer::SIGN ||
+                   layerType == NLR::Layer::ROUND || layerType == NLR::Layer::SOFTMAX) {
+            // Handle activation layers
+            activations.append(layerType);
+        } else if (layerType == NLR::Layer::BILINEAR) {
+            // Handle bilinear layers todo what ?
+        } else if (layerType == NLR::Layer::INPUT) {
+            // No action needed for input layer
+        } else {
+            std::cerr << "Unsupported layer type: " << layerType << std::endl;
         }
     }
+    std::cout << "Number of linear layers: " << linearLayers.size() + 1<< std::endl; // add 1 for input layer.
+    std::cout << "Number of activations: " << activations.size() << std::endl;
+    std::cout << "Total number of variables: " << totalVariables << std::endl;
+    std::cout << "Input layer size: " << layerSizes.first() << std::endl;
+    std::cout << "Output layer size: " << layerSizes.last() << std::endl;
 
-    for ( size_t i = 0; i < layerSizes.size() - 1; ++i )
-    {
-        linearLayers.push_back(
-            register_module( "linear" + std::to_string( i ),
-                             torch::nn::Linear( layerSizes[i], layerSizes[i + 1] ) ) );
-        std::vector<float> flattenedWeights;
-        for ( const auto &weight : weights[i] )
-        {
-            flattenedWeights.insert( flattenedWeights.end(), weight.begin(), weight.end() );
-        }
-
-        torch::Tensor weightTensor = torch::tensor( flattenedWeights, torch::kFloat )
-                                         .view( { layerSizes[i + 1], layerSizes[i] } );
-        torch::Tensor biasTensor = torch::tensor( biases[i], torch::kFloat );
-        auto &linear = linearLayers.back();
-        linear->weight.data().copy_( weightTensor );
-        linear->bias.data().copy_( biasTensor );
-    }
 }
-torch::Tensor CustomDNNImpl::forward( torch::Tensor x )
-{
-    for ( size_t i = 0; i < linearLayers.size(); ++i )
-    {
-        x = linearLayers[i]->forward( x );
-        if ( activations[i] == "ReLU" )
-        {
-            x = torch::relu( x );
-        }
-        else if ( activations[i] == "Sigmoid" )
-        {
-            x = torch::sigmoid( x );
-        }
-        else if ( activations[i] == "Tanh" )
-        {
-            x = torch::tanh( x );
-        }
-        else if ( activations[i] == "Softmax" )
-        {
-            x = torch::softmax( x, 1 );
+
+torch::Tensor CustomDNNImpl::forward(torch::Tensor x) {
+    for (unsigned i = 0; i < linearLayers.size(); i++) {
+        x = linearLayers[i]->forward(x);
+        if (i < activations.size()) {
+            switch (activations[i]) {
+            case NLR::Layer::RELU:
+                x = torch::relu(x);
+                break;
+            case NLR::Layer::LEAKY_RELU:
+                x = torch::leaky_relu(x, 0.01);
+                break;
+            case NLR::Layer::SIGMOID:
+                x = torch::sigmoid(x);
+                break;
+            case NLR::Layer::ABSOLUTE_VALUE:
+                x = torch::abs(x);
+                break;
+            case NLR::Layer::MAX:
+                x = std::get<0>(torch::max( x ,1));
+                break;
+            case NLR::Layer::SIGN:
+                x = torch::sign(x);
+                break;
+            case NLR::Layer::ROUND:
+                x = torch::round(x);
+                break;
+            case NLR::Layer::SOFTMAX:
+                x = torch::softmax(x, 1);
+                break;
+            default:
+                std::cerr << "Unsupported activation type: " << activations[i] << std::endl;
+                break;
+            }
         }
     }
     return x;

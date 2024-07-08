@@ -104,55 +104,6 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 list(APPEND LIBS ${Boost_LIBRARIES})
 
-###########
-## torch ##
-###########
-
-# set(TORCH_VERSION 1.10.0)
-# set(TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools")
-# set(Torch_DIR "${TOOLS_DIR}/libtorch/libtorch/share/cmake/Torch")
-
-# find_package(Torch QUIET PATHS ${Torch_DIR} NO_DEFAULT_PATH)
-# if(NOT Torch_FOUND)
-#     message(STATUS "Libtorch not found, attempting to download...")
-#     execute_process(
-#         COMMAND "${TOOLS_DIR}/download_libtorch.${SCRIPT_EXTENSION}" ${TORCH_VERSION}
-#         RESULT_VARIABLE SCRIPT_RESULT
-#         WORKING_DIRECTORY ${TOOLS_DIR}
-#         OUTPUT_VARIABLE DOWNLOAD_OUTPUT
-#         ERROR_VARIABLE DOWNLOAD_ERRORS)
-
-#     find_package(Torch REQUIRED PATHS ${Torch_DIR} NO_DEFAULT_PATH)
-# endif()
-
-# include_directories(${TORCH_INCLUDE_DIRS})
-# link_libraries(APPEND LIBS ${TORCH_LIBRARIES})
-
-set(TORCH_VERSION 1.10.0)
-if (NOT TORCH_DIR)
-    set(TORCH_DIR "${TOOLS_DIR}/libtorch")
-endif()
-
-if(NOT Torch_FOUND)
-    message(STATUS "Libtorch not found, attempting to download...")
-    execute_process(
-        COMMAND "${TOOLS_DIR}/download_libtorch.${SCRIPT_EXTENSION}" ${TORCH_VERSION}
-        RESULT_VARIABLE SCRIPT_RESULT
-        WORKING_DIRECTORY ${TOOLS_DIR}
-        OUTPUT_VARIABLE DOWNLOAD_OUTPUT
-        ERROR_VARIABLE DOWNLOAD_ERRORS)
-
-    find_package(Torch REQUIRED PATHS ${Torch_DIR} NO_DEFAULT_PATH)
-endif()
-
-set(TORCH_LIB torch)
-add_library(${TORCH_LIB} SHARED IMPORTED)
-set_target_properties(${TORCH_LIB} PROPERTIES IMPORTED_LOCATION ${TORCH_DIR}/lib/libtorch.so)
-target_include_directories(${TORCH_LIB} INTERFACE ${TORCH_DIR}/include)
-target_include_directories(${TORCH_LIB} INTERFACE ${TORCH_DIR}/include/torch/csrc/api/include)
-list(APPEND LIBS ${TORCH_LIB})
-
-
 
 ##############
 ## Protobuf ##
@@ -196,6 +147,20 @@ if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
 endif()
 file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
 include_directories(SYSTEM ${ONNX_DIR})
+
+#############
+## Pytorch ##
+#############
+
+set(PYTORCH_VERSION 2.2.1)
+set(PYTORCH_DIR "${TOOLS_DIR}/libtorch-${PYTORCH_VERSION}")
+list(APPEND CMAKE_PREFIX_PATH ${PYTORCH_DIR})
+if(NOT EXISTS "${PYTORCH_DIR}")
+    execute_process(COMMAND ${TOOLS_DIR}/download_libtorch.sh ${PYTORCH_VERSION})
+endif()
+find_package(Torch ${PYTORCH_VERSION} REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+list(APPEND LIBS ${TORCH_LIBRARIES})
 
 ############
 ## Gurobi ##

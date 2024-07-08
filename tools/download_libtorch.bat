@@ -6,7 +6,7 @@ set TEMP_DIR=%LIBTORCH_DIR%\temp
 
 if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
 
-powershell -command "Invoke-WebRequest -Uri https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-%LIBTORCH_VERSION%+cpu.zip -OutFile %TEMP_DIR%\libtorch.zip"
+powershell -command "Invoke-WebRequest -Uri https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Bcpu.zip -OutFile %TEMP_DIR%\libtorch.zip"
 
 powershell -command "Expand-Archive -Path %TEMP_DIR%\libtorch.zip -DestinationPath %LIBTORCH_DIR%"
 

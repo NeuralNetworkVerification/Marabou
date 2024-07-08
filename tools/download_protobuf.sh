@@ -17,8 +17,7 @@ fi
 
 cd $mydir
 echo "Downloading protobuf-$version"
-wget -q https://github.com/protocolbuffers/protobuf/releases/download/v$version/protobuf-cpp-$version.tar.gz -O protobuf-cpp-$version.tar.gz
-
+wget https://github.com/protocolbuffers/protobuf/releases/download/v$version/protobuf-cpp-$version.tar.gz -O protobuf-cpp-$version.tar.gz  -q --show-progress --progress=bar:force:noscroll
 echo "Unzipping protobuf-$version"
 tar -xzf protobuf-cpp-$version.tar.gz # >> /dev/null
 

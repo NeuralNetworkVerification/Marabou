@@ -2,20 +2,38 @@
 #define PGD_H
 
 #include "CustomDNN.h"
-
+#undef Warning
 #include <torch/torch.h>
 
-torch::Tensor findDelta( CustomDNNImpl &model,
-                         const torch::Tensor &X,
-                         int y,
-                         float epsilon,
-                         float alpha,
-                         int num_iter,
-                         torch::Device device );
-bool displayAdversarialExample( CustomDNNImpl &model,
-                                const torch::Tensor &input,
-                                int target,
-                                torch::Device device );
+constexpr float DEFAULT_ALPHA = 0.01;
+constexpr unsigned DEFAULT_NUM_ITER = 100;
+constexpr unsigned DEFAULT_NUM_RESTARTS = 50;
+constexpr torch::DeviceType DEFAULT_DEVICE_TYPE = torch::kCPU;
 
+class PGDAttack {
+public:
+  PGDAttack(CustomDNNImpl &model, const Map<unsigned, double> &lowerBounds,
+            const Map<unsigned, double> &upperBounds);
+  PGDAttack(CustomDNNImpl &model, const Map<unsigned, double> &lowerBounds,
+            const Map<unsigned, double> &upperBounds, double alpha, unsigned num_iter,
+            unsigned num_restarts, torch::Device device);
 
-#endif
+  bool displayAdversarialExample();
+
+private:
+  CustomDNNImpl &model;
+  const Map<unsigned, double> &lowerBounds;
+  const Map<unsigned, double> &upperBounds;
+  torch::Device device;
+  torch::Tensor epsilon;
+  torch::Tensor originalInput;
+  double alpha;
+  unsigned num_iter;
+  unsigned num_restarts;
+  unsigned inputSize;
+
+  torch::Tensor findDelta(int originalPred);
+  std::pair<torch::Tensor, torch::Tensor> generateSampleAndEpsilon();
+};
+
+#endif // PGD_H

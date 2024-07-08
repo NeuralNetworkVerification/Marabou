@@ -1,13 +1,19 @@
 #!/bin/bash
+curdir=$pwd
+mydir="${0%/*}"
+version=$1
 
-LIBTORCH_VERSION=$1
-LIBTORCH_DIR=$(dirname $0)
+cd $mydir
 
-TEMP_DIR=$(mktemp -d)
-mkdir -p ${TEMP_DIR}
+# Need to download the cxx11-abi version of libtorch in order to ensure compatability
+# with boost.
+#
+# See https://discuss.pytorch.org/t/issues-linking-with-libtorch-c-11-abi/29510 for details.
+echo "Downloading PyTorch"
+wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-$version%2Bcpu.zip -O libtorch-$version.zip -q --show-progress --progress=bar:force:noscroll
 
-wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Bcpu.zip -O ${TEMP_DIR}/libtorch.zip
-unzip -o ${TEMP_DIR}/libtorch.zip -d ${LIBTORCH_DIR}
-rm ${TEMP_DIR}/libtorch.zip
+echo "Unzipping PyTorch"
+unzip libtorch-$version.zip >> /dev/null
+mv libtorch libtorch-$version
 
-rm -rf ${TEMP_DIR}
+cd $curdir

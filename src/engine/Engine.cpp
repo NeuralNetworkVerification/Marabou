@@ -32,8 +32,14 @@
 #include "TimeUtils.h"
 #include "VariableOutOfBoundDuringOptimizationException.h"
 #include "Vector.h"
+#include "CustomDNN.h"
+#include "PGD.h"
 
 #include <random>
+
+#undef Warning
+#include <torch/torch.h>  
+
 
 Engine::Engine()
     : _context()
@@ -1435,10 +1441,23 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
+        // for (auto& inputVar : inputQuery.getInputVariables()) {
+        //     inputQuery.setLowerBound(inputVar, -1.0); // Set lower bounds
+        //     inputQuery.setUpperBound(inputVar, 1.0);  // Set upper bounds
+        // }
+
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
+
+        CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
+        // torch::Tensor input = torch::tensor({{0.1300, -0.6401,  0.3475, -0.0579, -0.9246,  0.7567,  0.2141, -1.1153, 0.8332,  0.0851}});
+        // int target = 0;
+        torch::Device device(torch::kCPU);
+        PGDAttack pgd_attack(network, inputQuery.getLowerBounds(), inputQuery.getUpperBounds());
+        pgd_attack.displayAdversarialExample();
+
         if ( preprocess )
         {
             performSymbolicBoundTightening( &( *_preprocessedQuery ) );

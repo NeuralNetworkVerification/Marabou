@@ -4,24 +4,23 @@
 #include "NetworkLevelReasoner.h"
 
 #include <string>
-#include <torch/torch.h>
 #include <vector>
+
+#undef Warning
+#include <torch/torch.h>
 
 
 class CustomDNNImpl : public torch::nn::Module
 {
 public:
-    std::vector<int> layerSizes;
-    std::vector<std::string> activations;
-    std::vector<std::vector<std::vector<float>>> weights;
-    std::vector<std::vector<float>> biases;
-    std::vector<torch::nn::Linear> linearLayers;
+    Vector<unsigned> layerSizes;
+    Vector<NLR::Layer::Type> activations;
+    Vector<Vector<Vector<float>>> weights;
+    Vector<std::vector<float>> biases;
+    Vector<torch::nn::Linear> linearLayers;
 
-    CustomDNNImpl( const std::vector<int> &layer_sizes,
-                   const std::vector<std::string> &activationFunctions,
-                   const std::vector<std::vector<std::vector<float>>> &weights,
-                   const std::vector<std::vector<float>> &biases );
-    CustomDNNImpl( NLR::NetworkLevelReasoner &nlr );
+
+    explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
     torch::Tensor forward( torch::Tensor x );
 };
