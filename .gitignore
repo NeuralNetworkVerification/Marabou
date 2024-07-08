@@ -35,6 +35,7 @@ _deps
 /tools/protobuf*
 /tools/OpenBLAS*
 /tools/onnx*
+/tools/libtorch*
 
 
 build
