@@ -25,6 +25,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "SmtCore.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -130,6 +131,9 @@ void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, doubl
         setPhaseStatus( RELU_PHASE_ACTIVE );
     else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
+
+    if ( !_cadicalVars.empty() && phaseFixed() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -139,6 +143,9 @@ void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, doubl
 
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
+
+    if ( !_cadicalVars.empty() && phaseFixed() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
@@ -1111,16 +1118,15 @@ PiecewiseLinearCaseSplit ReluConstraint::propagateLitAsSplit( int lit )
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
 
     setActiveConstraint( false );
+    if ( phaseFixed() )
+        return getCaseSplit( getPhaseStatus() );
+
     if ( lit > 0 )
     {
-        if ( phaseFixed() )
-            ASSERT( getPhaseStatus() == RELU_PHASE_ACTIVE );
         setPhaseStatus( RELU_PHASE_ACTIVE );
         return getActiveSplit();
     }
 
-    if ( phaseFixed() )
-        ASSERT( getPhaseStatus() == RELU_PHASE_INACTIVE );
     setPhaseStatus( RELU_PHASE_INACTIVE );
     return getInactiveSplit();
 }

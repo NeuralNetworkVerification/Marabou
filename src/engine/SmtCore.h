@@ -212,6 +212,8 @@ public:
 
     const PiecewiseLinearConstraint *getConstraintFromLit( int lit ) const;
 
+    void addLiteralToPropagate( int lit );
+
 private:
     /*
       Valid splits that were implied by level 0 of the stack.
@@ -290,7 +292,7 @@ private:
     CadicalWrapper _cadicalWrapper;
     Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 
-    Vector<int> _literalsToPropagate;
+    List<Pair<int, int>> _literalsToPropagate;
     CVC4::context::CDList<int> _assignedLiterals;
 
     Vector<int> _reasonClauseLiterals;
@@ -298,9 +300,11 @@ private:
 
     Vector<Vector<int>> _externalClausesToAdd;
 
-
-    bool isLiteralNotified( int literal ) const;
     Set<int> _fixedCadicalVars;
+
+    bool isLiteralAssigned( int literal ) const;
+
+    bool isLiteralToBePropagated( int literal ) const;
 };
 
 #endif // __SmtCore_h__

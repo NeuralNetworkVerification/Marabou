@@ -60,6 +60,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
+//#include "SmtCore.h"
 #include "Tightening.h"
 #include "context/cdlist.h"
 #include "context/cdo.h"
@@ -70,6 +71,7 @@ class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
+class SmtCore;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
@@ -354,6 +356,15 @@ public:
     {
         _tableau = tableau;
     }
+
+    /*
+      Register the SmtCore object
+     */
+    inline void registerSmtCore ( SmtCore *smtCore )
+    {
+        _smtCore = smtCore;
+    }
+
     /*
       Method to set PhaseStatus of the constraint. Encapsulates both context
       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
@@ -570,6 +581,16 @@ protected:
     GurobiWrapper *_gurobi;
 
     /*
+      The SmtCore object servers as the theory solver of CDCL.
+     */
+    SmtCore *_smtCore;
+
+    List<unsigned> _tableauAuxVars;
+    List<unsigned> _cadicalVars;
+
+    CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
+
+    /*
       Initialize CDOs.
     */
     void initializeCDActiveStatus();
@@ -671,11 +692,6 @@ protected:
         else
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
-
-    List<unsigned> _tableauAuxVars;
-    List<unsigned> _cadicalVars;
-
-    CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

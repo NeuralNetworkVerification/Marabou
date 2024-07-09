@@ -21,6 +21,7 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
+#include "InfeasibleQueryException.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Options.h"
@@ -55,6 +56,8 @@ SmtCore::SmtCore( IEngine *engine )
 SmtCore::~SmtCore()
 {
     freeMemory();
+
+    _cadicalWrapper.disconnectTheorySolver();
 }
 
 void SmtCore::freeMemory()
@@ -638,7 +641,7 @@ void SmtCore::initBooleanAbstraction( PiecewiseLinearConstraint *plc )
     plc->booleanAbstraction( _cadicalWrapper, _cadicalVarToPlc );
 }
 
-bool SmtCore::isLiteralNotified( int literal ) const
+bool SmtCore::isLiteralAssigned( int literal ) const
 {
     for ( int curLiteral : _assignedLiterals )
         if ( curLiteral == literal )
@@ -652,18 +655,25 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
-    if ( isLiteralNotified( lit ) )
+    if ( isLiteralAssigned( lit ) )
         return;
 
-    ASSERT( !isLiteralNotified( -lit ) );
+    ASSERT( !isLiteralAssigned( -lit ) );
 
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
     PiecewiseLinearCaseSplit split = plc->propagateLitAsSplit( lit );
     _engine->applySplit( split );
-    plc->setPhaseFixingEntry( _engine->getGroundBoundEntry(
-        split.getBoundTightenings().back()._variable, split.getBoundTightenings().back()._type ) );
+    if ( !plc->getPhaseFixingEntry() )
+        plc->setPhaseFixingEntry(
+            _engine->getGroundBoundEntry( split.getBoundTightenings().back()._variable,
+                                          split.getBoundTightenings().back()._type ) );
     plc->setActiveConstraint( false );
-    _engine->propagateBoundManagerTightenings();
+    try {
+        _engine->propagateBoundManagerTightenings();
+    }
+    catch (const InfeasibleQueryException &)
+    {
+    }
     _assignedLiterals.push_back( lit );
 }
 
@@ -695,6 +705,9 @@ void SmtCore::notify_new_decision_level()
     _engine->preContextPushHook();
     pushContext();
 
+    for ( const auto &lit : _fixedCadicalVars )
+        notify_assignment( lit, true );
+
     if ( _statistics )
     {
         unsigned level = _context.getLevel();
@@ -710,6 +723,7 @@ void SmtCore::notify_new_decision_level()
 void SmtCore::notify_backtrack( size_t new_level )
 {
     SMT_LOG( "Performing a pop" );
+    //    printf( "backtracking to %zu\n", new_level );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
@@ -719,8 +733,14 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     popContextTo( new_level );
     _engine->postContextPopHook();
-    for ( const auto &lit : _fixedCadicalVars )
-        notify_assignment( lit, true );
+
+
+    List<Pair<int, int>> currentPropagations = _literalsToPropagate;
+    _literalsToPropagate.clear();
+
+    for ( const Pair<int, int> &propagation : currentPropagations )
+        if ( propagation.second() <= (int)new_level )
+            _literalsToPropagate.append( propagation );
 
     if ( _statistics )
     {
@@ -737,11 +757,13 @@ void SmtCore::notify_backtrack( size_t new_level )
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
     for ( const auto &lit : model )
-        if ( !isLiteralNotified( lit ) )
+        if ( !isLiteralAssigned( lit ) )
             notify_assignment( lit, false );
-
+    printf("checking model\n");
     _engine->setStopConditionFlag( false );
     bool result = _engine->solve( 0 );
+    std::cout << "check found model result: " << result
+              << "; has external clause: " << cb_has_external_clause() << std::endl;
     return result;
 }
 
@@ -751,7 +773,8 @@ int SmtCore::cb_decide()
     {
         _constraintForSplitting->setActiveConstraint( false );
         int lit = _constraintForSplitting->propagatePhaseAsLit();
-        ASSERT( !isLiteralNotified( -lit ) );
+        //        printf( "deciding %d\n", lit );
+        ASSERT( !isLiteralAssigned( -lit ) );
         _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
@@ -767,40 +790,21 @@ int SmtCore::cb_propagate()
     {
         _engine->setStopConditionFlag( false );
         _engine->solve( 0 );
-        _engine->propagateBoundManagerTightenings();
-        int literal;
-        for ( const auto *plc : _cadicalVarToPlc.values() )
-            if ( plc )
-            {
-                literal = plc->propagatePhaseAsLit();
-                if ( literal && !isLiteralNotified( literal ) )
-                {
-                    ASSERT( !isLiteralNotified( -literal ) );
-                    ASSERT( plc->getPhaseFixingEntry() && plc->getPhaseFixingEntry()->lemma );
-                    _literalsToPropagate.append( literal );
-                }
-            }
-
-
-        auto compareLitsByPhaseId = [this]( int a, int b ) -> bool {
-            return _cadicalVarToPlc.at( abs( a ) )->getPhaseFixingEntry()->id >=
-                   _cadicalVarToPlc.at( abs( b ) )->getPhaseFixingEntry()->id;
-        };
-        std::sort( _literalsToPropagate.begin(), _literalsToPropagate.end(), compareLitsByPhaseId );
-        _literalsToPropagate.insertHead( 0 );
+        try {
+            _engine->propagateBoundManagerTightenings();
+        }
+        catch (const InfeasibleQueryException &)
+        {
+        }
+        _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
     }
 
-    if ( !_literalsToPropagate.empty() )
-    {
-        int lit = _literalsToPropagate.pop();
-        ASSERT( !isLiteralNotified( -lit ) );
-        if ( lit )
-            _assignedLiterals.push_back( lit );
-        ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        return lit;
-    }
-
-    return 0;
+    int lit = _literalsToPropagate.popFront().first();
+    if ( lit )
+        _assignedLiterals.push_back( lit );
+    ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+    //    printf( "propagating %d", lit );
+    return lit;
 }
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
@@ -861,11 +865,12 @@ int SmtCore::cb_add_external_clause_lit()
 
 void SmtCore::addExternalClause( const Set<int> &clause )
 {
+    ASSERT( !clause.exists( 0 ) && !clause.empty() )
     Vector<int> toAdd( 0 );
     for ( int lit : clause )
         if ( !_fixedCadicalVars.exists( lit ) )
             toAdd.append( -lit );
-    ASSERT( !toAdd.exists( 0 ) && !toAdd.empty() );
+//    if ( !toAdd.empty() )
     _externalClausesToAdd.append( toAdd );
 }
 
@@ -885,7 +890,6 @@ void SmtCore::solveWithCadical()
 
     _engine->preSolve();
     int result = _cadicalWrapper.solve();
-    _cadicalWrapper.disconnectTheorySolver();
 
     if ( result == 0 )
         _engine->setExitCode( IEngine::ExitCode::UNKNOWN );
@@ -895,4 +899,26 @@ void SmtCore::solveWithCadical()
         _engine->setExitCode( IEngine::ExitCode::UNSAT );
     else
         ASSERT( false );
+}
+
+void SmtCore::addLiteralToPropagate( int lit )
+{
+    ASSERT( lit );
+    if ( !isLiteralAssigned( lit ) && !isLiteralToBePropagated( lit ) )
+    {
+        //        std::cout << "literal to propagate: " << lit
+        //                  << "; minus assigned: " << isLiteralAssigned( -lit )
+        //                  << "; minus to propagate: " << isLiteralToBePropagated( -lit )
+        //                  << "; decision level: " << _context.getLevel() << std::endl;
+        ASSERT( !isLiteralAssigned( -lit ) && !isLiteralToBePropagated( -lit ) );
+        _literalsToPropagate.append( Pair<int, int>( lit, _context.getLevel() ) );
+    }
+}
+
+bool SmtCore::isLiteralToBePropagated( int literal ) const
+{
+    for ( const Pair<int, int> &pair : _literalsToPropagate )
+        if ( pair.first() == literal )
+            return true;
+    return false;
 }

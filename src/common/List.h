@@ -183,6 +183,17 @@ public:
         _container.pop_back();
     }
 
+    T popFront()
+    {
+        if ( empty() )
+            throw CommonError( CommonError::LIST_IS_EMPTY );
+
+        const T &head = front();
+        _container.pop_front();
+
+        return head;
+    }
+
     template <class Predicate> void removeIf( Predicate p )
     {
         _container.remove_if( p );

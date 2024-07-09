@@ -85,6 +85,10 @@ public:
      */
     int vars();
 
+    /*
+      Return the current decision level;
+     */
+
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;
     std::unique_ptr<CaDiCaL::Terminator> d_terminator;

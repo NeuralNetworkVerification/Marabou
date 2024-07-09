@@ -84,7 +84,7 @@ void CDSmtCore::initializeScoreTrackerIfNeeded(
         _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
         _scoreTracker->initialize( plConstraints );
 
-        SMT_LOG( "\tTracking Pseudo Impact..." );
+        CD_SMT_LOG( "\tTracking Pseudo Impact..." );
     }
 }
 
@@ -109,19 +109,19 @@ bool CDSmtCore::needToSplit() const
 
 void CDSmtCore::pushDecision( PiecewiseLinearConstraint *constraint, PhaseStatus decision )
 {
-    SMT_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
+    CD_SMT_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
     TrailEntry te( constraint, decision );
     applyTrailEntry( te, true );
-    SMT_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
+    CD_SMT_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
 }
 
 void CDSmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
 {
     ASSERT( constraint->isImplication() );
-    SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
+    CD_SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
     TrailEntry te( constraint, constraint->nextFeasibleCase() );
     applyTrailEntry( te, false );
-    SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
+    CD_SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
 }
 
 void CDSmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
@@ -139,7 +139,7 @@ void CDSmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
 void CDSmtCore::decide()
 {
     ASSERT( _needToSplit );
-    SMT_LOG( "Performing a ReLU split" );
+    CD_SMT_LOG( "Performing a ReLU split" );
 
     _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
@@ -190,7 +190,7 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
-    SMT_LOG( "Performing a ReLU split - DONE" );
+    CD_SMT_LOG( "Performing a ReLU split - DONE" );
 }
 
 
@@ -205,11 +205,11 @@ bool CDSmtCore::popDecisionLevel( TrailEntry &lastDecision )
     if ( _decisions.empty() )
         return false;
 
-    SMT_LOG( "Popping trail ..." );
+    CD_SMT_LOG( "Popping trail ..." );
     lastDecision = _decisions.back();
     _context.pop();
     _engine->postContextPopHook();
-    SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
+    CD_SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
     return true;
 }
 
@@ -217,7 +217,7 @@ void CDSmtCore::interruptIfCompliantWithDebugSolution()
 {
     if ( checkSkewFromDebuggingSolution() )
     {
-        SMT_LOG( "Error! Popping from a compliant stack\n" );
+        CD_SMT_LOG( "Error! Popping from a compliant stack\n" );
         throw MarabouError( MarabouError::DEBUGGING_ERROR );
     }
 }
@@ -231,7 +231,7 @@ PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel ) const
 
 bool CDSmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
 {
-    SMT_LOG( "Backtracking to a feasible decision..." );
+    CD_SMT_LOG( "Backtracking to a feasible decision..." );
 
     if ( getDecisionLevel() == 0 )
         return false;
