@@ -3,9 +3,9 @@
 CadicalWrapper::CadicalWrapper()
     : d_solver( new CaDiCaL::Solver() )
 {
-    d_solver->set("walk", 0);
-    d_solver->set("lucky", 0);
-    d_solver->set("log", 0);
+    d_solver->set( "walk", 0 );
+    d_solver->set( "lucky", 0 );
+    d_solver->set( "log", 0 );
 }
 
 void CadicalWrapper::addLiteral( int lit )

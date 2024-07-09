@@ -269,7 +269,8 @@ public:
       Return all ground bounds as a vector
     */
     double getGroundBound( unsigned var, bool isUpper ) const override;
-     std::shared_ptr<GroundBoundManager::GroundBoundEntry> getGroundBoundEntry( unsigned var, bool isUpper ) const override;
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    getGroundBoundEntry( unsigned var, bool isUpper ) const override;
 
 
     /*

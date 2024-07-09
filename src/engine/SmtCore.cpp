@@ -668,10 +668,11 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
             _engine->getGroundBoundEntry( split.getBoundTightenings().back()._variable,
                                           split.getBoundTightenings().back()._type ) );
     plc->setActiveConstraint( false );
-    try {
+    try
+    {
         _engine->propagateBoundManagerTightenings();
     }
-    catch (const InfeasibleQueryException &)
+    catch ( const InfeasibleQueryException & )
     {
     }
     _assignedLiterals.push_back( lit );
@@ -723,7 +724,6 @@ void SmtCore::notify_new_decision_level()
 void SmtCore::notify_backtrack( size_t new_level )
 {
     SMT_LOG( "Performing a pop" );
-    //    printf( "backtracking to %zu\n", new_level );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
@@ -759,7 +759,6 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     for ( const auto &lit : model )
         if ( !isLiteralAssigned( lit ) )
             notify_assignment( lit, false );
-    printf("checking model\n");
     _engine->setStopConditionFlag( false );
     bool result = _engine->solve( 0 );
     std::cout << "check found model result: " << result
@@ -773,7 +772,6 @@ int SmtCore::cb_decide()
     {
         _constraintForSplitting->setActiveConstraint( false );
         int lit = _constraintForSplitting->propagatePhaseAsLit();
-        //        printf( "deciding %d\n", lit );
         ASSERT( !isLiteralAssigned( -lit ) );
         _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
@@ -790,10 +788,11 @@ int SmtCore::cb_propagate()
     {
         _engine->setStopConditionFlag( false );
         _engine->solve( 0 );
-        try {
+        try
+        {
             _engine->propagateBoundManagerTightenings();
         }
-        catch (const InfeasibleQueryException &)
+        catch ( const InfeasibleQueryException & )
         {
         }
         _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
@@ -803,7 +802,6 @@ int SmtCore::cb_propagate()
     if ( lit )
         _assignedLiterals.push_back( lit );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    //    printf( "propagating %d", lit );
     return lit;
 }
 
@@ -870,7 +868,7 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     for ( int lit : clause )
         if ( !_fixedCadicalVars.exists( lit ) )
             toAdd.append( -lit );
-//    if ( !toAdd.empty() )
+    //    if ( !toAdd.empty() )
     _externalClausesToAdd.append( toAdd );
 }
 
@@ -906,10 +904,6 @@ void SmtCore::addLiteralToPropagate( int lit )
     ASSERT( lit );
     if ( !isLiteralAssigned( lit ) && !isLiteralToBePropagated( lit ) )
     {
-        //        std::cout << "literal to propagate: " << lit
-        //                  << "; minus assigned: " << isLiteralAssigned( -lit )
-        //                  << "; minus to propagate: " << isLiteralToBePropagated( -lit )
-        //                  << "; decision level: " << _context.getLevel() << std::endl;
         ASSERT( !isLiteralAssigned( -lit ) && !isLiteralToBePropagated( -lit ) );
         _literalsToPropagate.append( Pair<int, int>( lit, _context.getLevel() ) );
     }

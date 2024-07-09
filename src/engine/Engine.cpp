@@ -3785,7 +3785,7 @@ bool Engine::certifyUNSATCertificate()
 
 void Engine::markLeafToDelegate()
 {
-//    std::cout << "markLeafToDelegate" << std::endl;
+    //    std::cout << "markLeafToDelegate" << std::endl;
     ASSERT( _produceUNSATProofs );
     ASSERT( _produceUNSATProofs );
 
@@ -4012,11 +4012,11 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
         litConstraint->getPhaseFixingEntry();
 
     // Return a clause explaining the phase-fixing GroundBound entry
-//    std::cout << "phaseFixingEntry: " << phaseFixingEntry
-//              << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma
-//              << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing
-//              << "; literal: " << litConstraint->getCadicalVars().back()
-//              << std::endl;
+    //    std::cout << "phaseFixingEntry: " << phaseFixingEntry
+    //              << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma
+    //              << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing
+    //              << "; literal: " << litConstraint->getCadicalVars().back()
+    //              << std::endl;
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();

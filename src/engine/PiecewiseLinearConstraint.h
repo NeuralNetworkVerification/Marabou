@@ -360,7 +360,7 @@ public:
     /*
       Register the SmtCore object
      */
-    inline void registerSmtCore ( SmtCore *smtCore )
+    inline void registerSmtCore( SmtCore *smtCore )
     {
         _smtCore = smtCore;
     }
