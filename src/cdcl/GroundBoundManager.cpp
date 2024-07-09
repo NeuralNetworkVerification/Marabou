@@ -106,7 +106,7 @@ GroundBoundManager::getGroundBoundEntryUpToId( unsigned index,
         if ( entry->id < id )
             return entry;
     }
-
+    ASSERT( id <= 2 * temp.size() );
     return ( *temp[index] )[0];
 }
 

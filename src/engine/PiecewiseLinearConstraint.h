@@ -510,7 +510,7 @@ public:
     */
     virtual PiecewiseLinearCaseSplit propagateLitAsSplit( int lit ) = 0;
 
-    virtual List<unsigned> getCadicalVars()
+    virtual List<unsigned> getCadicalVars() const
     {
         return _cadicalVars;
     }

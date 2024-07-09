@@ -151,7 +151,8 @@ public:
       Get the ground bound of the variable
     */
     virtual double getGroundBound( unsigned var, bool isUpper ) const = 0;
-
+    virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    getGroundBoundEntry( unsigned var, bool isUpper ) const = 0;
     /*
       Get the current pointer in the UNSAT certificate node
     */

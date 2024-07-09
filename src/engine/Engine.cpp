@@ -306,7 +306,7 @@ bool Engine::solve( double timeoutInSeconds )
                 //                be removed
                 //                _smtCore.performSplit(); splitJustPerformed = true;
                 //                continue;
-
+                _boundManager.propagateTightenings();
                 return false;
             }
 
@@ -3344,7 +3344,15 @@ InputQuery Engine::buildQueryFromCurrentState() const
 double Engine::getGroundBound( unsigned var, bool isUpper ) const
 {
     ASSERT( var < _tableau->getN() && _produceUNSATProofs );
-    return getGroundBound( var, isUpper ? Tightening::UB : Tightening::LB );
+    return _groundBoundManager.getGroundBound( var, isUpper ? Tightening::UB : Tightening::LB );
+}
+
+std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+Engine::getGroundBoundEntry( unsigned var, bool isUpper ) const
+{
+    ASSERT( var < _tableau->getN() && _produceUNSATProofs );
+    return _groundBoundManager.getGroundBoundEntry( var,
+                                                    isUpper ? Tightening::UB : Tightening::LB );
 }
 
 bool Engine::shouldProduceProofs() const
@@ -3777,14 +3785,15 @@ void Engine::markLeafToDelegate()
     ASSERT( _produceUNSATProofs );
 
     // Mark leaf with toDelegate Flag
-    UnsatCertificateNode *currentUnsatCertificateNode = _UNSATCertificateCurrentPointer->get();
-    ASSERT( _UNSATCertificateCurrentPointer && !currentUnsatCertificateNode->getContradiction() );
-    currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_SAVE );
-    currentUnsatCertificateNode->deletePLCExplanations();
+    //    UnsatCertificateNode *currentUnsatCertificateNode =
+    //    _UNSATCertificateCurrentPointer->get(); ASSERT( _UNSATCertificateCurrentPointer &&
+    //    !currentUnsatCertificateNode->getContradiction() );
+    //    currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_SAVE );
+    //    currentUnsatCertificateNode->deletePLCExplanations();
     _statistics.incUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES );
-
-    if ( !currentUnsatCertificateNode->getChildren().empty() )
-        currentUnsatCertificateNode->makeLeaf();
+    //
+    //    if ( !currentUnsatCertificateNode->getChildren().empty() )
+    //        currentUnsatCertificateNode->makeLeaf();
 }
 
 const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) const
@@ -3898,62 +3907,31 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     if ( explainedVar >= 0 )
         linearCombination[explainedVar]++;
 
-    List<unsigned> vars;
-    Vector<unsigned> conVars( 0 );
-    unsigned lit = 0;
+    int lit;
 
-    // Iterate through all constraint, check whether their phase was involved in the explanation
+    // Iterate through all constraints, check whether their phase was involved in the explanation
     // Propagate literals accordingly
     // Currently works only for ReLU constraints
     for ( const auto &constraint : _plConstraints )
     {
         lit = 0;
-        vars = constraint->getParticipatingVariables();
-        conVars = Vector<unsigned>( vars.begin(), vars.end() );
 
         // TODO support max and disjunction
         ASSERT( constraint->getType() != DISJUNCTION && constraint->getType() != MAX );
-        if ( constraint->getType() == RELU )
+        if ( constraint->getPhaseFixingEntry() && constraint->getPhaseFixingEntry()->id < id )
         {
-            ASSERT( conVars.size() == 3 );
-            unsigned b = conVars[0];
-            unsigned f = conVars[1];
-            unsigned aux = conVars[2];
-
-            // Active phase
-            if ( ( !FloatUtils::isZero( linearCombination[f] ) &&
-                   FloatUtils::isPositive(
-                       _groundBoundManager.getGroundBoundUpToId( f, Tightening::LB, id ) ) ) ||
-                 ( !FloatUtils::isZero( linearCombination[b] ) &&
-                   !FloatUtils::isNegative(
-                       _groundBoundManager.getGroundBoundUpToId( b, Tightening::LB, id ) ) ) ||
-                 ( !FloatUtils::isZero( linearCombination[aux] ) &&
-                   !FloatUtils::isPositive(
-                       _groundBoundManager.getGroundBoundUpToId( aux, Tightening::UB, id ) ) ) )
-            {
-                ASSERT( constraint->getCadicalVars().size() == 1 );
-                lit = constraint->getCadicalVars().front();
-            }
-            // Inactive phase
-            else if ( ( !FloatUtils::isZero( linearCombination[f] ) &&
-                        !FloatUtils::isPositive(
-                            _groundBoundManager.getGroundBoundUpToId( f, Tightening::UB, id ) ) ) ||
-                      ( !FloatUtils::isZero( linearCombination[b] ) &&
-                        !FloatUtils::isPositive(
-                            _groundBoundManager.getGroundBoundUpToId( b, Tightening::UB, id ) ) ) ||
-                      ( !FloatUtils::isZero( linearCombination[aux] ) &&
-                        FloatUtils::isPositive( _groundBoundManager.getGroundBoundUpToId(
-                            aux, Tightening::LB, id ) ) ) )
-            {
-                ASSERT( constraint->getCadicalVars().size() == 1 );
-                lit = -constraint->getCadicalVars().front();
-            }
-        } // TODO apply to additional PLC types
+            for ( unsigned var : constraint->getParticipatingVariables() )
+                if ( !FloatUtils::isZero( linearCombination[var] ) &&
+                     _groundBoundManager
+                         .getGroundBoundEntryUpToId(
+                             var, linearCombination[var] > 0 ? Tightening::UB : Tightening::LB, id )
+                         ->isPhaseFixing )
+                    lit = constraint->propagatePhaseAsLit();
+        }
 
         if ( lit )
         {
             ASSERT( !clause.exists( -lit ) );
-            ASSERT( constraint && constraint->getType() == RELU );
             ASSERT( constraint->phaseFixed() || !constraint->isActive() )
             clause.insert( lit );
         }
@@ -3967,7 +3945,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         if ( !FloatUtils::isZero( linearCombination[var] ) )
         {
             Tightening::BoundType btype =
-                FloatUtils::isPositive( linearCombination[var] ) ? Tightening::UB : Tightening::LB;
+                linearCombination[var] > 0 ? Tightening::UB : Tightening::LB;
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
@@ -3980,6 +3958,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     // and add their explaining literals to the clause
     for ( std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry : entries )
     {
+        ASSERT( entry->id < id );
         Set<int> minorClause;
         if ( entry->clause.empty() )
         {
@@ -4020,13 +3999,10 @@ Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isP
 Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
 {
     ASSERT( litConstraint );
+    ASSERT( litConstraint->phaseFixed() || !litConstraint->isActive() );
     Set<int> clause;
 
-    _boundManager.propagateTightenings();
-
     // Get corresponding constraints, and its participating variables
-    List<unsigned> vars = litConstraint->getParticipatingVariables();
-    Vector<unsigned> conVars = Vector<unsigned>( vars.begin(), vars.end() );
     std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
         litConstraint->getPhaseFixingEntry();
 

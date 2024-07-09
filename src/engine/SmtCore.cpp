@@ -641,7 +641,7 @@ void SmtCore::initBooleanAbstraction( PiecewiseLinearConstraint *plc )
 bool SmtCore::isLiteralNotified( int literal ) const
 {
     for ( int curLiteral : _assignedLiterals )
-        if ( curLiteral == literal || curLiteral == -literal )
+        if ( curLiteral == literal )
             return true;
 
     return false;
@@ -655,11 +655,16 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     if ( isLiteralNotified( lit ) )
         return;
 
+    ASSERT( !isLiteralNotified( -lit ) );
+
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-    _engine->applySplit( plc->propagateLitAsSplit( lit ) );
+    PiecewiseLinearCaseSplit split = plc->propagateLitAsSplit( lit );
+    _engine->applySplit( split );
+    plc->setPhaseFixingEntry( _engine->getGroundBoundEntry(
+        split.getBoundTightenings().back()._variable, split.getBoundTightenings().back()._type ) );
     plc->setActiveConstraint( false );
+    _engine->propagateBoundManagerTightenings();
     _assignedLiterals.push_back( lit );
-    std::cout << "notify_assignment " << lit << " " << is_fixed << " return void" << std::endl;
 }
 
 void SmtCore::notify_new_decision_level()
@@ -679,7 +684,6 @@ void SmtCore::notify_new_decision_level()
     {
         _constraintToViolationCount[_constraintForSplitting] = 0;
         _constraintForSplitting = NULL;
-        std::cout << "notify_new_decision_level return void" << std::endl;
         return;
     }
 
@@ -701,14 +705,11 @@ void SmtCore::notify_new_decision_level()
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
-
-    std::cout << "notify_new_decision_level return void" << std::endl;
 }
 
 void SmtCore::notify_backtrack( size_t new_level )
 {
     SMT_LOG( "Performing a pop" );
-
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
@@ -719,13 +720,7 @@ void SmtCore::notify_backtrack( size_t new_level )
     popContextTo( new_level );
     _engine->postContextPopHook();
     for ( const auto &lit : _fixedCadicalVars )
-    {
-        PiecewiseLinearConstraint *constraint = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-        if ( !constraint->phaseFixed() )
-            _engine->applySplit( constraint->propagateLitAsSplit( lit ) );
-
-        ASSERT( constraint->phaseFixed() );
-    }
+        notify_assignment( lit, true );
 
     if ( _statistics )
     {
@@ -737,20 +732,16 @@ void SmtCore::notify_backtrack( size_t new_level )
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
-
-    std::cout << "notify_backtrack " << new_level << " return void" << std::endl;
 }
 
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
     for ( const auto &lit : model )
-    {
         if ( !isLiteralNotified( lit ) )
             notify_assignment( lit, false );
-    }
+
     _engine->setStopConditionFlag( false );
     bool result = _engine->solve( 0 );
-    std::cout << "cb_check_found_model return " << result << std::endl;
     return result;
 }
 
@@ -764,11 +755,9 @@ int SmtCore::cb_decide()
         _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        std::cout << "cb_decide return " << lit << std::endl;
         return lit;
     }
 
-    std::cout << "cb_decide return " << 0 << std::endl;
     return 0;
 }
 
@@ -778,38 +767,46 @@ int SmtCore::cb_propagate()
     {
         _engine->setStopConditionFlag( false );
         _engine->solve( 0 );
+        _engine->propagateBoundManagerTightenings();
         int literal;
         for ( const auto *plc : _cadicalVarToPlc.values() )
-        {
             if ( plc )
             {
                 literal = plc->propagatePhaseAsLit();
                 if ( literal && !isLiteralNotified( literal ) )
                 {
-                    ASSERT( plc->getPhaseFixingEntry() );
+                    ASSERT( !isLiteralNotified( -literal ) );
+                    ASSERT( plc->getPhaseFixingEntry() && plc->getPhaseFixingEntry()->lemma );
                     _literalsToPropagate.append( literal );
                 }
             }
-        }
+
+
+        auto compareLitsByPhaseId = [this]( int a, int b ) -> bool {
+            return _cadicalVarToPlc.at( abs( a ) )->getPhaseFixingEntry()->id >=
+                   _cadicalVarToPlc.at( abs( b ) )->getPhaseFixingEntry()->id;
+        };
+        std::sort( _literalsToPropagate.begin(), _literalsToPropagate.end(), compareLitsByPhaseId );
+        _literalsToPropagate.insertHead( 0 );
     }
 
     if ( !_literalsToPropagate.empty() )
     {
         int lit = _literalsToPropagate.pop();
         ASSERT( !isLiteralNotified( -lit ) );
-        _assignedLiterals.push_back( lit );
+        if ( lit )
+            _assignedLiterals.push_back( lit );
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        std::cout << "cb_propagate return " << lit << std::endl;
         return lit;
     }
 
-    std::cout << "cb_propagate return " << 0 << std::endl;
     return 0;
 }
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
     ASSERT( propagated_lit )
+    ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
 
     if ( !_isReasonClauseInitialized )
     {
@@ -817,6 +814,9 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
         for ( int lit : toAdd )
         {
+            ASSERT( _cadicalVarToPlc[abs( propagated_lit )]->getPhaseFixingEntry()->id >
+                    _cadicalVarToPlc[abs( lit )]->getPhaseFixingEntry()->id );
+
             if ( !_fixedCadicalVars.exists( lit ) )
                 _reasonClauseLiterals.append( -lit );
         }
@@ -830,19 +830,16 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     if ( _reasonClauseLiterals.empty() )
     {
         _isReasonClauseInitialized = false;
-        std::cout << "cb_add_reason_clause_lit " << propagated_lit << " return " << 0 << std::endl;
         return 0;
     }
 
     int lit = _reasonClauseLiterals.pop();
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    std::cout << "cb_add_reason_clause_lit " << propagated_lit << " return " << lit << std::endl;
     return lit;
 }
 
 bool SmtCore::cb_has_external_clause()
 {
-    std::cout << "cb_has_external_clause return " << !_externalClausesToAdd.empty() << std::endl;
     return !_externalClausesToAdd.empty();
 }
 
@@ -855,12 +852,10 @@ int SmtCore::cb_add_external_clause_lit()
     {
         int lit = currentClause.pop();
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        std::cout << "cb_add_external_clause_lit return " << lit << std::endl;
         return lit;
     }
 
     _externalClausesToAdd.pop();
-    std::cout << "cb_add_external_clause_lit return " << 0 << std::endl;
     return 0;
 }
 
