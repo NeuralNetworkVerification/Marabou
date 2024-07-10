@@ -3399,7 +3399,6 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
-        _smtCore.addTrivialConflictClause();
         return;
     }
 
@@ -3798,7 +3797,6 @@ bool Engine::certifyUNSATCertificate()
 
 void Engine::markLeafToDelegate()
 {
-    //    std::cout << "markLeafToDelegate" << std::endl;
     ASSERT( _produceUNSATProofs );
     ASSERT( _produceUNSATProofs );
 
@@ -4026,13 +4024,6 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
         litConstraint->getPhaseFixingEntry();
 
     // Return a clause explaining the phase-fixing GroundBound entry
-//    std::cout << "var: " << var << std::endl;
-//    std::cout << "; phaseFixed: " << litConstraint->phaseFixed() << std::endl;
-//    std::cout << "; isActive: " << litConstraint->isActive() << std::endl;
-//    std::cout << "; phaseFixingEntry: " << phaseFixingEntry << std::endl;
-//    std::cout << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma << std::endl;
-//    std::cout << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing << std::endl;
-//    std::cout << std::endl;
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();

@@ -761,8 +761,9 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
             notify_assignment( lit, false );
     _engine->setStopConditionFlag( false );
     bool result = _engine->solve( 0 );
-    std::cout << "check found model result: " << result
-              << "; has external clause: " << cb_has_external_clause() << std::endl;
+    // In cases where  Marabou fails to provide a conflict clause, add the trivial possibility
+    if ( !result && !cb_has_external_clause() )
+        addTrivialConflictClause();
     return result;
 }
 
@@ -932,4 +933,3 @@ void SmtCore::turnNeedToSplitOff()
 {
     _needToSplit = false;
 }
-
