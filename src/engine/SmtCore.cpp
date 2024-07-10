@@ -917,7 +917,7 @@ bool SmtCore::isLiteralToBePropagated( int literal ) const
     return false;
 }
 
-void SmtCore::addTrivialConfclitClause()
+void SmtCore::addTrivialConflictClause()
 {
     Set<int> clause = Set<int>();
     for ( int lit : _assignedLiterals )
@@ -926,3 +926,9 @@ void SmtCore::addTrivialConfclitClause()
 
     addExternalClause( clause );
 }
+
+void SmtCore::turnNeedToSplitOff()
+{
+    _needToSplit = false;
+}
+

@@ -213,7 +213,8 @@ public:
     const PiecewiseLinearConstraint *getConstraintFromLit( int lit ) const;
 
     void addLiteralToPropagate( int lit );
-    void addTrivialConfclitClause();
+    void addTrivialConflictClause();
+    void turnNeedToSplitOff();
 private:
     /*
       Valid splits that were implied by level 0 of the stack.

@@ -306,7 +306,19 @@ bool Engine::solve( double timeoutInSeconds )
                 //                be removed
                 //                _smtCore.performSplit(); splitJustPerformed = true;
                 //                continue;
+                bool canSplit = false;
+                for (const auto &constraint : _plConstraints)
+                    if (!constraint->phaseFixed())
+                        canSplit = true;
+
                 _boundManager.propagateTightenings();
+                // TODO why it can happen?
+                if (!canSplit)
+                {
+                    _smtCore.turnNeedToSplitOff();
+                    continue;
+                }
+
                 return false;
             }
 
@@ -3387,7 +3399,7 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
-        _smtCore.addTrivialConfclitClause();
+        _smtCore.addTrivialConflictClause();
         return;
     }
 
