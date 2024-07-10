@@ -132,7 +132,7 @@ void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, doubl
     else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
-    if ( !_cadicalVars.empty() && phaseFixed() )
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
         _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
@@ -144,7 +144,7 @@ void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, doubl
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
 
-    if ( !_cadicalVars.empty() && phaseFixed() )
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
         _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
