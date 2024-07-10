@@ -916,3 +916,13 @@ bool SmtCore::isLiteralToBePropagated( int literal ) const
             return true;
     return false;
 }
+
+void SmtCore::addTrivialConfclitClause()
+{
+    Set<int> clause = Set<int>();
+    for ( int lit : _assignedLiterals )
+        if ( _cadicalWrapper.isDecision( lit ) )
+            clause.insert( lit );
+
+    addExternalClause( clause );
+}

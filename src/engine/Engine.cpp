@@ -3387,6 +3387,7 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
+        _smtCore.addTrivialConfclitClause();
         return;
     }
 
