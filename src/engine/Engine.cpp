@@ -307,13 +307,13 @@ bool Engine::solve( double timeoutInSeconds )
                 //                _smtCore.performSplit(); splitJustPerformed = true;
                 //                continue;
                 bool canSplit = false;
-                for (const auto &constraint : _plConstraints)
-                    if (!constraint->phaseFixed())
+                for ( const auto &constraint : _plConstraints )
+                    if ( !constraint->phaseFixed() )
                         canSplit = true;
 
                 _boundManager.propagateTightenings();
                 // TODO why it can happen?
-                if (!canSplit)
+                if ( !canSplit )
                 {
                     _smtCore.turnNeedToSplitOff();
                     continue;

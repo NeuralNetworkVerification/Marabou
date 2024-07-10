@@ -773,7 +773,8 @@ int SmtCore::cb_decide()
         _constraintForSplitting->setActiveConstraint( false );
         int lit = _constraintForSplitting->propagatePhaseAsLit();
         ASSERT( !isLiteralAssigned( -lit ) );
-        _assignedLiterals.push_back( lit );
+        if ( lit )
+            _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
         return lit;
