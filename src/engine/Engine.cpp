@@ -1451,16 +1451,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
 
-        if ( _networkLevelReasoner )
-        {
-            CustomDNNImpl network = CustomDNNImpl( _networkLevelReasoner );
-            // torch::Tensor input = torch::tensor({{0.1300, -0.6401,  0.3475, -0.0579, -0.9246, 0.7567,
-            // 0.2141, -1.1153, 0.8332,  0.0851}}); int target = 0;
-            // torch::Device device( torch::kCPU );
-            PGDAttack pgd_attack( network, inputQuery.getLowerBounds(), inputQuery.getUpperBounds() );
-            pgd_attack.displayAdversarialExample();
-        }
-
+        CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
+        // torch::Tensor input = torch::tensor({{0.1300, -0.6401,  0.3475, -0.0579, -0.9246,  0.7567,  0.2141, -1.1153, 0.8332,  0.0851}});
+        // int target = 0;
+        torch::Device device(torch::kCPU);
+        PGDAttack pgd_attack(network, inputQuery.getLowerBounds(), inputQuery.getUpperBounds());
+        pgd_attack.displayAdversarialExample();
 
         if ( preprocess )
         {
