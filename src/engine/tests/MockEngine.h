@@ -252,7 +252,8 @@ public:
     {
         return 0;
     }
-    std::shared_ptr<GroundBoundManager::GroundBoundEntry> getGroundBoundEntry( unsigned /*var*/, bool /*isUpper*/ ) const override
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    getGroundBoundEntry( unsigned /*var*/, bool /*isUpper*/ ) const override
     {
         return nullptr;
     }
@@ -326,6 +327,10 @@ public:
     }
 
     void preSolve()
+    {
+    }
+
+    void removeLiteralFromPropagations( int /*literal*/ )
     {
     }
 };
