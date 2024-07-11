@@ -924,7 +924,8 @@ private:
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned id,
-                                            int explainedVar ) override;
+                                            int explainedVar,
+                                            bool isUpper ) override;
 
     /*
       Attempts to reduce a conflict clause, while explanation can still be used to prove UNSAT

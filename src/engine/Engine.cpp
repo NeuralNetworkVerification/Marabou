@@ -3455,8 +3455,8 @@ void Engine::explainSimplexFailure()
 
     SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
                                             leafContradictionVec.size() );
-    Set<int> clause =
-        clauseFromContradictionVector( sparseContradiction, _groundBoundManager.getCounter(), -1 );
+    Set<int> clause = clauseFromContradictionVector(
+        sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
     // If possible, attempt to reduce the clause size
     if ( !clause.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
@@ -3833,7 +3833,7 @@ bool Engine::certifyUNSATCertificate()
 
 void Engine::markLeafToDelegate()
 {
-    //    std::cout << "markLeafToDelegate" << std::endl;
+    std::cout << "markLeafToDelegate" << std::endl;
     ASSERT( _produceUNSATProofs );
 
     // Mark leaf with toDelegate Flag
@@ -3947,7 +3947,8 @@ void Engine::extractBounds( InputQuery &inputQuery )
 
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                 unsigned id,
-                                                int explainedVar )
+                                                int explainedVar,
+                                                bool isUpper )
 {
     ASSERT( _nlConstraints.empty() && !explanation.empty() );
     Set<int> clause = Set<int>();
@@ -3973,10 +3974,10 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         if ( constraint->getPhaseFixingEntry() && constraint->getPhaseFixingEntry()->id < id )
         {
             for ( unsigned var : constraint->getParticipatingVariables() )
-                if ( !FloatUtils::isZero( linearCombination[var] ) &&
+                if (  !FloatUtils::isZero( linearCombination[var] )  &&
                      _groundBoundManager
                          .getGroundBoundEntryUpToId(
-                             var, linearCombination[var] > 0 ? Tightening::UB : Tightening::LB, id )
+                             var, (linearCombination[var] > 0 ) ^ isUpper ? Tightening::LB : Tightening::UB, id )
                          ->isPhaseFixing )
                     lit = constraint->propagatePhaseAsLit();
         }
@@ -4017,7 +4018,8 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         {
             minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
                                                          entry->id,
-                                                         entry->lemma->getCausingVars().back() );
+                                                         entry->lemma->getCausingVars().back(),
+                                                         entry->lemma->getCausingVarBound() );
             _groundBoundManager.addClauseToGroundBoundEntry( entry->lemma->getAffectedVar(),
                                                              entry->lemma->getAffectedVarBound(),
                                                              id,
@@ -4073,8 +4075,10 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
-    clause = clauseFromContradictionVector(
-        tempExpl, phaseFixingEntry->id, phaseFixingEntry->lemma->getCausingVars().back() );
+    clause = clauseFromContradictionVector( tempExpl,
+                                            phaseFixingEntry->id,
+                                            phaseFixingEntry->lemma->getCausingVars().back(),
+                                            phaseFixingEntry->lemma->getCausingVarBound() );
 
     if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
         clause = reduceClauseSizeWithProof(

@@ -306,9 +306,8 @@ public:
         return nullptr;
     }
 
-    Set<int> clauseFromContradictionVector( const SparseUnsortedList & /*explanation*/,
-                                            unsigned /*id*/,
-                                            int /*explainedVar*/ )
+    Set<int>
+    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool isUpper )
     {
         return Set<int>();
     }

@@ -201,7 +201,8 @@ public:
 
     virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                     unsigned id,
-                                                    int explainedVar ) = 0;
+                                                    int explainedVar,
+                                                    bool isUpper ) = 0;
 
     virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
 
