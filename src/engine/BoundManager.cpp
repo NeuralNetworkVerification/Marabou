@@ -420,6 +420,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        PiecewiseLinearConstraint &constraint,
                                                        bool isPhaseFixing )
 {
+    if ( causingVars.back() == 163 )
+        std::cout << "tightened; upperBound: " << getUpperBound( var ) << std::endl;
     if ( !shouldProduceProofs() )
         return false;
 
@@ -484,6 +486,9 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
             _engine->setStopConditionFlag( true );
         }
     }
+    else
+        _engine->removeLiteralFromPropagations(constraint.propagatePhaseAsLit());
+
     return true;
 }
 

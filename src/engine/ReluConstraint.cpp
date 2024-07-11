@@ -133,7 +133,15 @@ void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, doubl
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
     if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+    {
+        if ( _cadicalVars.back() == 5 )
+            std::cout << "propagating 5; is b: " << (variable == _b) << "variable" << variable <<
+                "; bound: "
+                                                                                      <<
+                bound <<
+                std::endl;
         _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+    }
 }
 
 void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )

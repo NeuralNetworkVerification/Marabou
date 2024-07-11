@@ -865,7 +865,7 @@ int SmtCore::cb_add_external_clause_lit()
 
 void SmtCore::addExternalClause( const Set<int> &clause )
 {
-    ASSERT( !clause.exists( 0 ) && !clause.empty() )
+    ASSERT( !clause.exists( 0 ) )
     Vector<int> toAdd( 0 );
     for ( int lit : clause )
         if ( !_fixedCadicalVars.exists( lit ) )
@@ -901,13 +901,13 @@ void SmtCore::solveWithCadical()
         ASSERT( false );
 }
 
-void SmtCore::addLiteralToPropagate( int lit )
+void SmtCore::addLiteralToPropagate( int literal )
 {
-    ASSERT( lit );
-    if ( !isLiteralAssigned( lit ) && !isLiteralToBePropagated( lit ) )
+    ASSERT( literal );
+    if ( !isLiteralAssigned( literal ) && !isLiteralToBePropagated( literal ) )
     {
-        ASSERT( !isLiteralAssigned( -lit ) && !isLiteralToBePropagated( -lit ) );
-        _literalsToPropagate.append( Pair<int, int>( lit, _context.getLevel() ) );
+        ASSERT( !isLiteralAssigned( -literal ) && !isLiteralToBePropagated( -literal ) );
+        _literalsToPropagate.append( Pair<int, int>( literal, _context.getLevel() ) );
     }
 }
 
@@ -934,4 +934,9 @@ Set<int> SmtCore::addTrivialConflictClause()
 void SmtCore::turnNeedToSplitOff()
 {
     _needToSplit = false;
+}
+
+void SmtCore::removeLiteralFromPropagations( int literal )
+{
+    _literalsToPropagate.erase( Pair<int, int>( literal, _context.getLevel() ) );
 }

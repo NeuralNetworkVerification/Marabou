@@ -965,6 +965,8 @@ private:
     bool _stopConditionFlag = false;
 
     void setStopConditionFlag( bool value ) override;
+
+    void removeLiteralFromPropagations( int literal ) override;
 };
 
 #endif // __Engine_h__

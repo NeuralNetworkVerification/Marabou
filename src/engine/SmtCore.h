@@ -212,11 +212,13 @@ public:
 
     const PiecewiseLinearConstraint *getConstraintFromLit( int lit ) const;
 
-    void addLiteralToPropagate( int lit );
+    void addLiteralToPropagate( int literal );
 
     void turnNeedToSplitOff();
 
     Set<int> addTrivialConflictClause();
+
+    void removeLiteralFromPropagations( int literal );
 
 private:
     /*
@@ -309,7 +311,6 @@ private:
     bool isLiteralAssigned( int literal ) const;
 
     bool isLiteralToBePropagated( int literal ) const;
-
 };
 
 #endif // __SmtCore_h__

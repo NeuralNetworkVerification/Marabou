@@ -3398,6 +3398,7 @@ void Engine::explainSimplexFailure()
 
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
+        std::cout << "markLeafToDelegate" << std::endl;
         markLeafToDelegate();
         Set<int> clause = _smtCore.addTrivialConflictClause();
 
@@ -3435,7 +3436,7 @@ void Engine::explainSimplexFailure()
             }
         }
         ipq.saveQuery(
-            "test_query_" +
+            "delegation_test_query_" +
             std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) ) +
             ".ipq" );
 
@@ -3457,10 +3458,8 @@ void Engine::explainSimplexFailure()
     Set<int> clause =
         clauseFromContradictionVector( sparseContradiction, _groundBoundManager.getCounter(), -1 );
 
-    ASSERT( !clause.empty() );
-
     // If possible, attempt to reduce the clause size
-    if ( checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    if ( !clause.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
         clause = reduceClauseSizeWithProof(
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
 
@@ -3468,43 +3467,43 @@ void Engine::explainSimplexFailure()
 
     // TODO: delete the following or move to a different function
     // Create input query for each conflict clause for testing the clause
-//    InputQuery ipq( *_preprocessedQuery );
-//    for ( int lit : clause )
-//    {
-//        ASSERT( lit != 0 );
-//        if ( lit > 0 )
-//        {
-//            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
-//            unsigned int b = relu->getB();
-//            unsigned int f = relu->getF();
-//            unsigned int aux = relu->getAux();
-//
-//            Equation eq( Equation::EQ );
-//            eq.addAddend( 1, b );
-//            eq.addAddend( -1, f );
-//            eq.setScalar( 0 );
-//            ipq.addEquation( eq );
-//
-//            ipq.setLowerBound( b, 0 );
-//            ipq.setLowerBound( f, 0 );
-//            ipq.setUpperBound( aux, 0 );
-//        }
-//        else
-//        {
-//            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
-//            unsigned int b = relu->getB();
-//            unsigned int f = relu->getF();
-//            unsigned int aux = relu->getAux();
-//
-//            ipq.setUpperBound( b, 0 );
-//            ipq.setUpperBound( f, 0 );
-//            ipq.setLowerBound( aux, 0 );
-//        }
-//    }
-//    ipq.saveQuery(
-//        "test_query_" +
-//        std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) ) +
-//        ".ipq" );
+    InputQuery ipq( *_preprocessedQuery );
+    for ( int lit : clause )
+    {
+        ASSERT( lit != 0 );
+        if ( lit > 0 )
+        {
+            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
+            unsigned int b = relu->getB();
+            unsigned int f = relu->getF();
+            unsigned int aux = relu->getAux();
+
+            Equation eq( Equation::EQ );
+            eq.addAddend( 1, b );
+            eq.addAddend( -1, f );
+            eq.setScalar( 0 );
+            ipq.addEquation( eq );
+
+            ipq.setLowerBound( b, 0 );
+            ipq.setLowerBound( f, 0 );
+            ipq.setUpperBound( aux, 0 );
+        }
+        else
+        {
+            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
+            unsigned int b = relu->getB();
+            unsigned int f = relu->getF();
+            unsigned int aux = relu->getAux();
+
+            ipq.setUpperBound( b, 0 );
+            ipq.setUpperBound( f, 0 );
+            ipq.setLowerBound( aux, 0 );
+        }
+    }
+    ipq.saveQuery(
+        "test_query_" +
+        std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) ) +
+        ".ipq" );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -3835,7 +3834,7 @@ bool Engine::certifyUNSATCertificate()
 
 void Engine::markLeafToDelegate()
 {
-//    std::cout << "markLeafToDelegate" << std::endl;
+    //    std::cout << "markLeafToDelegate" << std::endl;
     ASSERT( _produceUNSATProofs );
 
     // Mark leaf with toDelegate Flag
@@ -4003,7 +4002,8 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
-            if ( entry->lemma != nullptr && !entry->isPhaseFixing &&
+            if ( entry->lemma != nullptr && !entry->lemma->getExplanations().empty() &&
+                 !entry->lemma->getExplanations().front().empty() && !entry->isPhaseFixing &&
                  entry->id > 2 * _tableau->getN() )
                 entries.append( entry );
         }
@@ -4060,6 +4060,15 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     // Get corresponding constraints, and its participating variables
     std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
         litConstraint->getPhaseFixingEntry();
+
+    //    std::cout << "var: " << var << std::endl;
+    //    std::cout << "; phaseFixed: " << litConstraint->phaseFixed() << std::endl;
+    //    std::cout << "; isActive: " << litConstraint->isActive() << std::endl;
+    //    std::cout << "; phaseFixingEntry: " << phaseFixingEntry << std::endl;
+    //    std::cout << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma << std::endl;
+    //    std::cout << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing
+    //              << std::endl;
+    //    std::cout << std::endl;
 
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
@@ -4236,4 +4245,9 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
 void Engine::setStopConditionFlag( bool value )
 {
     _stopConditionFlag = value;
+}
+
+void Engine::removeLiteralFromPropagations( int literal )
+{
+    _smtCore.removeLiteralFromPropagations( literal );
 }
