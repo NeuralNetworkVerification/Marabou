@@ -972,7 +972,7 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
 void OnnxParser::constant( onnx::NodeProto &node )
 {
     String outputNodeName = node.output()[0];
-    const onnx::TensorProto &value = getTensorAttribute( node, "value" );
+    const onnx::TensorProto value = getTensorAttribute( node, "value" );
     const TensorShape shape = shapeOfConstant( value );
 
     _shapeMap[outputNodeName] = shape;
