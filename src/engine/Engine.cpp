@@ -1445,16 +1445,16 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
         //     inputQuery.setLowerBound(inputVar, -1.0); // Set lower bounds
         //     inputQuery.setUpperBound(inputVar, 1.0);  // Set upper bounds
         // }
-
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
-
-        CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
-        torch::Device device(torch::kCPU);
-        PGDAttack pgd_attack(network, inputQuery);
-        pgd_attack.displayAdversarialExample();
+        if (_networkLevelReasoner)
+        {
+            CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
+            PGDAttack pgd_attack(network, inputQuery);
+            pgd_attack.displayAdversarialExample();
+        }
 
         if ( preprocess )
         {
