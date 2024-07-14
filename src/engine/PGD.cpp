@@ -25,7 +25,7 @@ PGDAttack::PGDAttack(CustomDNNImpl &model, InputQuery &inputQuery, double alpha,
     epsilon = variables.second;
 }
 
-torch::Device PGDAttack::getDevice() {
+torch::Device PGDAttack::_getDevice() {
     if (torch::cuda::is_available()) {
         std::cout << "CUDA is available. Using GPU." << std::endl;
         return {torch::kCUDA};
