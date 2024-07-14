@@ -3949,7 +3949,7 @@ void Engine::extractBounds( InputQuery &inputQuery )
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                 unsigned id,
                                                 int explainedVar,
-                                                bool /*isUpper*/ )
+                                                bool isUpper )
 {
     ASSERT( _nlConstraints.empty() && !explanation.empty() );
     Set<int> clause = Set<int>();
@@ -3976,13 +3976,10 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         {
             for ( unsigned var : constraint->getParticipatingVariables() )
                 if (  !FloatUtils::isZero( linearCombination[var] )  &&
-                     ( _groundBoundManager
+                     _groundBoundManager
                          .getGroundBoundEntryUpToId(
-                             var,  Tightening::LB , id )
-                         ->isPhaseFixing  || _groundBoundManager
-                           .getGroundBoundEntryUpToId(
-                               var,  Tightening::UB, id )
-                           ->isPhaseFixing ) )
+                             var, (linearCombination[var] > 0 ) ^ isUpper ? Tightening::LB : Tightening::UB, id )
+                         ->isPhaseFixing )
                     lit = constraint->propagatePhaseAsLit();
         }
 
