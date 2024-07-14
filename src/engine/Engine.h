@@ -963,10 +963,6 @@ private:
                                const Set<int> &clause,
                                const std::shared_ptr<PLCLemma> lemma ) const;
 
-    bool _stopConditionFlag = false;
-
-    void setStopConditionFlag( bool value ) override;
-
     void removeLiteralFromPropagations( int literal ) override;
 };
 

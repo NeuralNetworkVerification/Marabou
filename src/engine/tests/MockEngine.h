@@ -321,10 +321,6 @@ public:
     {
     }
 
-    void setStopConditionFlag( bool /*value*/ )
-    {
-    }
-
     void preSolve()
     {
     }

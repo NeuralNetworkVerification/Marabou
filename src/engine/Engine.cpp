@@ -341,9 +341,6 @@ bool Engine::solve( double timeoutInSeconds )
                 // Check the status of the PL constraints
                 bool solutionFound = adjustAssignmentToSatisfyNonLinearConstraints();
 
-                if ( _stopConditionFlag )
-                    return false;
-
                 if ( solutionFound )
                 {
                     if ( allNonlinearConstraintsHold() )
@@ -4282,11 +4279,6 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
 
     return checkLinearCombinationForClause(
         explanationLinearCombination, gub, glb, clauseVec, lemma );
-}
-
-void Engine::setStopConditionFlag( bool value )
-{
-    _stopConditionFlag = value;
 }
 
 void Engine::removeLiteralFromPropagations( int literal )

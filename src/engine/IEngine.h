@@ -208,7 +208,6 @@ public:
 
     virtual void solveWithCadical() = 0;
 
-    virtual void setStopConditionFlag( bool value ) = 0;
 
     virtual void removeLiteralFromPropagations( int literal ) = 0;
 };

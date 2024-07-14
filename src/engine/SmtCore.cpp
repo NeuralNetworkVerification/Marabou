@@ -759,7 +759,6 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     for ( const auto &lit : model )
         if ( !isLiteralAssigned( lit ) )
             notify_assignment( lit, false );
-    _engine->setStopConditionFlag( false );
     bool result = _engine->solve( 0 );
     // In cases where  Marabou fails to provide a conflict clause, add the trivial possibility
     if ( !result && !cb_has_external_clause() )
@@ -788,7 +787,6 @@ int SmtCore::cb_propagate()
 {
     if ( _literalsToPropagate.empty() )
     {
-        _engine->setStopConditionFlag( false );
         _engine->solve( 0 );
         try
         {

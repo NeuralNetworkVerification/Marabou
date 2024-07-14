@@ -17,7 +17,6 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "InfeasibleQueryException.h"
 #include "MarabouError.h"
 #include "Tableau.h"
 #include "Tightening.h"
@@ -481,7 +480,6 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
         {
             ASSERT( constraint.getPhaseFixingEntry() == nullptr );
             constraint.setPhaseFixingEntry( phaseFixingEntry );
-            _engine->setStopConditionFlag( true );
         }
     }
     else
