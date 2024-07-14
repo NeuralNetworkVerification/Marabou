@@ -307,7 +307,7 @@ public:
     }
 
     Set<int>
-    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool isUpper )
+    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool )
     {
         return Set<int>();
     }
