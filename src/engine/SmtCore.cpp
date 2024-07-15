@@ -645,8 +645,11 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 {
     for ( int curLiteral : _assignedLiterals )
         if ( curLiteral == literal )
+        {
+            ASSERT( _cadicalVarToPlc.at( abs( literal ) )->phaseFixed() ||
+                    !_cadicalVarToPlc.at( abs( literal ) )->isActive() )
             return true;
-
+        }
     return false;
 }
 
@@ -655,8 +658,9 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
-    if ( isLiteralAssigned( lit ) )
-        return;
+    // TODO check if necessary
+    //    if ( isLiteralAssigned( lit ) )
+    //        return;
 
     ASSERT( !isLiteralAssigned( -lit ) );
 
@@ -757,9 +761,10 @@ void SmtCore::notify_backtrack( size_t new_level )
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
     for ( const auto &lit : model )
-        if ( !isLiteralAssigned( lit ) )
-            notify_assignment( lit, false );
+        notify_assignment( lit, false );
+    printf( "checking model\n" );
     bool result = _engine->solve( 0 );
+    printf( "done checking model with result %d\n", result );
     // In cases where  Marabou fails to provide a conflict clause, add the trivial possibility
     if ( !result && !cb_has_external_clause() )
         addTrivialConflictClause();
