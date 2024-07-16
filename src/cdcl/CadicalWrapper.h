@@ -78,7 +78,7 @@ public:
     /*
       Get reason of valid observed literal.
     */
-    bool isDecision( int observedVar ) override;
+    bool isDecision( int observedVar ) const override;
 
     /*
       Return the number of vars;

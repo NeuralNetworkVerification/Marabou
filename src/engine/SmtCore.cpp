@@ -671,15 +671,6 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
             _engine->getGroundBoundEntry( split.getBoundTightenings().back()._variable,
                                           split.getBoundTightenings().back()._type ) );
     plc->setActiveConstraint( false );
-    try
-    {
-        _engine->propagateBoundManagerTightenings();
-    }
-    catch ( const InfeasibleQueryException & )
-    {
-        printf( "catching exception on notification\n" );
-        _engine->explainSimplexFailure();
-    }
     _assignedLiterals.push_back( lit );
 }
 
@@ -762,11 +753,20 @@ void SmtCore::notify_backtrack( size_t new_level )
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
     ASSERT( _externalClausesToAdd.empty() );
-    printf( "checking model\n" );
     for ( const auto &lit : model )
         notify_assignment( lit, false );
+    try
+    {
+        _engine->propagateBoundManagerTightenings();
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        _engine->explainSimplexFailure();
+    }
+
+    if ( !_externalClausesToAdd.empty() )
+        return false;
     bool result = _engine->solve( 0 );
-    printf( "done checking model with result %d\n", result );
     // In cases where  Marabou fails to provide a conflict clause, add the trivial possibility
     if ( !result && !cb_has_external_clause() )
         addTrivialConflictClause();
@@ -802,7 +802,6 @@ int SmtCore::cb_propagate()
             }
             catch ( const InfeasibleQueryException & )
             {
-                printf( "catching exception\n" );
                 _engine->explainSimplexFailure();
             }
         _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );

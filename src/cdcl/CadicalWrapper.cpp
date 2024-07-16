@@ -73,7 +73,7 @@ void CadicalWrapper::removeObservedVar( int var )
     d_solver->remove_observed_var( var );
 }
 
-bool CadicalWrapper::isDecision( int observedVar )
+bool CadicalWrapper::isDecision( int observedVar ) const
 {
     return d_solver->is_decision( observedVar );
 }

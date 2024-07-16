@@ -71,7 +71,7 @@ public:
     /*
       Get reason of valid observed literal.
     */
-    virtual bool isDecision( int observedVar ) = 0;
+    virtual bool isDecision( int observedVar ) const = 0;
 };
 
 
