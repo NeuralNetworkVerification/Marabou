@@ -483,7 +483,7 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
         }
     }
     else
-        _engine->removeLiteralFromPropagations(constraint.propagatePhaseAsLit());
+        _engine->removeLiteralFromPropagations( constraint.propagatePhaseAsLit() );
 
     return true;
 }

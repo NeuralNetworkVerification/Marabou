@@ -230,6 +230,7 @@ bool Engine::solve( double timeoutInSeconds )
 
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
+    _tableau->computeAssignment();
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -345,6 +346,20 @@ bool Engine::solve( double timeoutInSeconds )
                 {
                     if ( allNonlinearConstraintsHold() )
                     {
+                        // TODO: remove following loop
+                        for ( unsigned int v = 0; v < _tableau->getN(); ++v )
+                        {
+                            ASSERT( FloatUtils::areEqual( _tableau->getLowerBound( v ),
+                                                          _boundManager.getLowerBound( v ) ) );
+
+                            ASSERT( FloatUtils::areEqual( _tableau->getUpperBound( v ),
+                                                          _boundManager.getUpperBound( v ) ) );
+                        }
+
+                        List<Tightening> tightenings;
+                        _boundManager.getTightenings( tightenings );
+                        ASSERT( tightenings.empty() );
+
                         mainLoopEnd = TimeUtils::sampleMicro();
                         _statistics.incLongAttribute(
                             Statistics::TIME_MAIN_LOOP_MICRO,
@@ -4054,21 +4069,21 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 {
     ASSERT( litConstraint );
     ASSERT( litConstraint->phaseFixed() || !litConstraint->isActive() );
-//    unsigned int var = litConstraint->getCadicalVars().back();
+    //    unsigned int var = litConstraint->getCadicalVars().back();
     Set<int> clause;
 
     // Get corresponding constraints, and its participating variables
     std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
         litConstraint->getPhaseFixingEntry();
 
-//    std::cout << "var: " << var << std::endl;
-//    std::cout << "; phaseFixed: " << litConstraint->phaseFixed() << std::endl;
-//    std::cout << "; isActive: " << litConstraint->isActive() << std::endl;
-//    std::cout << "; phaseFixingEntry: " << phaseFixingEntry << std::endl;
-//    std::cout << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma << std::endl;
-//    std::cout << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing
-//              << std::endl;
-//    std::cout << std::endl;
+    //    std::cout << "var: " << var << std::endl;
+    //    std::cout << "; phaseFixed: " << litConstraint->phaseFixed() << std::endl;
+    //    std::cout << "; isActive: " << litConstraint->isActive() << std::endl;
+    //    std::cout << "; phaseFixingEntry: " << phaseFixingEntry << std::endl;
+    //    std::cout << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma << std::endl;
+    //    std::cout << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing
+    //              << std::endl;
+    //    std::cout << std::endl;
 
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
