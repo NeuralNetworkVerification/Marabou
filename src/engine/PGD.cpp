@@ -121,14 +121,13 @@ bool PGDAttack::_isWithinBounds(const torch::Tensor& sample, unsigned type) {
 
 
 torch::Tensor PGDAttack::_calculateLoss(const torch::Tensor& predictions) {
-    // Convert output bounds to tensors
     torch::Tensor lowerBoundTensor = torch::tensor(outputBounds.first.data(), torch::kFloat32).to(device);
     torch::Tensor upperBoundTensor = torch::tensor(outputBounds.second.data(), torch::kFloat32).to(device);
 
-    // Compute the penalty: We want to penalize if predictions are inside the bounds
+    // Compute the penalty: We want high loss if predictions are inside the bounds
     torch::Tensor penalty = torch::add(
-        - torch::relu(predictions - upperBoundTensor), // Penalize if pred > upperBound
-        - torch::relu(lowerBoundTensor - predictions)  // Penalize if pred < lowerBound
+        - torch::relu(predictions - upperBoundTensor),
+        - torch::relu(lowerBoundTensor - predictions)
     );
 
     return torch::sum(penalty);
@@ -151,13 +150,9 @@ torch::Tensor PGDAttack::_findDelta() {
 
             torch::Tensor pred = model.forward(originalInput + delta);
             torch::Tensor loss = _calculateLoss(pred);
-
             // Negate the loss for maximization
             (-loss).backward();
-
-            // Step the optimizer
             optimizer.step();
-
             // Project delta back to epsilon-ball
             delta.data() = delta.data().clamp(-epsilon, epsilon);
         }

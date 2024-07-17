@@ -3,21 +3,16 @@
 #include "NetworkLevelReasoner.h"
 
 CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* networkLevelReasoner) {
-    unsigned totalVariables = 0;
-    unsigned linearLayersNum = 0;
 
     std::cout << "----- Construct Custom Network -----" << std::endl;
 
-    // Iterate over layers
     for (unsigned i = 0; i < networkLevelReasoner->getNumberOfLayers(); i++) {
         const NLR::Layer* layer = networkLevelReasoner->getLayer(i);
         layerSizes.append(layer->getSize());
-        totalVariables += layer->getSize();
         NLR::Layer::Type layerType = layer->getLayerType();
 
         if (layerType == NLR::Layer::WEIGHTED_SUM) {
             // Fully connected layer
-            linearLayersNum ++;
             unsigned sourceLayer = i - 1;
             const NLR::Layer *prevLayer = networkLevelReasoner->getLayer(sourceLayer);
             unsigned inputSize = prevLayer->getSize();
@@ -55,24 +50,22 @@ CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* networkLevelReason
                 linearLayer->weight.set_(weightTensor);
                 linearLayer->bias.set_(biasTensor);
             }
-
+        // activation layers
         } else if (layerType == NLR::Layer::RELU || layerType == NLR::Layer::LEAKY_RELU ||
                    layerType == NLR::Layer::SIGMOID || layerType == NLR::Layer::ABSOLUTE_VALUE ||
                    layerType == NLR::Layer::MAX || layerType == NLR::Layer::SIGN ||
                    layerType == NLR::Layer::ROUND || layerType == NLR::Layer::SOFTMAX) {
-            // Handle activation layers
             activations.append(layerType);
         } else if (layerType == NLR::Layer::BILINEAR) {
-            // Handle bilinear layers todo what ?
+            //  todo what to do when BILINEAR ?
         } else if (layerType == NLR::Layer::INPUT) {
             // No action needed for input layer
         } else {
             std::cerr << "Unsupported layer type: " << layerType << std::endl;
         }
     }
-    std::cout << "Number of linear layers: " << linearLayers.size() + 1<< std::endl; // add 1 for input layer.
+    std::cout << "Number of layers: " << linearLayers.size() + 1<< std::endl; // add 1 for input layer.
     std::cout << "Number of activations: " << activations.size() << std::endl;
-    std::cout << "Total number of variables: " << totalVariables << std::endl;
     std::cout << "Input layer size: " << layerSizes.first() << std::endl;
     std::cout << "Output layer size: " << layerSizes.last() << std::endl;
 
@@ -87,7 +80,7 @@ torch::Tensor CustomDNNImpl::forward(torch::Tensor x) {
                 x = torch::relu(x);
                 break;
             case NLR::Layer::LEAKY_RELU:
-                x = torch::leaky_relu(x, 0.01);
+                x = torch::leaky_relu(x);
                 break;
             case NLR::Layer::SIGMOID:
                 x = torch::sigmoid(x);
@@ -96,7 +89,7 @@ torch::Tensor CustomDNNImpl::forward(torch::Tensor x) {
                 x = torch::abs(x);
                 break;
             case NLR::Layer::MAX:
-                x = std::get<0>(torch::max( x ,1));
+                x = torch::max( x );
                 break;
             case NLR::Layer::SIGN:
                 x = torch::sign(x);
