@@ -90,6 +90,8 @@ public:
                 lastUpperBounds.append( Bound( bound._variable, bound._value ) );
             }
         }
+
+        return false;
     }
 
     void postContextPopHook()
