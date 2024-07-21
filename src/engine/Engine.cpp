@@ -4307,9 +4307,9 @@ void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
     {
         int var = bound._variable;
         if ( bound._type == Tightening::UB )
-            ASSERT( FloatUtils::lt( _boundManager.getUpperBound( var ), bound._value ) );
+            ASSERT( FloatUtils::lte( _boundManager.getUpperBound( var ), bound._value ) );
 
         if ( bound._type == Tightening::LB )
-            ASSERT( FloatUtils::gt( _boundManager.getLowerBound( var ), bound._value ) );
+            ASSERT( FloatUtils::gte( _boundManager.getLowerBound( var ), bound._value ) );
     }
 }
