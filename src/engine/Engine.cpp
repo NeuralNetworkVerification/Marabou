@@ -346,15 +346,13 @@ bool Engine::solve( double timeoutInSeconds )
                 {
                     if ( allNonlinearConstraintsHold() )
                     {
-                        // TODO: remove following loop
-                        for ( unsigned int v = 0; v < _tableau->getN(); ++v )
-                        {
+                        DEBUG( for ( unsigned int v = 0; v < _tableau->getN(); ++v ) {
                             ASSERT( FloatUtils::areEqual( _tableau->getLowerBound( v ),
                                                           _boundManager.getLowerBound( v ) ) );
 
                             ASSERT( FloatUtils::areEqual( _tableau->getUpperBound( v ),
                                                           _boundManager.getUpperBound( v ) ) );
-                        }
+                        } );
 
                         List<Tightening> tightenings;
                         _boundManager.getTightenings( tightenings );
@@ -3414,47 +3412,6 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
-        //        Set<int> clause = _smtCore.addTrivialConflictClause();
-        //
-        //        InputQuery ipq( *_preprocessedQuery );
-        //        for ( int lit : clause )
-        //        {
-        //            ASSERT( lit != 0 );
-        //            if ( lit > 0 )
-        //            {
-        //                const ReluConstraint *relu = (ReluConstraint
-        //                *)_smtCore.getConstraintFromLit( lit ); unsigned int b = relu->getB();
-        //                unsigned int f = relu->getF();
-        //                unsigned int aux = relu->getAux();
-        //
-        //                Equation eq( Equation::EQ );
-        //                eq.addAddend( 1, b );
-        //                eq.addAddend( -1, f );
-        //                eq.setScalar( 0 );
-        //                ipq.addEquation( eq );
-        //
-        //                ipq.setLowerBound( b, 0 );
-        //                ipq.setLowerBound( f, 0 );
-        //                ipq.setUpperBound( aux, 0 );
-        //            }
-        //            else
-        //            {
-        //                const ReluConstraint *relu = (ReluConstraint
-        //                *)_smtCore.getConstraintFromLit( lit ); unsigned int b = relu->getB();
-        //                unsigned int f = relu->getF();
-        //                unsigned int aux = relu->getAux();
-        //
-        //                ipq.setUpperBound( b, 0 );
-        //                ipq.setUpperBound( f, 0 );
-        //                ipq.setLowerBound( aux, 0 );
-        //            }
-        //        }
-        //        ipq.saveQuery(
-        //            "delegation_test_query_" +
-        //            std::to_string( _statistics.getUnsignedAttribute(
-        //            Statistics::NUM_CERTIFIED_LEAVES ) ) +
-        //            ".ipq" );
-
         return;
     }
 
@@ -3464,7 +3421,7 @@ void Engine::explainSimplexFailure()
     _statistics.incUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
 
     Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
-    writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
+    //    writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
 
@@ -3479,45 +3436,6 @@ void Engine::explainSimplexFailure()
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
 
     _smtCore.addExternalClause( clause );
-
-    // TODO: delete the following or move to a different function
-    // Create input query for each conflict clause for testing the clause
-    //    InputQuery ipq( *_preprocessedQuery );
-    //    for ( int lit : clause )
-    //    {
-    //        ASSERT( lit != 0 );
-    //        if ( lit > 0 )
-    //        {
-    //            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit
-    //            ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned int aux
-    //            = relu->getAux();
-    //
-    //            Equation eq( Equation::EQ );
-    //            eq.addAddend( 1, b );
-    //            eq.addAddend( -1, f );
-    //            eq.setScalar( 0 );
-    //            ipq.addEquation( eq );
-    //
-    //            ipq.setLowerBound( b, 0 );
-    //            ipq.setLowerBound( f, 0 );
-    //            ipq.setUpperBound( aux, 0 );
-    //        }
-    //        else
-    //        {
-    //            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit
-    //            ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned int aux
-    //            = relu->getAux();
-    //
-    //            ipq.setUpperBound( b, 0 );
-    //            ipq.setUpperBound( f, 0 );
-    //            ipq.setLowerBound( aux, 0 );
-    //        }
-    //    }
-    //    ipq.saveQuery(
-    //        "test_query_" +
-    //        std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) )
-    //        +
-    //        ".ipq" );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -4044,13 +3962,6 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         }
         else
             minorClause = entry->clause;
-        //         TODO delete
-        //        DEBUG( {
-        //            ASSERT( clauseFromContradictionVector( entry->lemma->getExplanations().back(),
-        //                                                   entry->id,
-        //                                                   entry->lemma->getCausingVars().back() )
-        //                                                   == entry->clause );
-        //        } )
 
         for ( int literal : minorClause )
         {
@@ -4100,43 +4011,6 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
             tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
-
-    //    InputQuery ipq( *_preprocessedQuery );
-    //    for ( int lit : clause )
-    //    {
-    //        ASSERT( lit != 0 );
-    //        if ( lit > 0 )
-    //        {
-    //            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit
-    //            ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned int aux
-    //            = relu->getAux();
-    //
-    //            Equation eq( Equation::EQ );
-    //            eq.addAddend( 1, b );
-    //            eq.addAddend( -1, f );
-    //            eq.setScalar( 0 );
-    //            ipq.addEquation( eq );
-    //
-    //            ipq.setLowerBound( b, 0 );
-    //            ipq.setLowerBound( f, 0 );
-    //            ipq.setUpperBound( aux, 0 );
-    //        }
-    //        else
-    //        {
-    //            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit
-    //            ); unsigned int b = relu->getB(); unsigned int f = relu->getF(); unsigned int aux
-    //            = relu->getAux();
-    //
-    //            ipq.setUpperBound( b, 0 );
-    //            ipq.setUpperBound( f, 0 );
-    //            ipq.setLowerBound( aux, 0 );
-    //        }
-    //    }
-    //    ipq.saveQuery(
-    //        "explainPhase_test_query_" +
-    //        std::to_string( _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) )
-    //        +
-    //        ".ipq" );
 
     return Vector<int>( clause.begin(), clause.end() );
 }
@@ -4306,14 +4180,52 @@ void Engine::removeLiteralFromPropagations( int literal )
 
 void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
 {
-    DEBUG(
-    for ( const auto &bound : split.getBoundTightenings() )
-    {
+    DEBUG( for ( const auto &bound
+                 : split.getBoundTightenings() ) {
         if ( bound._type == Tightening::UB )
-            ASSERT( FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
+            ASSERT(
+                FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
 
         if ( bound._type == Tightening::LB )
-            ASSERT( FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
+            ASSERT(
+                FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
+    } )
+}
+
+void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
+{
+    InputQuery ipq( *_preprocessedQuery );
+    for ( int lit : clause )
+    {
+        ASSERT( lit != 0 );
+        if ( lit > 0 )
+        {
+            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
+            unsigned int b = relu->getB();
+            unsigned int f = relu->getF();
+            unsigned int aux = relu->getAux();
+
+            Equation eq( Equation::EQ );
+            eq.addAddend( 1, b );
+            eq.addAddend( -1, f );
+            eq.setScalar( 0 );
+            ipq.addEquation( eq );
+
+            ipq.setLowerBound( b, 0 );
+            ipq.setLowerBound( f, 0 );
+            ipq.setUpperBound( aux, 0 );
+        }
+        else
+        {
+            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
+            unsigned int b = relu->getB();
+            unsigned int f = relu->getF();
+            unsigned int aux = relu->getAux();
+
+            ipq.setUpperBound( b, 0 );
+            ipq.setUpperBound( f, 0 );
+            ipq.setLowerBound( aux, 0 );
+        }
     }
-    )
+    ipq.saveQuery( prefix + ".ipq" );
 }

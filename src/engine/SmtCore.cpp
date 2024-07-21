@@ -69,7 +69,6 @@ void SmtCore::freeMemory()
     }
 
     _stack.clear();
-    //    _assignedLiterals.deleteSelf(); // TODO: check if required
 }
 
 void SmtCore::reset()
@@ -691,11 +690,6 @@ void SmtCore::notify_new_decision_level()
         return;
     }
 
-    // Obtain the current state of the engine
-    EngineState *stateBeforeSplits = new EngineState;
-    stateBeforeSplits->_stateId = _stateId;
-    ++_stateId;
-    _engine->storeState( *stateBeforeSplits, TableauStateStorageLevel::STORE_BOUNDS_ONLY );
     _engine->preContextPushHook();
     pushContext();
 
@@ -726,7 +720,6 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     popContextTo( new_level );
     _engine->postContextPopHook();
-
 
     List<Pair<int, int>> currentPropagations = _literalsToPropagate;
     _literalsToPropagate.clear();

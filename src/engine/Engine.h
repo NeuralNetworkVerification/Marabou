@@ -966,6 +966,8 @@ private:
     void removeLiteralFromPropagations( int literal ) override;
 
     void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
+
+    void dumpClauseToIpqFile( const List<int> &clause, String prefix );
 };
 
 #endif // __Engine_h__

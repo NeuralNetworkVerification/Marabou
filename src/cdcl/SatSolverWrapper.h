@@ -48,10 +48,7 @@ public:
       Add call-back which allows to learn, propagate and backtrack based on external constraints.
     */
     virtual void
-    connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator ) = 0; // TODO: add
-                                                                                // parameter
-                                                                                // representing the
-                                                                                // theory solver
+    connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator ) = 0;
 
     /*
       Disconnect the theory solver, resets all the observed variables.
