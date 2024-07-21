@@ -4303,13 +4303,14 @@ void Engine::removeLiteralFromPropagations( int literal )
 
 void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
 {
+    DEBUG(
     for ( const auto &bound : split.getBoundTightenings() )
     {
-        int var = bound._variable;
         if ( bound._type == Tightening::UB )
-            ASSERT( FloatUtils::lte( _boundManager.getUpperBound( var ), bound._value ) );
+            ASSERT( FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
 
         if ( bound._type == Tightening::LB )
-            ASSERT( FloatUtils::gte( _boundManager.getLowerBound( var ), bound._value ) );
+            ASSERT( FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
     }
+    )
 }

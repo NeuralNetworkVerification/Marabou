@@ -661,9 +661,13 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::propagateLitAsSplit( int lit )
     PhaseStatus phaseToFix = indToPhaseStatus( _disjuncts.getIndex( disjunct ) );
 
     if ( phaseFixed() )
+    {
         ASSERT( getPhaseStatus() == phaseToFix )
+    }
     else
+    {
         setPhaseStatus( phaseToFix );
+    }
 
     return disjunct;
 }

@@ -912,7 +912,9 @@ void SmtCore::solveWithCadical()
     else if ( result == 20 )
         _engine->setExitCode( IEngine::ExitCode::UNSAT );
     else
+    {
         ASSERT( false );
+    }
 }
 
 void SmtCore::addLiteralToPropagate( int literal )
