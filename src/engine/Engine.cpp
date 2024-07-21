@@ -2027,7 +2027,7 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
     return true;
 }
 
-void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
+bool Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     ENGINE_LOG( "" );
     ENGINE_LOG( "Applying a split. " );
@@ -2134,7 +2134,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     {
         adjustWorkMemorySize();
     }
-
+    bool tightnened = false;
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
@@ -2149,6 +2149,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _boundManager.resetExplanation( variable, Tightening::LB );
                 _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
                 _boundManager.tightenLowerBound( variable, bound._value );
+                tightnened = true;
             }
             else if ( !_produceUNSATProofs )
                 _boundManager.tightenLowerBound( variable, bound._value );
@@ -2163,6 +2164,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _boundManager.resetExplanation( variable, Tightening::UB );
                 _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
                 _boundManager.tightenUpperBound( variable, bound._value );
+                tightnened = true;
             }
             else if ( !_produceUNSATProofs )
                 _boundManager.tightenUpperBound( variable, bound._value );
@@ -2174,6 +2176,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     DEBUG( _tableau->verifyInvariants() );
     ENGINE_LOG( "Done with split\n" );
+    return tightnened;
 }
 
 void Engine::applyBoundTightenings()

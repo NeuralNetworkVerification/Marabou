@@ -58,7 +58,7 @@ public:
     /*
       Add equations and apply tightenings from a PL case split.
     */
-    virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
+    virtual bool applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
 
     /*
       Register initial SnC split

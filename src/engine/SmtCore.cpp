@@ -658,15 +658,13 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
-    if ( isLiteralAssigned( lit ) )
-        return;
+    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+    PiecewiseLinearCaseSplit split = plc->propagateLitAsSplit( lit );
 
     ASSERT( !isLiteralAssigned( -lit ) );
 
-    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-    PiecewiseLinearCaseSplit split = plc->propagateLitAsSplit( lit );
-    _engine->applySplit( split );
-    if ( !plc->getPhaseFixingEntry() )
+    bool tightened = _engine->applySplit( split );
+    if ( !plc->getPhaseFixingEntry() && tightened )
         plc->setPhaseFixingEntry(
             _engine->getGroundBoundEntry( split.getBoundTightenings().back()._variable,
                                           split.getBoundTightenings().back()._type ) );

@@ -175,7 +175,7 @@ public:
     /*
       Add equations and tightenings from a split.
     */
-    void applySplit( const PiecewiseLinearCaseSplit &split ) override;
+    bool applySplit( const PiecewiseLinearCaseSplit &split ) override;
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
