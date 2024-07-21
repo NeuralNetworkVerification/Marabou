@@ -328,6 +328,10 @@ public:
     void removeLiteralFromPropagations( int /*literal*/ )
     {
     }
+
+    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &/*split*/ )
+    {
+    }
 };
 
 #endif // __MockEngine_h__

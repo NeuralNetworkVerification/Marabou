@@ -964,6 +964,8 @@ private:
                                const std::shared_ptr<PLCLemma> lemma ) const;
 
     void removeLiteralFromPropagations( int literal ) override;
+
+    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
 };
 
 #endif // __Engine_h__

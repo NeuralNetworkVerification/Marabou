@@ -4300,3 +4300,16 @@ void Engine::removeLiteralFromPropagations( int literal )
 {
     _smtCore.removeLiteralFromPropagations( literal );
 }
+
+void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
+{
+    for ( const auto &bound : split.getBoundTightenings() )
+    {
+        int var = bound._variable;
+        if ( bound._type == Tightening::UB )
+            ASSERT( FloatUtils::lt( _boundManager.getUpperBound( var ), bound._value ) );
+
+        if ( bound._type == Tightening::LB )
+            ASSERT( FloatUtils::gt( _boundManager.getLowerBound( var ), bound._value ) );
+    }
+}
