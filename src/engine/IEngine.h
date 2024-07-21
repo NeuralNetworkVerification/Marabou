@@ -210,6 +210,8 @@ public:
 
 
     virtual void removeLiteralFromPropagations( int literal ) = 0;
+
+    virtual void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) = 0;
 };
 
 #endif // __IEngine_h__

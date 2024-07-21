@@ -4303,3 +4303,17 @@ void Engine::removeLiteralFromPropagations( int literal )
 {
     _smtCore.removeLiteralFromPropagations( literal );
 }
+
+void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
+{
+    DEBUG(
+    for ( const auto &bound : split.getBoundTightenings() )
+    {
+        if ( bound._type == Tightening::UB )
+            ASSERT( FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
+
+        if ( bound._type == Tightening::LB )
+            ASSERT( FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
+    }
+    )
+}

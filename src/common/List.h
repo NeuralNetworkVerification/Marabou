@@ -188,7 +188,7 @@ public:
         if ( empty() )
             throw CommonError( CommonError::LIST_IS_EMPTY );
 
-        const T &head = front();
+        T head = front();
         _container.pop_front();
 
         return head;
