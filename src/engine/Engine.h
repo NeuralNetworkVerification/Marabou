@@ -178,9 +178,9 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split ) override;
 
     /*
-      Apply tighetenings implied from phase fixing of the given piecewise linear constraint;
+      Apply tightenings implied from phase fixing of the given piecewise linear constraint;
      */
-    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint);
+    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint) override;
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
