@@ -464,8 +464,8 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
         }
         catch ( ... )
         {
-            _exitCode = Engine::ERROR;// TODO: exitCode should change only in
-                                      // solveWithCadical
+            _exitCode = Engine::ERROR; // TODO: exitCode should change only in
+                                       // solveWithCadical
             exportInputQueryWithError( "Unknown error" );
             mainLoopEnd = TimeUtils::sampleMicro();
             _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -2014,7 +2014,7 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
     return true;
 }
 
-bool Engine::applySplit( const PiecewiseLinearCaseSplit &split )
+void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     ENGINE_LOG( "" );
     ENGINE_LOG( "Applying a split. " );
@@ -2121,7 +2121,6 @@ bool Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     {
         adjustWorkMemorySize();
     }
-    bool tightnened = false;
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
@@ -2136,7 +2135,6 @@ bool Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _boundManager.resetExplanation( variable, Tightening::LB );
                 _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
                 _boundManager.tightenLowerBound( variable, bound._value );
-                tightnened = true;
             }
             else if ( !_produceUNSATProofs )
                 _boundManager.tightenLowerBound( variable, bound._value );
@@ -2151,7 +2149,6 @@ bool Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                 _boundManager.resetExplanation( variable, Tightening::UB );
                 _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
                 _boundManager.tightenUpperBound( variable, bound._value );
-                tightnened = true;
             }
             else if ( !_produceUNSATProofs )
                 _boundManager.tightenUpperBound( variable, bound._value );
@@ -2163,7 +2160,57 @@ bool Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     DEBUG( _tableau->verifyInvariants() );
     ENGINE_LOG( "Done with split\n" );
-    return tightnened;
+}
+
+void Engine::applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint )
+{
+    ASSERT( constraint.phaseFixed() );
+    ASSERT( constraint.getValidCaseSplit().getEquations().empty() );
+
+    List<Tightening> bounds = constraint.getValidCaseSplit().getBoundTightenings();
+
+    for ( auto &bound : bounds )
+    {
+        unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
+
+        if ( bound._type == Tightening::LB )
+        {
+            ENGINE_LOG(
+                Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
+            if ( _produceUNSATProofs &&
+                 FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
+            {
+                _boundManager.resetExplanation( variable, Tightening::LB );
+                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
+                _boundManager.tightenLowerBound( variable, bound._value );
+                if ( !constraint.getPhaseFixingEntry() )
+                    constraint.setPhaseFixingEntry(
+                        getGroundBoundEntry( variable, Tightening::LB ) );
+            }
+            else if ( !_produceUNSATProofs )
+                _boundManager.tightenLowerBound( variable, bound._value );
+        }
+        else
+        {
+            ENGINE_LOG(
+                Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
+            if ( _produceUNSATProofs &&
+                 FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
+            {
+                _boundManager.resetExplanation( variable, Tightening::UB );
+                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
+                _boundManager.tightenUpperBound( variable, bound._value );
+                if ( !constraint.getPhaseFixingEntry() )
+                    constraint.setPhaseFixingEntry(
+                        getGroundBoundEntry( variable, Tightening::UB ) );
+            }
+            else if ( !_produceUNSATProofs )
+                _boundManager.tightenUpperBound( variable, bound._value );
+        }
+    }
+
+    DEBUG( _tableau->verifyInvariants() );
+    ENGINE_LOG( "Done with split\n" );
 }
 
 void Engine::applyBoundTightenings()

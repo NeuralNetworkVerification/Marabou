@@ -828,21 +828,14 @@ int MaxConstraint::propagatePhaseAsLit() const
     return 0;
 }
 
-PiecewiseLinearCaseSplit MaxConstraint::propagateLitAsSplit( int lit )
+void MaxConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
 
     setActiveConstraint( false );
     PhaseStatus phaseToFix = variableToPhase( _cadicalVarsToElements.at( lit ) );
 
-    if ( phaseFixed() )
-    {
-        ASSERT( getPhaseStatus() == phaseToFix )
-    }
-    else
-    {
-        setPhaseStatus( phaseToFix );
-    }
+    ASSERT( !phaseFixed() || getPhaseStatus() == phaseToFix );
 
-    return getCaseSplit( phaseToFix );
+    setPhaseStatus( phaseToFix );
 }

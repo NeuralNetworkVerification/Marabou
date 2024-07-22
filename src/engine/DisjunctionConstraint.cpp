@@ -652,7 +652,7 @@ int DisjunctionConstraint::propagatePhaseAsLit() const
     return 0;
 }
 
-PiecewiseLinearCaseSplit DisjunctionConstraint::propagateLitAsSplit( int lit )
+void DisjunctionConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
 
@@ -660,14 +660,7 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::propagateLitAsSplit( int lit )
     PiecewiseLinearCaseSplit disjunct = *_cadicalVarsToDisjuncts.at( lit );
     PhaseStatus phaseToFix = indToPhaseStatus( _disjuncts.getIndex( disjunct ) );
 
-    if ( phaseFixed() )
-    {
-        ASSERT( getPhaseStatus() == phaseToFix )
-    }
-    else
-    {
-        setPhaseStatus( phaseToFix );
-    }
+    ASSERT( !phaseFixed() || getPhaseStatus() == phaseToFix );
 
-    return disjunct;
+    setPhaseStatus( phaseToFix );
 }

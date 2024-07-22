@@ -685,22 +685,16 @@ int SignConstraint::propagatePhaseAsLit() const
         return 0;
 }
 
-PiecewiseLinearCaseSplit SignConstraint::propagateLitAsSplit( int lit )
+void SignConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( !phaseFixed() );
+    ASSERT( ( lit > 0 && getPhaseStatus() != SIGN_PHASE_NEGATIVE ) ||
+            ( lit < 0 && getPhaseStatus() != SIGN_PHASE_POSITIVE ) )
 
     setActiveConstraint( false );
-    if ( lit > 0 )
-    {
-        if ( phaseFixed() )
-            ASSERT( getPhaseStatus() == SIGN_PHASE_POSITIVE );
-        setPhaseStatus( SIGN_PHASE_POSITIVE );
-        return getPositiveSplit();
-    }
 
-    if ( phaseFixed() )
-        ASSERT( getPhaseStatus() == SIGN_PHASE_NEGATIVE );
-    setPhaseStatus( SIGN_PHASE_NEGATIVE );
-    return getNegativeSplit();
+    if ( lit > 0 )
+        setPhaseStatus( SIGN_PHASE_POSITIVE );
+    else
+        setPhaseStatus( SIGN_PHASE_NEGATIVE );
 }

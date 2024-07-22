@@ -515,11 +515,10 @@ public:
     virtual int propagatePhaseAsLit() const = 0;
 
     /*
-      Returns a phase status corresponding to a literal,
+      Fixes a phase status corresponding to a literal,
       assuming the literal is part of the boolean abstraction
-      propagation includes phase fixing
     */
-    virtual PiecewiseLinearCaseSplit propagateLitAsSplit( int lit ) = 0;
+    virtual void propagateLitAsSplit( int lit ) = 0;
 
     virtual List<unsigned> getCadicalVars() const
     {

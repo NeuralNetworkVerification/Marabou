@@ -1113,22 +1113,18 @@ int ReluConstraint::propagatePhaseAsLit() const
         return 0;
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::propagateLitAsSplit( int lit )
+void ReluConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( ( lit > 0 && getPhaseStatus() != RELU_PHASE_INACTIVE ) ||
+            ( lit < 0 && getPhaseStatus() != RELU_PHASE_ACTIVE ) )
 
     setActiveConstraint( false );
-    if ( phaseFixed() )
-        return getCaseSplit( getPhaseStatus() );
 
     if ( lit > 0 )
-    {
         setPhaseStatus( RELU_PHASE_ACTIVE );
-        return getActiveSplit();
-    }
-
-    setPhaseStatus( RELU_PHASE_INACTIVE );
-    return getInactiveSplit();
+    else
+        setPhaseStatus( RELU_PHASE_INACTIVE );
 }
 
 //

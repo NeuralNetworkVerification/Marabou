@@ -266,7 +266,7 @@ public:
      Returns a phase status corresponding to a literal,
      assuming the literal is part of the boolean abstraction
     */
-    PiecewiseLinearCaseSplit propagateLitAsSplit( int lit ) override;
+    void propagateLitAsSplit( int lit ) override;
 
 private:
     unsigned _f;

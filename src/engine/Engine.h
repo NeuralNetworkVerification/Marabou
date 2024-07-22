@@ -175,7 +175,12 @@ public:
     /*
       Add equations and tightenings from a split.
     */
-    bool applySplit( const PiecewiseLinearCaseSplit &split ) override;
+    void applySplit( const PiecewiseLinearCaseSplit &split ) override;
+
+    /*
+      Apply tighetenings implied from phase fixing of the given piecewise linear constraint;
+     */
+    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint);
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.

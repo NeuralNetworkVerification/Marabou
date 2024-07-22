@@ -999,22 +999,16 @@ int AbsoluteValueConstraint::propagatePhaseAsLit() const
         return 0;
 }
 
-PiecewiseLinearCaseSplit AbsoluteValueConstraint::propagateLitAsSplit( int lit )
+void AbsoluteValueConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( !phaseFixed() );
+    ASSERT( ( lit > 0 && getPhaseStatus() != ABS_PHASE_NEGATIVE ) ||
+            ( lit < 0 && getPhaseStatus() != ABS_PHASE_POSITIVE ) )
 
     setActiveConstraint( false );
-    if ( lit > 0 )
-    {
-        if ( phaseFixed() )
-            ASSERT( getPhaseStatus() == ABS_PHASE_POSITIVE );
-        setPhaseStatus( ABS_PHASE_POSITIVE );
-        return getPositiveSplit();
-    }
 
-    if ( phaseFixed() )
-        ASSERT( getPhaseStatus() == ABS_PHASE_NEGATIVE );
-    setPhaseStatus( ABS_PHASE_NEGATIVE );
-    return getNegativeSplit();
+    if ( lit > 0 )
+        setPhaseStatus( ABS_PHASE_POSITIVE );
+    else
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
 }

@@ -58,7 +58,12 @@ public:
     /*
       Add equations and apply tightenings from a PL case split.
     */
-    virtual bool applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
+    virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
+
+    /*
+      Apply tighetenings implied from phase fixing of the given piecewise linear constraint;
+     */
+    virtual void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint) = 0;
 
     /*
       Register initial SnC split

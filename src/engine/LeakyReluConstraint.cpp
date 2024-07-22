@@ -1028,21 +1028,16 @@ int LeakyReluConstraint::propagatePhaseAsLit() const
         return 0;
 }
 
-PiecewiseLinearCaseSplit LeakyReluConstraint::propagateLitAsSplit( int lit )
+void LeakyReluConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( ( lit > 0 && getPhaseStatus() != RELU_PHASE_INACTIVE ) ||
+            ( lit < 0 && getPhaseStatus() != RELU_PHASE_ACTIVE ) )
 
     setActiveConstraint( false );
-    if ( lit > 0 )
-    {
-        if ( phaseFixed() )
-            ASSERT( getPhaseStatus() == RELU_PHASE_ACTIVE );
-        setPhaseStatus( RELU_PHASE_ACTIVE );
-        return getActiveSplit();
-    }
 
-    if ( phaseFixed() )
-        ASSERT( getPhaseStatus() == RELU_PHASE_INACTIVE );
-    setPhaseStatus( RELU_PHASE_INACTIVE );
-    return getInactiveSplit();
+    if ( lit > 0 )
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+    else
+        setPhaseStatus( RELU_PHASE_INACTIVE );
 }

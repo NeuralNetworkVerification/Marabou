@@ -661,16 +661,10 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
     // Pick the split to perform
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-    PiecewiseLinearCaseSplit split = plc->propagateLitAsSplit( lit );
+    plc->propagateLitAsSplit( lit );
 
-    // TODO perform within applySplit, and setPhaseFixing entry according to the first bound tightened
-    // Apply split, and add the first bound of the split as a phase fixing ground bound entry,
-    // if needed and split actually tightened a bound
-    bool tightened = _engine->applySplit( split );
-    if ( !plc->getPhaseFixingEntry() && tightened )
-        plc->setPhaseFixingEntry(
-            _engine->getGroundBoundEntry( split.getBoundTightenings().back()._variable,
-                                          split.getBoundTightenings().back()._type ) );
+    _engine->applyPlcPhaseFixingTightenings( *plc );
+
     plc->setActiveConstraint( false );
     _assignedLiterals.push_back( lit );
 }
