@@ -188,36 +188,97 @@ public:
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
     /*
-     *
-     */
+      Initializes the boolean abstraction for a PiecewiseLinearConstraint object
+    */
     void initBooleanAbstraction( PiecewiseLinearConstraint *plc );
 
     /*
-     *
-     */
+        Calls the solving method combining the SAT solver with Marabou back engine
+    */
     void solveWithCadical();
 
+    /**********************************************************************/
+    /*  IPASIR-UP functions, for integrating Marabou with the SAT solver  */
+    /**********************************************************************/
+
+    /*
+      Notify Marabou about an assignment of a boolean (abstract) variable
+    */
     void notify_assignment( int lit, bool is_fixed ) override;
+
+    /*
+      Notify Marabou about a new decision level
+    */
     void notify_new_decision_level() override;
+
+    /*
+      Notify Marabou should backtrack to new_level decision level
+    */
     void notify_backtrack( size_t new_level ) override;
 
+    /*
+      Callback from the SAT solver that calls Marabou to check a full assignment of the boolean
+      (abstract) variables
+    */
     bool cb_check_found_model( const std::vector<int> &model ) override;
+
+    /*
+      Callback from the SAT solver that allows Marabou to decide a boolean (abstract) variable to
+      split on
+    */
     int cb_decide() override;
+
+    /*
+      Callback from the SAT solver that enables Marabou propagate literals leanred based on a
+      partial assignment
+     */
     int cb_propagate() override;
+
+    /*
+      Callback from the SAT solver that requires Marabou to explain a propagation.
+      Returns a literal in the explanation clause one at a time, including the literal to explain.
+      Ends with 0.
+    */
     int cb_add_reason_clause_lit( int propagated_lit ) override;
+
+    /*
+      Check if Marabou has a conflict clause to inform the SAT solver
+    */
     bool cb_has_external_clause() override;
+    /*
+      Add conflict clause from Marabou to the SAT solver, one literal at a time. Ends with 0.
+    */
     int cb_add_external_clause_lit() override;
 
+    /*
+      Internally adds a conflict clause when learned, later to be informed to the SAT solver
+    */
     void addExternalClause( const Set<int> &clause );
 
+    /*
+       Returns the PiecewiseLinearConstraint abstraced by the literal lit
+    */
     const PiecewiseLinearConstraint *getConstraintFromLit( int lit ) const;
 
+    /*
+      Internally adds a literal, when learned, later to be informed to the SAT solver
+    */
     void addLiteralToPropagate( int literal );
 
+    /*
+        set _needToSplit to false
+    */
     void turnNeedToSplitOff();
 
+    /*
+      Adds the trivial conflict clause (negation of all decisions) to Marabou,
+      later to be propagated
+    */
     Set<int> addTrivialConflictClause();
 
+    /*
+     Remove a literal from the propagation list
+    */
     void removeLiteralFromPropagations( int literal );
 
 private:
@@ -295,9 +356,21 @@ private:
     */
     unsigned _numRejectedPhasePatternProposal;
 
+    /*
+      SAT solver object
+    */
     CadicalWrapper _cadicalWrapper;
+
+    /*
+      Boolean abstraction map, from boolean variables to the PiecewiseLinearConstraint they
+      represent
+    */
     Map<unsigned, PiecewiseLinearConstraint *> _cadicalVarToPlc;
 
+    /*
+      Internal data structures to keep track of literals to propagate, assigned and fixed literals;
+      and reason and conflict clauses
+    */
     List<Pair<int, int>> _literalsToPropagate;
     CVC4::context::CDList<int> _assignedLiterals;
 
@@ -308,8 +381,10 @@ private:
 
     Set<int> _fixedCadicalVars;
 
+    /*
+      Access info in the internal data structures
+    */
     bool isLiteralAssigned( int literal ) const;
-
     bool isLiteralToBePropagated( int literal ) const;
 };
 

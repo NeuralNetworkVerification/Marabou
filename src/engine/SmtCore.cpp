@@ -654,13 +654,18 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
+    SMT_LOG( "Notified assignment %d", lit );
     ASSERT( !isLiteralAssigned( -lit ) );
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
+    // Pick the split to perform
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
     PiecewiseLinearCaseSplit split = plc->propagateLitAsSplit( lit );
 
+    // TODO perform within applySplit, and setPhaseFixing entry according to the first bound tightened
+    // Apply split, and add the first bound of the split as a phase fixing ground bound entry,
+    // if needed and split actually tightened a bound
     bool tightened = _engine->applySplit( split );
     if ( !plc->getPhaseFixingEntry() && tightened )
         plc->setPhaseFixingEntry(
@@ -672,10 +677,12 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
 void SmtCore::notify_new_decision_level()
 {
+    SMT_LOG( "Notified new decision level" );
     _numRejectedPhasePatternProposal = 0;
 
     struct timespec start = TimeUtils::sampleMicro();
 
+    // TODO change name to num decisions. Is NUM_VISITED_TREE_STATES relevant?
     if ( _statistics )
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
@@ -710,7 +717,7 @@ void SmtCore::notify_new_decision_level()
 
 void SmtCore::notify_backtrack( size_t new_level )
 {
-    SMT_LOG( "Performing a pop" );
+    SMT_LOG( "Backtracking to level %d", new_level );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
@@ -721,6 +728,7 @@ void SmtCore::notify_backtrack( size_t new_level )
     popContextTo( new_level );
     _engine->postContextPopHook();
 
+    // Maintain literals to propagate learned before the decision level
     List<Pair<int, int>> currentPropagations = _literalsToPropagate;
     _literalsToPropagate.clear();
 
@@ -742,9 +750,12 @@ void SmtCore::notify_backtrack( size_t new_level )
 
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
+    SMT_LOG( "Checking model found by SAT solver" );
     ASSERT( _externalClausesToAdd.empty() );
     for ( const auto &lit : model )
         notify_assignment( lit, false );
+
+    // Quickly try to notify constraints for bounds, which raises exception in case of infeasibility
     try
     {
         _engine->propagateBoundManagerTightenings();
@@ -754,17 +765,22 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         _engine->explainSimplexFailure();
     }
 
-    if ( !_externalClausesToAdd.empty() )
+    // If external clause learned, no need to call solve
+    if ( cb_has_external_clause() )
         return false;
+
     bool result = _engine->solve( 0 );
-    // In cases where  Marabou fails to provide a conflict clause, add the trivial possibility
+    // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
     if ( !result && !cb_has_external_clause() )
         addTrivialConflictClause();
-    return result && !_externalClausesToAdd.empty();
+
+    return result && !cb_has_external_clause();
 }
 
 int SmtCore::cb_decide()
 {
+    SMT_LOG( "Callback for decision:" );
+    // First, try to decide according to Marabou heuristics
     if ( pickSplitPLConstraint() )
     {
         _constraintForSplitting->setActiveConstraint( false );
@@ -774,6 +790,7 @@ int SmtCore::cb_decide()
             _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+        SMT_LOG( "Decided literal %d", lit );
         return lit;
     }
 
@@ -782,10 +799,13 @@ int SmtCore::cb_decide()
 
 int SmtCore::cb_propagate()
 {
+    SMT_LOG( "Propagating:" );
     if ( _literalsToPropagate.empty() )
     {
+        // If no literals left to propagate, attempt solving
         _engine->solve( 0 );
         if ( _externalClausesToAdd.empty() )
+            // Try learning a conflict clause if possible
             try
             {
                 _engine->propagateBoundManagerTightenings();
@@ -794,6 +814,7 @@ int SmtCore::cb_propagate()
             {
                 _engine->explainSimplexFailure();
             }
+        // Add the zero literal at the end
         _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
     }
 
@@ -801,11 +822,13 @@ int SmtCore::cb_propagate()
     if ( lit )
         _assignedLiterals.push_back( lit );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+    SMT_LOG( "propagating literal %d", lit );
     return lit;
 }
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
+    SMT_LOG( "Adding reason clause for literal %d", propagated_lit );
     ASSERT( propagated_lit )
     ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
 
@@ -815,9 +838,11 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
         for ( int lit : toAdd )
         {
+            // Make sure all clause literals were fixed before the literal to explain
             ASSERT( _cadicalVarToPlc[abs( propagated_lit )]->getPhaseFixingEntry()->id >
                     _cadicalVarToPlc[abs( lit )]->getPhaseFixingEntry()->id );
 
+            // Remove fixed literals from clause, as they are redundant
             if ( !_fixedCadicalVars.exists( lit ) )
                 _reasonClauseLiterals.append( -lit );
         }
@@ -848,6 +873,7 @@ int SmtCore::cb_add_external_clause_lit()
 {
     ASSERT( !_externalClausesToAdd.empty() );
 
+    // Add literal from the last conflict clause learned
     Vector<int> &currentClause = _externalClausesToAdd[_externalClausesToAdd.size() - 1];
     if ( !currentClause.empty() )
     {
@@ -864,10 +890,11 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 {
     ASSERT( !clause.exists( 0 ) )
     Vector<int> toAdd( 0 );
+
+    // Remove fixed literals as they are redundant
     for ( int lit : clause )
         if ( !_fixedCadicalVars.exists( lit ) )
             toAdd.append( -lit );
-    //    if ( !toAdd.empty() )
     _externalClausesToAdd.append( toAdd );
 }
 
