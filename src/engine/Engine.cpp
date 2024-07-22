@@ -342,6 +342,7 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound = adjustAssignmentToSatisfyNonLinearConstraints();
+                _boundManager.propagateTightenings();
 
                 if ( solutionFound )
                 {

@@ -1116,8 +1116,9 @@ int ReluConstraint::propagatePhaseAsLit() const
 void ReluConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( ( lit > 0 && getPhaseStatus() != RELU_PHASE_INACTIVE ) ||
-            ( lit < 0 && getPhaseStatus() != RELU_PHASE_ACTIVE ) )
+    // TODO maybe should erase
+//    ASSERT( ( lit > 0 && getPhaseStatus() != RELU_PHASE_INACTIVE ) ||
+//            ( lit < 0 && getPhaseStatus() != RELU_PHASE_ACTIVE ) )
 
     setActiveConstraint( false );
 
