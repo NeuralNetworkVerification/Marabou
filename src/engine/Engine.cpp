@@ -186,8 +186,9 @@ void Engine::exportInputQueryWithError( String errorMessage )
             ipqFileName.ascii() );
 }
 
-void Engine::preSolve()
+void Engine::preSolve() // TODO: change the name of this method
 {
+    // TODO: when Marabou uses signals? Is it necessary?
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -215,12 +216,13 @@ void Engine::preSolve()
     }
 }
 
-bool Engine::solve( double timeoutInSeconds )
+bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this method
 {
-    if ( _solveWithMILP )
+    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
         return solveWithMILPEncoding( timeoutInSeconds );
 
-    mainLoopStatistics();
+    mainLoopStatistics(); // TODO: update usage of statistics, maybe should be called in
+                          // solveWithCadical
     if ( _verbosity > 0 )
     {
         printf( "\nEngine::solve: Initial statistics\n" );
@@ -228,7 +230,7 @@ bool Engine::solve( double timeoutInSeconds )
         printf( "\n---\n" );
     }
 
-    bool splitJustPerformed = true;
+    bool splitJustPerformed = true; // TODO: Marabou with cadical does not perform splits by itself
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     _tableau->computeAssignment();
     while ( true )
@@ -238,6 +240,7 @@ bool Engine::solve( double timeoutInSeconds )
                                       TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
+        // TODO: timeout should be set inside Cadical, and check for timeout in solveWithCadical
         if ( shouldExitDueToTimeout( timeoutInSeconds ) )
         {
             if ( _verbosity > 0 )
@@ -303,10 +306,8 @@ bool Engine::solve( double timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                //                ASSERT( false ); // TODO: should not get here with CDCL, needs to
-                //                be removed
-                //                _smtCore.performSplit(); splitJustPerformed = true;
-                //                continue;
+                // TODO: Marabou with CDCL does not perform splits, this code should be updated as
+                // an exit point when propagating
                 bool canSplit = false;
                 for ( const auto &constraint : _plConstraints )
                     if ( !constraint->phaseFixed() )
@@ -370,12 +371,13 @@ bool Engine::solve( double timeoutInSeconds )
 
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
                         // search tree
-                        if ( _produceUNSATProofs )
+                        if ( _produceUNSATProofs ) // TODO: how to construct proof tree with CDCL
                         {
                             ASSERT( _UNSATCertificateCurrentPointer );
                             ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
                         }
-                        _exitCode = Engine::SAT;
+                        _exitCode = Engine::SAT; // TODO: exitCode should change only in
+                                                 // solveWithCadical
                         return true;
                     }
                     else if ( !hasBranchingCandidate() )
@@ -389,7 +391,8 @@ bool Engine::solve( double timeoutInSeconds )
                             printf( "\nEngine::solve: at leaf node but solving inconclusive\n" );
                             _statistics.print();
                         }
-                        _exitCode = Engine::UNKNOWN;
+                        _exitCode = Engine::UNKNOWN; // TODO: exitCode should change only in
+                                                     // solveWithCadical
                         return false;
                     }
                     else
@@ -440,23 +443,7 @@ bool Engine::solve( double timeoutInSeconds )
             if ( _produceUNSATProofs )
                 explainSimplexFailure();
 
-            if ( !_smtCore.popSplit() )
-            {
-                mainLoopEnd = TimeUtils::sampleMicro();
-                _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
-                                              TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-                if ( _verbosity > 0 )
-                {
-                    printf( "\nEngine::solve: unsat query\n" );
-                    _statistics.print();
-                }
-                _exitCode = Engine::UNSAT;
-                return false;
-            }
-            else
-            {
-                splitJustPerformed = true;
-            }
+            return false;
         }
         catch ( const VariableOutOfBoundDuringOptimizationException & )
         {
@@ -467,7 +454,8 @@ bool Engine::solve( double timeoutInSeconds )
         {
             String message = Stringf(
                 "Caught a MarabouError. Code: %u. Message: %s ", e.getCode(), e.getUserMessage() );
-            _exitCode = Engine::ERROR;
+            _exitCode = Engine::ERROR; // TODO: exitCode should change only in
+                                       // solveWithCadical
             exportInputQueryWithError( message );
             mainLoopEnd = TimeUtils::sampleMicro();
             _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -476,7 +464,8 @@ bool Engine::solve( double timeoutInSeconds )
         }
         catch ( ... )
         {
-            _exitCode = Engine::ERROR;
+            _exitCode = Engine::ERROR;// TODO: exitCode should change only in
+                                      // solveWithCadical
             exportInputQueryWithError( "Unknown error" );
             mainLoopEnd = TimeUtils::sampleMicro();
             _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -2216,6 +2205,7 @@ void Engine::applyAllBoundTightenings()
 
 bool Engine::applyAllValidConstraintCaseSplits()
 {
+    // TODO: maybe notify cdcl on each valid pl constraint with cadical::phase()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool appliedSplit = false;
