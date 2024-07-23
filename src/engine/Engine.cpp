@@ -342,7 +342,6 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound = adjustAssignmentToSatisfyNonLinearConstraints();
-                _boundManager.propagateTightenings();
 
                 if ( solutionFound )
                 {
@@ -3871,7 +3870,14 @@ void Engine::setBoundExplainerContent( BoundExplainer *boundExplainer )
 
 void Engine::propagateBoundManagerTightenings()
 {
-    _boundManager.propagateTightenings();
+    try
+    {
+        _boundManager.propagateTightenings();
+    }
+    catch ( InfeasibleQueryException )
+    {
+        explainSimplexFailure();
+    }
 }
 
 void Engine::extractBounds( InputQuery &inputQuery )

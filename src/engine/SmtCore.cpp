@@ -750,14 +750,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         notify_assignment( lit, false );
 
     // Quickly try to notify constraints for bounds, which raises exception in case of infeasibility
-    try
-    {
-        _engine->propagateBoundManagerTightenings();
-    }
-    catch ( const InfeasibleQueryException & )
-    {
-        _engine->explainSimplexFailure();
-    }
+    _engine->propagateBoundManagerTightenings();
 
     // If external clause learned, no need to call solve
     if ( cb_has_external_clause() )
@@ -798,16 +791,10 @@ int SmtCore::cb_propagate()
     {
         // If no literals left to propagate, attempt solving
         _engine->solve( 0 );
+        // Try learning a conflict clause if possible
         if ( _externalClausesToAdd.empty() )
-            // Try learning a conflict clause if possible
-            try
-            {
-                _engine->propagateBoundManagerTightenings();
-            }
-            catch ( const InfeasibleQueryException & )
-            {
-                _engine->explainSimplexFailure();
-            }
+            _engine->propagateBoundManagerTightenings();
+
         // Add the zero literal at the end
         _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
     }
