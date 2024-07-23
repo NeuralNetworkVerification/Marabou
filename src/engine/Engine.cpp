@@ -2206,6 +2206,8 @@ void Engine::applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constrai
         }
     }
 
+    propagateBoundManagerTightenings();
+
     DEBUG( _tableau->verifyInvariants() );
     ENGINE_LOG( "Done with split\n" );
 }
