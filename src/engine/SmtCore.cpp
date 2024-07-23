@@ -654,6 +654,9 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
+    if ( cb_has_external_clause() )
+        return;
+
     SMT_LOG( "Notified assignment %d", lit );
     ASSERT( !isLiteralAssigned( -lit ) );
     if ( is_fixed )
@@ -664,6 +667,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     plc->propagateLitAsSplit( lit );
 
     _engine->applyPlcPhaseFixingTightenings( *plc );
+    _engine->propagateBoundManagerTightenings();
 
     plc->setActiveConstraint( false );
     _assignedLiterals.push_back( lit );
@@ -847,11 +851,13 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
 bool SmtCore::cb_has_external_clause()
 {
+    SMT_LOG( "Checking if there is a Conflict Clause to add" );
     return !_externalClausesToAdd.empty();
 }
 
 int SmtCore::cb_add_external_clause_lit()
 {
+    SMT_LOG( "Adding Conflict Clause" );
     ASSERT( !_externalClausesToAdd.empty() );
 
     // Add literal from the last conflict clause learned

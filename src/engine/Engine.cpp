@@ -355,9 +355,6 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
                                                           _boundManager.getUpperBound( v ) ) );
                         } );
 
-                        List<Tightening> tightenings;
-                        _boundManager.getTightenings( tightenings );
-                        ASSERT( tightenings.empty() );
 
                         mainLoopEnd = TimeUtils::sampleMicro();
                         _statistics.incLongAttribute(
@@ -4033,15 +4030,6 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     // Get corresponding constraints, and its participating variables
     std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
         litConstraint->getPhaseFixingEntry();
-
-    //    std::cout << "var: " << var << std::endl;
-    //    std::cout << "; phaseFixed: " << litConstraint->phaseFixed() << std::endl;
-    //    std::cout << "; isActive: " << litConstraint->isActive() << std::endl;
-    //    std::cout << "; phaseFixingEntry: " << phaseFixingEntry << std::endl;
-    //    std::cout << "; phaseFixingEntry->lemma: " << phaseFixingEntry->lemma << std::endl;
-    //    std::cout << "; phaseFixingEntry->isPhaseFixing: " << phaseFixingEntry->isPhaseFixing
-    //              << std::endl;
-    //    std::cout << std::endl;
 
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
