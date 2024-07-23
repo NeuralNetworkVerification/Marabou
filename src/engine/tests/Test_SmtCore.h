@@ -190,7 +190,6 @@ public:
 
         void propagateLitAsSplit( int /*lit*/ )
         {
-            return getCaseSplits().back();
         }
     };
 
