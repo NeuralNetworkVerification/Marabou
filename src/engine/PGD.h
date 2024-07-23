@@ -5,19 +5,19 @@
 #undef Warning
 #include <torch/torch.h>
 
-constexpr float DEFAULT_ALPHA = 0.01;
-constexpr float PANELTY = 0.1;
-constexpr unsigned DEFAULT_NUM_ITER = 100;
-constexpr unsigned DEFAULT_NUM_RESTARTS = 100;
+constexpr float LR = 0.2;
+constexpr float PANELTY = 10;
+constexpr unsigned DEFAULT_NUM_ITER = 1000;
+constexpr unsigned DEFAULT_NUM_RESTARTS = 10;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
-constexpr unsigned ATTACK_EPSILON = 10.0f;
+constexpr unsigned ATTACK_EPSILON = 100.0f;
 
 class PGDAttack {
 public:
-  PGDAttack(CustomDNNImpl &model, InputQuery &inputQuery);
+  PGDAttack(CustomDNNImpl &model, const NLR::NetworkLevelReasoner* networkLevelReasoner);
   PGDAttack( CustomDNNImpl &model,
-             InputQuery &inputQuery,
+             const NLR::NetworkLevelReasoner* networkLevelReasoner,
              double alpha,
              unsigned num_iter,
              unsigned num_restarts,
@@ -28,15 +28,15 @@ public:
 
 private:
   CustomDNNImpl &model;
-  InputQuery &inputQuery;
+  const NLR::NetworkLevelReasoner* networkLevelReasoner;
   torch::Device device;
   torch::Tensor epsilon;
   torch::Tensor originalInput;
-  double alpha;
+  double learningRate;
   unsigned num_iter;
   unsigned num_restarts;
   unsigned inputSize;
-  double lambdaPenalty;
+  double penalty;
   std::pair<Vector<double>, Vector<double>> inputBounds;
   std::pair<Vector<double>, Vector<double>> outputBounds;
 

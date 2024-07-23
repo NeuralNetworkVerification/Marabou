@@ -2,9 +2,9 @@
 #include <InputQuery.h>
 #include <iostream>
 
-PGDAttack::PGDAttack(CustomDNNImpl &model, InputQuery &inputQuery)
-    : model(model), inputQuery(inputQuery), device(torch::kCPU),
-      alpha(DEFAULT_ALPHA), num_iter(DEFAULT_NUM_ITER), num_restarts(DEFAULT_NUM_RESTARTS), lambdaPenalty( PANELTY ) {
+PGDAttack::PGDAttack(CustomDNNImpl &model, const NLR::NetworkLevelReasoner* networkLevelReasoner)
+    : model(model),  networkLevelReasoner( networkLevelReasoner ), device(torch::kCPU),
+      learningRate(LR), num_iter(DEFAULT_NUM_ITER), num_restarts(DEFAULT_NUM_RESTARTS), penalty( PANELTY ) {
     inputSize = model.layerSizes.first();
     inputBounds = _getBounds(INPUT);
     outputBounds = _getBounds(OUTPUT);
@@ -13,13 +13,14 @@ PGDAttack::PGDAttack(CustomDNNImpl &model, InputQuery &inputQuery)
     epsilon = variables.second;
 }
 
-PGDAttack::PGDAttack(CustomDNNImpl &model, InputQuery &inputQuery, double alpha, unsigned num_iter,
-                     unsigned num_restarts, torch::Device device, double lambdaPenalty)
-    : model(model), inputQuery(inputQuery), device(device),
-      alpha(alpha), num_iter(num_iter), num_restarts(num_restarts), lambdaPenalty( lambdaPenalty ) {
+PGDAttack::PGDAttack(CustomDNNImpl &model,
+    const NLR::NetworkLevelReasoner* networkLevelReasoner, double learningRate, unsigned num_iter,
+                     unsigned num_restarts, torch::Device device, double penalty)
+    : model(model),  networkLevelReasoner( networkLevelReasoner ), device(device),
+      learningRate(learningRate), num_iter(num_iter), num_restarts(num_restarts), penalty( penalty ) {
     inputSize = model.layerSizes.first();
-    std::pair<Vector<double>, Vector<double>> inputBounds = _getBounds(INPUT);
-    std::pair<Vector<double>, Vector<double>> outputBounds = _getBounds(OUTPUT);
+    inputBounds = _getBounds(INPUT);
+    outputBounds = _getBounds(OUTPUT);
     std::pair<torch::Tensor, torch::Tensor> variables = _generateSampleAndEpsilon();
     originalInput = variables.first;
     epsilon = variables.second;
@@ -39,19 +40,15 @@ std::pair<Vector<double>, Vector<double>> PGDAttack::_getBounds(unsigned type ) 
 {
     Vector<double> upperBounds;
     Vector<double> lowerBounds;
+    unsigned layerIndex = type == INPUT ? 0 : networkLevelReasoner->getNumberOfLayers() -1;
+    const NLR::Layer *layer = networkLevelReasoner->getLayer( layerIndex );
 
-    List<unsigned> variables = type == INPUT ? inputQuery.getInputVariables() : inputQuery.getOutputVariables();
+    for (unsigned neuron = 0 ; neuron < layer->getSize(); ++neuron) {
+        double lowerBound = layer->getLb(neuron);
+        double upperBound = layer->getUb(neuron);
 
-    for (auto it = variables.begin(); it != variables.end(); ++it) {
-        double upperBound = inputQuery.getUpperBounds().exists(*it)
-                                ? inputQuery.getUpperBounds().get(*it)
-                                : std::numeric_limits<double>::infinity();
-        double lowerBound = inputQuery.getLowerBounds().exists(*it)
-                                ? inputQuery.getLowerBounds().get(*it)
-                                : -std::numeric_limits<double>::infinity();
-
-        upperBounds.append(upperBound);
-        lowerBounds.append(lowerBound);
+        lowerBounds.append( lowerBound );
+        upperBounds.append( upperBound );
     }
     return {lowerBounds, upperBounds};
 }
@@ -95,6 +92,9 @@ bool PGDAttack::_isWithinBounds(const torch::Tensor& sample, unsigned type) {
     Vector<double> upperBounds = bounds.second;
 
     torch::Tensor flatInput = sample.view({-1});
+    if (flatInput.numel() != lowerBounds.size() || flatInput.numel() != upperBounds.size()) {
+        throw std::runtime_error("Mismatch in sizes of input and bounds");
+    }
 
     for (int64_t i = 0; i < flatInput.size(0); i++) {
         double value = flatInput[i].item<double>();
@@ -124,48 +124,48 @@ torch::Tensor PGDAttack::_calculateLoss(const torch::Tensor& predictions) {
     torch::Tensor lowerBoundTensor = torch::tensor(outputBounds.first.data(), torch::kFloat32).to(device);
     torch::Tensor upperBoundTensor = torch::tensor(outputBounds.second.data(), torch::kFloat32).to(device);
 
-    // Compute the penalty: We want high loss if predictions are inside the bounds
-    torch::Tensor penalty = torch::add(
-        - torch::relu(predictions - upperBoundTensor),
-        - torch::relu(lowerBoundTensor - predictions)
-    );
+    // Compute the penalty: We want high loss if predictions are outside the bounds
+    torch::Tensor total_violation = torch::add(
+        torch::relu(predictions - upperBoundTensor),
+        torch::relu(lowerBoundTensor - predictions));
 
-    return torch::sum(penalty);
+    torch::Tensor smoothed_violation = torch::log1p(total_violation) * penalty;
+    return torch::sum(smoothed_violation).pow( 2 );;
 }
 
 
 torch::Tensor PGDAttack::_findDelta() {
-    torch::Tensor max_delta = torch::zeros_like(originalInput).to(device);
-    torch::Tensor max_loss = torch::tensor(-std::numeric_limits<float>::infinity()).to(device);
+    torch::Tensor bestDelta = torch::zeros_like(originalInput).to(device);
+    torch::Tensor minLoss = torch::tensor(std::numeric_limits<double>::infinity()).to(device);
 
     for (unsigned i = 0; i < num_restarts; i++) {
         torch::Tensor delta = torch::rand(inputSize).to(device);
         delta = delta.mul(epsilon);
         delta.set_requires_grad(true);
 
-        torch::optim::Adam optimizer({delta}, torch::optim::AdamOptions(alpha));
+        torch::optim::Adam optimizer({delta},
+            torch::optim::AdamOptions(learningRate));
 
         for (unsigned j = 0; j < num_iter; j++) {
             optimizer.zero_grad();
 
-            torch::Tensor pred = model.forward(originalInput + delta);
-            torch::Tensor loss = _calculateLoss(pred);
-            // Negate the loss for maximization
-            (-loss).backward();
+            torch::Tensor prediction = model.forward(originalInput + delta);
+            torch::Tensor loss = _calculateLoss(prediction);
+            loss.backward();
             optimizer.step();
             // Project delta back to epsilon-ball
             delta.data() = delta.data().clamp(-epsilon, epsilon);
         }
 
         torch::Tensor currentPrediction = model.forward(originalInput + delta);
-        torch::Tensor current_loss = _calculateLoss(currentPrediction);
-        if (current_loss.item<float>() > max_loss.item<float>()) {
-            max_loss = current_loss;
-            max_delta = delta.detach().clone();
+        torch::Tensor currentLoss = _calculateLoss(currentPrediction);
+        if (currentLoss.item<double>() < minLoss.item<double>()) {
+            minLoss = currentLoss;
+            bestDelta = delta.detach().clone();
         }
     }
 
-    return max_delta;
+    return bestDelta;
 }
 
 bool PGDAttack::displayAdversarialExample() {
@@ -175,25 +175,29 @@ bool PGDAttack::displayAdversarialExample() {
     auto original_pred = model.forward(originalInput);
 
     torch::Tensor adv_delta = _findDelta();
-    torch::Tensor adv_example = originalInput + adv_delta;
+    torch::Tensor advInput = originalInput + adv_delta;
 
-    auto adv_pred = model.forward(adv_example);
+    auto advPred = model.forward(advInput);
 
-    auto loss = _calculateLoss(adv_pred);
+    bool isFooled = _isWithinBounds( advInput, INPUT ) &&
+                    _isWithinBounds( advPred, OUTPUT );
 
-
-    bool isFooled = _isWithinBounds( adv_example, INPUT ) &&  !_isWithinBounds( adv_pred, OUTPUT );
-
-    std::cout << "Input Lower Bounds : " << inputBounds.first.getContainer() << "\n";
-    std::cout << "Input Upper Bounds : " << inputBounds.second.getContainer() << "\n\n";
-    std::cout << "Original Input: " << originalInput << "\n";
-    std::cout << "Adversarial Example: " << adv_example << "\n\n";
+    std::cout << "Input Lower Bounds : " << inputBounds.first.getContainer()<< "\n";
+    std::cout << "Input Upper Bounds : " << inputBounds.second.getContainer() << "\n";
+    std::cout << "Adversarial Input: \n";
+    auto* example = advInput.data_ptr<float>();
+    for (int i = 0; i < advInput.numel(); ++i) {
+        std::cout << "x" << i << " = "<<  example[i] << "\n";
+    }
     std::cout << "Output Lower Bounds : " << outputBounds.first.getContainer() << "\n";
-    std::cout << "Output Lower Bounds : " << outputBounds.second.getContainer() << "\n";
-    std::cout << "Original Prediction: " << original_pred << "\n";
-    std::cout << ", Adversarial Prediction: " << adv_pred << "\n\n";
+    std::cout << "Output Upper Bounds : " << outputBounds.second.getContainer() << "\n";
+    std::cout << "Adversarial Prediction: \n";
+    auto* prediction = advPred.data_ptr<float>();
+    for (int i = 0; i < advPred.numel(); ++i) {
+        std::cout << "y" << i << " = "<<  prediction[i] << "\n";
+    }
     std::cout << "Model fooled: " << (isFooled ? "Yes \n ------ PGD Attack Succeed ------" :
-                                "No \n ------ PGD Attack Failed ------") << "\n";
+                                "No \n ------ PGD Attack Failed ------") << "\n\n";
 
     return isFooled;
 }

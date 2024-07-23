@@ -1441,10 +1441,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
-        // for (auto& inputVar : inputQuery.getInputVariables()) {
-        //     inputQuery.setLowerBound(inputVar, -1.0); // Set lower bounds
-        //     inputQuery.setUpperBound(inputVar, 1.0);  // Set upper bounds
-        // }
+        for (auto& inputVar : inputQuery.getInputVariables()) {
+            inputQuery.setLowerBound(inputVar, -1.5);
+            inputQuery.setUpperBound(inputVar, 1.6);
+        }
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
@@ -1452,7 +1452,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
         if (_networkLevelReasoner)
         {
             CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
-            PGDAttack pgd_attack(network, inputQuery);
+            PGDAttack pgd_attack(network, _networkLevelReasoner);
             pgd_attack.displayAdversarialExample();
         }
 
