@@ -281,6 +281,11 @@ public:
     */
     void removeLiteralFromPropagations( int literal );
 
+    /*
+      Force the default decision phase of a variable to a certain value.
+     */
+    void phase( int literal );
+
 private:
     /*
       Valid splits that were implied by level 0 of the stack.

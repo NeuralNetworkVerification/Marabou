@@ -201,9 +201,16 @@ void Engine::preSolve() // TODO: change the name of this method
     // Before encoding, make sure all valid constraints are applied.
     applyAllValidConstraintCaseSplits();
 
+    for ( const auto plConstraint : _plConstraints )
+        if ( plConstraint->phaseFixed() )
+        {
+            printf( "phase fixed\n" );
+            _smtCore.phase( plConstraint->propagatePhaseAsLit() );
+        }
+
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
-        storeInitialEngineState();
+        storeInitialEngineState(); // TODO: remove this call
     else if ( _lpSolverType == LPSolverType::GUROBI )
     {
         ENGINE_LOG( "Encoding convex relaxation into Gurobi..." );

@@ -30,6 +30,11 @@ public:
     virtual void assume( int lit ) = 0;
 
     /*
+      Force the default decision phase of a variable to a certain value.
+     */
+    virtual void phase ( int lit ) = 0;
+
+    /*
       Try to solve the current formula.
     */
     virtual int solve() = 0;

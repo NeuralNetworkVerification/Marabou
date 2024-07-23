@@ -36,6 +36,11 @@ public:
     void assume( int lit ) override;
 
     /*
+      Force the default decision phase of a variable to a certain value.
+     */
+    void phase ( int lit) override;
+
+    /*
       Try to solve the current formula.
     */
     int solve() override;

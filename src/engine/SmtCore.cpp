@@ -655,7 +655,7 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
     SMT_LOG( "Notified assignment %d", lit );
-    ASSERT( !isLiteralAssigned( -lit ) );\
+    ASSERT( !isLiteralAssigned( -lit ) );
 
     SMT_LOG( "Notified assignment %d", lit );
     if ( is_fixed )
@@ -950,4 +950,10 @@ void SmtCore::turnNeedToSplitOff()
 void SmtCore::removeLiteralFromPropagations( int literal )
 {
     _literalsToPropagate.erase( Pair<int, int>( literal, _context.getLevel() ) );
+}
+
+void SmtCore::phase( int literal )
+{
+    _cadicalWrapper.phase( literal );
+    _fixedCadicalVars.insert( literal );
 }
