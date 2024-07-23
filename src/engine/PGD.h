@@ -5,9 +5,9 @@
 #undef Warning
 #include <torch/torch.h>
 
-constexpr float LR = 0.2;
+constexpr float LR = 0.1;
 constexpr float PANELTY = 10;
-constexpr unsigned DEFAULT_NUM_ITER = 1000;
+constexpr unsigned DEFAULT_NUM_ITER = 10000;
 constexpr unsigned DEFAULT_NUM_RESTARTS = 10;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
