@@ -203,10 +203,7 @@ void Engine::preSolve() // TODO: change the name of this method
 
     for ( const auto plConstraint : _plConstraints )
         if ( plConstraint->phaseFixed() )
-        {
-            printf( "phase fixed\n" );
             _smtCore.phase( plConstraint->propagatePhaseAsLit() );
-        }
 
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
@@ -2286,7 +2283,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
-        applySplit( validSplit );
+        applySplit( validSplit ); // TODO: Replace with new applySplit
 
         if ( _soiManager )
             _soiManager->removeCostComponentFromHeuristicCost( constraint );
