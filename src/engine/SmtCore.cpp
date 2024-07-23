@@ -654,11 +654,10 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
-    if ( cb_has_external_clause() )
-        return;
+    SMT_LOG( "Notified assignment %d", lit );
+    ASSERT( !isLiteralAssigned( -lit ) );\
 
     SMT_LOG( "Notified assignment %d", lit );
-    ASSERT( !isLiteralAssigned( -lit ) );
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
@@ -667,7 +666,6 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     plc->propagateLitAsSplit( lit );
 
     _engine->applyPlcPhaseFixingTightenings( *plc );
-    _engine->propagateBoundManagerTightenings();
 
     plc->setActiveConstraint( false );
     _assignedLiterals.push_back( lit );
@@ -807,7 +805,7 @@ int SmtCore::cb_propagate()
     if ( lit )
         _assignedLiterals.push_back( lit );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    SMT_LOG( "propagating literal %d", lit );
+    SMT_LOG( "Propagating literal %d", lit );
     return lit;
 }
 
