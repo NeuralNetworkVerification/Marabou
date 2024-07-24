@@ -276,6 +276,19 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                      0 )
                 _statistics.print();
 
+            // If smtCore demands splitting, stop the loop before performing other actions
+            if ( _smtCore.needToSplit() )
+            {
+                // Make sure this is the case solve is called for propagation, and not for checking model
+                ASSERT(
+                    std::any_of( _plConstraints.begin(),
+                                 _plConstraints.end(),
+                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
+
+                _boundManager.propagateTightenings();
+                return false;
+            }
+
             if ( _lpSolverType == LPSolverType::NATIVE )
             {
                 checkOverallProgress();
@@ -300,18 +313,6 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                 splitJustPerformed = false;
             }
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
-            {
-                // If all constraints are fixed, continue
-                ASSERT(
-                    std::any_of( _plConstraints.begin(),
-                                 _plConstraints.end(),
-                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
-
-                _boundManager.propagateTightenings();
-                return false;
-            }
 
             if ( !_tableau->allBoundsValid() )
             {
@@ -534,7 +535,6 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         // Finally, take this opportunity to tighten any bounds
         // and perform any valid case splits.
         tightenBoundsOnConstraintMatrix();
-        _boundManager.propagateTightenings();
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
 
