@@ -60,6 +60,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     }
 
     // Restore engine and tableau to their original form
+    engine.postContextPopHook();
     engine.initDataStructures();
     // Reset the violation counts in the SMT core
     smtCore.resetSplitConditions();

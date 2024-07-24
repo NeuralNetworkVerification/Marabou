@@ -371,11 +371,11 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
 
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
                         // search tree
-                        if ( _produceUNSATProofs ) // TODO: how to construct proof tree with CDCL
-                        {
-                            ASSERT( _UNSATCertificateCurrentPointer );
-                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
-                        }
+//                        if ( _produceUNSATProofs ) // TODO: how to construct proof tree with CDCL
+//                        {
+//                            ASSERT( _UNSATCertificateCurrentPointer );
+//                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
+//                        }
                         _exitCode = Engine::SAT; // TODO: exitCode should change only in
                                                  // solveWithCadical
                         return true;
