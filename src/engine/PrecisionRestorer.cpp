@@ -124,7 +124,9 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
         tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
     }
-    // Restore constraint status
+
+    // Notify all constraints for the restore bounds
+    // Will fix phases if necessary
     engine.propagateBoundManagerTightenings();
 
     DEBUG( {
