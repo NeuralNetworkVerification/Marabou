@@ -296,6 +296,7 @@ public:
 
     bool propagateBoundManagerTightenings()
     {
+        return false;
     }
 
     bool shouldProduceProofs() const
