@@ -43,23 +43,32 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     unsigned targetN = tableau.getN();
 
     Set<unsigned> shouldBeBasic = tableau.getBasicVariables();
-    EngineState targetEngineState;
-
-    DEBUG({
-        engine.storeState( targetEngineState, TableauStateStorageLevel::STORE_NONE );
-    })
 
     BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
+    Vector<double> groundUpperBoundsBackup;
+    Vector<double> groundLowerBoundsBackup;
 
-    Vector<double> upperBoundsBackup = Vector<double>( targetN, 0 );
-    Vector<double> lowerBoundsBackup = Vector<double>( targetN, 0 );
+    Vector<double> upperBoundsBackup;
+    Vector<double> lowerBoundsBackup;
 
-    boundExplainerBackup = *engine.getBoundExplainer();
-
-    for ( unsigned i = 0; i < targetN; ++i )
+    if ( engine.shouldProduceProofs() )
     {
-        lowerBoundsBackup[i] = tableau.getLowerBound( i );
-        upperBoundsBackup[i] = tableau.getUpperBound( i );
+        groundUpperBoundsBackup = Vector<double>( targetN, 0 );
+        groundLowerBoundsBackup = Vector<double>( targetN, 0 );
+
+        upperBoundsBackup = Vector<double>( targetN, 0 );
+        lowerBoundsBackup = Vector<double>( targetN, 0 );
+
+        boundExplainerBackup = *engine.getBoundExplainer();
+
+        for ( unsigned i = 0; i < targetN; ++i )
+        {
+            lowerBoundsBackup[i] = tableau.getLowerBound( i );
+            upperBoundsBackup[i] = tableau.getUpperBound( i );
+
+            groundUpperBoundsBackup[i] = engine.getGroundBound( i, Tightening::UB );
+            groundLowerBoundsBackup[i] = engine.getGroundBound( i, Tightening::LB );
+        }
     }
 
     // Restore engine and tableau to their original form
@@ -117,13 +126,15 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         }
     }
 
-    engine.setBoundExplainerContent( &boundExplainerBackup );
-
-    for ( unsigned i = 0; i < targetN; ++i )
+    if ( engine.shouldProduceProofs() )
     {
-        tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
-        tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
-    }
+        engine.setBoundExplainerContent( &boundExplainerBackup );
+
+        for ( unsigned i = 0; i < targetN; ++i )
+        {
+            tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
+            tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
+        }
 
     // Notify all constraints for the restore bounds
     // Will fix phases if necessary
@@ -134,15 +145,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getN() == targetN );
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getM() == targetM );
 
-        // Constraints should be in the same state before and after restoration
-        for ( const auto &pair : targetEngineState._plConstraintToState )
-        {
-            ASSERT( pair.second->isActive() == pair.first->isActive() );
-            // Only active constraints need to be synchronized
-            ASSERT( !pair.second->isActive() ||
-                    pair.second->phaseFixed() == pair.first->phaseFixed() );
-            ASSERT( pair.second->constraintObsolete() == pair.first->constraintObsolete() );
-        }
+
 
         tableau.verifyInvariants();
     } );
