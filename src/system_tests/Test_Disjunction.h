@@ -134,7 +134,7 @@ public:
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
-        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 
@@ -270,7 +270,7 @@ public:
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
-        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 

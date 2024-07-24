@@ -485,7 +485,7 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
         else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            engine.solve( timeoutInSeconds );
+            engine.solveWithCadical( timeoutInSeconds );
 
             resultString = exitCodeToString( engine.getExitCode() );
 

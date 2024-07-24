@@ -78,7 +78,7 @@ void IncrementalLinearization::solve()
                 static_cast<long double>( _timeoutInMicroSeconds ) / MICROSECONDS_TO_SECONDS;
             INCREMENTAL_LINEARIZATION_LOG(
                 Stringf( "Solving with timeout %.2f seconds", timeoutInSeconds ).ascii() );
-            _engine->solve( timeoutInSeconds );
+            _engine->solveWithCadical( timeoutInSeconds );
         }
 
         if ( _engine->getExitCode() == IEngine::UNKNOWN )

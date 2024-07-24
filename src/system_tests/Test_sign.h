@@ -133,7 +133,7 @@ public:
 
         TS_ASSERT( engine.processInputQuery( inputQuery ) );
 
-        TS_ASSERT( engine.solve() );
+        TS_ASSERT( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 
@@ -496,7 +496,7 @@ public:
 
         // should return SAT
         TS_ASSERT( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT( engine.solve() );
+        TS_ASSERT( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 
@@ -715,7 +715,7 @@ public:
         Engine engine;
 
         TS_ASSERT( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT( engine.solve() );
+        TS_ASSERT( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 

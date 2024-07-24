@@ -221,10 +221,11 @@ void Engine::preSolve() // TODO: change the name of this method
     }
 }
 
-bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this method
+bool Engine::solve() // TODO: change the name of this method, and remove
+                                              // argument
 {
-    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
-        return solveWithMILPEncoding( timeoutInSeconds );
+//    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
+//        return solveWithMILPEncoding( timeoutInSeconds );
 
     mainLoopStatistics(); // TODO: update usage of statistics, maybe should be called in
                           // solveWithCadical
@@ -244,21 +245,6 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
         _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
                                       TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
-
-        // TODO: timeout should be set inside Cadical, and check for timeout in solveWithCadical
-        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\n\nEngine: quitting due to timeout...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
-
-            _exitCode = Engine::TIMEOUT;
-            _statistics.timeout();
-            return false;
-        }
 
         if ( _quitRequested )
         {
@@ -2018,6 +2004,7 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
+    ASSERT( false );
     ENGINE_LOG( "" );
     ENGINE_LOG( "Applying a split. " );
 
@@ -2281,9 +2268,10 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
                         .ascii() );
 
         constraint->setActiveConstraint( false );
-        PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
-        _smtCore.recordImpliedValidSplit( validSplit );
-        applySplit( validSplit ); // TODO: Replace with new applySplit
+//        PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
+//        _smtCore.recordImpliedValidSplit( validSplit );
+        applyPlcPhaseFixingTightenings(*constraint);
+//        applySplit( validSplit ); // TODO: Replace with new applySplit
 
         if ( _soiManager )
             _soiManager->removeCostComponentFromHeuristicCost( constraint );
@@ -4053,9 +4041,9 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     return Vector<int>( clause.begin(), clause.end() );
 }
 
-void Engine::solveWithCadical()
+bool Engine::solveWithCadical( double timeoutInSeconds )
 {
-    _smtCore.solveWithCadical();
+    return _smtCore.solveWithCadical( timeoutInSeconds );
 }
 
 Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
@@ -4278,4 +4266,9 @@ void Engine::initDataStructures()
         _activeEntryStrategy->resizeHook( _tableau );
         _costFunctionManager->initialize();
     }
+}
+\
+unsigned Engine::getVerbosity() const
+{
+    return _verbosity;
 }

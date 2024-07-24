@@ -654,6 +654,7 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Notified assignment %d", lit );
     ASSERT( !isLiteralAssigned( -lit ) );
 
@@ -673,6 +674,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
 void SmtCore::notify_new_decision_level()
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Notified new decision level" );
     _numRejectedPhasePatternProposal = 0;
 
@@ -713,6 +715,7 @@ void SmtCore::notify_new_decision_level()
 
 void SmtCore::notify_backtrack( size_t new_level )
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Backtracking to level %d", new_level );
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -746,6 +749,7 @@ void SmtCore::notify_backtrack( size_t new_level )
 
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Checking model found by SAT solver" );
     ASSERT( _externalClausesToAdd.empty() );
     for ( const auto &lit : model )
@@ -758,7 +762,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     if ( cb_has_external_clause() )
         return false;
 
-    bool result = _engine->solve( 0 );
+    bool result = _engine->solve();
     // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
     if ( !result && !cb_has_external_clause() )
         addTrivialConflictClause();
@@ -768,6 +772,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 
 int SmtCore::cb_decide()
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
     // First, try to decide according to Marabou heuristics
     if ( pickSplitPLConstraint() )
@@ -788,11 +793,12 @@ int SmtCore::cb_decide()
 
 int SmtCore::cb_propagate()
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Propagating:" );
     if ( _literalsToPropagate.empty() )
     {
         // If no literals left to propagate, attempt solving
-        _engine->solve( 0 );
+        _engine->solve();
         // Try learning a conflict clause if possible
         if ( _externalClausesToAdd.empty() )
             _engine->propagateBoundManagerTightenings();
@@ -811,6 +817,7 @@ int SmtCore::cb_propagate()
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Adding reason clause for literal %d", propagated_lit );
     ASSERT( propagated_lit )
     ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
@@ -849,12 +856,14 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
 bool SmtCore::cb_has_external_clause()
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Checking if there is a Conflict Clause to add" );
     return !_externalClausesToAdd.empty();
 }
 
 int SmtCore::cb_add_external_clause_lit()
 {
+    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Adding Conflict Clause" );
     ASSERT( !_externalClausesToAdd.empty() );
 
@@ -890,25 +899,57 @@ const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
     return NULL;
 }
 
-void SmtCore::solveWithCadical()
+bool SmtCore::solveWithCadical( double timeoutInSeconds )
 {
-    _cadicalWrapper.connectTheorySolver( this );
-    for ( unsigned var : _cadicalVarToPlc.keys() )
-        if ( var != 0 )
-            _cadicalWrapper.addObservedVar( var );
-
-    _engine->preSolve();
-    int result = _cadicalWrapper.solve();
-
-    if ( result == 0 )
-        _engine->setExitCode( IEngine::ExitCode::UNKNOWN );
-    else if ( result == 10 )
-        _engine->setExitCode( IEngine::ExitCode::SAT );
-    else if ( result == 20 )
-        _engine->setExitCode( IEngine::ExitCode::UNSAT );
-    else
+    try
     {
-        ASSERT( false );
+        _timeoutInSeconds = timeoutInSeconds;
+
+        // Maybe query detected as UNSAT in processInputQuery
+        if (_engine->getExitCode() == IEngine::ExitCode::UNSAT)
+            return false;
+
+        _cadicalWrapper.connectTheorySolver( this );
+        for ( unsigned var : _cadicalVarToPlc.keys() )
+            if ( var != 0 )
+                _cadicalWrapper.addObservedVar( var );
+
+        _engine->preSolve();
+        int result = _cadicalWrapper.solve();
+
+        if ( result == 0 )
+        {
+            _engine->setExitCode( IEngine::ExitCode::UNKNOWN );
+            return false;
+        }
+        else if ( result == 10 )
+        {
+            _engine->setExitCode( IEngine::ExitCode::SAT );
+            return true;
+        }
+        else if ( result == 20 )
+        {
+            _engine->setExitCode( IEngine::ExitCode::UNSAT );
+            return false;
+        }
+        else
+        {
+            ASSERT( false );
+            return false;
+        }
+    }
+    catch (const TimeoutException &)
+    {
+        if ( _engine->getVerbosity() > 0 )
+        {
+            printf( "\n\nSmtCore: quitting due to timeout...\n\n" );
+            printf( "Final statistics:\n" );
+            _statistics->print();
+        }
+
+        _engine->setExitCode(IEngine::ExitCode::TIMEOUT);
+        _statistics->timeout();
+        return false;
     }
 }
 
@@ -956,4 +997,12 @@ void SmtCore::phase( int literal )
 {
     _cadicalWrapper.phase( literal );
     _fixedCadicalVars.insert( literal );
+}
+
+void SmtCore::checkIfShouldExitDueToTimeout()
+{
+    if ( _engine->shouldExitDueToTimeout( _timeoutInSeconds ) )
+    {
+        throw TimeoutException();
+    }
 }

@@ -222,7 +222,7 @@ void Marabou::solveQuery()
     if ( _engine->processInputQuery( _inputQuery ) )
     {
         //        _engine->solve( timeoutInSeconds );
-        _engine->solveWithCadical();
+        _engine->solveWithCadical( timeoutInSeconds );
         //        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
         //            _engine->certifyUNSATCertificate();
     }

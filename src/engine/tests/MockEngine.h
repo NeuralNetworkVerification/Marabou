@@ -123,10 +123,8 @@ public:
 
     unsigned _timeToSolve;
     IEngine::ExitCode _exitCode;
-    bool solve( double timeoutInSeconds )
+    bool solve()
     {
-        if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = IEngine::TIMEOUT;
         return _exitCode == IEngine::SAT;
     }
 
@@ -322,8 +320,11 @@ public:
         return Vector<int>();
     }
 
-    void solveWithCadical()
+    bool solveWithCadical( double timeoutInSeconds )
     {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = IEngine::TIMEOUT;
+        return _exitCode == IEngine::SAT;
     }
 
     void preSolve()
@@ -340,6 +341,16 @@ public:
 
     void initDataStructures()
     {
+    }
+
+    bool shouldExitDueToTimeout( double ) const
+    {
+        return false;
+    }
+
+    unsigned getVerbosity() const
+    {
+        return 0;
     }
 };
 

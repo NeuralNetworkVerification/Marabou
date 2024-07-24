@@ -58,7 +58,7 @@ public:
         Engine engine;
         engine.setVerbosity( 2 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( ipq ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
         Engine::ExitCode code = engine.getExitCode();
         TS_ASSERT( code == Engine::SAT || code == Engine::UNKNOWN );
     }

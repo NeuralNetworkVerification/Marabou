@@ -69,7 +69,7 @@ public:
 
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
 
         // Cost function: x0 - x1
         Map<unsigned, double> heuristicCost;
@@ -135,7 +135,7 @@ public:
 
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 
@@ -220,7 +220,7 @@ public:
         }
         else
         {
-            result = engine.solve();
+            result = engine.solveWithCadical();
             TS_ASSERT( !result );
         }
     }

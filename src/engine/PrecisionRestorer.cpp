@@ -136,17 +136,19 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
             tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
         }
 
-    // Notify all constraints for the restore bounds
-    // Will fix phases if necessary
-    engine.propagateBoundManagerTightenings();
+        // Notify all constraints for the restore bounds
+        // Will fix phases if necessary
+        engine.propagateBoundManagerTightenings();
 
-    DEBUG( {
-        // Same dimensions
-        ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getN() == targetN );
-        ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getM() == targetM );
+        DEBUG( {
+            // Same dimensions
+            ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS ||
+                    tableau.getN() == targetN );
+            ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS ||
+                    tableau.getM() == targetM );
 
 
-
-        tableau.verifyInvariants();
-    } );
+            tableau.verifyInvariants();
+        } );
+    }
 }

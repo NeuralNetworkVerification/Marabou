@@ -48,7 +48,7 @@ public:
         }
         else
         {
-            bool result = engine.solve();
+            bool result = engine.solveWithCadical();
             TS_ASSERT( !result );
         }
     }
@@ -64,7 +64,7 @@ public:
         mpsParser.generateQuery( inputQuery );
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
         engine.extractSolution( inputQuery );
 
         // Sanity test

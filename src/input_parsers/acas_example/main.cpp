@@ -65,7 +65,7 @@ int main()
         Engine engine;
         bool preprocess = engine.processInputQuery( inputQuery );
 
-        if ( !preprocess || !engine.solve() )
+        if ( !preprocess || !engine.solveWithCadical() )
         {
             printf( "\n\nQuery is unsat\n" );
             return 0;

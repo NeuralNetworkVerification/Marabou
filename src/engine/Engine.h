@@ -89,7 +89,7 @@ public:
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( double timeoutInSeconds = 0 ) override;
+    bool solve() override;
 
     /*
       Minimize the cost function with respect to the current set of linear constraints.
@@ -324,10 +324,19 @@ public:
     */
     Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) override;
 
-    void solveWithCadical() override;
+    bool solveWithCadical( double timeoutInSeconds = 0 ) override;
 
     void initDataStructures() override;
 
+    /*
+      Check whether a timeout value has been provided and exceeded.
+    */
+    bool shouldExitDueToTimeout( double timeout ) const override;
+
+    /*
+      Returns the verbosity level.
+     */
+    unsigned getVerbosity() const override;
 
 private:
     enum BasisRestorationRequired {
@@ -719,11 +728,6 @@ private:
       randomly generated input values.
     */
     void performSimulation();
-
-    /*
-      Check whether a timeout value has been provided and exceeded.
-    */
-    bool shouldExitDueToTimeout( double timeout ) const;
 
     /*
       Evaluate the network on legal inputs; obtain the assignment

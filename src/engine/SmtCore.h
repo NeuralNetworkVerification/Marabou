@@ -24,6 +24,7 @@
 #include "SmtState.h"
 #include "Stack.h"
 #include "Statistics.h"
+#include "TimeoutException.h"
 #include "context/cdlist.h"
 #include "context/context.h"
 
@@ -195,7 +196,7 @@ public:
     /*
         Calls the solving method combining the SAT solver with Marabou back engine
     */
-    void solveWithCadical();
+    bool solveWithCadical( double timeoutInSeconds );
 
     /**********************************************************************/
     /*  IPASIR-UP functions, for integrating Marabou with the SAT solver  */
@@ -285,6 +286,11 @@ public:
       Force the default decision phase of a variable to a certain value.
      */
     void phase( int literal );
+
+    /*
+      Check if the solver should stop due to the requested timeout by the user
+     */
+    void checkIfShouldExitDueToTimeout();
 
 private:
     /*
@@ -385,6 +391,8 @@ private:
     Vector<Vector<int>> _externalClausesToAdd;
 
     Set<int> _fixedCadicalVars;
+
+    double _timeoutInSeconds;
 
     /*
       Access info in the internal data structures

@@ -75,7 +75,7 @@ public:
             return;
         }
 
-        TS_ASSERT( !engine.solve() );
+        TS_ASSERT( !engine.solveWithCadical() );
     }
 
     void test_absoluate_value_sat()
@@ -116,7 +116,7 @@ public:
 
         Engine engine;
         TS_ASSERT( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT( engine.solve() );
+        TS_ASSERT( engine.solveWithCadical() );
 
         engine.extractSolution( inputQuery );
 
@@ -211,7 +211,7 @@ public:
         auto allConstraints = engine.getInputQuery()->getPiecewiseLinearConstraints();
         TS_ASSERT_EQUALS( constraintsInTopologicalOrder.size(), allConstraints.size() );
 
-        bool result = engine.solve();
+        bool result = engine.solveWithCadical();
         if ( !result )
         {
             // No counter example found, this is acceptable

@@ -103,7 +103,7 @@ public:
     /*
       Solve the encoded query.
     */
-    virtual bool solve( double timeoutInSeconds ) = 0;
+    virtual bool solve() = 0;
 
     /*
       Retrieve the exit code.
@@ -211,7 +211,7 @@ public:
 
     virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
 
-    virtual void solveWithCadical() = 0;
+    virtual bool solveWithCadical( double timeoutInSeconds ) = 0;
 
 
     virtual void removeLiteralFromPropagations( int literal ) = 0;
@@ -219,6 +219,16 @@ public:
     virtual void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) = 0;
 
     virtual void initDataStructures() = 0; // TODO rename
+
+    /*
+      Check whether a timeout value has been provided and exceeded.
+    */
+    virtual bool shouldExitDueToTimeout( double timeout ) const = 0;
+
+    /*
+      Returns the verbosity level.
+     */
+    virtual unsigned getVerbosity() const = 0;
 };
 
 #endif // __IEngine_h__

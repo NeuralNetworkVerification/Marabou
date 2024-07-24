@@ -60,7 +60,7 @@ int main()
             exit( 1 );
         }
 
-        if ( !engine.solve() )
+        if ( !engine.solveWithCadical() )
         {
             printf( "\n\nQuery is unsat\n" );
             return 0;

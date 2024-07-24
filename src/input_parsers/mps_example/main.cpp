@@ -40,7 +40,7 @@ int main( int argc, char *argv[] )
     Engine engine;
     bool preprocess = engine.processInputQuery( inputQuery );
 
-    if ( !preprocess || !engine.solve() )
+    if ( !preprocess || !engine.solveWithCadical() )
     {
         printf( "unsat\n" );
         return 0;
