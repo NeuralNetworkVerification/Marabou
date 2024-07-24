@@ -48,23 +48,16 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
     BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
 
-    Vector<double> upperBoundsBackup;
-    Vector<double> lowerBoundsBackup;
+    Vector<double> upperBoundsBackup = Vector<double>( targetN, 0 );
+    Vector<double> lowerBoundsBackup = Vector<double>( targetN, 0 );
 
-    if ( engine.shouldProduceProofs() )
+    boundExplainerBackup = *engine.getBoundExplainer();
+
+    for ( unsigned i = 0; i < targetN; ++i )
     {
-        upperBoundsBackup = Vector<double>( targetN, 0 );
-        lowerBoundsBackup = Vector<double>( targetN, 0 );
-
-        boundExplainerBackup = *engine.getBoundExplainer();
-
-        for ( unsigned i = 0; i < targetN; ++i )
-        {
-            lowerBoundsBackup[i] = tableau.getLowerBound( i );
-            upperBoundsBackup[i] = tableau.getUpperBound( i );
-        }
+        lowerBoundsBackup[i] = tableau.getLowerBound( i );
+        upperBoundsBackup[i] = tableau.getUpperBound( i );
     }
-
 
     // Restore engine and tableau to their original form
     engine.initDataStructures();
@@ -122,21 +115,16 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         }
     }
 
-    if ( engine.shouldProduceProofs() )
+    engine.setBoundExplainerContent( &boundExplainerBackup );
+
+    for ( unsigned i = 0; i < targetN; ++i )
     {
-        engine.setBoundExplainerContent( &boundExplainerBackup );
-
-        for ( unsigned i = 0; i < targetN; ++i )
-        {
-            tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
-            tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
-        }
-
-        engine.propagateBoundManagerTightenings();
+        tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
+        tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
     }
 
     // Restore constraint status
-   engine.propagateBoundManagerTightenings();
+    engine.propagateBoundManagerTightenings();
 
     DEBUG( {
         // Same dimensions
