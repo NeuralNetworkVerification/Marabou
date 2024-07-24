@@ -270,6 +270,18 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                      0 )
                 _statistics.print();
 
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit() )
+            {
+                DEBUG( {
+                    ASSERT( std::any_of( _plConstraints.begin(),
+                                         _plConstraints.end(),
+                                         []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) );
+                } );
+
+                _boundManager.propagateTightenings();
+                return false;
+            }
             if ( _lpSolverType == LPSolverType::NATIVE )
             {
                 checkOverallProgress();
@@ -294,17 +306,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                 splitJustPerformed = false;
             }
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
-            {
-                DEBUG( {
-                    ASSERT( std::any_of( _plConstraints.begin(),
-                                 _plConstraints.end(),
-                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) );
-                } );
-                _boundManager.propagateTightenings();
-                return false;
-            }
+
 
             if ( !_tableau->allBoundsValid() )
             {
@@ -533,6 +535,14 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
 
         while ( applyAllValidConstraintCaseSplits() )
             performSymbolicBoundTightening();
+
+        // If all constraints are fixed, then solve loop continues until concluding satisfiability
+        if ( !std::any_of( _plConstraints.begin(),
+                          _plConstraints.end(),
+                          []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); }) )
+            _smtCore.turnNeedToSplitOff();
+
+
         return false;
     }
     else
