@@ -298,10 +298,10 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             if ( _smtCore.needToSplit() )
             {
                 // If all constraints are fixed, continue
-                if ( !std::any_of(
+                if ( std::all_of(
                          _plConstraints.begin(),
                          _plConstraints.end(),
-                         []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
+                         []( PiecewiseLinearConstraint *p ) { return p->phaseFixed(); } ) )
                 {
                     _smtCore.turnNeedToSplitOff();
                     continue;
