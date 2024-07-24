@@ -297,20 +297,15 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                // TODO: Marabou with CDCL does not perform splits, this code should be updated as
-                // an exit point when propagating
+                // TODO: delete
                 bool canSplit = false;
                 for ( const auto &constraint : _plConstraints )
                     if ( !constraint->phaseFixed() )
                         canSplit = true;
 
                 _boundManager.propagateTightenings();
-                // TODO why it can happen?
                 if ( !canSplit )
-                {
-                    _smtCore.turnNeedToSplitOff();
-                    continue;
-                }
+                    ASSERT( false );
 
                 return false;
             }
@@ -531,7 +526,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         // We have violated piecewise-linear constraints.
         performConstraintFixingStep();
 
-        // Finally, take this opporunity to tighten any bounds
+        // Finally, take this opportunity to tighten any bounds
         // and perform any valid case splits.
         tightenBoundsOnConstraintMatrix();
         _boundManager.propagateTightenings();
@@ -1811,7 +1806,7 @@ void Engine::collectViolatedPlConstraints()
     _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
     {
-        if ( constraint->isActive() && !constraint->satisfied() )
+        if ( constraint->isActive() && !constraint->satisfied() && !constraint->phaseFixed() )
             _violatedPlConstraints.append( constraint );
     }
 }
