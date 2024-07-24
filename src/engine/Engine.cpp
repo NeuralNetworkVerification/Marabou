@@ -222,10 +222,10 @@ void Engine::preSolve() // TODO: change the name of this method
 }
 
 bool Engine::solve() // TODO: change the name of this method, and remove
-                                              // argument
+                     // argument
 {
-//    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
-//        return solveWithMILPEncoding( timeoutInSeconds );
+    //    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
+    //        return solveWithMILPEncoding( timeoutInSeconds );
 
     mainLoopStatistics(); // TODO: update usage of statistics, maybe should be called in
                           // solveWithCadical
@@ -297,16 +297,12 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                // TODO: delete
-                bool canSplit = false;
-                for ( const auto &constraint : _plConstraints )
-                    if ( !constraint->phaseFixed() )
-                        canSplit = true;
-
+                DEBUG( {
+                    ASSERT( std::any_of( _plConstraints.begin(),
+                                 _plConstraints.end(),
+                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) );
+                } );
                 _boundManager.propagateTightenings();
-                if ( !canSplit )
-                    ASSERT( false );
-
                 return false;
             }
 
@@ -354,11 +350,13 @@ bool Engine::solve() // TODO: change the name of this method, and remove
 
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
                         // search tree
-//                        if ( _produceUNSATProofs ) // TODO: how to construct proof tree with CDCL
-//                        {
-//                            ASSERT( _UNSATCertificateCurrentPointer );
-//                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
-//                        }
+                        //                        if ( _produceUNSATProofs ) // TODO: how to
+                        //                        construct proof tree with CDCL
+                        //                        {
+                        //                            ASSERT( _UNSATCertificateCurrentPointer );
+                        //                            ( **_UNSATCertificateCurrentPointer
+                        //                            ).setSATSolutionFlag();
+                        //                        }
                         _exitCode = Engine::SAT; // TODO: exitCode should change only in
                                                  // solveWithCadical
                         return true;
@@ -2263,10 +2261,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
                         .ascii() );
 
         constraint->setActiveConstraint( false );
-//        PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
-//        _smtCore.recordImpliedValidSplit( validSplit );
-        applyPlcPhaseFixingTightenings(*constraint);
-//        applySplit( validSplit ); // TODO: Replace with new applySplit
+        applyPlcPhaseFixingTightenings( *constraint );
 
         if ( _soiManager )
             _soiManager->removeCostComponentFromHeuristicCost( constraint );
@@ -2922,8 +2917,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
-              ( ( _context.getLevel() + 1 ) %
-                    GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
+              ( ( _context.getLevel() + 1 ) % GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
                 0 ) )
     {
         // Conduct interval splitting periodically.
@@ -4262,7 +4256,7 @@ void Engine::initDataStructures()
         _costFunctionManager->initialize();
     }
 }
-\
+
 unsigned Engine::getVerbosity() const
 {
     return _verbosity;
