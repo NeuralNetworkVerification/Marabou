@@ -297,11 +297,15 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                DEBUG( {
-                    ASSERT( std::any_of( _plConstraints.begin(),
-                                 _plConstraints.end(),
-                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) );
-                } );
+                // If all constraints are fixed, continue
+                if ( !std::any_of(
+                         _plConstraints.begin(),
+                         _plConstraints.end(),
+                         []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
+                {
+                    _smtCore.turnNeedToSplitOff();
+                    continue;
+                }
                 _boundManager.propagateTightenings();
                 return false;
             }
