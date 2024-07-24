@@ -31,10 +31,7 @@ public:
     void storeInitialEngineState( const IEngine &engine );
     void restoreInitialEngineState( IEngine &engine );
 
-    void restorePrecision( IEngine &engine,
-                           ITableau &tableau,
-                           SmtCore &smtCore,
-                           RestoreBasics restoreBasics );
+    void restorePrecision( IEngine &engine, ITableau &tableau, RestoreBasics restoreBasics );
 
 private:
     EngineState _initialEngineState;

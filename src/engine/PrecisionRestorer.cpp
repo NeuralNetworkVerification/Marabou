@@ -35,7 +35,6 @@ void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           ITableau &tableau,
-                                          SmtCore &/*smtCore*/,
                                           RestoreBasics restoreBasics )
 {
     // Store the dimensions, bounds and basic variables in the current tableau,
@@ -125,7 +124,9 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
         tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
     }
-    // Restore constraint status
+
+    // Notify all constraints for the restore bounds
+    // Will fix phases if necessary
     engine.propagateBoundManagerTightenings();
 
     DEBUG( {
