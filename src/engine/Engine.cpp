@@ -209,9 +209,8 @@ void Engine::preSolve() // TODO: change the name of this method
         }
 
     updateDirections();
-    if ( _lpSolverType == LPSolverType::NATIVE )
-        storeInitialEngineState(); // TODO: remove this call
-    else if ( _lpSolverType == LPSolverType::GUROBI )
+
+    if ( _lpSolverType == LPSolverType::GUROBI )
     {
         ENGINE_LOG( "Encoding convex relaxation into Gurobi..." );
         _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
@@ -4269,4 +4268,16 @@ void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
         }
     }
     ipq.saveQuery( prefix + ".ipq" );
+}
+
+void Engine::initDataStructures()
+{
+    if ( _lpSolverType == LPSolverType::NATIVE )
+    {
+        // Make sure the data structures are initialized to the correct size
+        _rowBoundTightener->setDimensions();
+        adjustWorkMemorySize();
+        _activeEntryStrategy->resizeHook( _tableau );
+        _costFunctionManager->initialize();
+    }
 }

@@ -45,8 +45,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
     Set<unsigned> shouldBeBasic = tableau.getBasicVariables();
 
-    EngineState targetEngineState;
-    engine.storeState( targetEngineState, TableauStateStorageLevel::STORE_NONE );
 
     BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
 
@@ -67,13 +65,11 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         }
     }
 
-    // Store the case splits performed so far
-    List<PiecewiseLinearCaseSplit> targetSplits;
-    smtCore.allSplitsSoFar( targetSplits );
 
     // Restore engine and tableau to their original form
-    engine.restoreState( _initialEngineState );
-    engine.postContextPopHook();
+    engine.initDataStructures();
+    // Reset the violation counts in the SMT core
+    smtCore.resetSplitConditions();
     DEBUG( tableau.verifyInvariants() );
 
     // At this point, the tableau has the appropriate dimensions. Restore the
@@ -140,32 +136,13 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     }
 
     // Restore constraint status
-    for ( const auto &pair : targetEngineState._plConstraintToState )
-        pair.first->setActiveConstraint( pair.second->isActive() );
-
-    engine.setNumPlConstraintsDisabledByValidSplits(
-        targetEngineState._numPlConstraintsDisabledByValidSplits );
+   engine.propagateBoundManagerTightenings();
 
     DEBUG( {
         // Same dimensions
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getN() == targetN );
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getM() == targetM );
 
-        // Constraints should be in the same state before and after restoration
-        for ( const auto &pair : targetEngineState._plConstraintToState )
-        {
-            ASSERT( pair.second->isActive() == pair.first->isActive() );
-            // Only active constraints need to be synchronized
-            ASSERT( !pair.second->isActive() ||
-                    pair.second->phaseFixed() == pair.first->phaseFixed() );
-            ASSERT( pair.second->constraintObsolete() == pair.first->constraintObsolete() );
-        }
-
-        EngineState currentEngineState;
-        engine.storeState( currentEngineState, TableauStateStorageLevel::STORE_NONE );
-
-        ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
-                targetEngineState._numPlConstraintsDisabledByValidSplits );
 
         tableau.verifyInvariants();
     } );
