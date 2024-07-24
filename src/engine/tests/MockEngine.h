@@ -337,6 +337,10 @@ public:
     void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &/*split*/ )
     {
     }
+
+    void initDataStructures()
+    {
+    }
 };
 
 #endif // __MockEngine_h__
