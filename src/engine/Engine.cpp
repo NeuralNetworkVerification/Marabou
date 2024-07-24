@@ -239,6 +239,12 @@ bool Engine::solve() // TODO: change the name of this method, and remove
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     _tableau->computeAssignment();
+    _smtCore.resetSplitConditions();
+
+    applyAllBoundTightenings();
+    if ( !propagateBoundManagerTightenings() )
+        return false;
+
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -298,14 +304,11 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             if ( _smtCore.needToSplit() )
             {
                 // If all constraints are fixed, continue
-                if ( std::all_of(
-                         _plConstraints.begin(),
-                         _plConstraints.end(),
-                         []( PiecewiseLinearConstraint *p ) { return p->phaseFixed(); } ) )
-                {
-                    _smtCore.turnNeedToSplitOff();
-                    continue;
-                }
+                ASSERT(
+                    std::any_of( _plConstraints.begin(),
+                                 _plConstraints.end(),
+                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
+
                 _boundManager.propagateTightenings();
                 return false;
             }
@@ -3852,15 +3855,17 @@ void Engine::setBoundExplainerContent( BoundExplainer *boundExplainer )
     _boundManager.copyBoundExplainerContent( boundExplainer );
 }
 
-void Engine::propagateBoundManagerTightenings()
+bool Engine::propagateBoundManagerTightenings()
 {
     try
     {
         _boundManager.propagateTightenings();
+        return true;
     }
     catch ( InfeasibleQueryException )
     {
         explainSimplexFailure();
+        return false;
     }
 }
 

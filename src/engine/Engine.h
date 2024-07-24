@@ -311,7 +311,7 @@ public:
     /*
       Propagate bound tightenings stored in the BoundManager
     */
-    void propagateBoundManagerTightenings() override;
+    bool propagateBoundManagerTightenings() override;
 
     /*
      Add ground bound entry using a lemma

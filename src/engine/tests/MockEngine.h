@@ -294,7 +294,7 @@ public:
     {
     }
 
-    void propagateBoundManagerTightenings()
+    bool propagateBoundManagerTightenings()
     {
     }
 

@@ -196,7 +196,7 @@ public:
     /*
       Propagate bound tightenings stored in the BoundManager
     */
-    virtual void propagateBoundManagerTightenings() = 0;
+    virtual bool propagateBoundManagerTightenings() = 0;
 
     /*
      Add ground bound entry using a lemma

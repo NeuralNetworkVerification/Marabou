@@ -756,7 +756,8 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         notify_assignment( lit, false );
 
     // Quickly try to notify constraints for bounds, which raises exception in case of infeasibility
-    _engine->propagateBoundManagerTightenings();
+    if ( !_engine->propagateBoundManagerTightenings() )
+        return false;
 
     // If external clause learned, no need to call solve
     if ( cb_has_external_clause() )
@@ -906,7 +907,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         _timeoutInSeconds = timeoutInSeconds;
 
         // Maybe query detected as UNSAT in processInputQuery
-        if (_engine->getExitCode() == IEngine::ExitCode::UNSAT)
+        if ( _engine->getExitCode() == IEngine::ExitCode::UNSAT )
             return false;
 
         _cadicalWrapper.connectTheorySolver( this );
@@ -938,7 +939,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
     }
-    catch (const TimeoutException &)
+    catch ( const TimeoutException & )
     {
         if ( _engine->getVerbosity() > 0 )
         {
@@ -947,7 +948,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _statistics->print();
         }
 
-        _engine->setExitCode(IEngine::ExitCode::TIMEOUT);
+        _engine->setExitCode( IEngine::ExitCode::TIMEOUT );
         _statistics->timeout();
         return false;
     }
