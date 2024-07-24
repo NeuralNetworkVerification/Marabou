@@ -131,7 +131,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getN() == targetN );
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getM() == targetM );
 
-
         tableau.verifyInvariants();
     } );
 }

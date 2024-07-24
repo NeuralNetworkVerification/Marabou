@@ -218,7 +218,7 @@ public:
 
     virtual void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) = 0;
 
-    virtual void initDataStructures() =0; // TODO rename
+    virtual void initDataStructures() = 0; // TODO rename
 };
 
 #endif // __IEngine_h__
