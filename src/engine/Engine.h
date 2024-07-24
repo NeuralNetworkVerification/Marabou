@@ -326,6 +326,9 @@ public:
 
     void solveWithCadical() override;
 
+    void initDataStructures() override;
+
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
