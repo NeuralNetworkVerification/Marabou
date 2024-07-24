@@ -35,7 +35,7 @@ void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           ITableau &tableau,
-                                          SmtCore &smtCore,
+                                          SmtCore &/*smtCore*/,
                                           RestoreBasics restoreBasics )
 {
     // Store the dimensions, bounds and basic variables in the current tableau,
@@ -44,7 +44,11 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     unsigned targetN = tableau.getN();
 
     Set<unsigned> shouldBeBasic = tableau.getBasicVariables();
+    EngineState targetEngineState;
 
+    DEBUG({
+        engine.storeState( targetEngineState, TableauStateStorageLevel::STORE_NONE );
+    })
 
     BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
 
@@ -60,16 +64,14 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     }
 
     // Restore engine and tableau to their original form
+    restoreInitialEngineState( engine );
     engine.postContextPopHook();
-    engine.initDataStructures();
-    // Reset the violation counts in the SMT core
-    smtCore.resetSplitConditions();
     DEBUG( tableau.verifyInvariants() );
 
     // At this point, the tableau has the appropriate dimensions. Restore the
     // variable bounds and basic variables. Note that if column merging is
     // enabled, the dimensions may not be precisely those before the
-    // resotration, because merging sometimes fails - in which case an equation
+    // restoration, because merging sometimes fails - in which case an equation
     // is added. If we fail to restore the dimensions, we cannot restore the
     // basics.
 
@@ -123,7 +125,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
         tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
     }
-
     // Restore constraint status
     engine.propagateBoundManagerTightenings();
 
@@ -131,6 +132,16 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         // Same dimensions
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getN() == targetN );
         ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS || tableau.getM() == targetM );
+
+        // Constraints should be in the same state before and after restoration
+        for ( const auto &pair : targetEngineState._plConstraintToState )
+        {
+            ASSERT( pair.second->isActive() == pair.first->isActive() );
+            // Only active constraints need to be synchronized
+            ASSERT( !pair.second->isActive() ||
+                    pair.second->phaseFixed() == pair.first->phaseFixed() );
+            ASSERT( pair.second->constraintObsolete() == pair.first->constraintObsolete() );
+        }
 
         tableau.verifyInvariants();
     } );

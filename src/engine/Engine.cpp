@@ -206,6 +206,8 @@ void Engine::preSolve() // TODO: change the name of this method
             _smtCore.phase( plConstraint->propagatePhaseAsLit() );
 
     updateDirections();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        storeInitialEngineState();
 
     if ( _lpSolverType == LPSolverType::GUROBI )
     {
