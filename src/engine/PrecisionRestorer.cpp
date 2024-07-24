@@ -35,7 +35,6 @@ void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           ITableau &tableau,
-                                          SmtCore &/*smtCore*/,
                                           RestoreBasics restoreBasics )
 {
     // Store the dimensions, bounds and basic variables in the current tableau,
