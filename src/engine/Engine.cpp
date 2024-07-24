@@ -233,7 +233,7 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
         printf( "\n---\n" );
     }
 
-    bool splitJustPerformed = true; // TODO: Marabou with cadical does not perform splits by itself
+    bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     _tableau->computeAssignment();
     while ( true )
@@ -371,11 +371,11 @@ bool Engine::solve( double timeoutInSeconds ) // TODO: change the name of this m
 
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
                         // search tree
-                        if ( _produceUNSATProofs ) // TODO: how to construct proof tree with CDCL
-                        {
-                            ASSERT( _UNSATCertificateCurrentPointer );
-                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
-                        }
+//                        if ( _produceUNSATProofs ) // TODO: how to construct proof tree with CDCL
+//                        {
+//                            ASSERT( _UNSATCertificateCurrentPointer );
+//                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
+//                        }
                         _exitCode = Engine::SAT; // TODO: exitCode should change only in
                                                  // solveWithCadical
                         return true;
@@ -2254,7 +2254,6 @@ void Engine::applyAllBoundTightenings()
 
 bool Engine::applyAllValidConstraintCaseSplits()
 {
-    // TODO: maybe notify cdcl on each valid pl constraint with cadical::phase()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool appliedSplit = false;
@@ -2938,7 +2937,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
-              ( ( _smtCore.getStackDepth() + 1 ) %
+              ( ( _context.getLevel() + 1 ) %
                     GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
                 0 ) )
     {
