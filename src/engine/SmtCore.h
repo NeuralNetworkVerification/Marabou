@@ -42,6 +42,17 @@ using CVC4::context::Context;
 class SmtCore : CaDiCaL::ExternalPropagator
 {
 public:
+    enum ExitCode {
+        UNSAT = 0,
+        SAT = 1,
+        ERROR = 2,
+        UNKNOWN = 3,
+        TIMEOUT = 4,
+        QUIT_REQUESTED = 5,
+
+        NOT_DONE = 999,
+    };
+
     SmtCore( IEngine *engine );
     ~SmtCore();
 
@@ -54,6 +65,21 @@ public:
       Reset the SmtCore
     */
     void reset();
+
+    /*
+      Get the exit code
+     */
+    ExitCode getExitCode() const;
+
+    /*
+      Set the exit code
+     */
+    void setExitCode(ExitCode exitCode);
+
+    /*
+      Resets the exit code
+     */
+    void resetExitCode();
 
     /*
       Initialize the score tracker with the given list of pl constraints.
@@ -293,6 +319,11 @@ public:
     void checkIfShouldExitDueToTimeout();
 
 private:
+    /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
+
     /*
       Valid splits that were implied by level 0 of the stack.
     */

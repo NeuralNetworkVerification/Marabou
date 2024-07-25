@@ -28,6 +28,7 @@
 #include "NLRError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
+#include "SmtCore.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 #include "VariableOutOfBoundDuringOptimizationException.h"
@@ -50,7 +51,6 @@ Engine::Engine()
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
-    , _exitCode( Engine::NOT_DONE )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
@@ -252,18 +252,19 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                                       TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
-        if ( _quitRequested )
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\n\nEngine: quitting due to external request...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
-
-            _exitCode = Engine::QUIT_REQUESTED;
-            return false;
-        }
+        // TODO: Check when quit requested, and whether it still applies to CDCL
+        //        if ( _quitRequested )
+        //        {
+        //            if ( _verbosity > 0 )
+        //            {
+        //                printf( "\n\nEngine: quitting due to external request...\n\n" );
+        //                printf( "Final statistics:\n" );
+        //                _statistics.print();
+        //            }
+        //
+        //            _exitCode = Engine::QUIT_REQUESTED;
+        //            return false;
+        //        }
 
         try
         {
@@ -279,7 +280,8 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             // If smtCore demands splitting, stop the loop before performing other actions
             if ( _smtCore.needToSplit() )
             {
-                // Make sure this is the case solve is called for propagation, and not for checking model
+                // Make sure this is the case solve is called for propagation, and not for checking
+                // model
                 ASSERT(
                     std::any_of( _plConstraints.begin(),
                                  _plConstraints.end(),
@@ -305,7 +307,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                 }
             }
 
-            // If true, we just entered a new subproblem
+            // If true, we just entered a new sub-problem
             if ( splitJustPerformed )
             {
                 performBoundTighteningAfterCaseSplit();
@@ -356,21 +358,20 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                             _statistics.print();
                         }
 
+                        // TODO: how to construct proof tree with CDCL
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
                         // search tree
-                        //                        if ( _produceUNSATProofs ) // TODO: how to
-                        //                        construct proof tree with CDCL
+                        //                        if ( _produceUNSATProofs )
                         //                        {
                         //                            ASSERT( _UNSATCertificateCurrentPointer );
                         //                            ( **_UNSATCertificateCurrentPointer
                         //                            ).setSATSolutionFlag();
                         //                        }
-                        _exitCode = Engine::SAT; // TODO: exitCode should change only in
-                                                 // solveWithCadical
                         return true;
                     }
                     else if ( !hasBranchingCandidate() )
                     {
+                        // TODO: check if this case still applies with CDCL
                         mainLoopEnd = TimeUtils::sampleMicro();
                         _statistics.incLongAttribute(
                             Statistics::TIME_MAIN_LOOP_MICRO,
@@ -380,8 +381,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                             printf( "\nEngine::solve: at leaf node but solving inconclusive\n" );
                             _statistics.print();
                         }
-                        _exitCode = Engine::UNKNOWN; // TODO: exitCode should change only in
-                                                     // solveWithCadical
+
                         return false;
                     }
                     else
@@ -416,7 +416,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             if ( !handleMalformedBasisException() )
             {
                 ASSERT( _lpSolverType == LPSolverType::NATIVE );
-                _exitCode = Engine::ERROR;
+                _smtCore.setExitCode( SmtCore::ExitCode::ERROR );
                 exportInputQueryWithError( "Cannot restore tableau" );
                 mainLoopEnd = TimeUtils::sampleMicro();
                 _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -438,28 +438,6 @@ bool Engine::solve() // TODO: change the name of this method, and remove
         {
             _tableau->toggleOptimization( false );
             continue;
-        }
-        catch ( MarabouError &e )
-        {
-            String message = Stringf(
-                "Caught a MarabouError. Code: %u. Message: %s ", e.getCode(), e.getUserMessage() );
-            _exitCode = Engine::ERROR; // TODO: exitCode should change only in
-                                       // solveWithCadical
-            exportInputQueryWithError( message );
-            mainLoopEnd = TimeUtils::sampleMicro();
-            _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
-                                          TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-            return false;
-        }
-        catch ( ... )
-        {
-            _exitCode = Engine::ERROR; // TODO: exitCode should change only in
-                                       // solveWithCadical
-            exportInputQueryWithError( "Unknown error" );
-            mainLoopEnd = TimeUtils::sampleMicro();
-            _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
-                                          TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-            return false;
         }
     }
 }
@@ -573,7 +551,7 @@ bool Engine::performPrecisionRestorationIfNeeded()
     // Restoration is not required
     _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
-    // Possible restoration due to preceision degradation
+    // Possible restoration due to precision degradation
     if ( shouldCheckDegradation() && highDegradation() )
     {
         performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
@@ -970,7 +948,6 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         _statistics.setLongAttribute( Statistics::CALCULATE_BOUNDS_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
-        _exitCode = Engine::UNSAT;
         printf( "unsat\n" );
 
         return false;
@@ -1029,7 +1006,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     unsigned infiniteBounds = _preprocessedQuery->countInfiniteBounds();
     if ( infiniteBounds != 0 )
     {
-        _exitCode = Engine::ERROR;
+        _smtCore.setExitCode( SmtCore::ExitCode::ERROR );
         throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
@@ -1099,7 +1076,7 @@ double *Engine::createConstraintMatrix()
     {
         if ( equation._type != Equation::EQ )
         {
-            _exitCode = Engine::ERROR;
+            _smtCore.setExitCode( SmtCore::ExitCode::ERROR );
             throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
@@ -1143,7 +1120,7 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix,
     /*
       This method permutes rows and columns in the constraint matrix (prior
       to the addition of auxiliary variables), in order to obtain a set of
-      column that constitue a lower triangular matrix. The variables
+      column that constitute a lower triangular matrix. The variables
       corresponding to the columns of this matrix join the initial basis.
 
       (It is possible that not enough variables are obtained this way, in which
@@ -1368,7 +1345,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         ++equationIndex;
     }
 
-    // Populate constriant matrix
+    // Populate constraint matrix
     _tableau->setConstraintMatrix( constraintMatrix );
 
     _tableau->registerToWatchAllVariables( _rowBoundTightener );
@@ -1595,7 +1572,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
-        _exitCode = Engine::UNSAT;
+        _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
         return false;
     }
 
@@ -1617,7 +1594,7 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
-        // Obtain from and store bounds into inputquery if it is not null.
+        // Obtain from and store bounds into inputQuery if it is not null.
         if ( inputQuery )
             _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
         else
@@ -2467,16 +2444,6 @@ void Engine::quitSignal()
     _quitRequested = true;
 }
 
-Engine::ExitCode Engine::getExitCode() const
-{
-    return _exitCode;
-}
-
-void Engine::setExitCode( IEngine::ExitCode exitCode )
-{
-    _exitCode = exitCode;
-}
-
 std::atomic_bool *Engine::getQuitRequested()
 {
     return &_quitRequested;
@@ -2530,7 +2497,7 @@ unsigned Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
     // Step 1: tell the NLR about the current bounds
     if ( inputQuery )
     {
-        // Obtain from and store bounds into inputquery if it is not null.
+        // Obtain from and store bounds into inputQuery if it is not null.
         _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
     }
     else
@@ -2643,7 +2610,6 @@ void Engine::reset()
     clearViolatedPLConstraints();
     resetSmtCore();
     resetBoundTighteners();
-    resetExitCode();
 }
 
 void Engine::resetStatistics()
@@ -2669,11 +2635,6 @@ void Engine::resetSmtCore()
 {
     _smtCore.reset();
     _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
-}
-
-void Engine::resetExitCode()
-{
-    _exitCode = Engine::NOT_DONE;
 }
 
 void Engine::resetBoundTighteners()
@@ -2780,7 +2741,7 @@ void Engine::decideBranchingHeuristics()
              _preprocessedQuery->getInputVariables().size() <
                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
-            // NOTE: the benefit of input splitting is minimal with abstract intepretation disabled.
+            // NOTE: the benefit of input splitting is minimal with abstract interpretation disabled.
             // Therefore, since the proof production mode does not currently support that, we do
             // not perform input-splitting in proof production mode.
             divideStrategy = DivideStrategy::LargestInterval;
@@ -2955,6 +2916,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
 
 bool Engine::restoreSmtState( SmtState &smtState )
 {
+    // TODO: this method should be updated as well, when integrating snc with cdcl
     try
     {
         ASSERT( _smtCore.getStackDepth() == 0 );
@@ -2979,7 +2941,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         {
             _smtCore.replaySmtStackEntry( stackEntry );
             // Do all the bound propagation, and set ReLU constraints to inactive (at
-            // least the one corresponding to the _activeSplit applied above.
+            // least the one corresponding to the _activeSplit applied above).
             tightenBoundsOnConstraintMatrix();
 
             // For debugging purposes
@@ -3004,7 +2966,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
                 printf( "\nEngine::solve: UNSAT query\n" );
                 _statistics.print();
             }
-            _exitCode = Engine::UNSAT;
+            _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
             for ( PiecewiseLinearConstraint *p : _plConstraints )
                 p->setActiveConstraint( true );
             return false;
@@ -3020,6 +2982,7 @@ void Engine::storeSmtState( SmtState &smtState )
 
 bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
 {
+    // TODO: this method should be updated when integrating milp with cdcl
     try
     {
         if ( _lpSolverType == LPSolverType::NATIVE && _tableau->basisMatrixAvailable() )
@@ -3036,7 +2999,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     }
     catch ( const InfeasibleQueryException & )
     {
-        _exitCode = Engine::UNSAT;
+        _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
         return false;
     }
 
@@ -3059,19 +3022,19 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     {
         if ( allNonlinearConstraintsHold() )
         {
-            _exitCode = IEngine::SAT;
+            _smtCore.setExitCode( SmtCore::ExitCode::SAT );
             return true;
         }
         else
         {
-            _exitCode = IEngine::UNKNOWN;
+            _smtCore.setExitCode( SmtCore::ExitCode::UNKNOWN );
             return false;
         }
     }
     else if ( _gurobi->infeasible() )
-        _exitCode = IEngine::UNSAT;
+        _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
     else if ( _gurobi->timeout() )
-        _exitCode = IEngine::TIMEOUT;
+        _smtCore.setExitCode( SmtCore::ExitCode::TIMEOUT );
     else
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
     return false;
@@ -3790,7 +3753,6 @@ bool Engine::certifyUNSATCertificate()
 
 void Engine::markLeafToDelegate()
 {
-    //    std::cout << "markLeafToDelegate" << std::endl;
     ASSERT( _produceUNSATProofs );
 
     // Mark leaf with toDelegate Flag
@@ -4269,4 +4231,10 @@ void Engine::initDataStructures()
 unsigned Engine::getVerbosity() const
 {
     return _verbosity;
+}
+
+const SmtCore &Engine::getSmtCore() const
+{
+    // TODO: should be removed after the SmtCore will be the wrapper of the Engine
+    return _smtCore;
 }

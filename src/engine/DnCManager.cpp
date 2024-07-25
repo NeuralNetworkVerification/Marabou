@@ -274,16 +274,16 @@ void DnCManager::updateDnCExitCode()
     bool hasQuitRequested = false;
     for ( auto &engine : _engines )
     {
-        Engine::ExitCode result = engine->getExitCode();
-        if ( result == Engine::SAT )
+        SmtCore::ExitCode result = engine->getSmtCore().getExitCode();
+        if ( result == SmtCore::SAT )
         {
             _engineWithSATAssignment = engine;
             hasSat = true;
             break;
         }
-        else if ( result == Engine::ERROR )
+        else if ( result == SmtCore::ERROR )
             hasError = true;
-        else if ( result == Engine::QUIT_REQUESTED )
+        else if ( result == SmtCore::QUIT_REQUESTED )
             hasQuitRequested = true;
     }
     if ( hasSat )

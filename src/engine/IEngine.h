@@ -33,6 +33,7 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
+class SmtCore;
 class SmtState;
 class String;
 class PiecewiseLinearConstraint;
@@ -43,17 +44,6 @@ class IEngine
 {
 public:
     virtual ~IEngine(){};
-
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        UNKNOWN = 3,
-        TIMEOUT = 4,
-        QUIT_REQUESTED = 5,
-
-        NOT_DONE = 999,
-    };
 
     /*
       Add equations and apply tightenings from a PL case split.
@@ -106,14 +96,9 @@ public:
     virtual bool solve() = 0;
 
     /*
-      Retrieve the exit code.
-    */
-    virtual ExitCode getExitCode() const = 0;
-
-    /*
-      Retrieve the exit code.
-    */
-    virtual void setExitCode( ExitCode exitCode ) = 0;
+      Print the given error message, and export the input query into a file.
+     */
+    virtual void exportInputQueryWithError( String errorMessage ) = 0;
 
     /*
       Methods for DnC: reset the engine state for re-use,
@@ -229,6 +214,8 @@ public:
       Returns the verbosity level.
      */
     virtual unsigned getVerbosity() const = 0;
+
+    virtual const SmtCore &getSmtCore() const = 0;
 };
 
 #endif // __IEngine_h__

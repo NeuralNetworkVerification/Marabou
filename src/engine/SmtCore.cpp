@@ -15,22 +15,37 @@
 
 #include "SmtCore.h"
 
+#include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
+#include "DisjunctionConstraint.h"
 #include "DivideStrategy.h"
+#include "Engine.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
 #include "InfeasibleQueryException.h"
+#include "InputQuery.h"
 #include "MStringf.h"
+#include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "NLRError.h"
 #include "Options.h"
+#include "PiecewiseLinearConstraint.h"
+#include "Preprocessor.h"
 #include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
+#include "TableauRow.h"
+#include "TimeUtils.h"
 #include "UnsatCertificateNode.h"
+#include "VariableOutOfBoundDuringOptimizationException.h"
+#include "Vector.h"
+
+#include <random>
 
 SmtCore::SmtCore( IEngine *engine )
-    : _statistics( NULL )
+    : _exitCode( ExitCode::NOT_DONE )
+    , _statistics( NULL )
     , _engine( engine )
     , _context( _engine->getContext() )
     , _needToSplit( false )
@@ -82,6 +97,17 @@ void SmtCore::reset()
     _stateId = 0;
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
+    resetExitCode();
+}
+
+SmtCore::ExitCode SmtCore::getExitCode() const
+{
+    return _exitCode;
+}
+
+void SmtCore::setExitCode( SmtCore::ExitCode exitCode )
+{
+    _exitCode = exitCode;
 }
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
@@ -907,7 +933,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         _timeoutInSeconds = timeoutInSeconds;
 
         // Maybe query detected as UNSAT in processInputQuery
-        if ( _engine->getExitCode() == IEngine::ExitCode::UNSAT )
+        if ( _exitCode == ExitCode::UNSAT )
             return false;
 
         _cadicalWrapper.connectTheorySolver( this );
@@ -920,17 +946,17 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         if ( result == 0 )
         {
-            _engine->setExitCode( IEngine::ExitCode::UNKNOWN );
+            _exitCode = ExitCode::UNKNOWN;
             return false;
         }
         else if ( result == 10 )
         {
-            _engine->setExitCode( IEngine::ExitCode::SAT );
+            _exitCode = ExitCode::SAT;
             return true;
         }
         else if ( result == 20 )
         {
-            _engine->setExitCode( IEngine::ExitCode::UNSAT );
+            _exitCode = ExitCode::UNSAT;
             return false;
         }
         else
@@ -948,8 +974,32 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _statistics->print();
         }
 
-        _engine->setExitCode( IEngine::ExitCode::TIMEOUT );
+        _exitCode = ExitCode::TIMEOUT;
         _statistics->timeout();
+        return false;
+    }
+    catch ( MarabouError &e )
+    {
+        String message = Stringf(
+            "Caught a MarabouError. Code: %u. Message: %s ", e.getCode(), e.getUserMessage() );
+        _exitCode = ExitCode::ERROR;
+        _engine->exportInputQueryWithError( message );
+
+        // TODO: uncomment after handling statistics
+//        mainLoopEnd = TimeUtils::sampleMicro();
+//        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+//                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        return false;
+    }
+    catch ( ... )
+    {
+        _exitCode = ERROR;
+        _engine->exportInputQueryWithError( "Unknown error" );
+
+        // TODO: uncomment after handling statistics
+//        mainLoopEnd = TimeUtils::sampleMicro();
+//        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+//                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         return false;
     }
 }
@@ -1006,4 +1056,9 @@ void SmtCore::checkIfShouldExitDueToTimeout()
     {
         throw TimeoutException();
     }
+}
+
+void SmtCore::resetExitCode()
+{
+    _exitCode = ExitCode::NOT_DONE;
 }

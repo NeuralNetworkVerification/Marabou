@@ -110,7 +110,11 @@ public:
     bool processInputQuery( InputQuery &inputQuery, bool preprocess );
 
     InputQuery prepareSnCInputQuery();
-    void exportInputQueryWithError( String errorMessage );
+
+    /*
+      Print the given error message, and export the input query into a file.
+     */
+    void exportInputQueryWithError( String errorMessage ) override;
 
     /*
       Methods for calculating bounds.
@@ -151,16 +155,6 @@ public:
     InputQuery *getInputQuery();
 
     InputQuery buildQueryFromCurrentState() const;
-
-    /*
-      Get the exit code
-    */
-    Engine::ExitCode getExitCode() const override;
-
-    /*
-      Set the exit code
-     */
-    void setExitCode( IEngine::ExitCode exitCode ) override;
 
     /*
       Get the quitRequested flag
@@ -236,7 +230,6 @@ public:
       cautiously.
      */
     void resetSmtCore();
-    void resetExitCode();
     void resetBoundTighteners();
 
     /*
@@ -337,6 +330,8 @@ public:
       Returns the verbosity level.
      */
     unsigned getVerbosity() const override;
+
+    const SmtCore &getSmtCore() const override;
 
 private:
     enum BasisRestorationRequired {
@@ -474,11 +469,6 @@ private:
       Indicates a user/DnCManager request to quit
     */
     std::atomic_bool _quitRequested;
-
-    /*
-      A code indicating how the run terminated.
-    */
-    ExitCode _exitCode;
 
     /*
       The number of visited states when we performed the previous
