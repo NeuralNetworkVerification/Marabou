@@ -833,6 +833,9 @@ int SmtCore::cb_propagate()
     }
 
     int lit = _literalsToPropagate.popFront().first();
+
+    // In case of assigned boolean variable with opposite assignment, find a conflict clause and
+    // terminate propagating
     if ( lit && isLiteralAssigned( -lit ) )
     {
         if ( !cb_has_external_clause() )
