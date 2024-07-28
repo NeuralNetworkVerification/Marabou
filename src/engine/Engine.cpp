@@ -510,9 +510,6 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         // We have violated piecewise-linear constraints.
         performConstraintFixingStep();
 
-        // Finally, take this opportunity to tighten any bounds
-        // and perform any valid case splits.
-        tightenBoundsOnConstraintMatrix();
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
 
