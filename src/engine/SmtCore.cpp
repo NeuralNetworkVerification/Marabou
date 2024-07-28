@@ -681,7 +681,7 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( Stringf("Notified assignment %d", lit).ascii() );
+    SMT_LOG( Stringf( "Notified assignment %d; is fixed: %d", lit, is_fixed ).ascii() );
     ASSERT( !isLiteralAssigned( -lit ) );
 
     if ( is_fixed )
@@ -741,7 +741,7 @@ void SmtCore::notify_new_decision_level()
 void SmtCore::notify_backtrack( size_t new_level )
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( Stringf("Backtracking to level %d", new_level).ascii() );
+    SMT_LOG( Stringf( "Backtracking to level %d", new_level ).ascii() );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
@@ -810,7 +810,7 @@ int SmtCore::cb_decide()
             _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        SMT_LOG( Stringf("Decided literal %d", lit).ascii() );
+        SMT_LOG( Stringf( "Decided literal %d", lit ).ascii() );
         return lit;
     }
 
@@ -820,7 +820,6 @@ int SmtCore::cb_decide()
 int SmtCore::cb_propagate()
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( "Propagating:" );
     if ( _literalsToPropagate.empty() )
     {
         // If no literals left to propagate, attempt solving
@@ -834,22 +833,30 @@ int SmtCore::cb_propagate()
     }
 
     int lit = _literalsToPropagate.popFront().first();
+    if ( isLiteralAssigned( -lit ) )
+    {
+        _engine->explainSimplexFailure();
+        ASSERT( cb_has_external_clause() );
+        _literalsToPropagate.clear();
+        return 0;
+    }
+
     if ( lit )
         _assignedLiterals.push_back( lit );
+    SMT_LOG( Stringf( "Propagating literal %d", lit ).ascii() );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    SMT_LOG( Stringf("Propagating literal %d", lit).ascii() );
     return lit;
 }
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( Stringf("Adding reason clause for literal %d", propagated_lit).ascii() );
     ASSERT( propagated_lit )
     ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
 
     if ( !_isReasonClauseInitialized )
     {
+        SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
         Vector<int> toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
 
         for ( int lit : toAdd )
@@ -859,7 +866,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
                     _cadicalVarToPlc[abs( lit )]->getPhaseFixingEntry()->id );
 
             // Remove fixed literals from clause, as they are redundant
-            if ( !_fixedCadicalVars.exists( lit ) )
+            if ( !_fixedCadicalVars.exists( -lit ) )
                 _reasonClauseLiterals.append( -lit );
         }
 
@@ -867,6 +874,12 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         ASSERT( !_fixedCadicalVars.exists( propagated_lit ) );
         _reasonClauseLiterals.append( propagated_lit );
         _isReasonClauseInitialized = true;
+
+        if ( _reasonClauseLiterals.size() == 1 )
+        {
+            _fixedCadicalVars.insert( _reasonClauseLiterals.first() );
+            phase( _reasonClauseLiterals.first() );
+        }
     }
 
     if ( _reasonClauseLiterals.empty() )
@@ -877,20 +890,22 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
     int lit = _reasonClauseLiterals.pop();
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+    SMT_LOG( Stringf( "\tAdding Literal %d for Reason Clause", lit ).ascii() )
     return lit;
 }
 
 bool SmtCore::cb_has_external_clause()
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( "Checking if there is a Conflict Clause to add" );
+    SMT_LOG( Stringf( "Checking if there is a Conflict Clause to add: %d",
+                      !_externalClausesToAdd.empty() )
+                 .ascii() );
     return !_externalClausesToAdd.empty();
 }
 
 int SmtCore::cb_add_external_clause_lit()
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( "Adding Conflict Clause" );
     ASSERT( !_externalClausesToAdd.empty() );
 
     // Add literal from the last conflict clause learned
@@ -899,6 +914,7 @@ int SmtCore::cb_add_external_clause_lit()
     {
         int lit = currentClause.pop();
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+        SMT_LOG( Stringf( "\tAdding Literal %d to Conflict Clause", lit ).ascii() )
         return lit;
     }
 
@@ -913,7 +929,7 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 
     // Remove fixed literals as they are redundant
     for ( int lit : clause )
-        if ( !_fixedCadicalVars.exists( lit ) )
+        if ( !_fixedCadicalVars.exists( -lit ) )
             toAdd.append( -lit );
     _externalClausesToAdd.append( toAdd );
 }
@@ -985,9 +1001,10 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         _engine->exportInputQueryWithError( message );
 
         // TODO: uncomment after handling statistics
-//        mainLoopEnd = TimeUtils::sampleMicro();
-//        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
-//                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        //        mainLoopEnd = TimeUtils::sampleMicro();
+        //        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+        //                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd )
+        //                                      );
         return false;
     }
     catch ( ... )
@@ -996,9 +1013,10 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         _engine->exportInputQueryWithError( "Unknown error" );
 
         // TODO: uncomment after handling statistics
-//        mainLoopEnd = TimeUtils::sampleMicro();
-//        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
-//                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        //        mainLoopEnd = TimeUtils::sampleMicro();
+        //        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+        //                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd )
+        //                                      );
         return false;
     }
 }
