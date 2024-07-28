@@ -681,10 +681,9 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( "Notified assignment %d", lit );
+    SMT_LOG( Stringf("Notified assignment %d", lit).ascii() );
     ASSERT( !isLiteralAssigned( -lit ) );
 
-    SMT_LOG( "Notified assignment %d", lit );
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
@@ -742,7 +741,7 @@ void SmtCore::notify_new_decision_level()
 void SmtCore::notify_backtrack( size_t new_level )
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( "Backtracking to level %d", new_level );
+    SMT_LOG( Stringf("Backtracking to level %d", new_level).ascii() );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
@@ -811,7 +810,7 @@ int SmtCore::cb_decide()
             _assignedLiterals.push_back( lit );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        SMT_LOG( "Decided literal %d", lit );
+        SMT_LOG( Stringf("Decided literal %d", lit).ascii() );
         return lit;
     }
 
@@ -838,14 +837,14 @@ int SmtCore::cb_propagate()
     if ( lit )
         _assignedLiterals.push_back( lit );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    SMT_LOG( "Propagating literal %d", lit );
+    SMT_LOG( Stringf("Propagating literal %d", lit).ascii() );
     return lit;
 }
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( "Adding reason clause for literal %d", propagated_lit );
+    SMT_LOG( Stringf("Adding reason clause for literal %d", propagated_lit).ascii() );
     ASSERT( propagated_lit )
     ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
 
