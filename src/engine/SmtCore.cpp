@@ -833,12 +833,15 @@ int SmtCore::cb_propagate()
     }
 
     int lit = _literalsToPropagate.popFront().first();
-    if ( isLiteralAssigned( -lit ) )
+    if ( lit && isLiteralAssigned( -lit ) )
     {
-        _engine->explainSimplexFailure();
+        if ( !cb_has_external_clause() )
+            _engine->explainSimplexFailure();
         ASSERT( cb_has_external_clause() );
         _literalsToPropagate.clear();
-        return 0;
+        _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+        _assignedLiterals.push_back( lit );
+        return lit;
     }
 
     if ( lit )
@@ -856,6 +859,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
     if ( !_isReasonClauseInitialized )
     {
+        _reasonClauseLiterals.clear();
         SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
         Vector<int> toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
 
@@ -876,10 +880,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         _isReasonClauseInitialized = true;
 
         if ( _reasonClauseLiterals.size() == 1 )
-        {
-            _fixedCadicalVars.insert( _reasonClauseLiterals.first() );
-            phase( _reasonClauseLiterals.first() );
-        }
+            phase( propagated_lit );
     }
 
     if ( _reasonClauseLiterals.empty() )
