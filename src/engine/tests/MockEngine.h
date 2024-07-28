@@ -20,14 +20,18 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "SmtCore.h"
 #include "context/context.h"
+#include <cxxtest/TestSuite.h>
 
 class String;
 
 class MockEngine : public IEngine
 {
 public:
-    MockEngine()
+    SmtCore _smtCore;
+
+    MockEngine() : _smtCore(this)
     {
         wasCreated = false;
         wasDiscarded = false;
@@ -122,10 +126,10 @@ public:
     }
 
     unsigned _timeToSolve;
-    IEngine::ExitCode _exitCode;
+    SmtCore::ExitCode _exitCode;
     bool solve()
     {
-        return _exitCode == IEngine::SAT;
+        return _exitCode == SmtCore::SAT;
     }
 
     void setTimeToSolve( unsigned timeToSolve )
@@ -133,12 +137,12 @@ public:
         _timeToSolve = timeToSolve;
     }
 
-    void setExitCode( IEngine::ExitCode exitCode )
+    void setExitCode( SmtCore::ExitCode exitCode )
     {
         _exitCode = exitCode;
     }
 
-    IEngine::ExitCode getExitCode() const
+    SmtCore::ExitCode getExitCode() const
     {
         return _exitCode;
     }
@@ -324,8 +328,8 @@ public:
     bool solveWithCadical( double timeoutInSeconds )
     {
         if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = IEngine::TIMEOUT;
-        return _exitCode == IEngine::SAT;
+            _exitCode = SmtCore::TIMEOUT;
+        return _exitCode == SmtCore::SAT;
     }
 
     void preSolve()
@@ -352,6 +356,15 @@ public:
     unsigned getVerbosity() const
     {
         return 0;
+    }
+
+    void exportInputQueryWithError( String )
+    {
+    }
+
+    const SmtCore &getSmtCore() const
+    {
+        return _smtCore;
     }
 };
 

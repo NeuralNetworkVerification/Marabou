@@ -59,8 +59,8 @@ public:
         engine.setVerbosity( 2 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( ipq ) );
         TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
-        Engine::ExitCode code = engine.getExitCode();
-        TS_ASSERT( code == Engine::SAT || code == Engine::UNKNOWN );
+        SmtCore::ExitCode code = engine.getSmtCore().getExitCode();
+        TS_ASSERT( code == SmtCore::SAT || code == SmtCore::UNKNOWN );
     }
 
     void _test_incremental_linearization_sigmoid()
@@ -117,9 +117,9 @@ public:
         TS_ASSERT( initialEngine->processInputQuery( ipq ) );
         TS_ASSERT_THROWS_NOTHING( initialEngine->solveWithCadical() );
 
-        TS_ASSERT( initialEngine->getExitCode() == Engine::UNKNOWN ||
-                   initialEngine->getExitCode() == Engine::SAT );
-        if ( initialEngine->getExitCode() == Engine::SAT )
+        TS_ASSERT( initialEngine->getSmtCore().getExitCode() == SmtCore::UNKNOWN ||
+                   initialEngine->getSmtCore().getExitCode() == SmtCore::SAT );
+        if ( initialEngine->getSmtCore().getExitCode() == SmtCore::SAT )
         {
             delete initialEngine;
             return;
@@ -134,7 +134,7 @@ public:
         std::cout << ipq.getSolutionValue( 0 ) << std::endl;
         std::cout << ipq.getSolutionValue( 1 ) << std::endl;
 
-        TS_ASSERT_EQUALS( afterEngine->getExitCode(), Engine::SAT );
+        TS_ASSERT_EQUALS( afterEngine->getSmtCore().getExitCode(), SmtCore::SAT );
 
         if ( afterEngine )
             delete afterEngine;

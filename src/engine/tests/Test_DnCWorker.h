@@ -113,7 +113,7 @@ public:
 
         createPlaceHolderSubQuery();
         _engine->setTimeToSolve( 10 );
-        _engine->setExitCode( IEngine::TIMEOUT );
+        _engine->setExitCode( SmtCore::TIMEOUT );
         std::atomic_int numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
@@ -134,7 +134,7 @@ public:
                              portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( _engine->getExitCode() == IEngine::TIMEOUT );
+        TS_ASSERT( _engine->getExitCode() == SmtCore::TIMEOUT );
         TS_ASSERT( clearSubQueries() == 4 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 4 );
         TS_ASSERT( !shouldQuitSolving.load() );
@@ -150,7 +150,7 @@ public:
 
         createPlaceHolderSubQuery();
         createPlaceHolderSubQuery();
-        _engine->setExitCode( IEngine::UNSAT );
+        _engine->setExitCode( SmtCore::UNSAT );
         numUnsolvedSubQueries = 2;
         shouldQuitSolving = false;
         dncWorker = DnCWorker( _workload,
@@ -165,7 +165,7 @@ public:
                                portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
+        TS_ASSERT( _engine->getExitCode() == SmtCore::UNSAT );
         TS_ASSERT( clearSubQueries() == 1 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
         TS_ASSERT( !shouldQuitSolving.load() );
@@ -182,7 +182,7 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        _engine->setExitCode( IEngine::UNSAT );
+        _engine->setExitCode( SmtCore::UNSAT );
         numUnsolvedSubQueries = 1;
         shouldQuitSolving = false;
 
@@ -198,7 +198,7 @@ public:
                                portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
+        TS_ASSERT( _engine->getExitCode() == SmtCore::UNSAT );
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
         TS_ASSERT( shouldQuitSolving.load() );
@@ -214,7 +214,7 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        _engine->setExitCode( IEngine::SAT );
+        _engine->setExitCode( SmtCore::SAT );
         numUnsolvedSubQueries = ( 1 );
         shouldQuitSolving = ( false );
         dncWorker = DnCWorker( _workload,
@@ -229,7 +229,7 @@ public:
                                portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( _engine->getExitCode() == IEngine::SAT );
+        TS_ASSERT( _engine->getExitCode() == SmtCore::SAT );
         TS_ASSERT( clearSubQueries() == 0 );
         TS_ASSERT( numUnsolvedSubQueries.load() == 0 );
         TS_ASSERT( shouldQuitSolving.load() );
@@ -244,7 +244,7 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        _engine->setExitCode( IEngine::QUIT_REQUESTED );
+        _engine->setExitCode( SmtCore::QUIT_REQUESTED );
         numUnsolvedSubQueries = 1;
         shouldQuitSolving = true;
         dncWorker = DnCWorker( _workload,
@@ -258,7 +258,7 @@ public:
                                verbosity,
                                portfolio );
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( _engine->getExitCode() == IEngine::QUIT_REQUESTED );
+        TS_ASSERT( _engine->getExitCode() == SmtCore::QUIT_REQUESTED );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
 
         //  Pop a subQuery from the workload, set the mock engine's exitCode
@@ -272,7 +272,7 @@ public:
         TS_ASSERT( clearSubQueries() == 0 );
 
         createPlaceHolderSubQuery();
-        _engine->setExitCode( IEngine::ERROR );
+        _engine->setExitCode( SmtCore::ERROR );
         numUnsolvedSubQueries = 1;
         shouldQuitSolving = false;
 
@@ -288,7 +288,7 @@ public:
                                portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
-        TS_ASSERT( _engine->getExitCode() == IEngine::ERROR );
+        TS_ASSERT( _engine->getExitCode() == SmtCore::ERROR );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
         TS_ASSERT( shouldQuitSolving.load() );
     }
