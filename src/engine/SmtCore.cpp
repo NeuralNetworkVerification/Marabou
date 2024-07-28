@@ -833,6 +833,9 @@ int SmtCore::cb_propagate()
     }
 
     int lit = _literalsToPropagate.popFront().first();
+
+    // In case of assigned boolean variable with opposite assignment, find a conflict clause and
+    // terminate propagating
     if ( lit && isLiteralAssigned( -lit ) )
     {
         if ( !cb_has_external_clause() )
@@ -879,6 +882,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         _reasonClauseLiterals.append( propagated_lit );
         _isReasonClauseInitialized = true;
 
+        // Unit clause fixes the propagated literal
         if ( _reasonClauseLiterals.size() == 1 )
             phase( propagated_lit );
     }
