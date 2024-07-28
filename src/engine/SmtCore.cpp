@@ -882,6 +882,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         _reasonClauseLiterals.append( propagated_lit );
         _isReasonClauseInitialized = true;
 
+        // Unit clause fixes the propagated literal
         if ( _reasonClauseLiterals.size() == 1 )
             phase( propagated_lit );
     }
