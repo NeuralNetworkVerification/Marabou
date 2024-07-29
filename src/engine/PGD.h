@@ -8,7 +8,7 @@
 constexpr float LR = 0.1;
 constexpr float PANELTY = 10;
 constexpr unsigned DEFAULT_NUM_ITER = 10000;
-constexpr unsigned DEFAULT_NUM_RESTARTS = 10;
+constexpr unsigned DEFAULT_NUM_RESTARTS = 20;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
 constexpr unsigned ATTACK_EPSILON = 100.0f;
