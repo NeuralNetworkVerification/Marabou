@@ -822,8 +822,9 @@ int SmtCore::cb_propagate()
     checkIfShouldExitDueToTimeout();
     if ( _literalsToPropagate.empty() )
     {
-        // If no literals left to propagate, attempt solving
-        _engine->solve();
+        // If no literals left to propagate, and no clause already found, attempt solving
+        if ( _externalClausesToAdd.empty() )
+            _engine->solve();
         // Try learning a conflict clause if possible
         if ( _externalClausesToAdd.empty() )
             _engine->propagateBoundManagerTightenings();
