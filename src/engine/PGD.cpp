@@ -159,10 +159,16 @@ torch::Tensor PGDAttack::_findDelta() {
 
         torch::Tensor currentPrediction = model.forward(originalInput + delta);
         torch::Tensor currentLoss = _calculateLoss(currentPrediction);
+        if (_isWithinBounds( currentPrediction, OUTPUT ))
+        {
+            return delta;
+        }
         if (currentLoss.item<double>() < minLoss.item<double>()) {
             minLoss = currentLoss;
             bestDelta = delta.detach().clone();
         }
+
+        learningRate *=2;
     }
 
     return bestDelta;

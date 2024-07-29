@@ -2,10 +2,10 @@
 #include "Vector.h"
 #include "NetworkLevelReasoner.h"
 
-CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* networkLevelReasoner) {
+CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* nlr) {
 
     std::cout << "----- Construct Custom Network -----" << std::endl;
-
+    networkLevelReasoner = nlr;
     numberOfLayers = networkLevelReasoner->getNumberOfLayers();
     for (unsigned i = 0; i < numberOfLayers; i++) {
         const NLR::Layer* layer = networkLevelReasoner->getLayer(i);
@@ -55,12 +55,17 @@ CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* networkLevelReason
         // activation layers
         } else if (layerType == NLR::Layer::RELU || layerType == NLR::Layer::LEAKY_RELU ||
                    layerType == NLR::Layer::SIGMOID || layerType == NLR::Layer::ABSOLUTE_VALUE ||
-                   layerType == NLR::Layer::MAX || layerType == NLR::Layer::SIGN ||
+                   layerType == NLR::Layer::SIGN ||
                    layerType == NLR::Layer::ROUND || layerType == NLR::Layer::SOFTMAX) {
             layersOrder.append( ACTIVATION );
             activations.append(layerType);
-        } else if (layerType == NLR::Layer::INPUT) {
-            // No action needed for input layer
+        }
+        else if(layerType == NLR::Layer::MAX)
+        {
+            maxLayerIndices.append( i );
+            layersOrder.append( ACTIVATION );
+            activations.append(layerType);
+        }else if (layerType == NLR::Layer::INPUT) {
             layersOrder.append( INPUT );
         } else {
             std::cerr << "Unsupported layer type: " << layerType << std::endl;
@@ -73,26 +78,62 @@ CustomDNNImpl::CustomDNNImpl(const NLR::NetworkLevelReasoner* networkLevelReason
 
 }
 
+
+
+
+torch::Tensor CustomDNNImpl::customMaxPool(unsigned maxLayerIndex, torch::Tensor *x)
+{
+    const NLR::Layer *layer = networkLevelReasoner->getLayer(maxLayerIndex);
+    Vector<float> newX;
+    for (unsigned neuron = 0; neuron < layer->getSize(); ++neuron)
+    {
+        float maxVal = -std::numeric_limits<float>::infinity();
+        for (const NLR::NeuronIndex activationNeuron : layer->getActivationSources(neuron))
+        {
+            int index = static_cast<int>(activationNeuron._neuron);
+            maxVal = (std::max(maxVal, x->index({0, index}).item<float>()));
+        }
+        newX.append(maxVal);
+    }
+
+    unsigned batchSize = x->size(0);
+    unsigned newSize = static_cast<unsigned>(newX.size());
+    return torch::tensor(newX.getContainer(), torch::kFloat).view({batchSize, newSize});
+}
+
+
+
 torch::Tensor CustomDNNImpl::forward(torch::Tensor x) {
     unsigned linearIndex = 0;
     unsigned activationIndex = 0;
-    for ( unsigned i = 1; i < numberOfLayers; i++ )
+    unsigned maxPoolNum = 0;
+    for ( unsigned i = 0; i < numberOfLayers; i++ )
     {
-        switch (layersOrder[i])
+        Type layerType = layersOrder[i];
+        switch (layerType)
         {
+        case INPUT:
+            // std::cout << "input layer " << i << ":  shape: " << x.sizes() << std::endl;
+            break;
         case LINEAR:
-
+            // std::cout << "linear Layer " << i << ":  shape: " << x.sizes() << std::endl;
             x = linearLayers[linearIndex]->forward( x );
             linearIndex ++;
+            // std::cout << " after linear Layer " << i << ":  shape: " << x.sizes() << std::endl;
+
             break;
 
         case ACTIVATION:
             {
-            switch ( activations[activationIndex] )
+            NLR::Layer::Type activationType = activations[activationIndex];
+            switch ( activationType )
             {
             case NLR::Layer::RELU:
+                // std::cout << "Relu Layer " << i << ":  shape: " << x.sizes() << std::endl;
                 x = torch::relu( x );
                 activationIndex ++;
+                // std::cout << "after Relu Layer " << i << ":  shape: " << x.sizes() << std::endl;
+
                 break;
 
             case NLR::Layer::LEAKY_RELU:
@@ -111,9 +152,15 @@ torch::Tensor CustomDNNImpl::forward(torch::Tensor x) {
                 break;
 
             case NLR::Layer::MAX:
-                x = std::get<0>( torch::max( x, 1, true ) );
+            {
+                // std::cout << "max Layer " << i << ":  shape: " << x.sizes() << std::endl;
+                unsigned maxLayerIndex = maxLayerIndices[maxPoolNum];
+                x = customMaxPool(maxLayerIndex, &x);
                 activationIndex ++;
+                maxPoolNum ++;
+                // std::cout << "after max Layer " << i << ":  shape: " << x.sizes() << std::endl;
                 break;
+            }
 
             case NLR::Layer::SIGN:
                 x = torch::sign( x );

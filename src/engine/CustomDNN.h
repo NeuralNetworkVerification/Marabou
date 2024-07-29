@@ -17,17 +17,21 @@ public:
         LINEAR,
         ACTIVATION,
     };
+    const NLR::NetworkLevelReasoner* networkLevelReasoner;
     Vector<unsigned> layerSizes;
     Vector<NLR::Layer::Type> activations;
     Vector<Vector<Vector<float>>> weights;
     Vector<std::vector<float>> biases;
     Vector<torch::nn::Linear> linearLayers;
-    Vector<unsigned> layersOrder;
+    Vector<Type> layersOrder;
     unsigned numberOfLayers;
+    Vector<unsigned> maxLayerIndices;
 
     explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
+    torch::Tensor customMaxPool(unsigned max_layer_inxes, torch::Tensor *x );
     torch::Tensor forward( torch::Tensor x );
 };
+
 
 #endif
