@@ -3118,7 +3118,11 @@ bool Engine::performDeepSoILocalSearch()
                     return true;
                 }
             }
-            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) )
+            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern -
+                                          costOfProposedPhasePattern ) ) // TODO: check this fix
+                                                                         // with Andrew, and
+                                                                         // maybe PR into main
+                                                                         // branch of Marabou
             {
                 // Corner case: the SoI is minimal but there are still some PL
                 // constraints (those not in the SoI) unsatisfied.
