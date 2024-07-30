@@ -134,9 +134,11 @@ torch::Tensor PGDAttack::_calculateLoss(const torch::Tensor& predictions) {
 }
 
 
-torch::Tensor PGDAttack::_findDelta() {
+std::pair <torch::Tensor, torch::Tensor>  PGDAttack::_findAdvExample() {
     torch::Tensor bestDelta = torch::zeros_like(originalInput).to(device);
     torch::Tensor minLoss = torch::tensor(std::numeric_limits<double>::infinity()).to(device);
+    torch::Tensor currentPrediction;
+    torch::Tensor currentExample;
 
     for (unsigned i = 0; i < num_restarts; i++) {
         torch::Tensor delta = torch::rand(inputSize).to(device);
@@ -156,12 +158,12 @@ torch::Tensor PGDAttack::_findDelta() {
             // Project delta back to epsilon-ball
             delta.data() = delta.data().clamp(-epsilon, epsilon);
         }
-
-        torch::Tensor currentPrediction = model.forward(originalInput + delta);
+        currentExample = originalInput + delta;
+        currentPrediction = model.forward(currentExample);
         torch::Tensor currentLoss = _calculateLoss(currentPrediction);
         if (_isWithinBounds( currentPrediction, OUTPUT ))
         {
-            return delta;
+            return {currentExample, currentPrediction};
         }
         if (currentLoss.item<double>() < minLoss.item<double>()) {
             minLoss = currentLoss;
@@ -171,7 +173,7 @@ torch::Tensor PGDAttack::_findDelta() {
         learningRate *=2;
     }
 
-    return bestDelta;
+    return {currentExample, currentPrediction};;
 }
 
 bool PGDAttack::displayAdversarialExample() {
@@ -179,11 +181,9 @@ bool PGDAttack::displayAdversarialExample() {
     model.eval();
 
     auto original_pred = model.forward(originalInput);
-
-    torch::Tensor adv_delta = _findDelta();
-    torch::Tensor advInput = originalInput + adv_delta;
-
-    auto advPred = model.forward(advInput);
+    auto adversarial = _findAdvExample();
+    torch::Tensor advInput = adversarial.first;
+    auto advPred = adversarial.second;
 
     bool isFooled = _isWithinBounds( advInput, INPUT ) &&
                     _isWithinBounds( advPred, OUTPUT );
