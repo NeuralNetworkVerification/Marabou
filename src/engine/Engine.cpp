@@ -1783,7 +1783,7 @@ void Engine::collectViolatedPlConstraints()
     _violatedPlConstraints.clear();
     for ( const auto &constraint : _plConstraints )
     {
-        if ( constraint->isActive() && !constraint->satisfied() && !constraint->phaseFixed() )
+        if ( constraint->isActive() && !constraint->satisfied() )
             _violatedPlConstraints.append( constraint );
     }
 }
