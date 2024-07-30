@@ -219,13 +219,6 @@ void Engine::preSolve() // TODO: change the name of this method
         _milpEncoder->encodeInputQuery( *_gurobi, *_preprocessedQuery, true );
         ENGINE_LOG( "Encoding convex relaxation into Gurobi - done" );
     }
-}
-
-bool Engine::solve() // TODO: change the name of this method, and remove
-                     // argument
-{
-    //    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
-    //        return solveWithMILPEncoding( timeoutInSeconds );
 
     mainLoopStatistics(); // TODO: update usage of statistics, maybe should be called in
                           // solveWithCadical
@@ -235,6 +228,13 @@ bool Engine::solve() // TODO: change the name of this method, and remove
         _statistics.print();
         printf( "\n---\n" );
     }
+}
+
+bool Engine::solve() // TODO: change the name of this method, and remove
+                     // argument
+{
+    //    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
+    //        return solveWithMILPEncoding( timeoutInSeconds );
 
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
@@ -348,15 +348,12 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                         } );
 
 
-                        mainLoopEnd = TimeUtils::sampleMicro();
-                        _statistics.incLongAttribute(
-                            Statistics::TIME_MAIN_LOOP_MICRO,
-                            TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-                        if ( _verbosity > 0 )
-                        {
-                            printf( "\nEngine::solve: sat assignment found\n" );
-                            _statistics.print();
-                        }
+                        // TODO: update time measurements
+//                        mainLoopEnd = TimeUtils::sampleMicro();
+//                        _statistics.incLongAttribute(
+//                            Statistics::TIME_MAIN_LOOP_MICRO,
+//                            TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+
 
                         // TODO: how to construct proof tree with CDCL
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query

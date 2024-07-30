@@ -286,7 +286,8 @@ endif()
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
-add_library(${MARABOU_LIB} ${DEPS_ONNX} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
+add_library(${MARABOU_LIB} ${DEPS_ONNX} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL}
+        src/engine/SatAssignmentFoundException.h)
 target_include_directories(${MARABOU_LIB} PRIVATE SYSTEM)
 
 set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})

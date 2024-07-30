@@ -17,28 +17,20 @@
 
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
-#include "DisjunctionConstraint.h"
-#include "DivideStrategy.h"
 #include "Engine.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
-#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
-#include "MalformedBasisException.h"
 #include "MarabouError.h"
-#include "NLRError.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
-#include "Preprocessor.h"
 #include "PseudoImpactTracker.h"
-#include "ReluConstraint.h"
-#include "TableauRow.h"
+#include "SatAssignmentFoundException.h"
 #include "TimeUtils.h"
 #include "UnsatCertificateNode.h"
-#include "VariableOutOfBoundDuringOptimizationException.h"
 #include "Vector.h"
 
 #include <random>
@@ -812,7 +804,9 @@ int SmtCore::cb_propagate()
 
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClausesToAdd.empty() )
-            _engine->solve();
+            if ( _engine->solve() )
+                throw SatAssignmentFoundException();
+
         // Try learning a conflict clause if possible
         if ( _externalClausesToAdd.empty() )
             _engine->propagateBoundManagerTightenings();
@@ -954,7 +948,10 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         int result = _cadicalWrapper.solve();
 
         if ( _statistics && _engine->getVerbosity() )
+        {
+            printf( "\nSmtCore::Final statistics:\n" );
             _statistics->print();
+        }
 
         if ( result == 0 )
         {
@@ -976,6 +973,17 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             ASSERT( false );
             return false;
         }
+    }
+    catch ( const SatAssignmentFoundException & )
+    {
+        if ( _engine->getVerbosity() )
+        {
+            printf( "\nSmtCore::solve: sat assignment found\n" );
+            _statistics->print();
+        }
+
+        _exitCode = ExitCode::SAT;
+        return true;
     }
     catch ( const TimeoutException & )
     {

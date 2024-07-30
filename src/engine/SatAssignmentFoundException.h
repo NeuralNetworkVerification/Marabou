@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file TimeoutException.h
+/*! \file SatAssignmentFoundException.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Idan Refaeli
@@ -13,15 +13,15 @@
 
 **/
 
-#ifndef __TimeoutException_h__
-#define __TimeoutException_h__
+#ifndef __SatAssignmentFoundException_h__
+#define __SatAssignmentFoundException_h__
 
-class TimeoutException
+class SatAssignmentFoundException
 {
 public:
 };
 
-#endif // __TimeoutException_h__
+#endif // __SatAssignmentFoundException_h__
 
 //
 // Local Variables:
