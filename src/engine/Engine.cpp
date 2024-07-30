@@ -364,6 +364,13 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                         //                            ( **_UNSATCertificateCurrentPointer
                         //                            ).setSATSolutionFlag();
                         //                        }
+                        List<int> clause = List<int>();
+                        for ( const auto *plc : _plConstraints )
+                            if ( plc->propagatePhaseAsLit() )
+                                clause.append( plc->propagatePhaseAsLit());
+
+                        dumpClauseToIpqFile(clause, String("sat_bug"));
+
                         return true;
                     }
                     else if ( !hasBranchingCandidate() )
