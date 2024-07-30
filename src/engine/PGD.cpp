@@ -4,7 +4,7 @@
 
 PGDAttack::PGDAttack(CustomDNNImpl &model, const NLR::NetworkLevelReasoner* networkLevelReasoner)
     : model(model),  networkLevelReasoner( networkLevelReasoner ), device(torch::kCPU),
-      learningRate(LR), num_iter(DEFAULT_NUM_ITER), num_restarts(DEFAULT_NUM_RESTARTS), penalty( PANELTY ) {
+      learningRate(LR), iters(DEFAULT_NUM_ITER), restarts(DEFAULT_NUM_RESTARTS), penalty( PANELTY ) {
     inputSize = model.layerSizes.first();
     inputBounds = _getBounds(INPUT);
     outputBounds = _getBounds(OUTPUT);
@@ -17,7 +17,7 @@ PGDAttack::PGDAttack(CustomDNNImpl &model,
     const NLR::NetworkLevelReasoner* networkLevelReasoner, double learningRate, unsigned num_iter,
                      unsigned num_restarts, torch::Device device, double penalty)
     : model(model),  networkLevelReasoner( networkLevelReasoner ), device(device),
-      learningRate(learningRate), num_iter(num_iter), num_restarts(num_restarts), penalty( penalty ) {
+      learningRate(learningRate), iters(num_iter), restarts(num_restarts), penalty( penalty ) {
     inputSize = model.layerSizes.first();
     inputBounds = _getBounds(INPUT);
     outputBounds = _getBounds(OUTPUT);
@@ -69,12 +69,12 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::_generateSampleAndEpsilon() {
             epsilons[i] = std::numeric_limits<double>::infinity();
         } else if (std::isinf(lower)) {
             // Only lower bound is infinite
-            sample[i] = upper - ATTACK_EPSILON;
-            epsilons[i] = ATTACK_EPSILON;
+            sample[i] = upper - RANGE;
+            epsilons[i] = RANGE;
         } else if (std::isinf(upper)) {
             // Only upper bound is infinite
-            sample[i] = lower + ATTACK_EPSILON;
-            epsilons[i] = ATTACK_EPSILON;
+            sample[i] = lower + RANGE;
+            epsilons[i] = RANGE;
         } else {
             // Both bounds are finite
             sample[i] = lower + (upper - lower) / 2.0f;
@@ -125,12 +125,11 @@ torch::Tensor PGDAttack::_calculateLoss(const torch::Tensor& predictions) {
     torch::Tensor upperBoundTensor = torch::tensor(outputBounds.second.data(), torch::kFloat32).to(device);
 
     // Compute the penalty: We want high loss if predictions are outside the bounds
-    torch::Tensor total_violation = torch::add(
-        torch::relu(predictions - upperBoundTensor),
-        torch::relu(lowerBoundTensor - predictions));
-
-    torch::Tensor smoothed_violation = torch::log1p(total_violation) * penalty;
-    return torch::sum(smoothed_violation).pow( 2 );;
+    torch::Tensor ubViolation = torch::sum(torch::square(
+                                torch::relu(predictions - upperBoundTensor )));
+    torch::Tensor lbViolation = torch::sum(torch::square(
+                                torch::relu(lowerBoundTensor - predictions) ));
+    return torch::sum(ubViolation + lbViolation) ;
 }
 
 
@@ -140,7 +139,7 @@ std::pair <torch::Tensor, torch::Tensor>  PGDAttack::_findAdvExample() {
     torch::Tensor currentPrediction;
     torch::Tensor currentExample;
 
-    for (unsigned i = 0; i < num_restarts; i++) {
+    for (unsigned i = 0; i < restarts; i++) {
         torch::Tensor delta = torch::rand(inputSize).to(device);
         delta = delta.mul(epsilon);
         delta.set_requires_grad(true);
@@ -148,7 +147,7 @@ std::pair <torch::Tensor, torch::Tensor>  PGDAttack::_findAdvExample() {
         torch::optim::Adam optimizer({delta},
             torch::optim::AdamOptions(learningRate));
 
-        for (unsigned j = 0; j < num_iter; j++) {
+        for (unsigned j = 0; j < iters; j++) {
             optimizer.zero_grad();
 
             torch::Tensor prediction = model.forward(originalInput + delta);

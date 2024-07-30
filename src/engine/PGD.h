@@ -7,11 +7,11 @@
 
 constexpr float LR = 0.1;
 constexpr float PANELTY = 10;
-constexpr unsigned DEFAULT_NUM_ITER = 100;
-constexpr unsigned DEFAULT_NUM_RESTARTS = 10;
+constexpr unsigned DEFAULT_NUM_ITER = 1000;
+constexpr unsigned DEFAULT_NUM_RESTARTS = 5;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
-constexpr unsigned ATTACK_EPSILON = 100.0f;
+constexpr unsigned RANGE = 1000.0f;
 
 class PGDAttack {
 public:
@@ -33,8 +33,8 @@ private:
   torch::Tensor epsilon;
   torch::Tensor originalInput;
   double learningRate;
-  unsigned num_iter;
-  unsigned num_restarts;
+  unsigned iters;
+  unsigned restarts;
   unsigned inputSize;
   double penalty;
   std::pair<Vector<double>, Vector<double>> inputBounds;
