@@ -28,6 +28,8 @@ Statistics::Statistics()
     _unsignedAttributes[NUM_PRECISION_RESTORATIONS] = 0;
     _unsignedAttributes[CURRENT_DECISION_LEVEL] = 0;
     _unsignedAttributes[MAX_DECISION_LEVEL] = 0;
+    _unsignedAttributes[NUM_DECISION_LEVELS] = 1;
+    _unsignedAttributes[SUM_DECISION_LEVELS] = 0;
     _unsignedAttributes[NUM_SPLITS] = 0;
     _unsignedAttributes[NUM_POPS] = 0;
     _unsignedAttributes[NUM_CONTEXT_PUSHES] = 0;
@@ -42,6 +44,9 @@ Statistics::Statistics()
     _unsignedAttributes[TOTAL_NUMBER_OF_VALID_CASE_SPLITS] = 0;
     _unsignedAttributes[NUM_CERTIFIED_LEAVES] = 0;
     _unsignedAttributes[NUM_DELEGATED_LEAVES] = 0;
+    _unsignedAttributes[MAX_BACKJUMP] = 0;
+    _unsignedAttributes[NUM_BACKJUMPS] = 0;
+    _unsignedAttributes[SUM_BACKJUMPS] = 0;
 
     _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
     _longAttributes[NUM_SIMPLEX_STEPS] = 0;
@@ -425,6 +430,19 @@ void Statistics::print()
             getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) );
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
+
+    printf( "\t--- CDCL Statistics ---\n" );
+    printf( "\tMaximal depth of the search tree: %u\n",
+            getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) );
+    printf( "\tAverage depth of the search tree: %.10lf\n",
+            getUnsignedAttribute( Statistics::SUM_DECISION_LEVELS ) /
+                (double)getUnsignedAttribute( Statistics::NUM_DECISION_LEVELS ) );
+    printf( "\tNumber of backjumps: %u\n", getUnsignedAttribute( Statistics::NUM_BACKJUMPS ) );
+    printf( "\tMaximal jump size across all backjumps: %u\n",
+            getUnsignedAttribute( Statistics::MAX_BACKJUMP ) );
+    printf( "\tAverage jump size across all backjumps: %.10lf\n",
+            getUnsignedAttribute( Statistics::SUM_BACKJUMPS ) /
+                (double)getUnsignedAttribute( Statistics::NUM_BACKJUMPS ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const

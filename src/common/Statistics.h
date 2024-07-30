@@ -36,9 +36,15 @@ public:
         // Precision restoration
         NUM_PRECISION_RESTORATIONS,
 
-        // Current and max stack depth in the SMT core
+        // Current and max depth of the search TREE
         CURRENT_DECISION_LEVEL,
         MAX_DECISION_LEVEL,
+
+        // Number of time the depth of the search tree was changed
+        NUM_DECISION_LEVELS,
+
+        // Sum of all depths of the search tree
+        SUM_DECISION_LEVELS,
 
         // Total number of splits so far
         NUM_SPLITS,
@@ -70,6 +76,15 @@ public:
         // Total number of delegated and certified leaves in the search tree
         NUM_CERTIFIED_LEAVES,
         NUM_DELEGATED_LEAVES,
+
+        // Maximal jump size across all backjumps performed
+        MAX_BACKJUMP,
+
+        // Number of backjumps performed
+        NUM_BACKJUMPS,
+
+        // Sum of all jump sizes across all backjumps
+        SUM_BACKJUMPS
     };
 
     enum StatisticsLongAttribute {

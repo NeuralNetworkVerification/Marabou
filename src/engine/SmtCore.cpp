@@ -182,7 +182,7 @@ void SmtCore::performSplit()
         return;
     }
 
-    struct timespec start = TimeUtils::sampleMicro();
+    //    struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
@@ -248,17 +248,6 @@ void SmtCore::performSplit()
 
     _stack.append( stackEntry );
 
-    if ( _statistics )
-    {
-        unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
-    }
-
     _constraintForSplitting = NULL;
 }
 
@@ -319,7 +308,7 @@ bool SmtCore::popSplit()
     if ( _stack.empty() )
         return false;
 
-    struct timespec start = TimeUtils::sampleMicro();
+    //    struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
     {
@@ -414,17 +403,6 @@ bool SmtCore::popSplit()
 
         if ( _engine->shouldProduceProofs() && inconsistent )
             _engine->explainSimplexFailure();
-    }
-
-    if ( _statistics )
-    {
-        unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
     }
 
     checkSkewFromDebuggingSolution();
@@ -608,7 +586,7 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing(
 
 void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
 {
-    struct timespec start = TimeUtils::sampleMicro();
+    //    struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
     {
@@ -630,16 +608,16 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
 
     _stack.append( stackEntry );
 
-    if ( _statistics )
-    {
-        unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
-    }
+    //    if ( _statistics )
+    //    {
+    //        unsigned level = getStackDepth();
+    //        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+    //        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+    //            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+    //        struct timespec end = TimeUtils::sampleMicro();
+    //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+    //                                       TimeUtils::timePassed( start, end ) );
+    //    }
 }
 
 void SmtCore::storeSmtState( SmtState &smtState )
@@ -703,21 +681,13 @@ void SmtCore::notify_new_decision_level()
     SMT_LOG( "Notified new decision level" );
     _numRejectedPhasePatternProposal = 0;
 
-    struct timespec start = TimeUtils::sampleMicro();
-
-    // TODO change name to num decisions. Is NUM_VISITED_TREE_STATES relevant?
-    if ( _statistics )
-    {
-        _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
-        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-    }
+    //    struct timespec start = TimeUtils::sampleMicro();
 
     _needToSplit = false;
     if ( _constraintForSplitting && !_constraintForSplitting->isActive() )
     {
         _constraintToViolationCount[_constraintForSplitting] = 0;
         _constraintForSplitting = NULL;
-        return;
     }
 
     _engine->preContextPushHook();
@@ -726,15 +696,22 @@ void SmtCore::notify_new_decision_level()
     for ( const auto &lit : _fixedCadicalVars )
         notify_assignment( lit, true );
 
+
     if ( _statistics )
     {
+        _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
+
         unsigned level = _context.getLevel();
         _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
         if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incUnsignedAttribute( Statistics::NUM_DECISION_LEVELS );
+        _statistics->incUnsignedAttribute( Statistics::SUM_DECISION_LEVELS, level );
+
+        // TODO : Update statistics about time passed in SMTCore
+        //        struct timespec end = TimeUtils::sampleMicro();
+        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        //                                       TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -742,12 +719,7 @@ void SmtCore::notify_backtrack( size_t new_level )
 {
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Backtracking to level %d", new_level ).ascii() );
-    struct timespec start = TimeUtils::sampleMicro();
-
-    if ( _statistics )
-        // A pop always sends us to a state that we haven't seen before - whether
-        // from a sibling split, or from a lower level of the tree.
-        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+    //    struct timespec start = TimeUtils::sampleMicro();
 
     popContextTo( new_level );
     _engine->postContextPopHook();
@@ -763,17 +735,30 @@ void SmtCore::notify_backtrack( size_t new_level )
     if ( _statistics )
     {
         unsigned level = _context.getLevel();
+        unsigned jumpSize =
+            _statistics->getUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL ) - level;
+
         _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incUnsignedAttribute( Statistics::NUM_DECISION_LEVELS );
+        _statistics->incUnsignedAttribute( Statistics::SUM_DECISION_LEVELS, level );
+
+        _statistics->incUnsignedAttribute( Statistics::NUM_BACKJUMPS );
+        _statistics->incUnsignedAttribute( Statistics::SUM_BACKJUMPS, jumpSize );
+        if ( jumpSize > _statistics->getUnsignedAttribute( Statistics::MAX_BACKJUMP ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_BACKJUMP, jumpSize );
+
+        // TODO : Update statistics about time passed in SMTCore
+        //        struct timespec end = TimeUtils::sampleMicro();
+        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        //                                       TimeUtils::timePassed( start, end ) );
     }
 }
 
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
+    if ( _statistics )
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Checking model found by SAT solver" );
     ASSERT( _externalClausesToAdd.empty() );
@@ -822,6 +807,9 @@ int SmtCore::cb_propagate()
     checkIfShouldExitDueToTimeout();
     if ( _literalsToPropagate.empty() )
     {
+        if ( _statistics )
+            _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClausesToAdd.empty() )
             _engine->solve();
@@ -964,6 +952,9 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         _engine->preSolve();
         int result = _cadicalWrapper.solve();
+
+        if ( _statistics && _engine->getVerbosity() )
+            _statistics->print();
 
         if ( result == 0 )
         {
