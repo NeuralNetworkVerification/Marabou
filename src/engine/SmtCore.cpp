@@ -650,6 +650,9 @@ bool SmtCore::isLiteralAssigned( int literal ) const
 
 void SmtCore::notify_assignment( int lit, bool is_fixed )
 {
+    if (_exitCode != NOT_DONE)
+        return;
+
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Notified assignment %d; is fixed: %d", lit, is_fixed ).ascii() );
     ASSERT( !isLiteralAssigned( -lit ) );
@@ -669,6 +672,9 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
 void SmtCore::notify_new_decision_level()
 {
+    if (_exitCode != NOT_DONE)
+        return;
+
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Notified new decision level" );
     _numRejectedPhasePatternProposal = 0;
@@ -709,6 +715,9 @@ void SmtCore::notify_new_decision_level()
 
 void SmtCore::notify_backtrack( size_t new_level )
 {
+    if (_exitCode != NOT_DONE)
+        return;
+
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Backtracking to level %d", new_level ).ascii() );
     //    struct timespec start = TimeUtils::sampleMicro();
@@ -748,6 +757,9 @@ void SmtCore::notify_backtrack( size_t new_level )
 
 bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 {
+    if (_exitCode != NOT_DONE)
+        return false;
+
     if ( _statistics )
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
 
@@ -775,6 +787,9 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 
 int SmtCore::cb_decide()
 {
+    if (_exitCode != NOT_DONE)
+        return 0;
+
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
     // First, try to decide according to Marabou heuristics
@@ -793,6 +808,9 @@ int SmtCore::cb_decide()
 
 int SmtCore::cb_propagate()
 {
+    if (_exitCode != NOT_DONE)
+        return 0;
+
     checkIfShouldExitDueToTimeout();
     if ( _literalsToPropagate.empty() )
     {
@@ -839,6 +857,9 @@ int SmtCore::cb_propagate()
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
+    if (_exitCode != NOT_DONE)
+        return 0;
+
     checkIfShouldExitDueToTimeout();
     ASSERT( propagated_lit )
     ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
@@ -884,6 +905,9 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
 bool SmtCore::cb_has_external_clause()
 {
+    if (_exitCode != NOT_DONE)
+        return false;
+
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Checking if there is a Conflict Clause to add: %d",
                       !_externalClausesToAdd.empty() )
@@ -893,6 +917,9 @@ bool SmtCore::cb_has_external_clause()
 
 int SmtCore::cb_add_external_clause_lit()
 {
+    if (_exitCode != NOT_DONE)
+        return 0;
+
     checkIfShouldExitDueToTimeout();
     ASSERT( !_externalClausesToAdd.empty() );
 
@@ -1080,5 +1107,6 @@ void SmtCore::resetExitCode()
 
 bool SmtCore::terminate()
 {
+    SMT_LOG( Stringf("Callback for terminate: %d", _exitCode != NOT_DONE).ascii() );
     return _exitCode != NOT_DONE;
 }
