@@ -28,7 +28,6 @@
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PseudoImpactTracker.h"
-#include "SatAssignmentFoundException.h"
 #include "TimeUtils.h"
 #include "UnsatCertificateNode.h"
 #include "Vector.h"
@@ -805,7 +804,10 @@ int SmtCore::cb_propagate()
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClausesToAdd.empty() )
             if ( _engine->solve() )
-                throw SatAssignmentFoundException();
+            {
+                _exitCode = SAT;
+                return 0;
+            }
 
         // Try learning a conflict clause if possible
         if ( _externalClausesToAdd.empty() )
@@ -936,7 +938,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         _timeoutInSeconds = timeoutInSeconds;
 
         // Maybe query detected as UNSAT in processInputQuery
-        if ( _exitCode == ExitCode::UNSAT )
+        if ( _exitCode == UNSAT )
             return false;
 
         _cadicalWrapper.connectTheorySolver( this );
@@ -956,17 +958,20 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         if ( result == 0 )
         {
-            _exitCode = ExitCode::UNKNOWN;
+            if ( _exitCode != NOT_DONE )
+                return true;
+
+            _exitCode = UNKNOWN;
             return false;
         }
         else if ( result == 10 )
         {
-            _exitCode = ExitCode::SAT;
+            _exitCode = SAT;
             return true;
         }
         else if ( result == 20 )
         {
-            _exitCode = ExitCode::UNSAT;
+            _exitCode = UNSAT;
             return false;
         }
         else
@@ -974,17 +979,6 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             ASSERT( false );
             return false;
         }
-    }
-    catch ( const SatAssignmentFoundException & )
-    {
-        if ( _engine->getVerbosity() )
-        {
-            printf( "\nSmtCore::solve: sat assignment found\n" );
-            _statistics->print();
-        }
-
-        _exitCode = ExitCode::SAT;
-        return true;
     }
     catch ( const TimeoutException & )
     {
@@ -995,7 +989,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _statistics->print();
         }
 
-        _exitCode = ExitCode::TIMEOUT;
+        _exitCode = TIMEOUT;
         _statistics->timeout();
         return false;
     }
@@ -1083,10 +1077,10 @@ void SmtCore::checkIfShouldExitDueToTimeout()
 
 void SmtCore::resetExitCode()
 {
-    _exitCode = ExitCode::NOT_DONE;
+    _exitCode = NOT_DONE;
 }
 
 bool SmtCore::terminate()
 {
-    return _exitCode != ExitCode::NOT_DONE;
+    return _exitCode != NOT_DONE;
 }
