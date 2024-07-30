@@ -64,6 +64,7 @@ SmtCore::~SmtCore()
 {
     freeMemory();
 
+    _cadicalWrapper.disconnectTerminator();
     _cadicalWrapper.disconnectTheorySolver();
 }
 
@@ -939,6 +940,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
 
         _cadicalWrapper.connectTheorySolver( this );
+        _cadicalWrapper.connectTerminator( this );
         for ( unsigned var : _cadicalVarToPlc.keys() )
             if ( var != 0 )
                 _cadicalWrapper.addObservedVar( var );
@@ -1082,4 +1084,9 @@ void SmtCore::checkIfShouldExitDueToTimeout()
 void SmtCore::resetExitCode()
 {
     _exitCode = ExitCode::NOT_DONE;
+}
+
+bool SmtCore::terminate()
+{
+    return _exitCode != ExitCode::NOT_DONE;
 }

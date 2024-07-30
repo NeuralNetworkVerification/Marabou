@@ -13,7 +13,7 @@ public:
     /*
       Constructs the Cadical Wrapper.
      */
-    CadicalWrapper();
+    explicit CadicalWrapper();
 
     /*
       Add valid literal to clause or zero to terminate clause.
@@ -38,7 +38,7 @@ public:
     /*
       Force the default decision phase of a variable to a certain value.
      */
-    void phase ( int lit) override;
+    void phase( int lit ) override;
 
     /*
       Try to solve the current formula.
@@ -91,12 +91,17 @@ public:
     int vars();
 
     /*
-      Return the current decision level;
+      Add call-back which is checked regularly for termination.
      */
+    void connectTerminator( CaDiCaL::Terminator *terminator );
+
+    /*
+      Disconnects the terminator, stops the CaDiCaL solver.
+     */
+    void disconnectTerminator ();
 
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;
-    std::unique_ptr<CaDiCaL::Terminator> d_terminator;
 };
 
 

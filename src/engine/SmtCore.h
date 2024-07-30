@@ -39,7 +39,7 @@ class String;
 
 using CVC4::context::Context;
 
-class SmtCore : CaDiCaL::ExternalPropagator
+class SmtCore : CaDiCaL::ExternalPropagator, CaDiCaL::Terminator
 {
 public:
     enum ExitCode {
@@ -317,6 +317,13 @@ public:
       Check if the solver should stop due to the requested timeout by the user
      */
     void checkIfShouldExitDueToTimeout();
+
+    /*
+      Connected terminators are checked for termination regularly.  If the
+      'terminate' function of the terminator returns true the solver is
+      terminated synchronously as soon it calls this function.
+     */
+    bool terminate () override;
 
 private:
     /*

@@ -1,5 +1,7 @@
 #include "CadicalWrapper.h"
 
+#include <utility>
+
 CadicalWrapper::CadicalWrapper()
     : d_solver( new CaDiCaL::Solver() )
 {
@@ -7,6 +9,7 @@ CadicalWrapper::CadicalWrapper()
     d_solver->set( "lucky", 0 );
     d_solver->set( "log", 0 );
 }
+
 
 void CadicalWrapper::addLiteral( int lit )
 {
@@ -86,4 +89,14 @@ bool CadicalWrapper::isDecision( int observedVar ) const
 int CadicalWrapper::vars()
 {
     return d_solver->vars();
+}
+
+void CadicalWrapper::connectTerminator( CaDiCaL::Terminator *terminator )
+{
+    d_solver->connect_terminator(terminator);
+}
+
+void CadicalWrapper::disconnectTerminator()
+{
+    d_solver->disconnect_terminator();
 }
