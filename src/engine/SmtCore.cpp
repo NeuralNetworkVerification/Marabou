@@ -780,7 +780,7 @@ int SmtCore::cb_decide()
     // First, try to decide according to Marabou heuristics
     if ( pickSplitPLConstraint() )
     {
-bugfix        int lit = _constraintForSplitting->propagatePhaseAsLit();
+        int lit = _constraintForSplitting->propagatePhaseAsLit();
         ASSERT( !isLiteralAssigned( -lit ) );
         if ( lit )
             _assignedLiterals.push_back( lit );
