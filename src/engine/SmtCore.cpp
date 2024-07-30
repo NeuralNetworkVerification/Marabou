@@ -778,18 +778,16 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
     // First, try to decide according to Marabou heuristics
-    if ( pickSplitPLConstraint() )
+    if ( _constraintForSplitting )
     {
-        int lit = _constraintForSplitting->propagatePhaseAsLit();
-        ASSERT( !isLiteralAssigned( -lit ) );
-        if ( lit )
-            _assignedLiterals.push_back( lit );
+        int lit = _constraintForSplitting->getCadicalVars().front();
+        ASSERT( !isLiteralAssigned( -lit ) && !isLiteralAssigned( lit ) );
         _constraintForSplitting = NULL;
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
         SMT_LOG( Stringf( "Decided literal %d", lit ).ascii() );
         return lit;
     }
-
+    SMT_LOG( "No decision made" );
     return 0;
 }
 
