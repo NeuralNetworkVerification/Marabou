@@ -4194,7 +4194,6 @@ void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
             const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
             unsigned int b = relu->getB();
             unsigned int f = relu->getF();
-            unsigned int aux = relu->getAux();
 
             Equation eq( Equation::EQ );
             eq.addAddend( 1, b );
@@ -4204,18 +4203,15 @@ void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
 
             ipq.setLowerBound( b, 0 );
             ipq.setLowerBound( f, 0 );
-            ipq.setUpperBound( aux, 0 );
         }
         else
         {
             const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
             unsigned int b = relu->getB();
             unsigned int f = relu->getF();
-            unsigned int aux = relu->getAux();
 
             ipq.setUpperBound( b, 0 );
             ipq.setUpperBound( f, 0 );
-            ipq.setLowerBound( aux, 0 );
         }
     }
     ipq.saveQuery( prefix + ".ipq" );
