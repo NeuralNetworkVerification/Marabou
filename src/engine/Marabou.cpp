@@ -228,7 +228,7 @@ void Marabou::solveQuery()
         //            _engine->certifyUNSATCertificate();
     }
 
-    if ( _engine->getSmtCore().getExitCode() == SmtCore::UNKNOWN )
+    if ( _engine->getExitCode() == ExitCode::UNKNOWN )
     {
         struct timespec end = TimeUtils::sampleMicro();
         unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
@@ -246,21 +246,21 @@ void Marabou::solveQuery()
     }
 
 
-    if ( _engine->getSmtCore().getExitCode() == SmtCore::SAT )
+    if ( _engine->getExitCode() == ExitCode::SAT )
         _engine->extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    SmtCore::ExitCode result = _engine->getSmtCore().getExitCode();
+    ExitCode result = _engine->getExitCode();
     String resultString;
 
-    if ( result == SmtCore::UNSAT )
+    if ( result == ExitCode::UNSAT )
     {
         resultString = "unsat";
         printf( "unsat\n" );
     }
-    else if ( result == SmtCore::SAT )
+    else if ( result == ExitCode::SAT )
     {
         resultString = "sat";
         printf( "sat\n" );
@@ -302,17 +302,17 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
             printf( "\n" );
         }
     }
-    else if ( result == SmtCore::TIMEOUT )
+    else if ( result == ExitCode::TIMEOUT )
     {
         resultString = "TIMEOUT";
         printf( "Timeout\n" );
     }
-    else if ( result == SmtCore::ERROR )
+    else if ( result == ExitCode::ERROR )
     {
         resultString = "ERROR";
         printf( "Error\n" );
     }
-    else if ( result == SmtCore::UNKNOWN )
+    else if ( result == ExitCode::UNKNOWN )
     {
         resultString = "UNKNOWN";
         printf( "UNKNOWN\n" );

@@ -92,12 +92,12 @@ void SmtCore::reset()
     resetExitCode();
 }
 
-SmtCore::ExitCode SmtCore::getExitCode() const
+ExitCode SmtCore::getExitCode() const
 {
     return _exitCode;
 }
 
-void SmtCore::setExitCode( SmtCore::ExitCode exitCode )
+void SmtCore::setExitCode( ExitCode exitCode )
 {
     _exitCode = exitCode;
 }

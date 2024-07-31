@@ -104,22 +104,22 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery
         if ( restoreTreeStates && smtState )
             fullSolveNeeded = _engine->restoreSmtState( *smtState );
-        SmtCore::ExitCode result = SmtCore::NOT_DONE;
+        ExitCode result = ExitCode::NOT_DONE;
         if ( fullSolveNeeded )
         {
             _engine->solve(); // TODO: how to integrate CDCL with SNC?
-            result = _engine->getSmtCore().getExitCode();
+            result = _engine->getExitCode();
         }
         else
         {
             // UNSAT is proven when replaying stack-entries
-            result = SmtCore::UNSAT;
+            result = ExitCode::UNSAT;
         }
 
         if ( _verbosity > 0 )
             printProgress( queryId, result );
         // Switch on the result
-        if ( result == SmtCore::UNSAT )
+        if ( result == ExitCode::UNSAT )
         {
             // If UNSAT, continue to solve
             *_numUnsolvedSubQueries -= 1;
@@ -127,7 +127,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 *_shouldQuitSolving = true;
             delete subQuery;
         }
-        else if ( result == SmtCore::TIMEOUT )
+        else if ( result == ExitCode::TIMEOUT )
         {
             // If TIMEOUT, split the current input region and add the
             // new subQueries to the current queue
@@ -169,7 +169,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             *_numUnsolvedSubQueries -= 1;
             delete subQuery;
         }
-        else if ( result == SmtCore::QUIT_REQUESTED )
+        else if ( result == ExitCode::QUIT_REQUESTED )
         {
             // If engine was asked to quit, quit
             std::cout << "Quit requested by manager!" << std::endl;
@@ -182,13 +182,13 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             // TIMEOUT. This way, the DnCManager will kill all the DnCWorkers.
 
             *_shouldQuitSolving = true;
-            if ( result == SmtCore::SAT )
+            if ( result == ExitCode::SAT )
             {
                 // case SAT
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
-            else if ( result == SmtCore::ERROR )
+            else if ( result == ExitCode::ERROR )
             {
                 // case ERROR
                 std::cout << "Error!" << std::endl;
@@ -210,7 +210,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
     }
 }
 
-void DnCWorker::printProgress( String queryId, SmtCore::ExitCode result ) const
+void DnCWorker::printProgress( String queryId, ExitCode result ) const
 {
     printf( "Worker %d: Query %s %s, %d tasks remaining\n",
             _threadId,
@@ -219,19 +219,19 @@ void DnCWorker::printProgress( String queryId, SmtCore::ExitCode result ) const
             _numUnsolvedSubQueries->load() );
 }
 
-String DnCWorker::exitCodeToString( SmtCore::ExitCode result )
+String DnCWorker::exitCodeToString( ExitCode result )
 {
     switch ( result )
     {
-    case SmtCore::UNSAT:
+    case ExitCode::UNSAT:
         return "unsat";
-    case SmtCore::SAT:
+    case ExitCode::SAT:
         return "sat";
-    case SmtCore::ERROR:
+    case ExitCode::ERROR:
         return "ERROR";
-    case SmtCore::TIMEOUT:
+    case ExitCode::TIMEOUT:
         return "TIMEOUT";
-    case SmtCore::QUIT_REQUESTED:
+    case ExitCode::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
         ASSERT( false );

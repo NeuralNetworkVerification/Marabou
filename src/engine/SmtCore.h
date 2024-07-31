@@ -42,16 +42,6 @@ using CVC4::context::Context;
 class SmtCore : CaDiCaL::ExternalPropagator, CaDiCaL::Terminator
 {
 public:
-    enum ExitCode {
-        UNSAT = 0,
-        SAT = 1,
-        ERROR = 2,
-        UNKNOWN = 3,
-        TIMEOUT = 4,
-        QUIT_REQUESTED = 5,
-
-        NOT_DONE = 999,
-    };
 
     SmtCore( IEngine *engine );
     ~SmtCore();

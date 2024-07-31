@@ -29,9 +29,7 @@ class String;
 class MockEngine : public IEngine
 {
 public:
-    SmtCore _smtCore;
-
-    MockEngine() : _smtCore(this)
+    MockEngine()
     {
         wasCreated = false;
         wasDiscarded = false;
@@ -74,7 +72,7 @@ public:
     List<Bound> lastLowerBounds;
     List<Bound> lastUpperBounds;
     List<Equation> lastEquations;
-    void applySplit( const PiecewiseLinearCaseSplit &split )
+    void applySplit( const PiecewiseLinearCaseSplit &split ) override
     {
         List<Tightening> bounds = split.getBoundTightenings();
         auto equations = split.getEquations();
@@ -96,40 +94,41 @@ public:
         }
     }
 
-    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &/*constraint*/)
+    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &/*constraint*/) override
     {
     }
 
 
-    void postContextPopHook()
+    void postContextPopHook() override
     {
     }
 
-    void preContextPushHook()
+    void preContextPushHook() override
     {
     }
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const override
     {
         lastStoredState = &state;
     }
 
     const EngineState *lastRestoredState;
-    void restoreState( const EngineState &state )
+    void restoreState( const EngineState &state ) override
     {
         lastRestoredState = &state;
     }
 
-    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
+    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ ) override
     {
     }
 
     unsigned _timeToSolve;
-    SmtCore::ExitCode _exitCode;
-    bool solve()
+    ExitCode _exitCode;
+
+    bool solve() override
     {
-        return _exitCode == SmtCore::SAT;
+        return _exitCode == ExitCode::SAT;
     }
 
     void setTimeToSolve( unsigned timeToSolve )
@@ -137,17 +136,17 @@ public:
         _timeToSolve = timeToSolve;
     }
 
-    void setExitCode( SmtCore::ExitCode exitCode )
-    {
-        _exitCode = exitCode;
-    }
-
-    SmtCore::ExitCode getExitCode() const
+    ExitCode getExitCode() const override
     {
         return _exitCode;
     }
 
-    void reset()
+    void setExitCode( ExitCode exitCode ) override
+    {
+        _exitCode = exitCode;
+    }
+
+    void reset() override
     {
     }
 
@@ -157,7 +156,7 @@ public:
         _inputVariables = inputVariables;
     }
 
-    List<unsigned> getInputVariables() const
+    List<unsigned> getInputVariables() const override
     {
         return _inputVariables;
     }
@@ -167,14 +166,14 @@ public:
     }
 
     mutable SmtState *lastRestoredSmtState;
-    bool restoreSmtState( SmtState &smtState )
+    bool restoreSmtState( SmtState &smtState ) override
     {
         lastRestoredSmtState = &smtState;
         return true;
     }
 
     mutable SmtState *lastStoredSmtState;
-    void storeSmtState( SmtState &smtState )
+    void storeSmtState( SmtState &smtState ) override
     {
         lastStoredSmtState = &smtState;
     }
@@ -185,7 +184,7 @@ public:
         _constraintsToSplit.append( constraint );
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ ) override
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -197,7 +196,7 @@ public:
             return NULL;
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ ) override
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -212,37 +211,37 @@ public:
     bool _snc;
     CVC4::context::Context _context;
 
-    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ )
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ ) override
     {
         _snc = true;
         _context.push();
     }
 
-    bool inSnCMode() const
+    bool inSnCMode() const override
     {
         return _snc;
     }
 
-    void applyAllBoundTightenings()
+    void applyAllBoundTightenings() override
     {
     }
 
-    bool applyAllValidConstraintCaseSplits()
+    bool applyAllValidConstraintCaseSplits() override
     {
         return false;
     };
 
-    CVC4::context::Context &getContext()
+    CVC4::context::Context &getContext() override
     {
         return _context;
     }
 
-    bool consistentBounds() const
+    bool consistentBounds() const override
     {
         return true;
     }
 
-    double explainBound( unsigned /* var */, bool /* isUpper */ ) const
+    double explainBound( unsigned /* var */, bool /* isUpper */ ) const override
     {
         return 0.0;
     }
@@ -255,7 +254,7 @@ public:
     {
     }
 
-    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
+    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const override
     {
         return 0;
     }
@@ -266,105 +265,100 @@ public:
     }
 
 
-    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const override
     {
         return NULL;
     }
 
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ )
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ ) override
     {
     }
 
-    const UnsatCertificateNode *getUNSATCertificateRoot() const
+    const UnsatCertificateNode *getUNSATCertificateRoot() const override
     {
         return NULL;
     }
 
-    bool certifyUNSATCertificate()
+    bool certifyUNSATCertificate() override
     {
         return true;
     }
 
-    void explainSimplexFailure()
+    void explainSimplexFailure() override
     {
     }
 
-    const BoundExplainer *getBoundExplainer() const
+    const BoundExplainer *getBoundExplainer() const override
     {
         return NULL;
     }
 
-    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )
+    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ ) override
     {
     }
 
-    bool propagateBoundManagerTightenings()
+    bool propagateBoundManagerTightenings() override
     {
         return false;
     }
 
-    bool shouldProduceProofs() const
+    bool shouldProduceProofs() const override
     {
         return true;
     }
 
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/, bool /*isPhaseFixing*/ )
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/, bool /*isPhaseFixing*/ ) override
     {
         return nullptr;
     }
 
     Set<int>
-    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool )
+    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool ) override
     {
         return Set<int>();
     }
 
-    Vector<int> explainPhase( const PiecewiseLinearConstraint * )
+    Vector<int> explainPhase( const PiecewiseLinearConstraint * ) override
     {
         return Vector<int>();
     }
 
-    bool solveWithCadical( double timeoutInSeconds )
+    bool solveWithCadical( double timeoutInSeconds ) override
     {
         if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = SmtCore::TIMEOUT;
-        return _exitCode == SmtCore::SAT;
+            _exitCode = ExitCode::TIMEOUT;
+        return _exitCode == ExitCode::SAT;
     }
 
-    void preSolve()
+    void preSolve() override
     {
     }
 
-    void removeLiteralFromPropagations( int /*literal*/ )
+    void removeLiteralFromPropagations( int /*literal*/ ) override
     {
     }
 
-    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &/*split*/ )
+    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &/*split*/ ) override
     {
     }
 
-    void initDataStructures()
+    void initDataStructures() override
     {
     }
 
-    bool shouldExitDueToTimeout( double ) const
+    bool shouldExitDueToTimeout( double ) const override
     {
         return false;
     }
 
-    unsigned getVerbosity() const
+    unsigned getVerbosity() const override
     {
         return 0;
     }
 
-    void exportInputQueryWithError( String )
+    void exportInputQueryWithError( String ) override
     {
-    }
-
-    const SmtCore &getSmtCore() const
-    {
-        return _smtCore;
     }
 };
 

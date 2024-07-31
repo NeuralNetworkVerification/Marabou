@@ -412,21 +412,21 @@ InputQuery preprocess( InputQuery &inputQuery,
         return *engine.getInputQuery();
 }
 
-std::string exitCodeToString( SmtCore::ExitCode code )
+std::string exitCodeToString( ExitCode code )
 {
     switch ( code )
     {
-    case SmtCore::UNSAT:
+    case ExitCode::UNSAT:
         return "unsat";
-    case SmtCore::SAT:
+    case ExitCode::SAT:
         return "sat";
-    case SmtCore::ERROR:
+    case ExitCode::ERROR:
         return "ERROR";
-    case SmtCore::UNKNOWN:
+    case ExitCode::UNKNOWN:
         return "UNKNOWN";
-    case SmtCore::TIMEOUT:
+    case ExitCode::TIMEOUT:
         return "TIMEOUT";
-    case SmtCore::QUIT_REQUESTED:
+    case ExitCode::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
         return "UNKNOWN";
@@ -456,7 +456,7 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
 
         if ( !engine.processInputQuery( inputQuery ) )
             return std::make_tuple(
-                exitCodeToString( engine.getSmtCore().getExitCode() ), ret, *( engine
+                exitCodeToString( engine.getExitCode() ), ret, *( engine
                                                                                    .getStatistics() ) );
         if ( dnc )
         {
@@ -466,13 +466,13 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
             resultString = dncManager->getResultString().ascii();
             switch ( dncManager->getExitCode() )
             {
-            case DnCManager::SAT:
+            case ExitCode::SAT:
             {
                 retStats = Statistics();
                 dncManager->getSolution( ret, inputQuery );
                 break;
             }
-            case DnCManager::TIMEOUT:
+            case ExitCode::TIMEOUT:
             {
                 retStats = Statistics();
                 retStats.timeout();
@@ -488,9 +488,9 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
             engine.solveWithCadical( timeoutInSeconds );
 
-            resultString = exitCodeToString( engine.getSmtCore().getExitCode() );
+            resultString = exitCodeToString( engine.getExitCode() );
 
-            if ( engine.getSmtCore().getExitCode() == SmtCore::SAT )
+            if ( engine.getExitCode() == ExitCode::SAT )
             {
                 engine.extractSolution( inputQuery );
                 for ( unsigned int i = 0; i < inputQuery.getNumberOfVariables(); ++i )
@@ -534,7 +534,7 @@ calculateBounds( InputQuery &inputQuery, MarabouOptions &options, std::string re
 
         if ( !engine.calculateBounds( inputQuery ) )
         {
-            std::string exitCode = exitCodeToString( engine.getSmtCore().getExitCode() );
+            std::string exitCode = exitCodeToString( engine.getExitCode() );
             return std::make_tuple( exitCode, ret, *( engine.getStatistics() ) );
         }
 
