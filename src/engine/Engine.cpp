@@ -3064,6 +3064,7 @@ bool Engine::performDeepSoILocalSearch()
         return false;
     }
 
+    _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
     minimizeHeuristicCost( initialPhasePattern );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
@@ -3184,7 +3185,6 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
         _heuristicCost = heuristicCost;
 
         bool localOptimumReached = false;
-        _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
         while ( !localOptimumReached )
         {
             DEBUG( _tableau->verifyInvariants() );
