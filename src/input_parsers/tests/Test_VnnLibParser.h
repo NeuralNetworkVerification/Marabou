@@ -184,7 +184,7 @@ public:
         engine.setVerbosity( 0 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
-        TS_ASSERT( engine.getSmtCore().getExitCode() == SmtCore::ExitCode::SAT )
+        TS_ASSERT( engine.getExitCode() == ExitCode::SAT )
     }
 
     void test_unsat_vnncomp()
@@ -257,7 +257,7 @@ public:
         engine.setVerbosity( 0 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
-        TS_ASSERT( engine.getSmtCore().getExitCode() == SmtCore::ExitCode::UNSAT )
+        TS_ASSERT( engine.getExitCode() == ExitCode::UNSAT )
     }
 
     void test_add_const()

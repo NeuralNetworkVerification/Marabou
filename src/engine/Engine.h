@@ -174,7 +174,7 @@ public:
     /*
       Apply tightenings implied from phase fixing of the given piecewise linear constraint;
      */
-    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint) override;
+    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint ) override;
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
@@ -331,7 +331,15 @@ public:
      */
     unsigned getVerbosity() const override;
 
-    const SmtCore &getSmtCore() const override;
+    /*
+      Returns the exit code from the SmtCore
+     */
+    ExitCode getExitCode() const override;
+
+    /*
+      Sets the exit code inside the SmyCore
+     */
+    void setExitCode( ExitCode exitCode ) override;
 
 private:
     enum BasisRestorationRequired {

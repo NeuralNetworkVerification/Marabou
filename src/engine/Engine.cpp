@@ -349,10 +349,11 @@ bool Engine::solve() // TODO: change the name of this method, and remove
 
 
                         // TODO: update time measurements
-//                        mainLoopEnd = TimeUtils::sampleMicro();
-//                        _statistics.incLongAttribute(
-//                            Statistics::TIME_MAIN_LOOP_MICRO,
-//                            TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+                        //                        mainLoopEnd = TimeUtils::sampleMicro();
+                        //                        _statistics.incLongAttribute(
+                        //                            Statistics::TIME_MAIN_LOOP_MICRO,
+                        //                            TimeUtils::timePassed( mainLoopStart,
+                        //                            mainLoopEnd ) );
 
 
                         // TODO: how to construct proof tree with CDCL
@@ -414,7 +415,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             if ( !handleMalformedBasisException() )
             {
                 ASSERT( _lpSolverType == LPSolverType::NATIVE );
-                _smtCore.setExitCode( SmtCore::ExitCode::ERROR );
+                _smtCore.setExitCode( ExitCode::ERROR );
                 exportInputQueryWithError( "Cannot restore tableau" );
                 mainLoopEnd = TimeUtils::sampleMicro();
                 _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -1001,7 +1002,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     unsigned infiniteBounds = _preprocessedQuery->countInfiniteBounds();
     if ( infiniteBounds != 0 )
     {
-        _smtCore.setExitCode( SmtCore::ExitCode::ERROR );
+        _smtCore.setExitCode( ExitCode::ERROR );
         throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
@@ -1071,7 +1072,7 @@ double *Engine::createConstraintMatrix()
     {
         if ( equation._type != Equation::EQ )
         {
-            _smtCore.setExitCode( SmtCore::ExitCode::ERROR );
+            _smtCore.setExitCode( ExitCode::ERROR );
             throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
@@ -1567,7 +1568,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
-        _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
+        _smtCore.setExitCode( ExitCode::UNSAT );
         return false;
     }
 
@@ -2734,9 +2735,9 @@ void Engine::decideBranchingHeuristics()
              _preprocessedQuery->getInputVariables().size() <
                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
-            // NOTE: the benefit of input splitting is minimal with abstract interpretation disabled.
-            // Therefore, since the proof production mode does not currently support that, we do
-            // not perform input-splitting in proof production mode.
+            // NOTE: the benefit of input splitting is minimal with abstract interpretation
+            // disabled. Therefore, since the proof production mode does not currently support that,
+            // we do not perform input-splitting in proof production mode.
             divideStrategy = DivideStrategy::LargestInterval;
             if ( _verbosity >= 2 )
                 printf( "Branching heuristics set to LargestInterval\n" );
@@ -2959,7 +2960,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
                 printf( "\nEngine::solve: UNSAT query\n" );
                 _statistics.print();
             }
-            _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
+            _smtCore.setExitCode( ExitCode::UNSAT );
             for ( PiecewiseLinearConstraint *p : _plConstraints )
                 p->setActiveConstraint( true );
             return false;
@@ -2992,7 +2993,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     }
     catch ( const InfeasibleQueryException & )
     {
-        _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
+        _smtCore.setExitCode( ExitCode::UNSAT );
         return false;
     }
 
@@ -3015,19 +3016,19 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     {
         if ( allNonlinearConstraintsHold() )
         {
-            _smtCore.setExitCode( SmtCore::ExitCode::SAT );
+            _smtCore.setExitCode( ExitCode::SAT );
             return true;
         }
         else
         {
-            _smtCore.setExitCode( SmtCore::ExitCode::UNKNOWN );
+            _smtCore.setExitCode( ExitCode::UNKNOWN );
             return false;
         }
     }
     else if ( _gurobi->infeasible() )
-        _smtCore.setExitCode( SmtCore::ExitCode::UNSAT );
+        _smtCore.setExitCode( ExitCode::UNSAT );
     else if ( _gurobi->timeout() )
-        _smtCore.setExitCode( SmtCore::ExitCode::TIMEOUT );
+        _smtCore.setExitCode( ExitCode::TIMEOUT );
     else
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
     return false;
@@ -4227,8 +4228,12 @@ unsigned Engine::getVerbosity() const
     return _verbosity;
 }
 
-const SmtCore &Engine::getSmtCore() const
+ExitCode Engine::getExitCode() const
 {
-    // TODO: should be removed after the SmtCore will be the wrapper of the Engine
-    return _smtCore;
+    return _smtCore.getExitCode();
+}
+
+void Engine::setExitCode( ExitCode exitCode )
+{
+    _smtCore.setExitCode( exitCode );
 }

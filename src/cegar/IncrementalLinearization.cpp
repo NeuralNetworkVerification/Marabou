@@ -81,7 +81,7 @@ void IncrementalLinearization::solve()
             _engine->solveWithCadical( timeoutInSeconds );
         }
 
-        if ( _engine->getSmtCore().getExitCode() == SmtCore::UNKNOWN )
+        if ( _engine->getExitCode() == ExitCode::UNKNOWN )
         {
             unsigned long long timePassed =
                 TimeUtils::timePassed( start, TimeUtils::sampleMicro() );

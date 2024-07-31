@@ -17,6 +17,7 @@
 #define __IEngine_h__
 
 #include "BoundExplainer.h"
+#include "ExitCode.h"
 #include "DivideStrategy.h"
 #include "GroundBoundManager.h"
 #include "List.h"
@@ -33,7 +34,6 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
-class SmtCore;
 class SmtState;
 class String;
 class PiecewiseLinearConstraint;
@@ -215,7 +215,15 @@ public:
      */
     virtual unsigned getVerbosity() const = 0;
 
-    virtual const SmtCore &getSmtCore() const = 0;
+    /*
+      Returns the exit code.
+     */
+    virtual ExitCode getExitCode() const = 0;
+
+    /*
+      Sets the exit code.
+     */
+    virtual void setExitCode( ExitCode exitCode ) = 0;
 };
 
 #endif // __IEngine_h__
