@@ -655,7 +655,9 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Notified assignment %d; is fixed: %d", lit, is_fixed ).ascii() );
-    ASSERT( !isLiteralAssigned( -lit ) );
+
+    // Allow notifying a negation of assigned literal only when a conflict is already discovered
+    ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
 
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
