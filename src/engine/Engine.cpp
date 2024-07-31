@@ -3185,7 +3185,7 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
         _heuristicCost = heuristicCost;
 
         bool localOptimumReached = false;
-        _costFunctionManager->computeCoreCostFunction(); // TODO ask Andre
+        _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
         while ( !localOptimumReached )
         {
             DEBUG( _tableau->verifyInvariants() );
