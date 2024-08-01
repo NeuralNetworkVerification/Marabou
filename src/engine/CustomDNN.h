@@ -2,8 +2,6 @@
 #define CUSTOM_DNN_H
 
 #include "NetworkLevelReasoner.h"
-
-#include <string>
 #include <vector>
 
 #undef Warning
@@ -29,7 +27,7 @@ public:
 
     explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
-    torch::Tensor customMaxPool(unsigned max_layer_inxes, torch::Tensor *x );
+    torch::Tensor customMaxPool(unsigned max_layer_inxes, torch::Tensor x ) const;
     torch::Tensor forward( torch::Tensor x );
 };
 
