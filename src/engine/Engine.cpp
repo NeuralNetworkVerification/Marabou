@@ -4019,11 +4019,11 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
 
     // Order clause by appearance in assigned constraints of the SMTCore
     // if not assigned yet then should be last
-    std::sort( clause.begin(), clause.end(), [this]( int a, int b ) {
+    Vector<int> toReturn = clause;
+    std::sort( toReturn.begin(), toReturn.end(), [this]( int a, int b ) {
         return _smtCore.getLiteralAssignmentIndex( a ) < _smtCore.getLiteralAssignmentIndex( b );
     } );
 
-    Vector<int> toReturn = clause;
     // TODO apply to additional types of PLCs
     if ( !lemma || lemma->getConstraintType() == RELU )
     {
@@ -4083,10 +4083,10 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
             linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
 
     // TODO remove
-//    if ( checkLinearCombinationForClause(
-//             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
-//        return reduceClauseSizeWithLinearCombination(
-//            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
+    //    if ( checkLinearCombinationForClause(
+    //             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
+    //        return reduceClauseSizeWithLinearCombination(
+    //            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
     Vector<int> can1 = support + r;
     Vector<int> newL = reduceClauseSizeWithLinearCombination(
