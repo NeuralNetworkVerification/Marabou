@@ -2340,14 +2340,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     double before = _degradationChecker.computeDegradation( *_tableau );
     //
 
-    _precisionRestorer.restorePrecision(
-        *this,
-        *_tableau,
-        restoreBasics,
-        _tableau->isOptimizing() &&
-            std::any_of( _plConstraints.begin(),
-                         _plConstraints.end(),
-                         []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) );
+    _precisionRestorer.restorePrecision( *this, *_tableau, restoreBasics );
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                   TimeUtils::timePassed( start, end ) );
@@ -2368,13 +2361,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         // Try again!
         start = TimeUtils::sampleMicro();
         _precisionRestorer.restorePrecision(
-            *this,
-            *_tableau,
-            PrecisionRestorer::DO_NOT_RESTORE_BASICS,
-            _tableau->isOptimizing() &&
-                std::any_of( _plConstraints.begin(),
-                             _plConstraints.end(),
-                             []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) );
+            *this, *_tableau, PrecisionRestorer::DO_NOT_RESTORE_BASICS );
         end = TimeUtils::sampleMicro();
         _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                       TimeUtils::timePassed( start, end ) );

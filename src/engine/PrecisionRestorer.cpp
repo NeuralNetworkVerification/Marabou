@@ -36,8 +36,7 @@ void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           ITableau &tableau,
-                                          RestoreBasics restoreBasics,
-                                          bool shouldQuit )
+                                          RestoreBasics restoreBasics )
 {
     Map<const PiecewiseLinearConstraint *, Pair<PhaseStatus, bool>> plcStatusBefore;
     for ( const auto *plc : engine.getPiecewiseLinearConstraints() )
@@ -130,9 +129,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                                     "Precision restoration failed - could not refactorize "
                                     "basis after setting basics" );
             }
-
-            if ( shouldQuit )
-                throw QuitFromPrecisionRestorationException();
         }
     }
 
