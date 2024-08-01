@@ -39,9 +39,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           RestoreBasics restoreBasics,
                                           bool shouldQuit )
 {
-    if ( shouldQuit )
-        throw QuitFromPrecisionRestorationException();
-
     // Store the dimensions, bounds and basic variables in the current tableau,
     // before restoring it
     unsigned targetM = tableau.getM();
@@ -112,6 +109,9 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
         if ( failed )
         {
+            if ( shouldQuit )
+                throw QuitFromPrecisionRestorationException();
+
             // The "restoreBasics" set leads to a malformed basis.
             // Try again without this part of the restoration
             shouldBeBasicList.clear();
