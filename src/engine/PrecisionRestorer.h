@@ -31,7 +31,10 @@ public:
     void storeInitialEngineState( const IEngine &engine );
     void restoreInitialEngineState( IEngine &engine );
 
-    void restorePrecision( IEngine &engine, ITableau &tableau, RestoreBasics restoreBasics );
+    void restorePrecision( IEngine &engine,
+                           ITableau &tableau,
+                           RestoreBasics restoreBasics,
+                           bool shouldQuit );
 
 private:
     EngineState _initialEngineState;

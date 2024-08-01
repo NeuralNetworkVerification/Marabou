@@ -19,6 +19,7 @@
 #include "FloatUtils.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "QuitFromPrecisionRestorationException.h"
 #include "SmtCore.h"
 #include "TableauStateStorageLevel.h"
 #include "UnsatCertificateNode.h"
@@ -35,8 +36,12 @@ void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           ITableau &tableau,
-                                          RestoreBasics restoreBasics )
+                                          RestoreBasics restoreBasics,
+                                          bool shouldQuit )
 {
+    if ( shouldQuit )
+        throw QuitFromPrecisionRestorationException();
+
     // Store the dimensions, bounds and basic variables in the current tableau,
     // before restoring it
     unsigned targetM = tableau.getM();
