@@ -3423,7 +3423,7 @@ void Engine::explainSimplexFailure()
         sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
     // If possible, attempt to reduce the clause size
-    if ( !clause.empty() && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
         clause = reduceClauseSizeWithProof(
             sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
 
@@ -3999,7 +3999,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                             phaseFixingEntry->lemma->getCausingVars().back(),
                                             phaseFixingEntry->lemma->getCausingVarBound() );
 
-    if ( !clause.empty() && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
+    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
             tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
