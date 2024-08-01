@@ -109,9 +109,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
         if ( failed )
         {
-            if ( shouldQuit )
-                throw QuitFromPrecisionRestorationException();
-
             // The "restoreBasics" set leads to a malformed basis.
             // Try again without this part of the restoration
             shouldBeBasicList.clear();
@@ -128,6 +125,9 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                                     "Precision restoration failed - could not refactorize "
                                     "basis after setting basics" );
             }
+
+            if ( shouldQuit )
+                throw QuitFromPrecisionRestorationException();
         }
     }
 
