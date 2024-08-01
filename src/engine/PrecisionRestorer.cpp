@@ -39,6 +39,11 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           RestoreBasics restoreBasics,
                                           bool shouldQuit )
 {
+    Map<const PiecewiseLinearConstraint *, Pair<PhaseStatus, bool>> plcStatusBefore;
+    for ( const auto *plc : engine.getPiecewiseLinearConstraints() )
+        plcStatusBefore.insert( plc,
+                                Pair<PhaseStatus, bool>( plc->getPhaseStatus(), plc->isActive() ) );
+
     // Store the dimensions, bounds and basic variables in the current tableau,
     // before restoring it
     unsigned targetM = tableau.getM();
@@ -155,5 +160,11 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
             tableau.verifyInvariants();
         } );
+    }
+
+    for ( const auto *plc : engine.getPiecewiseLinearConstraints() )
+    {
+        ASSERT( plc->getPhaseStatus() == plcStatusBefore.get( plc ).first() );
+        ASSERT( plc->isActive() == plcStatusBefore.get( plc ).second() );
     }
 }

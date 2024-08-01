@@ -224,6 +224,8 @@ public:
       Sets the exit code.
      */
     virtual void setExitCode( ExitCode exitCode ) = 0;
+
+    virtual const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const = 0;
 };
 
 #endif // __IEngine_h__

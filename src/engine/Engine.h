@@ -341,6 +341,8 @@ public:
      */
     void setExitCode( ExitCode exitCode ) override;
 
+    const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const override
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,

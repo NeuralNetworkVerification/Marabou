@@ -4256,3 +4256,8 @@ void Engine::setExitCode( ExitCode exitCode )
 {
     _smtCore.setExitCode( exitCode );
 }
+
+const List<PiecewiseLinearConstraint *> &Engine::getPiecewiseLinearConstraints() const
+{
+    return _plConstraints;
+}
