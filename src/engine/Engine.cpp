@@ -4017,6 +4017,12 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
 {
     ASSERT( !clause.empty() && !explanation.empty() );
 
+    // Order clause by appearance in assigned constraints of the SMTCore
+    // if not assigned yet then should be last
+    std::sort( clause.begin(), clause.end(), [this]( int a, int b ) {
+        return _smtCore.getLiteralAssignmentIndex( a ) < _smtCore.getLiteralAssignmentIndex( b );
+    } );
+
     Vector<int> toReturn = clause;
     // TODO apply to additional types of PLCs
     if ( !lemma || lemma->getConstraintType() == RELU )
@@ -4076,15 +4082,17 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
         return reduceClauseSizeWithLinearCombination(
             linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
 
-    if ( checkLinearCombinationForClause(
-             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
-        return reduceClauseSizeWithLinearCombination(
-            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
+    // TODO remove
+//    if ( checkLinearCombinationForClause(
+//             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
+//        return reduceClauseSizeWithLinearCombination(
+//            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
     Vector<int> can1 = support + r;
     Vector<int> newL = reduceClauseSizeWithLinearCombination(
         linearCombination, groundUpperBounds, groundLowerBounds, can1, l, lemma );
 
+    // Then try eliminating elements from the right half of the clause
     Vector<int> can2 = support + newL;
     Vector<int> newR = reduceClauseSizeWithLinearCombination(
         linearCombination, groundUpperBounds, groundLowerBounds, can2, r, lemma );
@@ -4244,7 +4252,7 @@ void Engine::setExitCode( ExitCode exitCode )
     _smtCore.setExitCode( exitCode );
 }
 
-const List<PiecewiseLinearConstraint *> &Engine::getPiecewiseLinearConstraints() const
+const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints() const
 {
-    return _plConstraints;
+    return &_plConstraints;
 }

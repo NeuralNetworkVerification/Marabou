@@ -315,6 +315,12 @@ public:
      */
     bool terminate () override;
 
+    /*
+     Get the the index of an assigned literal in the assigned literals list
+     return the size of the list if element not found
+     */
+    unsigned getLiteralAssignmentIndex( int literal ) const;
+
 private:
     /*
       A code indicating how the run terminated.

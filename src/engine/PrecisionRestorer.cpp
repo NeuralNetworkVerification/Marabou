@@ -39,10 +39,11 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           RestoreBasics restoreBasics )
 {
     Map<const PiecewiseLinearConstraint *, Pair<PhaseStatus, bool>> plcStatusBefore;
-    for ( const auto *plc : engine.getPiecewiseLinearConstraints() )
-        plcStatusBefore.insert( plc,
-                                Pair<PhaseStatus, bool>( plc->getPhaseStatus(), plc->isActive() ) );
-
+    DEBUG( {
+        for ( const auto *plc : *engine.getPiecewiseLinearConstraints() )
+            plcStatusBefore.insert(
+                plc, Pair<PhaseStatus, bool>( plc->getPhaseStatus(), plc->isActive() ) );
+    } );
     // Store the dimensions, bounds and basic variables in the current tableau,
     // before restoring it
     unsigned targetM = tableau.getM();
@@ -153,14 +154,13 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
             ASSERT( GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS ||
                     tableau.getM() == targetM );
 
+            for ( const auto *plc : *engine.getPiecewiseLinearConstraints() )
+            {
+                ASSERT( plc->getPhaseStatus() == plcStatusBefore.get( plc ).first() );
+                ASSERT( plc->isActive() == plcStatusBefore.get( plc ).second() );
+            }
 
             tableau.verifyInvariants();
         } );
-    }
-
-    for ( const auto *plc : engine.getPiecewiseLinearConstraints() )
-    {
-        ASSERT( plc->getPhaseStatus() == plcStatusBefore.get( plc ).first() );
-        ASSERT( plc->isActive() == plcStatusBefore.get( plc ).second() );
     }
 }

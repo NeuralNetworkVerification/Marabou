@@ -360,6 +360,11 @@ public:
     void exportInputQueryWithError( String ) override
     {
     }
+
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const
+    {
+        return NULL;
+    }
 };
 
 #endif // __MockEngine_h__

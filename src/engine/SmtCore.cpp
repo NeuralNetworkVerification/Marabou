@@ -1112,3 +1112,16 @@ bool SmtCore::terminate()
     SMT_LOG( Stringf( "Callback for terminate: %d", _exitCode != NOT_DONE ).ascii() );
     return _exitCode != NOT_DONE;
 }
+
+unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
+{
+    unsigned counter = 0;
+    for ( int curLiteral : _assignedLiterals )
+    {
+        if ( curLiteral == literal )
+            return counter;
+        ++counter;
+    }
+
+    return _assignedLiterals.size();
+}
