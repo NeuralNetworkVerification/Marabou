@@ -693,9 +693,6 @@ void SmtCore::notify_new_decision_level()
     _engine->preContextPushHook();
     pushContext();
 
-    for ( const auto &lit : _fixedCadicalVars )
-        notify_assignment( lit, true );
-
 
     if ( _statistics )
     {
@@ -734,6 +731,9 @@ void SmtCore::notify_backtrack( size_t new_level )
     for ( const Pair<int, int> &propagation : currentPropagations )
         if ( propagation.second() <= (int)new_level )
             _literalsToPropagate.append( propagation );
+
+    for ( const auto &lit : _fixedCadicalVars )
+        notify_assignment( lit, false );
 
     if ( _statistics )
     {
@@ -1124,4 +1124,9 @@ unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
     }
 
     return _assignedLiterals.size();
+}
+
+bool SmtCore::isLiteralFixed( int literal ) const
+{
+    return _fixedCadicalVars.exists( literal );
 }

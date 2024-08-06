@@ -39,10 +39,11 @@ class String;
 
 using CVC4::context::Context;
 
-class SmtCore : CaDiCaL::ExternalPropagator, CaDiCaL::Terminator
+class SmtCore
+    : CaDiCaL::ExternalPropagator
+    , CaDiCaL::Terminator
 {
 public:
-
     SmtCore( IEngine *engine );
     ~SmtCore();
 
@@ -64,7 +65,7 @@ public:
     /*
       Set the exit code
      */
-    void setExitCode(ExitCode exitCode);
+    void setExitCode( ExitCode exitCode );
 
     /*
       Resets the exit code
@@ -313,13 +314,18 @@ public:
       'terminate' function of the terminator returns true the solver is
       terminated synchronously as soon it calls this function.
      */
-    bool terminate () override;
+    bool terminate() override;
 
     /*
-     Get the the index of an assigned literal in the assigned literals list
+     Get the index of an assigned literal in the assigned literals list
      return the size of the list if element not found
      */
     unsigned getLiteralAssignmentIndex( int literal ) const;
+
+    /*
+      Return true iff the literal is fixed by the SAT solver
+    */
+    bool isLiteralFixed( int literal ) const;
 
 private:
     /*

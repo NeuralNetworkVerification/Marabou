@@ -4021,7 +4021,9 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
     // if not assigned yet then should be last
     Vector<int> toReturn = clause;
     std::sort( toReturn.begin(), toReturn.end(), [this]( int a, int b ) {
-        return _smtCore.getLiteralAssignmentIndex( a ) < _smtCore.getLiteralAssignmentIndex( b );
+        unsigned aVal = _smtCore.isLiteralFixed( a ) ? 0 : _smtCore.getLiteralAssignmentIndex( a );
+        unsigned bVal = _smtCore.isLiteralFixed( b ) ? 0 : _smtCore.getLiteralAssignmentIndex( b );
+        return aVal < bVal;
     } );
 
     // TODO apply to additional types of PLCs
