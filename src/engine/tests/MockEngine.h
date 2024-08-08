@@ -362,6 +362,10 @@ public:
         return NULL;
     }
 
+    void explainGurobiFailure() override
+    {
+    }
+
     LPSolverType getLpSolverType() const override
     {
         return LPSolverType::NATIVE;

@@ -284,11 +284,6 @@ public:
     void addLiteralToPropagate( int literal );
 
     /*
-        set _needToSplit to false
-    */
-    void turnNeedToSplitOff();
-
-    /*
       Adds the trivial conflict clause (negation of all decisions) to Marabou,
       later to be propagated
     */

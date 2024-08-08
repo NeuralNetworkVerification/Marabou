@@ -654,7 +654,11 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
         return;
 
     checkIfShouldExitDueToTimeout();
-    SMT_LOG( Stringf( "Notified assignment %d; is fixed: %d", lit, is_fixed ).ascii() );
+    SMT_LOG( Stringf( "Notified assignment %d; is decision: %d; is fixed: %d",
+                      lit,
+                      _cadicalWrapper.isDecision( lit ),
+                      is_fixed )
+                 .ascii() );
 
     // Allow notifying a negation of assigned literal only when a conflict is already discovered
     ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
@@ -733,7 +737,7 @@ void SmtCore::notify_backtrack( size_t new_level )
             _literalsToPropagate.append( propagation );
 
     for ( const auto &lit : _fixedCadicalVars )
-        notify_assignment( lit, false );
+        notify_assignment( lit, true );
 
     if ( _statistics )
     {
@@ -787,6 +791,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         if ( !result && !cb_has_external_clause() )
             addTrivialConflictClause();
 
+        SMT_LOG( Stringf( "\tResult is %u", result ).ascii() );
         return result && !cb_has_external_clause();
     }
     else
@@ -1088,17 +1093,12 @@ Set<int> SmtCore::addTrivialConflictClause()
 {
     Set<int> clause = Set<int>();
     for ( int lit : _assignedLiterals )
-        if ( _cadicalWrapper.isDecision( lit ) )
+        if ( _cadicalWrapper.isDecision( lit ) && !_fixedCadicalVars.exists( lit ) )
             clause.insert( lit );
 
     addExternalClause( clause );
 
     return clause;
-}
-
-void SmtCore::turnNeedToSplitOff()
-{
-    _needToSplit = false;
 }
 
 void SmtCore::removeLiteralFromPropagations( int literal )
@@ -1108,6 +1108,7 @@ void SmtCore::removeLiteralFromPropagations( int literal )
 
 void SmtCore::phase( int literal )
 {
+    SMT_LOG( Stringf( "Phasing literal %d", literal ).ascii() );
     _cadicalWrapper.phase( literal );
     _fixedCadicalVars.insert( literal );
 }
