@@ -4289,7 +4289,15 @@ void Engine::explainGurobiFailure()
 
         for ( unsigned variable : plc->getParticipatingVariables() )
         {
-            if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
+            String variableName = Stringf( "x%u", variable );
+            if ( ( ( bounds[variableName] == GurobiWrapper::IIS_UB ||
+                     bounds[variableName] == GurobiWrapper::IIS_BOTH ) &&
+                   plc->isBoundFixingPhase(
+                       variable, _boundManager.getUpperBound( variable ), Tightening::UB ) ) ||
+                 ( ( bounds[variableName] == GurobiWrapper::IIS_LB ||
+                     bounds[variableName] == GurobiWrapper::IIS_BOTH ) &&
+                   plc->isBoundFixingPhase(
+                       variable, _boundManager.getLowerBound( variable ), Tightening::LB ) ) )
             {
                 clause.insert( plc->propagatePhaseAsLit() );
                 continue;
