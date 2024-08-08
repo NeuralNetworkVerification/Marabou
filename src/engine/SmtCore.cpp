@@ -893,27 +893,30 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     {
         _reasonClauseLiterals.clear();
         SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
-        Vector<int> toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
 
-        for ( int lit : toAdd )
+        if (!_fixedCadicalVars.exists(propagated_lit))
         {
-            // Make sure all clause literals were fixed before the literal to explain
-            ASSERT( _cadicalVarToPlc[abs( propagated_lit )]->getPhaseFixingEntry()->id >
-                    _cadicalVarToPlc[abs( lit )]->getPhaseFixingEntry()->id );
+            Vector<int> toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
 
-            // Remove fixed literals from clause, as they are redundant
-            if ( !_fixedCadicalVars.exists( -lit ) )
-                _reasonClauseLiterals.append( -lit );
+            for ( int lit : toAdd )
+            {
+                // Make sure all clause literals were fixed before the literal to explain
+                ASSERT( _cadicalVarToPlc[abs( propagated_lit )]->getPhaseFixingEntry()->id >
+                        _cadicalVarToPlc[abs( lit )]->getPhaseFixingEntry()->id );
+
+                // Remove fixed literals from clause, as they are redundant
+                if ( !_fixedCadicalVars.exists( -lit ) )
+                    _reasonClauseLiterals.append( -lit );
+            }
         }
 
         ASSERT( !_reasonClauseLiterals.exists( -propagated_lit ) );
-        ASSERT( !_fixedCadicalVars.exists( propagated_lit ) );
         _reasonClauseLiterals.append( propagated_lit );
         _isReasonClauseInitialized = true;
 
         // Unit clause fixes the propagated literal
         if ( _reasonClauseLiterals.size() == 1 )
-            phase( propagated_lit );
+            _fixedCadicalVars.insert( propagated_lit );
     }
 
     if ( _reasonClauseLiterals.empty() )
@@ -1110,6 +1113,7 @@ void SmtCore::phase( int literal )
 {
     SMT_LOG( Stringf( "Phasing literal %d", literal ).ascii() );
     _cadicalWrapper.phase( literal );
+    _literalsToPropagate.append( Pair<int, int>( literal, 0 ) );
     _fixedCadicalVars.insert( literal );
 }
 
