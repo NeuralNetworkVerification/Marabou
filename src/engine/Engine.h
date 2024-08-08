@@ -349,7 +349,7 @@ public:
     /*
       Explain infeasibility of gurobi
     */
-    void explainGurobiFailure() const override;
+    void explainGurobiFailure() override;
 
 private:
     enum BasisRestorationRequired {

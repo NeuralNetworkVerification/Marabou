@@ -4272,7 +4272,7 @@ const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints()
 }
 
 
-void Engine::explainGurobiFailure() const
+void Engine::explainGurobiFailure()
 {
     ASSERT( _lpSolverType == LPSolverType::GUROBI );
     ASSERT( _milpEncoder && _gurobi && _gurobi->infeasible() );
@@ -4299,6 +4299,7 @@ void Engine::explainGurobiFailure() const
         }
     }
 
+    _smtCore.addExternalClause( clause );
     ENGINE_LOG( Stringf( "Conflict analysis - done, conflict length %u, level %u",
                          clause.size(),
                          _context.getLevel() )

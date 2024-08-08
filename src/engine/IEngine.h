@@ -233,7 +233,7 @@ public:
     /*
       Explain infeasibility of gurobi
     */
-    virtual void explainGurobiFailure() const = 0;
+    virtual void explainGurobiFailure() = 0;
 };
 
 #endif // __IEngine_h__
