@@ -4289,14 +4289,17 @@ void Engine::explainGurobiFailure()
     Set<int> clause;
     for ( const auto &plc : _plConstraints )
     {
+        if ( !plc->phaseFixed() )
+            continue;
+
         for ( unsigned variable : plc->getParticipatingVariables() )
-        {
-            if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
             {
-                clause.insert( plc->propagatePhaseAsLit() );
-                continue;
+                if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
+                {
+                    clause.insert( plc->propagatePhaseAsLit() );
+                    continue;
+                }
             }
-        }
     }
 
     _smtCore.addExternalClause( clause );
