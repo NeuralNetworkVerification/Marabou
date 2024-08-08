@@ -21,6 +21,7 @@
 #include "DivideStrategy.h"
 #include "GroundBoundManager.h"
 #include "List.h"
+#include "LPSolverType.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
 #include "TableauStateStorageLevel.h"
@@ -203,8 +204,6 @@ public:
 
     virtual void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) = 0;
 
-    virtual void initDataStructures() = 0; // TODO rename
-
     /*
       Check whether a timeout value has been provided and exceeded.
     */
@@ -234,6 +233,11 @@ public:
       Explain infeasibility of gurobi
     */
     virtual void explainGurobiFailure() = 0;
+
+    /*
+      Returns the type of the LP Solver in use.
+     */
+    virtual LPSolverType getLpSolverType() const = 0;
 };
 
 #endif // __IEngine_h__

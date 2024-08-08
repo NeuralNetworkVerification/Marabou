@@ -771,20 +771,26 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     for ( const auto &lit : model )
         notify_assignment( lit, false );
 
-    // Quickly try to notify constraints for bounds, which raises exception in case of infeasibility
-    if ( !_engine->propagateBoundManagerTightenings() )
-        return false;
+    if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
+    {
+        // Quickly try to notify constraints for bounds, which raises exception in case of
+        // infeasibility
+        if ( !_engine->propagateBoundManagerTightenings() )
+            return false;
 
-    // If external clause learned, no need to call solve
-    if ( cb_has_external_clause() )
-        return false;
+        // If external clause learned, no need to call solve
+        if ( cb_has_external_clause() )
+            return false;
 
-    bool result = _engine->solve();
-    // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
-    if ( !result && !cb_has_external_clause() )
-        addTrivialConflictClause();
+        bool result = _engine->solve();
+        // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
+        if ( !result && !cb_has_external_clause() )
+            addTrivialConflictClause();
 
-    return result && !cb_has_external_clause();
+        return result && !cb_has_external_clause();
+    }
+    else
+        return _engine->solve();
 }
 
 int SmtCore::cb_decide()
@@ -814,6 +820,17 @@ int SmtCore::cb_propagate()
         return 0;
 
     checkIfShouldExitDueToTimeout();
+
+    if ( _engine->getLpSolverType() == LPSolverType::GUROBI )
+    {
+        if ( _engine->solve() )
+            _exitCode = SAT;
+
+        return 0;
+    }
+
+    ASSERT( _engine->getLpSolverType() == LPSolverType::NATIVE );
+
     if ( _literalsToPropagate.empty() )
     {
         if ( _statistics )
@@ -859,6 +876,7 @@ int SmtCore::cb_propagate()
 
 int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 {
+    ASSERT( _engine->getLpSolverType() == LPSolverType::NATIVE );
     if ( _exitCode != NOT_DONE )
         return 0;
 

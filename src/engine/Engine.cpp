@@ -239,11 +239,10 @@ bool Engine::solve() // TODO: change the name of this method, and remove
 
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    _tableau->computeAssignment();
     _smtCore.resetSplitConditions();
 
     applyAllBoundTightenings();
-    if ( !propagateBoundManagerTightenings() )
+    if ( _lpSolverType == LPSolverType::NATIVE && !propagateBoundManagerTightenings() )
         return false;
 
     while ( true )
@@ -2151,7 +2150,8 @@ void Engine::applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constrai
             ENGINE_LOG(
                 Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             if ( _produceUNSATProofs &&
-                 FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
+                 FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) &&
+                 _lpSolverType == LPSolverType::NATIVE )
             {
                 _boundManager.resetExplanation( variable, Tightening::LB );
                 _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
@@ -2160,7 +2160,7 @@ void Engine::applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constrai
                     constraint.setPhaseFixingEntry(
                         getGroundBoundEntry( variable, Tightening::LB ) );
             }
-            else if ( !_produceUNSATProofs )
+            else if ( !_produceUNSATProofs || _lpSolverType == LPSolverType::GUROBI )
                 _boundManager.tightenLowerBound( variable, bound._value );
         }
         else
@@ -2168,7 +2168,8 @@ void Engine::applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constrai
             ENGINE_LOG(
                 Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             if ( _produceUNSATProofs &&
-                 FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
+                 FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) &&
+                 _lpSolverType == LPSolverType::NATIVE )
             {
                 _boundManager.resetExplanation( variable, Tightening::UB );
                 _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
@@ -2177,7 +2178,7 @@ void Engine::applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constrai
                     constraint.setPhaseFixingEntry(
                         getGroundBoundEntry( variable, Tightening::UB ) );
             }
-            else if ( !_produceUNSATProofs )
+            else if ( !_produceUNSATProofs || _lpSolverType == LPSolverType::GUROBI )
                 _boundManager.tightenUpperBound( variable, bound._value );
         }
     }
@@ -3081,7 +3082,8 @@ bool Engine::performDeepSoILocalSearch()
         return false;
     }
 
-    _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
     minimizeHeuristicCost( initialPhasePattern );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
@@ -3919,15 +3921,20 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         if ( constraint->getPhaseFixingEntry() && constraint->getPhaseFixingEntry()->id < id )
         {
             for ( unsigned var : constraint->getParticipatingVariables() )
-                if ( !FloatUtils::isZero( linearCombination[var] ) &&
-                     _groundBoundManager
-                         .getGroundBoundEntryUpToId( var,
-                                                     ( linearCombination[var] > 0 ) ^ isUpper
-                                                         ? Tightening::LB
-                                                         : Tightening::UB,
-                                                     id )
-                         ->isPhaseFixing )
-                    lit = constraint->propagatePhaseAsLit();
+                if ( !FloatUtils::isZero( linearCombination[var] ) )
+                {
+                    Tightening::BoundType boundTypeParticipating =
+                        ( linearCombination[var] > 0 ) ^ isUpper ? Tightening::LB : Tightening::UB;
+                    std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
+                        _groundBoundManager.getGroundBoundEntryUpToId(
+                            var, boundTypeParticipating, id );
+                    if ( entry->isPhaseFixing &&
+                         constraint->isBoundFixingPhase( var, entry->val, boundTypeParticipating ) )
+                    {
+                        lit = constraint->propagatePhaseAsLit();
+                        break;
+                    }
+                }
         }
 
         if ( lit )
@@ -4239,18 +4246,6 @@ void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
     ipq.saveQuery( prefix + ".ipq" );
 }
 
-void Engine::initDataStructures()
-{
-    if ( _lpSolverType == LPSolverType::NATIVE )
-    {
-        // Make sure the data structures are initialized to the correct size
-        _rowBoundTightener->setDimensions();
-        adjustWorkMemorySize();
-        _activeEntryStrategy->resizeHook( _tableau );
-        _costFunctionManager->initialize();
-    }
-}
-
 unsigned Engine::getVerbosity() const
 {
     return _verbosity;
@@ -4294,12 +4289,12 @@ void Engine::explainGurobiFailure()
 
         for ( unsigned variable : plc->getParticipatingVariables() )
         {
-                if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
-                {
-                    clause.insert( plc->propagatePhaseAsLit() );
-                    continue;
-                }
+            if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
+            {
+                clause.insert( plc->propagatePhaseAsLit() );
+                continue;
             }
+        }
     }
 
     _smtCore.addExternalClause( clause );
@@ -4307,4 +4302,9 @@ void Engine::explainGurobiFailure()
                          clause.size(),
                          _context.getLevel() )
                     .ascii() );
+}
+
+LPSolverType Engine::getLpSolverType() const
+{
+    return _lpSolverType;
 }

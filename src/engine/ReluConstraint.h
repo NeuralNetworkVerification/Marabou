@@ -260,8 +260,12 @@ public:
     */
     void propagateLitAsSplit( int lit ) override;
 
-private:
-    unsigned _b, _f;
+    bool isBoundFixingPhase( unsigned var, double bound, Tightening::BoundType boundType ) const
+        override;
+
+        private
+        : unsigned _b
+        , _f;
     bool _auxVarInUse;
     unsigned _aux;
 

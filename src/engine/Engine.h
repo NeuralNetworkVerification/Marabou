@@ -319,8 +319,6 @@ public:
 
     bool solveWithCadical( double timeoutInSeconds = 0 ) override;
 
-    void initDataStructures() override;
-
     /*
       Check whether a timeout value has been provided and exceeded.
     */
@@ -350,6 +348,11 @@ public:
       Explain infeasibility of gurobi
     */
     void explainGurobiFailure() override;
+
+    /*
+      Returns the type of the LP Solver in use.
+     */
+    LPSolverType getLpSolverType() const override;
 
 private:
     enum BasisRestorationRequired {

@@ -93,14 +93,6 @@ int marabouMain( int argc, char **argv )
                 "Proof production is not yet supported with MILP solvers, turning --milp off.\n" );
         }
 
-        if ( options->getBool( Options::PRODUCE_PROOFS ) &&
-             ( options->getLPSolverType() == LPSolverType::GUROBI ) )
-        {
-            options->setString( Options::LP_SOLVER, "native" );
-            printf( "Proof production is not yet supported with MILP solvers, using native simplex "
-                    "engine.\n" );
-        }
-
         if ( options->getBool( Options::DNC_MODE ) &&
              options->getBool( Options::PARALLEL_DEEPSOI ) )
         {

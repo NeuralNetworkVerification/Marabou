@@ -60,7 +60,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
-//#include "SmtCore.h"
+// #include "SmtCore.h"
 #include "Tightening.h"
 #include "context/cdlist.h"
 #include "context/cdo.h"
@@ -252,7 +252,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ){};
+    virtual void transformToUseAuxVariables( InputQuery & ) {};
 
     void setStatistics( Statistics *statistics );
 
@@ -534,6 +534,14 @@ public:
         const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &groundBoundEntry )
     {
         _cdPhaseFixingEntry->set( groundBoundEntry );
+    }
+
+    virtual bool isBoundFixingPhase( unsigned /*var*/,
+                                     double /*bound*/,
+                                     Tightening::BoundType /*boundType*/ ) const
+    {
+        // TODO: remove default implementation after supporting other PLCs in CDCL
+        return true;
     }
 
 protected:

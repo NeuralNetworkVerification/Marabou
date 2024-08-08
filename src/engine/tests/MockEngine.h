@@ -343,10 +343,6 @@ public:
     {
     }
 
-    void initDataStructures() override
-    {
-    }
-
     bool shouldExitDueToTimeout( double ) const override
     {
         return false;
@@ -361,10 +357,16 @@ public:
     {
     }
 
-    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override
     {
         return NULL;
     }
+
+    LPSolverType getLpSolverType() const override
+    {
+        return LPSolverType::NATIVE;
+    }
+
 };
 
 #endif // __MockEngine_h__

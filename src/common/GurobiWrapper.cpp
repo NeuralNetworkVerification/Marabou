@@ -443,7 +443,7 @@ void GurobiWrapper::log( const String &message )
         printf( "GurobiWrapper: %s\n", message.ascii() );
 }
 
-void GurobiWrapper::computeIIS( int method = 0 )
+void GurobiWrapper::computeIIS( int method )
 {
     try
     {
