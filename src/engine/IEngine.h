@@ -212,20 +212,28 @@ public:
 
     /*
       Returns the verbosity level.
-     */
+    */
     virtual unsigned getVerbosity() const = 0;
 
     /*
       Returns the exit code.
-     */
+    */
     virtual ExitCode getExitCode() const = 0;
 
     /*
       Sets the exit code.
-     */
+    */
     virtual void setExitCode( ExitCode exitCode ) = 0;
 
+    /*
+      Return the piecewise linear constraints list of the engine
+    */
     virtual const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const = 0;
+
+    /*
+      Explain infeasibility of gurobi
+    */
+    virtual void explainGurobiFailure() const = 0;
 };
 
 #endif // __IEngine_h__

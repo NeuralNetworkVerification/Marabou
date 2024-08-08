@@ -430,7 +430,12 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( _produceUNSATProofs )
-                explainSimplexFailure();
+            {
+                if ( _lpSolverType == LPSolverType::NATIVE )
+                    explainSimplexFailure();
+                else
+                    explainGurobiFailure();
+            }
 
             return false;
         }
@@ -2957,7 +2962,13 @@ bool Engine::restoreSmtState( SmtState &smtState )
         // The current query is unsat, and we need to pop.
         // If we're at level 0, the whole query is unsat.
         if ( _produceUNSATProofs )
-            explainSimplexFailure();
+        {
+            if ( _lpSolverType == LPSolverType::NATIVE )
+                explainSimplexFailure();
+            else
+                explainGurobiFailure();
+        }
+
 
         if ( !_smtCore.popSplit() )
         {
@@ -3382,7 +3393,7 @@ bool Engine::shouldProduceProofs() const
 
 void Engine::explainSimplexFailure()
 {
-    ASSERT( _produceUNSATProofs );
+    ASSERT( _produceUNSATProofs && _lpSolverType == LPSolverType::NATIVE );
 
     DEBUG( checkGroundBounds() );
 
@@ -3824,6 +3835,7 @@ void Engine::setBoundExplainerContent( BoundExplainer *boundExplainer )
 
 bool Engine::propagateBoundManagerTightenings()
 {
+    ASSERT( _lpSolverType == LPSolverType::NATIVE );
     try
     {
         _boundManager.propagateTightenings();
@@ -4257,4 +4269,38 @@ void Engine::setExitCode( ExitCode exitCode )
 const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints() const
 {
     return &_plConstraints;
+}
+
+
+void Engine::explainGurobiFailure() const
+{
+    ASSERT( _lpSolverType == LPSolverType::GUROBI );
+    ASSERT( _milpEncoder && _gurobi && _gurobi->infeasible() );
+    ASSERT( _produceUNSATProofs );
+
+    ENGINE_LOG( "Extracting theory explanation..." );
+    _gurobi->computeIIS();
+
+    Map<String, GurobiWrapper::IISBoundType> bounds;
+    List<String> dontCare;
+    List<String> names;
+    _gurobi->extractIIS( bounds, dontCare, names );
+
+    Set<int> clause;
+    for ( const auto &plc : _plConstraints )
+    {
+        for ( unsigned variable : plc->getParticipatingVariables() )
+        {
+            if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
+            {
+                clause.insert( plc->propagatePhaseAsLit() );
+                continue;
+            }
+        }
+    }
+
+    ENGINE_LOG( Stringf( "Conflict analysis - done, conflict length %u, level %u",
+                         clause.size(),
+                         _context.getLevel() )
+                    .ascii() );
 }

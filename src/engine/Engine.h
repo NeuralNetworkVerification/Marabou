@@ -328,20 +328,28 @@ public:
 
     /*
       Returns the verbosity level.
-     */
+    */
     unsigned getVerbosity() const override;
 
     /*
       Returns the exit code from the SmtCore
-     */
+    */
     ExitCode getExitCode() const override;
 
     /*
       Sets the exit code inside the SmyCore
-     */
+    */
     void setExitCode( ExitCode exitCode ) override;
 
+    /*
+      Return the piecewise linear constraints list of the engine
+    */
     const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override;
+
+    /*
+      Explain infeasibility of gurobi
+    */
+    void explainGurobiFailure() const override;
 
 private:
     enum BasisRestorationRequired {

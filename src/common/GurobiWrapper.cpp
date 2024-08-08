@@ -443,6 +443,44 @@ void GurobiWrapper::log( const String &message )
         printf( "GurobiWrapper: %s\n", message.ascii() );
 }
 
+void GurobiWrapper::computeIIS( int method = 0 )
+{
+    try
+    {
+        _model->getEnv().set( GRB_IntParam_IISMethod, method );
+        _model->computeIIS();
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() )
+                               .ascii() );
+    }
+}
+
+void GurobiWrapper::extractIIS( Map<String, GurobiWrapper::IISBoundType> &bounds,
+                                List<String> &constraints,
+                                const List<String> &constraintNames )
+{
+    for ( const auto &variable : _nameToVariable )
+    {
+        if ( variable.second->get( GRB_IntAttr_IISLB ) )
+            bounds[variable.first] = IIS_LB;
+        if ( variable.second->get( GRB_IntAttr_IISUB ) )
+            bounds[variable.first] = IIS_UB;
+        if ( variable.second->get( GRB_IntAttr_IISLB ) &&
+             variable.second->get( GRB_IntAttr_IISUB ) )
+            bounds[variable.first] = IIS_BOTH;
+    }
+
+    for ( const auto &name : constraintNames )
+    {
+        if ( _model->getConstrByName( name.ascii() ).get( GRB_IntAttr_IISConstr ) )
+            constraints.append( name );
+    }
+}
 #endif // ENABLE_GUROBI
 
 //

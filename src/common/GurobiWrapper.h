@@ -31,6 +31,12 @@ public:
         INTEGER = 2,
     };
 
+    enum IISBoundType {
+        IIS_LB = 0,
+        IIS_UB = 1,
+        IIS_BOTH = 2
+    };
+
     /*
       A term has the form: coefficient * variable
     */
@@ -212,6 +218,15 @@ public:
     // default
     void dumpModel( String name );
 
+    // Compute the UNSAT core in case of infeasibility
+    void computeIIS( int method = 0 );
+
+    // Extract the list of bound participating in an IIS, assuming it is computed
+    void extractIIS( Map<String, GurobiWrapper::IISBoundType> &bounds,
+                                    List<String> &constraints,
+                                    const List<String> &constraintNames );
+
+
 private:
     GRBEnv *_environment;
     GRBModel *_model;
@@ -248,6 +263,12 @@ public:
         CONTINUOUS = 0,
         BINARY = 1,
         INTEGER = 2,
+    };
+
+    enum IISBoundType {
+        IIS_LB = 0,
+        IIS_UB = 1,
+        IIS_BOTH = 2
     };
 
     struct Term
@@ -386,6 +407,16 @@ public:
     {
     }
     static void log( const String & );
+
+    void computeIIS( int /*method*/ = 0 )
+    {
+    }
+
+    void extractIIS( Map<String, IISBoundType> & /*bounds*/,
+                     List<String> & /*constraints*/,
+                     const List<String> & /*constraintNames*/ )
+    {
+    }
 };
 
 #endif // ENABLE_GUROBI
