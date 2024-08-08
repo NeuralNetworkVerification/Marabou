@@ -4293,7 +4293,7 @@ void Engine::explainGurobiFailure()
             continue;
 
         for ( unsigned variable : plc->getParticipatingVariables() )
-            {
+        {
                 if ( bounds.exists( _milpEncoder->getVariableNameFromVariable( variable ) ) )
                 {
                     clause.insert( plc->propagatePhaseAsLit() );
