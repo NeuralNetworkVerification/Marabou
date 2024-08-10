@@ -7,24 +7,35 @@
 #undef Warning
 #include <torch/torch.h>
 
+class CustomMaxPool : public torch::nn::Module {
+public:
+    CustomMaxPool(const NLR::NetworkLevelReasoner* nlr, unsigned layerIndex);
+    torch::Tensor forward(torch::Tensor x) const;
+
+private:
+    const NLR::NetworkLevelReasoner* networkLevelReasoner;
+    unsigned maxLayerIndex;
+};
+
 class CustomDNNImpl : public torch::nn::Module
 {
 public:
-    enum Type {
-        INPUT,
-        LINEAR,
-        ACTIVATION,
-    };
+
     const NLR::NetworkLevelReasoner* networkLevelReasoner;
     Vector<unsigned> layerSizes;
+    Vector<torch::nn::ReLU> reluLayers;
+    Vector<torch::nn::LeakyReLU> leakyReluLayers;
+    Vector<torch::nn::Sigmoid> sigmoidLayers;
+    Vector<std::shared_ptr<CustomMaxPool>> customMaxPoolLayers;
     Vector<NLR::Layer::Type> activations;
     Vector<Vector<Vector<float>>> weights;
     Vector<std::vector<float>> biases;
     Vector<torch::nn::Linear> linearLayers;
-    Vector<Type> layersOrder;
+    Vector<NLR::Layer::Type> layersOrder;
     unsigned numberOfLayers;
     Vector<unsigned> maxLayerIndices;
 
+    void weightedSum( unsigned i, const NLR::Layer *layer );
     explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
     torch::Tensor customMaxPool(unsigned max_layer_inxes, torch::Tensor x ) const;
