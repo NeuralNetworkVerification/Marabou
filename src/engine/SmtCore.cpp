@@ -720,10 +720,10 @@ void SmtCore::notify_backtrack( size_t new_level )
 {
     if ( _exitCode != NOT_DONE )
         return;
-
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Backtracking to level %d", new_level ).ascii() );
     //    struct timespec start = TimeUtils::sampleMicro();
+    unsigned oldLevel = _context.getLevel();
 
     popContextTo( new_level );
     _engine->postContextPopHook();
@@ -741,13 +741,11 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     if ( _statistics )
     {
-        unsigned level = _context.getLevel();
-        unsigned jumpSize =
-            _statistics->getUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL ) - level;
+        unsigned jumpSize = oldLevel - new_level;
 
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, new_level );
         _statistics->incUnsignedAttribute( Statistics::NUM_DECISION_LEVELS );
-        _statistics->incUnsignedAttribute( Statistics::SUM_DECISION_LEVELS, level );
+        _statistics->incUnsignedAttribute( Statistics::SUM_DECISION_LEVELS, new_level );
 
         _statistics->incUnsignedAttribute( Statistics::NUM_BACKJUMPS );
         _statistics->incUnsignedAttribute( Statistics::SUM_BACKJUMPS, jumpSize );
@@ -1001,6 +999,24 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _cadicalWrapper.addObservedVar( var );
 
         _engine->preSolve();
+        if ( _engine->solve() )
+        {
+            _exitCode = SAT;
+            return true;
+        }
+
+        _engine->propagateBoundManagerTightenings();
+
+        if ( !_externalClausesToAdd.empty() )
+        {
+            _exitCode = UNSAT;
+            return false;
+        }
+
+        // Add the zero literal at the end
+        if ( !_literalsToPropagate.empty() )
+            _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+
         int result = _cadicalWrapper.solve();
 
         if ( _statistics && _engine->getVerbosity() )
