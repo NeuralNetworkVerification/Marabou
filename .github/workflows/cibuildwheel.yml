@@ -57,7 +57,7 @@ jobs:
         run: docker system prune -a -f
 
       - name: Build wheel
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.20.0
         with:
           output-dir: "./wheelhouse"
           config-file: "{package}/pyproject.toml"
