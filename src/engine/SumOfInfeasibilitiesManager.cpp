@@ -351,6 +351,12 @@ void SumOfInfeasibilitiesManager::setPhaseStatusInCurrentPhasePattern(
     _currentPhasePattern[constraint] = phase;
 }
 
+void SumOfInfeasibilitiesManager::setPLConstraintsInCurrentPhasePattern(
+    const Vector<PiecewiseLinearConstraint *> &constraints )
+{
+    _plConstraintsInCurrentPhasePattern = constraints;
+}
+
 void SumOfInfeasibilitiesManager::getCostReduction( PiecewiseLinearConstraint *plConstraint,
                                                     double &reducedCost,
                                                     PhaseStatus &phaseOfReducedCost ) const
