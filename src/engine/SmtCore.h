@@ -322,6 +322,8 @@ public:
     */
     bool isLiteralFixed( int literal ) const;
 
+    void printCurrentState() const;
+
 private:
     /*
       A code indicating how the run terminated.

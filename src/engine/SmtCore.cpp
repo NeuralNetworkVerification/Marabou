@@ -765,7 +765,10 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         return false;
 
     if ( _statistics )
+    {
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+        printCurrentState();
+    }
 
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Checking model found by SAT solver" );
@@ -837,7 +840,10 @@ int SmtCore::cb_propagate()
     if ( _literalsToPropagate.empty() )
     {
         if ( _statistics )
+        {
             _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+            printCurrentState();
+        }
 
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClausesToAdd.empty() )
@@ -999,6 +1005,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _cadicalWrapper.addObservedVar( var );
 
         _engine->preSolve();
+        printCurrentState();
         if ( _engine->solve() )
         {
             _exitCode = SAT;
@@ -1168,4 +1175,20 @@ unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
 bool SmtCore::isLiteralFixed( int literal ) const
 {
     return _fixedCadicalVars.exists( literal );
+}
+
+void SmtCore::printCurrentState() const
+{
+    unsigned size = _cadicalVarToPlc.size();
+    std::cout << "State "
+              << _statistics->getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES )
+              << " Time " << _statistics->getTotalTimeInMicro() << " : ";
+    for ( unsigned v = size - 1; v > 0; --v )
+    {
+        if ( _cadicalVarToPlc[v]->getPhaseStatus() == RELU_PHASE_ACTIVE )
+            std::cout << size - v << " ";
+        else if ( _cadicalVarToPlc[v]->getPhaseStatus() == RELU_PHASE_INACTIVE )
+            std::cout << -(int)( size - v ) << " ";
+    }
+    std::cout << std::endl;
 }
