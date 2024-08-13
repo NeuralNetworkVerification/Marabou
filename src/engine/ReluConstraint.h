@@ -264,6 +264,8 @@ public:
                              double bound,
                              Tightening::BoundType boundType ) const override;
 
+    int getLiteralForDecision() const;
+
 private:
     unsigned _b, _f;
     bool _auxVarInUse;

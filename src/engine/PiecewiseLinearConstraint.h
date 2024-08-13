@@ -544,6 +544,12 @@ public:
         return true;
     }
 
+    virtual int getLiteralForDecision() const
+    {
+        // TODO: remove default implementation after supporting other PLCs in CDCL
+        return 0;
+    }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )

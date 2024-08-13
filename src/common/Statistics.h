@@ -84,7 +84,11 @@ public:
         NUM_BACKJUMPS,
 
         // Sum of all jump sizes across all backjumps
-        SUM_BACKJUMPS
+        SUM_BACKJUMPS,
+
+        // Number of decisions performed by Cadical and Marabou
+        NUM_SAT_SOLVER_DECISIONS,
+        NUM_MARABOU_DECISIONS
     };
 
     enum StatisticsLongAttribute {

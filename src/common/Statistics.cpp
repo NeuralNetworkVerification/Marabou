@@ -47,6 +47,8 @@ Statistics::Statistics()
     _unsignedAttributes[MAX_BACKJUMP] = 0;
     _unsignedAttributes[NUM_BACKJUMPS] = 0;
     _unsignedAttributes[SUM_BACKJUMPS] = 0;
+    _unsignedAttributes[NUM_SAT_SOLVER_DECISIONS] = 0;
+    _unsignedAttributes[NUM_MARABOU_DECISIONS] = 0;
 
     _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
     _longAttributes[NUM_SIMPLEX_STEPS] = 0;
@@ -443,6 +445,10 @@ void Statistics::print()
     printf( "\tAverage jump size across all backjumps: %.10lf\n",
             getUnsignedAttribute( Statistics::SUM_BACKJUMPS ) /
                 (double)getUnsignedAttribute( Statistics::NUM_BACKJUMPS ) );
+    printf( "\tNumber of decisions performed by the SAT solver: %u\n",
+            getUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS ) );
+    printf( "\tNumber of decisions performed by Marabou: %u\n",
+            getUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
