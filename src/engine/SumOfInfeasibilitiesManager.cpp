@@ -32,6 +32,10 @@ SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const Query &inputQuer
           Options::get()->getFloat( Options::PROBABILITY_DENSITY_PARAMETER ) )
     , _statistics( NULL )
 {
+    if ( !inputQuery._networkLevelReasoner ||
+         inputQuery._networkLevelReasoner->getConstraintsInTopologicalOrder().size() <
+             _plConstraints.size() )
+        _initializationStrategy = SoIInitializationStrategy::CURRENT_ASSIGNMENT;
 }
 
 void SumOfInfeasibilitiesManager::resetPhasePattern()
@@ -82,13 +86,12 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
 
     resetPhasePattern();
 
-    if ( _initializationStrategy == SoIInitializationStrategy::INPUT_ASSIGNMENT &&
-         _networkLevelReasoner )
+    if ( _initializationStrategy == SoIInitializationStrategy::INPUT_ASSIGNMENT )
     {
+        ASSERT( _networkLevelReasoner );
         initializePhasePatternWithCurrentInputAssignment();
     }
-    else if ( _initializationStrategy == SoIInitializationStrategy::CURRENT_ASSIGNMENT ||
-              !_networkLevelReasoner )
+    else if ( _initializationStrategy == SoIInitializationStrategy::CURRENT_ASSIGNMENT )
     {
         initializePhasePatternWithCurrentAssignment();
     }
