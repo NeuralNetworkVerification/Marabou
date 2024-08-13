@@ -236,6 +236,11 @@ public:
     */
     void propagateLitAsSplit( int lit ) override;
 
+    /*
+      Returns on which phase to decide this constraint, as a cadical var
+     */
+    int getLiteralForDecision() const override;
+
 private:
     /*
       The variables that make up this constraint; _f = | _b |.

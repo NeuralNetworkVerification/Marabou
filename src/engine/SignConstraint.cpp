@@ -698,3 +698,21 @@ void SignConstraint::propagateLitAsSplit( int lit )
     else
         setPhaseStatus( SIGN_PHASE_NEGATIVE );
 }
+
+int SignConstraint::getLiteralForDecision() const
+{
+    ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
+
+    if ( _direction == SIGN_PHASE_NEGATIVE )
+        return -(int)_cadicalVars.front();
+    if ( _direction == SIGN_PHASE_POSITIVE )
+        return (int)_cadicalVars.front();
+
+    if ( existsAssignment( _f ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
+            return (int)_cadicalVars.front();
+        else
+            return -(int)_cadicalVars.front();
+    else
+        return -(int)_cadicalVars.front();
+}

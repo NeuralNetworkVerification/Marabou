@@ -544,6 +544,9 @@ public:
         return true;
     }
 
+    /*
+      Returns on which phase to decide this constraint, as a cadical var
+     */
     virtual int getLiteralForDecision() const
     {
         // TODO: remove default implementation after supporting other PLCs in CDCL

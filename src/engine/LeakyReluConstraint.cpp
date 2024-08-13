@@ -1041,3 +1041,22 @@ void LeakyReluConstraint::propagateLitAsSplit( int lit )
     else
         setPhaseStatus( RELU_PHASE_INACTIVE );
 }
+
+int LeakyReluConstraint::getLiteralForDecision() const
+{
+    ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
+
+    if ( _direction == RELU_PHASE_INACTIVE )
+        return -(int)_cadicalVars.front();
+    if ( _direction == RELU_PHASE_ACTIVE )
+        return (int)_cadicalVars.front();
+
+    if ( existsAssignment( _f ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
+            return (int)_cadicalVars.front();
+        else
+            return -(int)_cadicalVars.front();
+    else
+        return -(int)_cadicalVars.front();
+
+}

@@ -1012,3 +1012,10 @@ void AbsoluteValueConstraint::propagateLitAsSplit( int lit )
     else
         setPhaseStatus( ABS_PHASE_NEGATIVE );
 }
+
+int AbsoluteValueConstraint::getLiteralForDecision() const
+{
+    ASSERT( getPhaseStatus() == PhaseStatus::PHASE_NOT_FIXED );
+
+    return -(int)_cadicalVars.front();
+}
