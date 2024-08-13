@@ -4104,10 +4104,10 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
             linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
 
     // TODO remove
-    //    if ( checkLinearCombinationForClause(
-    //             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
-    //        return reduceClauseSizeWithLinearCombination(
-    //            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
+//    if ( checkLinearCombinationForClause(
+//             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
+//        return reduceClauseSizeWithLinearCombination(
+//            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
     Vector<int> can1 = support + r;
     Vector<int> newL = reduceClauseSizeWithLinearCombination(
@@ -4304,10 +4304,6 @@ void Engine::explainGurobiFailure()
             }
         }
     }
-
-    dumpClauseToIpqFile( List<int>( clause.begin(), clause.end() ),
-                         String( "../../gurobi_ipqs/gurobi" ) +
-                             Stringf( "%lu", TimeUtils::sampleMicro().tv_nsec ) );
 
     _smtCore.addExternalClause( clause );
     ENGINE_LOG( Stringf( "Conflict analysis - done, conflict length %u, level %u",
