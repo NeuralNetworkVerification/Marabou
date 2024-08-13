@@ -892,7 +892,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         _reasonClauseLiterals.clear();
         SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
 
-        if (!_fixedCadicalVars.exists(propagated_lit))
+        if ( !_fixedCadicalVars.exists( propagated_lit ) )
         {
             Vector<int> toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
 
@@ -1004,8 +1004,8 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _exitCode = SAT;
             return true;
         }
-
-        _engine->propagateBoundManagerTightenings();
+        if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
+            _engine->propagateBoundManagerTightenings();
 
         if ( !_externalClausesToAdd.empty() )
         {
