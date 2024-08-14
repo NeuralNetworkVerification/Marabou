@@ -767,7 +767,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     if ( _statistics )
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-        //        printCurrentState();
+//        printCurrentState();
     }
 
     checkIfShouldExitDueToTimeout();
@@ -819,7 +819,7 @@ int SmtCore::cb_decide()
         return lit;
     }
     SMT_LOG( "No decision made" );
-    if (_statistics)
+    if ( _statistics )
         _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
     return 0;
 }
@@ -846,7 +846,7 @@ int SmtCore::cb_propagate()
         if ( _statistics )
         {
             _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-            //            printCurrentState();
+//            printCurrentState();
         }
 
         // If no literals left to propagate, and no clause already found, attempt solving
@@ -1009,7 +1009,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _cadicalWrapper.addObservedVar( var );
 
         _engine->preSolve();
-        //        printCurrentState();
+//        printCurrentState();
         if ( _engine->solve() )
         {
             _exitCode = SAT;

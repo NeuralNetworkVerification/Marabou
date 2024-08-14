@@ -1129,26 +1129,28 @@ bool ReluConstraint::isBoundFixingPhase( unsigned int var,
                                          double bound,
                                          Tightening::BoundType boundType ) const
 {
-    if (getPhaseStatus() == RELU_PHASE_ACTIVE)
+    if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
     {
-        if (var == _b && boundType == Tightening::LB && !FloatUtils::isNegative(bound))
+        if ( var == _b && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
             return true;
 
-        if (var == _f && boundType == Tightening::LB && FloatUtils::isPositive(bound))
+        if ( var == _f && boundType == Tightening::LB && FloatUtils::isPositive( bound ) )
             return true;
 
-        if (var == _aux && boundType == Tightening::UB && FloatUtils::isZero(bound))
+        if ( _auxVarInUse && var == _aux && boundType == Tightening::UB &&
+             FloatUtils::isZero( bound ) )
             return true;
     }
-    else if (getPhaseStatus() == RELU_PHASE_INACTIVE)
+    else if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
     {
-        if (var == _b && boundType == Tightening::UB && !FloatUtils::isPositive(bound))
+        if ( var == _b && boundType == Tightening::UB && !FloatUtils::isPositive( bound ) )
             return true;
 
-        if (var == _f && boundType == Tightening::UB && !FloatUtils::isPositive(bound))
+        if ( var == _f && boundType == Tightening::UB && !FloatUtils::isPositive( bound ) )
             return true;
 
-        if (var == _aux && boundType == Tightening::LB && FloatUtils::isPositive(bound))
+        if ( _auxVarInUse && var == _aux && boundType == Tightening::LB &&
+             FloatUtils::isPositive( bound ) )
             return true;
     }
 

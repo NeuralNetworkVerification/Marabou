@@ -25,6 +25,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "SmtCore.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -149,6 +150,9 @@ void LeakyReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, 
         else if ( variable == _inactiveAux && FloatUtils::isPositive( bound ) )
             setPhaseStatus( RELU_PHASE_ACTIVE );
     }
+
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -164,6 +168,9 @@ void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, 
         else if ( variable == _inactiveAux && FloatUtils::isZero( bound ) )
             setPhaseStatus( RELU_PHASE_INACTIVE );
     }
+
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
@@ -1058,5 +1065,48 @@ int LeakyReluConstraint::getLiteralForDecision() const
             return -(int)_cadicalVars.front();
     else
         return -(int)_cadicalVars.front();
+}
 
+bool LeakyReluConstraint::isBoundFixingPhase( unsigned int var,
+                                              double bound,
+                                              Tightening::BoundType boundType ) const
+{
+    if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
+    {
+        if ( var == _b && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( var == _f && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( _auxVarsInUse )
+        {
+            if ( var == _activeAux && boundType == Tightening::UB && FloatUtils::isZero( bound ) )
+                return true;
+
+            if ( var == _inactiveAux && boundType == Tightening::LB &&
+                 FloatUtils::isPositive( bound ) )
+                return true;
+        }
+    }
+    else if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
+    {
+        if ( var == _b && boundType == Tightening::UB && FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( var == _f && boundType == Tightening::UB && FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( _auxVarsInUse )
+        {
+            if ( var == _activeAux && boundType == Tightening::LB &&
+                 FloatUtils::isPositive( bound ) )
+                return true;
+
+            if ( var == _inactiveAux && boundType == Tightening::UB && FloatUtils::isZero( bound ) )
+                return true;
+        }
+    }
+
+    return false;
 }

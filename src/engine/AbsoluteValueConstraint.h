@@ -241,6 +241,10 @@ public:
      */
     int getLiteralForDecision() const override;
 
+    bool isBoundFixingPhase( unsigned var,
+                             double bound,
+                             Tightening::BoundType boundType ) const override;
+
 private:
     /*
       The variables that make up this constraint; _f = | _b |.

@@ -21,6 +21,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "SmtCore.h"
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
@@ -827,80 +828,78 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
                 _posAux, 0, Tightening::UB, { _b }, Tightening::LB, *this );
-        return;
     }
 
     // Option 2: b's range is strictly negative:
-    if ( existsUpperBound( _b ) && getUpperBound( _b ) <= 0 )
+    else if ( existsUpperBound( _b ) && getUpperBound( _b ) <= 0 )
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
                 _negAux, 0, Tightening::UB, { _b }, Tightening::UB, *this );
-        return;
     }
 
-    if ( !existsLowerBound( _f ) )
-        return;
-
-    // Option 3: f's range is strictly disjoint from b's positive
-    // range
-    if ( existsUpperBound( _b ) && getLowerBound( _f ) > getUpperBound( _b ) )
+    else if ( existsLowerBound( _f ) )
     {
-        setPhaseStatus( ABS_PHASE_NEGATIVE );
-        if ( proofs )
-            _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this );
-        return;
-    }
-
-    // Option 4: f's range is strictly disjoint from b's negative
-    // range, in absolute value
-    if ( existsLowerBound( _b ) && getLowerBound( _f ) > -getLowerBound( _b ) )
-    {
-        setPhaseStatus( ABS_PHASE_POSITIVE );
-        if ( proofs )
-            _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this );
-        return;
-    }
-
-    if ( _auxVarsInUse )
-    {
-        // Option 5: posAux has become zero, phase is positive
-        if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
-        {
-            setPhaseStatus( ABS_PHASE_POSITIVE );
-            return;
-        }
-
-        // Option 6: posAux can never be zero, phase is negative
-        if ( existsLowerBound( _posAux ) && FloatUtils::isPositive( getLowerBound( _posAux ) ) )
+        // Option 3: f's range is strictly disjoint from b's positive
+        // range
+        if ( existsUpperBound( _b ) && getLowerBound( _f ) > getUpperBound( _b ) )
         {
             setPhaseStatus( ABS_PHASE_NEGATIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this );
-            return;
+                    _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this );
         }
 
-        // Option 7: negAux has become zero, phase is negative
-        if ( existsUpperBound( _negAux ) && FloatUtils::isZero( getUpperBound( _negAux ) ) )
-        {
-            setPhaseStatus( ABS_PHASE_NEGATIVE );
-            return;
-        }
-
-        // Option 8: negAux can never be zero, phase is positive
-        if ( existsLowerBound( _negAux ) && FloatUtils::isPositive( getLowerBound( _negAux ) ) )
+        // Option 4: f's range is strictly disjoint from b's negative
+        // range, in absolute value
+        else if ( existsLowerBound( _b ) && getLowerBound( _f ) > -getLowerBound( _b ) )
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this );
-            return;
+                    _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this );
+        }
+
+        else if ( _auxVarsInUse )
+        {
+            // Option 5: posAux has become zero, phase is positive
+            if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
+            {
+                setPhaseStatus( ABS_PHASE_POSITIVE );
+            }
+
+            // Option 6: posAux can never be zero, phase is negative
+            else if ( existsLowerBound( _posAux ) &&
+                      FloatUtils::isPositive( getLowerBound( _posAux ) ) )
+            {
+                setPhaseStatus( ABS_PHASE_NEGATIVE );
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this );
+            }
+
+            // Option 7: negAux has become zero, phase is negative
+            else if ( existsUpperBound( _negAux ) &&
+                      FloatUtils::isZero( getUpperBound( _negAux ) ) )
+            {
+                setPhaseStatus( ABS_PHASE_NEGATIVE );
+            }
+
+            // Option 8: negAux can never be zero, phase is positive
+            else if ( existsLowerBound( _negAux ) &&
+                      FloatUtils::isPositive( getLowerBound( _negAux ) ) )
+            {
+                setPhaseStatus( ABS_PHASE_POSITIVE );
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this );
+            }
         }
     }
+
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
@@ -1018,4 +1017,42 @@ int AbsoluteValueConstraint::getLiteralForDecision() const
     ASSERT( getPhaseStatus() == PhaseStatus::PHASE_NOT_FIXED );
 
     return -(int)_cadicalVars.front();
+}
+
+bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,
+                                                  double bound,
+                                                  Tightening::BoundType boundType ) const
+{
+    if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
+    {
+        if ( var == _b && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
+            return true;
+        if ( var == _f && boundType == Tightening::LB &&
+             FloatUtils::gt( bound, -getLowerBound( _b ) ) )
+            return true;
+        if ( _auxVarsInUse )
+        {
+            if ( var == _posAux && boundType == Tightening::UB && FloatUtils::isZero( bound ) )
+                return true;
+            if ( var == _negAux && boundType == Tightening::LB && FloatUtils::isPositive( bound ) )
+                return true;
+        }
+    }
+    else if ( getPhaseStatus() == ABS_PHASE_NEGATIVE )
+    {
+        if ( var == _b && boundType == Tightening::UB && !FloatUtils::isPositive( bound ) )
+            return true;
+        if ( var == _f && boundType == Tightening::LB &&
+             FloatUtils::gt( bound, getUpperBound( _b ) ) )
+            return true;
+        if ( _auxVarsInUse )
+        {
+            if ( var == _posAux && boundType == Tightening::LB && FloatUtils::isPositive( bound ) )
+                return true;
+            if ( var == _negAux && boundType == Tightening::UB && FloatUtils::isZero( bound ) )
+                return true;
+        }
+    }
+
+    return false;
 }

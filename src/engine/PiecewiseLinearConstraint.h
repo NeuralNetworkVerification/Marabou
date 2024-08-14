@@ -520,11 +520,6 @@ public:
     */
     virtual void propagateLitAsSplit( int lit ) = 0;
 
-    virtual List<unsigned> getCadicalVars() const
-    {
-        return _cadicalVars;
-    }
-
     inline std::shared_ptr<GroundBoundManager::GroundBoundEntry> getPhaseFixingEntry() const
     {
         return _cdPhaseFixingEntry->get();

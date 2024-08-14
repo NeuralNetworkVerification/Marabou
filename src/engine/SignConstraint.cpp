@@ -716,3 +716,27 @@ int SignConstraint::getLiteralForDecision() const
     else
         return -(int)_cadicalVars.front();
 }
+
+bool SignConstraint::isBoundFixingPhase( unsigned int var,
+                                         double bound,
+                                         Tightening::BoundType boundType ) const
+{
+    if ( getPhaseStatus() == SIGN_PHASE_POSITIVE )
+    {
+        if ( var == _b && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( var == _f && boundType == Tightening::LB && FloatUtils::gt( bound, -1 ) )
+            return true;
+    }
+    else if ( getPhaseStatus() == SIGN_PHASE_NEGATIVE )
+    {
+        if ( var == _b && boundType == Tightening::UB && FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( var == _f && boundType == Tightening::UB && FloatUtils::lt( bound, 1 ) )
+            return true;
+    }
+
+    return false;
+}
