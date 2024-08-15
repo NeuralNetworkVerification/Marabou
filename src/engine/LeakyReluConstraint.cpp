@@ -201,7 +201,7 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
                 // If we're in the active phase, activeAux should be 0
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _activeAux, 0, Tightening::UB, { variable }, Tightening::LB, *this );
+                        _activeAux, 0, Tightening::UB, { variable }, Tightening::LB, *this, true );
                 else if ( !proofs && _auxVarsInUse )
                     _boundManager->tightenUpperBound( _activeAux, 0 );
 
@@ -217,7 +217,7 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
             {
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _b, bound / _slope, Tightening::LB, { _f }, Tightening::LB, *this );
+                        _b, bound / _slope, Tightening::LB, { _f }, Tightening::LB, *this, false );
                 else
                     _boundManager->tightenLowerBound( _b, bound / _slope, *_inactiveTighteningRow );
             }
@@ -229,7 +229,7 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
             // Inactive phase
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _inactiveAux, 0, Tightening::UB, { _activeAux }, Tightening::LB, *this );
+                    _inactiveAux, 0, Tightening::UB, { _activeAux }, Tightening::LB, *this, true );
             else
                 _boundManager->tightenUpperBound( _inactiveAux, 0 );
         }
@@ -240,7 +240,7 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
             // Active phase
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _activeAux, 0, Tightening::UB, { _inactiveAux }, Tightening::LB, *this );
+                    _activeAux, 0, Tightening::UB, { _inactiveAux }, Tightening::LB, *this, true );
             else
                 _boundManager->tightenUpperBound( _activeAux, 0 );
         }
@@ -278,7 +278,7 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 unsigned partner = ( variable == _f ) ? _b : _f;
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        partner, bound, Tightening::UB, { variable }, Tightening::UB, *this );
+                        partner, bound, Tightening::UB, { variable }, Tightening::UB, *this, false );
                 else
                     _boundManager->tightenUpperBound( partner, bound );
             }
@@ -287,7 +287,7 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 // A negative upper bound of b implies inactive phase
                 if ( proofs && _auxVarsInUse )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _inactiveAux, 0, Tightening::UB, { _b }, Tightening::UB, *this );
+                        _inactiveAux, 0, Tightening::UB, { _b }, Tightening::UB, *this, true );
 
                 _boundManager->tightenUpperBound( _f, _slope * bound, *_inactiveTighteningRow );
             }
@@ -296,7 +296,7 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 // A negative upper bound of f implies inactive phase as well
                 if ( proofs && _auxVarsInUse )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _inactiveAux, 0, Tightening::UB, { _f }, Tightening::UB, *this );
+                        _inactiveAux, 0, Tightening::UB, { _f }, Tightening::UB, *this, true );
 
                 _boundManager->tightenUpperBound( _b, bound / _slope, *_inactiveTighteningRow );
             }

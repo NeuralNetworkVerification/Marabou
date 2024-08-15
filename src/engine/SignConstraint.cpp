@@ -24,6 +24,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "SignConstraint.h"
+#include "SmtCore.h"
 #include "Statistics.h"
 
 #ifdef _WIN32
@@ -403,9 +404,9 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                     throw InfeasibleQueryException();
 
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this );
+                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::LB, { variable }, Tightening::LB, *this );
+                    _b, 0, Tightening::LB, { variable }, Tightening::LB, *this, false );
             }
             else
             {
@@ -421,11 +422,14 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
         {
             if ( _boundManager->shouldProduceProofs() )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this );
+                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
             else
                 _boundManager->tightenLowerBound( _f, 1 );
         }
     }
+
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void SignConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -453,9 +457,9 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
                     throw InfeasibleQueryException();
 
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this );
+                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::UB, { variable }, Tightening::UB, *this );
+                    _b, 0, Tightening::UB, { variable }, Tightening::UB, *this, false );
             }
             else
             {
@@ -471,11 +475,14 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         {
             if ( _boundManager->shouldProduceProofs() )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this );
+                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
             else
                 _boundManager->tightenUpperBound( _f, -1 );
         }
     }
+
+    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const

@@ -147,13 +147,13 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
                 double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) );
                 // If phase is not fixed, both bounds are stored and checker should check the max of
                 // the two
-                if ( proofs && !phaseFixed() )
+                if ( proofs && !phaseFixed() ) // TODO modify explain phase
                     _boundManager->addLemmaExplanationAndTightenBound( _f,
                                                                        fUpperBound,
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       *this );
+                                                                       *this, false );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -227,13 +227,13 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
                 double fUpperBound = FloatUtils::max( bound, -getLowerBound( _b ) );
                 // If phase is not fixed, both bonds are stored and checker should check the max of
                 // the two
-                if ( proofs && !phaseFixed() )
+                if ( proofs && !phaseFixed() ) // TODO modify explain phase
                     _boundManager->addLemmaExplanationAndTightenBound( _f,
                                                                        fUpperBound,
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       *this );
+                                                                       *this, false );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -827,7 +827,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b }, Tightening::LB, *this );
+                _posAux, 0, Tightening::UB, { _b }, Tightening::LB, *this, true );
     }
 
     // Option 2: b's range is strictly negative:
@@ -836,7 +836,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b }, Tightening::UB, *this );
+                _negAux, 0, Tightening::UB, { _b }, Tightening::UB, *this, true );
     }
 
     else if ( existsLowerBound( _f ) )
@@ -848,7 +848,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
             setPhaseStatus( ABS_PHASE_NEGATIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this );
+                    _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this, true );
         }
 
         // Option 4: f's range is strictly disjoint from b's negative
@@ -858,7 +858,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
             setPhaseStatus( ABS_PHASE_POSITIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this );
+                    _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this, true );
         }
 
         else if ( _auxVarsInUse )
@@ -867,6 +867,9 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
             if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
             {
                 setPhaseStatus( ABS_PHASE_POSITIVE );
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _posAux, 0, Tightening::UB, { _posAux }, Tightening::UB, *this, true );
             }
 
             // Option 6: posAux can never be zero, phase is negative
@@ -874,9 +877,10 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
                       FloatUtils::isPositive( getLowerBound( _posAux ) ) )
             {
                 setPhaseStatus( ABS_PHASE_NEGATIVE );
+                // TODO modify code to accept phase fixings without a lemma
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this );
+                        _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this, true );
             }
 
             // Option 7: negAux has become zero, phase is negative
@@ -884,6 +888,9 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
                       FloatUtils::isZero( getUpperBound( _negAux ) ) )
             {
                 setPhaseStatus( ABS_PHASE_NEGATIVE );
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _negAux, 0, Tightening::UB, { _negAux }, Tightening::UB, *this, true );
             }
 
             // Option 8: negAux can never be zero, phase is positive
@@ -891,9 +898,10 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
                       FloatUtils::isPositive( getLowerBound( _negAux ) ) )
             {
                 setPhaseStatus( ABS_PHASE_POSITIVE );
+                // TODO modify code to accept phase fixings without a lemma
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this );
+                        _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this, true );
             }
         }
     }
@@ -1025,10 +1033,9 @@ bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,
 {
     if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
     {
-        if ( var == _b && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
+        if ( var == _b && boundType == Tightening::LB && bound >= 0 )
             return true;
-        if ( var == _f && boundType == Tightening::LB &&
-             FloatUtils::gt( bound, -getLowerBound( _b ) ) )
+        if ( var == _f && boundType == Tightening::LB && bound > -getLowerBound( _b ) )
             return true;
         if ( _auxVarsInUse )
         {
@@ -1040,10 +1047,9 @@ bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,
     }
     else if ( getPhaseStatus() == ABS_PHASE_NEGATIVE )
     {
-        if ( var == _b && boundType == Tightening::UB && !FloatUtils::isPositive( bound ) )
+        if ( var == _b && boundType == Tightening::UB && bound <= 0 )
             return true;
-        if ( var == _f && boundType == Tightening::LB &&
-             FloatUtils::gt( bound, getUpperBound( _b ) ) )
+        if ( var == _f && boundType == Tightening::LB && bound >getUpperBound( _b ) )
             return true;
         if ( _auxVarsInUse )
         {
