@@ -35,6 +35,11 @@ public:
     unsigned numberOfLayers;
     Vector<unsigned> maxLayerIndices;
 
+    static void setWeightsAndBiases( torch::nn::Linear &linearLayer,
+                              const NLR::Layer *layer,
+                              unsigned sourceLayer,
+                              unsigned inputSize,
+                              unsigned outputSize );
     void weightedSum( unsigned i, const NLR::Layer *layer );
     explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
