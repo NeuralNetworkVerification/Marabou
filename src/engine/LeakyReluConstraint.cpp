@@ -244,9 +244,10 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
             else
                 _boundManager->tightenUpperBound( _activeAux, 0 );
         }
+
+        checkIfLowerBoundUpdateFixesPhase( variable, bound );
     }
 
-    checkIfLowerBoundUpdateFixesPhase( variable, bound );
 }
 
 void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -301,9 +302,10 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 _boundManager->tightenUpperBound( _b, bound / _slope, *_inactiveTighteningRow );
             }
         }
+
+        checkIfUpperBoundUpdateFixesPhase( variable, bound );
     }
 
-    checkIfUpperBoundUpdateFixesPhase( variable, bound );
 }
 
 bool LeakyReluConstraint::participatingVariable( unsigned variable ) const
