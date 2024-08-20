@@ -660,6 +660,11 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
                       is_fixed )
                  .ascii() );
 
+    // TODO rethink
+    // Could happen if lit is deduced by SAT solver. Thus propagating -lit will lead to UNSAT.
+    if ( isLiteralToBePropagated( -lit ) )
+        return;
+
     // Allow notifying a negation of assigned literal only when a conflict is already discovered
     ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
 

@@ -4103,11 +4103,10 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
         return reduceClauseSizeWithLinearCombination(
             linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
 
-    // TODO remove
-//    if ( checkLinearCombinationForClause(
-//             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
-//        return reduceClauseSizeWithLinearCombination(
-//            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
+    if ( checkLinearCombinationForClause(
+             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
+        return reduceClauseSizeWithLinearCombination(
+            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
     Vector<int> can1 = support + r;
     Vector<int> newL = reduceClauseSizeWithLinearCombination(
@@ -4131,18 +4130,33 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
     for ( int lit : clause )
     {
         constraint = _smtCore.getConstraintFromLit( lit );
-        ASSERT( constraint && constraint->getType() == RELU );
+        ASSERT( constraint );
         ASSERT( constraint->phaseFixed() || !constraint->isActive() );
-        ASSERT( constraint->phaseFixed() || !constraint->isActive() );
+        PiecewiseLinearCaseSplit litSplit;
         if ( lit > 0 )
         {
-            groundLowerBounds[( (ReluConstraint *)constraint )->getB()] = 0;
-            groundUpperBounds[( (ReluConstraint *)constraint )->getAux()] = 0;
+            if ( constraint->getType() == RELU || constraint->getType() == LEAKY_RELU )
+                litSplit = constraint->getCaseSplit( RELU_PHASE_ACTIVE );
+            else if ( constraint->getType() == ABSOLUTE_VALUE )
+                litSplit = constraint->getCaseSplit( ABS_PHASE_POSITIVE );
+            else if ( constraint->getType() == SIGN )
+                litSplit = constraint->getCaseSplit( SIGN_PHASE_POSITIVE );
         }
         else
         {
-            groundUpperBounds[( (ReluConstraint *)constraint )->getB()] = 0;
-            groundUpperBounds[( (ReluConstraint *)constraint )->getF()] = 0;
+            if ( constraint->getType() == RELU || constraint->getType() == LEAKY_RELU )
+                litSplit = constraint->getCaseSplit( RELU_PHASE_INACTIVE );
+            else if ( constraint->getType() == ABSOLUTE_VALUE )
+                litSplit = constraint->getCaseSplit( ABS_PHASE_NEGATIVE );
+            else if ( constraint->getType() == SIGN )
+                litSplit = constraint->getCaseSplit( SIGN_PHASE_NEGATIVE );
+        }
+        ASSERT( !litSplit.getBoundTightenings().empty() )
+
+        for ( const auto tightening : litSplit.getBoundTightenings() )
+        {
+            Vector<double> temp = tightening._type == Tightening::UB ?   groundUpperBounds :   groundLowerBounds;
+            temp[tightening._variable] = tightening._value;
         }
     }
 
@@ -4175,8 +4189,6 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
                                    const Set<int> &clause,
                                    const std::shared_ptr<PLCLemma> lemma ) const
 {
-    // TODO apply to additional PLC types
-    ASSERT( !lemma || lemma->getConstraintType() == RELU );
     ASSERT( !explanation.empty() && !clause.empty() );
     Vector<double> explanationLinearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(

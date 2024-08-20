@@ -390,46 +390,47 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
 
     // Otherwise - update bound
     setLowerBound( variable, bound );
-
-    if ( variable == _f && FloatUtils::gt( bound, -1 ) )
+    if ( !phaseFixed() )
     {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-
-        if ( _boundManager != nullptr )
+        if ( variable == _f && FloatUtils::gt( bound, -1 ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
-            {
-                // If lb of f is > 1, we have a contradiction
-                if ( FloatUtils::gt( bound, 1 ) )
-                    throw InfeasibleQueryException();
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
 
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::LB, { variable }, Tightening::LB, *this, false );
-            }
-            else
+            if ( _boundManager != nullptr )
             {
-                _boundManager->tightenLowerBound( _f, 1 );
-                _boundManager->tightenLowerBound( _b, 0 );
+                if ( _boundManager->shouldProduceProofs() )
+                {
+                    // If lb of f is > 1, we have a contradiction
+                    if ( FloatUtils::gt( bound, 1 ) )
+                        throw InfeasibleQueryException();
+
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _b, 0, Tightening::LB, { variable }, Tightening::LB, *this, false );
+                }
+                else
+                {
+                    _boundManager->tightenLowerBound( _f, 1 );
+                    _boundManager->tightenLowerBound( _b, 0 );
+                }
             }
         }
-    }
-    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-    {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-        if ( _boundManager != nullptr )
+        else if ( variable == _b && !FloatUtils::isNegative( bound ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
-            else
-                _boundManager->tightenLowerBound( _f, 1 );
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
+            if ( _boundManager != nullptr )
+            {
+                if ( _boundManager->shouldProduceProofs() )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
+                else
+                    _boundManager->tightenLowerBound( _f, 1 );
+            }
         }
+        if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+            _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
     }
-
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void SignConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -444,45 +445,47 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
 
     // Otherwise - update bound
     setUpperBound( variable, bound );
-
-    if ( variable == _f && FloatUtils::lt( bound, 1 ) )
+    if ( !phaseFixed() )
     {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _boundManager != nullptr )
+        if ( variable == _f && FloatUtils::lt( bound, 1 ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
+            if ( _boundManager != nullptr )
             {
-                // If ub of f is < -1, we have a contradiction
-                if ( FloatUtils::lt( bound, -1 ) )
-                    throw InfeasibleQueryException();
+                if ( _boundManager->shouldProduceProofs() )
+                {
+                    // If ub of f is < -1, we have a contradiction
+                    if ( FloatUtils::lt( bound, -1 ) )
+                        throw InfeasibleQueryException();
 
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::UB, { variable }, Tightening::UB, *this, false );
-            }
-            else
-            {
-                _boundManager->tightenUpperBound( _f, -1 );
-                _boundManager->tightenUpperBound( _b, 0 );
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _b, 0, Tightening::UB, { variable }, Tightening::UB, *this, false );
+                }
+                else
+                {
+                    _boundManager->tightenUpperBound( _f, -1 );
+                    _boundManager->tightenUpperBound( _b, 0 );
+                }
             }
         }
-    }
-    else if ( variable == _b && FloatUtils::isNegative( bound ) )
-    {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _boundManager != nullptr )
+        else if ( variable == _b && FloatUtils::isNegative( bound ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
-            else
-                _boundManager->tightenUpperBound( _f, -1 );
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
+            if ( _boundManager != nullptr )
+            {
+                if ( _boundManager->shouldProduceProofs() )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
+                else
+                    _boundManager->tightenUpperBound( _f, -1 );
+            }
         }
-    }
 
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+        if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+            _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+    }
 }
 
 List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
@@ -685,9 +688,9 @@ int SignConstraint::propagatePhaseAsLit() const
 {
     ASSERT( _cadicalVars.size() == 1 )
     if ( getPhaseStatus() == SIGN_PHASE_POSITIVE )
-        return _cadicalVars.back();
+        return (int)_cadicalVars.back();
     else if ( getPhaseStatus() == SIGN_PHASE_NEGATIVE )
-        return -_cadicalVars.back();
+        return -(int)_cadicalVars.back();
     else
         return 0;
 }
