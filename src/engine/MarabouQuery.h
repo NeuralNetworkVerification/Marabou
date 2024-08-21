@@ -1,0 +1,173 @@
+/*********************                                                        */
+/*! \file MarabouQuery.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Andrew Wu
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
+ **/
+
+#ifndef __MarabouQuery_h__
+#define __MarabouQuery_h__
+
+#include "Equation.h"
+#include "MString.h"
+#include "Map.h"
+#include "NonlinearConstraint.h"
+#include "PiecewiseLinearConstraint.h"
+#include "context/cdo.h"
+
+#include <context/cdhashmap.h>
+#include <context/cdlist.h>
+#include <context/context.h>
+
+class MarabouQuery
+{
+    using VariableValueMap = CVC4::context::CDHashMap<unsigned, double>;
+    using VariableIndexMap = CVC4::context::CDHashMap<unsigned, unsigned>;
+    using IndexVariableMap = CVC4::context::CDHashMap<unsigned, unsigned>;
+    using EquationList = CVC4::context::CDList<Equation>;
+    using PLConstraintsList = CVC4::context::CDList<PiecewiseLinearConstraint *>;
+    using NLConstraintsList = CVC4::context::CDList<NonlinearConstraint *>;
+
+public:
+    MarabouQuery();
+    ~MarabouQuery();
+
+    void setNumberOfVariables( unsigned numberOfVariables );
+    unsigned getNumberOfVariables() const;
+    unsigned getNewVariable();
+
+    /*
+      The set*Bound methods will overwrite the currently stored bound of the variable.
+      They will throw an error if the context level is positive and the variable bound
+      has already been set.
+
+      The tighten*Bound methods will have update the currently stored bound of the
+      variable if and only if the new bound is tighter. The methods return true if and
+      if only the bound is tightened.
+    */
+    void setLowerBound( unsigned variable, double bound );
+    void setUpperBound( unsigned variable, double bound );
+    bool tightenLowerBound( unsigned variable, double bound );
+    bool tightenUpperBound( unsigned variable, double bound );
+
+    double getLowerBound( unsigned variable ) const;
+    double getUpperBound( unsigned variable ) const;
+    void getLowerBounds( Map<unsigned, double> &lowerBounds ) const;
+    void getUpperBounds( Map<unsigned, double> &upperBounds ) const;
+    void clearBounds();
+
+    /*
+      Note: currently there is no API call for removing equations, PLConstraints or NLConstraints,
+      becaues CDList does not support removal.
+    */
+    void addEquation( const Equation &equation );
+    void getEquations( List<Equation> &equations ) const;
+
+    void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
+    void getPiecewiseLinearConstraints( List<PiecewiseLinearConstraint *> &constraints ) const;
+    void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling );
+
+    void addNonlinearConstraint( NonlinearConstraint *constraint );
+    void getNonlinearConstraints( List<NonlinearConstraint *> &constraints ) const;
+
+    /*
+      Methods for handling input and output variables
+    */
+    void markInputVariable( unsigned variable, unsigned inputIndex );
+    void markOutputVariable( unsigned variable, unsigned outputIndex );
+    unsigned inputVariableByIndex( unsigned index ) const;
+    unsigned outputVariableByIndex( unsigned index ) const;
+    unsigned getNumInputVariables() const;
+    unsigned getNumOutputVariables() const;
+    void getInputVariables( List<unsigned> &inputVariables ) const;
+    void getOutputVariables( List<unsigned> &outputVariables ) const;
+
+    /*
+      Methods for setting and getting the solution.
+    */
+    void setSolutionValue( unsigned variable, double value );
+    double getSolutionValue( unsigned variable ) const;
+
+    /*
+      Store a correct possible solution
+    */
+    void storeDebuggingSolution( unsigned variable, double value );
+
+    /*
+      Serializes the query to a file which can then be loaded using QueryLoader.
+    */
+    void saveQuery( const String &fileName );
+
+    /*
+      Print input and output bounds
+    */
+    void printInputOutputBounds() const;
+    void dump() const;
+    void printAllBounds() const;
+
+    /*
+      The following methods perform directly read/write to the _userContext object.
+    */
+    inline unsigned getContextLevel()
+    {
+        return _userContext.getLevel();
+    };
+    inline void pushContext()
+    {
+        _userContext.push();
+    };
+    inline void popContext()
+    {
+        _userContext.pop();
+    };
+    inline void popContextTo( unsigned toLevel )
+    {
+        _userContext.popto( toLevel );
+    };
+
+private:
+    /*
+      This is an outward-facing context which manages incrementally pushing and popping constraints
+    */
+    CVC4::context::Context _userContext;
+
+    /*
+      The following constitutes a verification query
+      Mapping between input/output variables and their indices are optional
+    */
+    CVC4::context::CDO<unsigned> _numberOfVariables;
+    EquationList _equations;
+    VariableValueMap _lowerBounds;
+    VariableValueMap _upperBounds;
+    PLConstraintsList _plConstraints;
+    NLConstraintsList _nlConstraints;
+    VariableIndexMap _variableToInputIndex;
+    IndexVariableMap _inputIndexToVariable;
+    VariableIndexMap _variableToOutputIndex;
+    IndexVariableMap _outputIndexToVariable;
+
+    /*
+      Stores the satisfying assignment.
+    */
+    VariableValueMap _solution;
+
+    /*
+      Stores a correct possible assignment.
+    */
+    VariableValueMap _debuggingSolution;
+
+    /*
+      Free any stored pl constraints.
+    */
+    void freeConstraintsIfNeeded();
+};
+
+#endif // __MarabouQuery_h__

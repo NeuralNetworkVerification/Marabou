@@ -24,10 +24,13 @@
 #include "NonlinearConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 
+class MarabouQuery;
+
 class InputQuery
 {
 public:
     InputQuery();
+    InputQuery( const MarabouQuery & /*query*/ );
     ~InputQuery();
 
     /*

@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file InputQuery.cpp
+/*! \file MarabouQuery.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Christopher Lazarus, Shantanu Thakoor, Andrew Wu
+ **   Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,55 +13,63 @@
 
  **/
 
-#include "InputQuery.h"
+#include "MarabouQuery.h"
 
 #include "AutoFile.h"
 #include "BilinearConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "MStringf.h"
 #include "MarabouError.h"
-#include "MarabouQuery.h"
 #include "MaxConstraint.h"
 #include "Options.h"
 #include "RoundConstraint.h"
 #include "SoftmaxConstraint.h"
-#include "SymbolicBoundTighteningType.h"
 
 #define INPUT_QUERY_LOG( x, ... )                                                                  \
-    LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
+    LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Marabou Query: %s\n", x )
 
-InputQuery::InputQuery()
-    : _ensureSameSourceLayerInNLR( Options::get()->getSymbolicBoundTighteningType() ==
-                                   SymbolicBoundTighteningType::DEEP_POLY )
-    , _networkLevelReasoner( NULL )
+using namespace CVC4::context;
+
+MarabouQuery::MarabouQuery()
+    : _userContext()
+    , _equations( &_userContext )
+    , _lowerBounds( &_userContext )
+    , _upperBounds( &_userContext )
+    , _plConstraints( &_userContext )
+    , _nlConstraints( &_userContext )
+    , _variableToInputIndex( &_userContext )
+    , _inputIndexToVariable( &_userContext )
+    , _variableToOutputIndex( &_userContext )
+    , _outputIndexToVariable( &_userContext )
+    , _solution( &_userContext )
+    , _debuggingSolution( &_userContext )
 {
 }
 
-InputQuery::InputQuery( const MarabouQuery & /*query*/ )
-    : _ensureSameSourceLayerInNLR( Options::get()->getSymbolicBoundTighteningType() ==
-                                   SymbolicBoundTighteningType::DEEP_POLY )
-    , _networkLevelReasoner( NULL )
+MarabouQuery::~MarabouQuery()
 {
+    z freeConstraintsIfNeeded();
 }
 
-InputQuery::~InputQuery()
-{
-    freeConstraintsIfNeeded();
-    if ( _networkLevelReasoner )
-    {
-        delete _networkLevelReasoner;
-        _networkLevelReasoner = NULL;
-    }
-}
-
-void InputQuery::setNumberOfVariables( unsigned numberOfVariables )
+void MarabouQuery::setNumberOfVariables( unsigned numberOfVariables )
 {
     _numberOfVariables = numberOfVariables;
 }
 
-void InputQuery::setLowerBound( unsigned variable, double bound )
+unsigned MarabouQuery::getNumberOfVariables() const
+{
+    return _numberOfVariables;
+}
+
+unsigned MarabouQuery::getNewVariable()
+{
+    return _numberOfVariables++;
+}
+
+void MarabouQuery::setLowerBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
@@ -72,10 +80,18 @@ void InputQuery::setLowerBound( unsigned variable, double bound )
                                 .ascii() );
     }
 
+    if ( getContextLevel() > 0 && _lowerBounds.exists( variable ) )
+        throw MarabouError(
+            MarabouError::INPUT_QUERY_VARIABLE_BOUND_ALREADY_SET,
+            Stringf( "Lower bound of variable %u has already been set, consider using "
+                     "the tightenLowerBound method",
+                     variable )
+                .ascii() );
+
     _lowerBounds[variable] = bound;
 }
 
-void InputQuery::setUpperBound( unsigned variable, double bound )
+void MarabouQuery::setUpperBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
@@ -86,25 +102,62 @@ void InputQuery::setUpperBound( unsigned variable, double bound )
                                 .ascii() );
     }
 
+    if ( getContextLevel() > 0 && _upperBounds.exists( variable ) )
+        throw MarabouError(
+            MarabouError::INPUT_QUERY_VARIABLE_BOUND_ALREADY_SET,
+            Stringf( "Upper bound of variable %u has already been set, consider using "
+                     "the tightenUpperBound method",
+                     variable )
+                .ascii() );
+
     _upperBounds[variable] = bound;
 }
 
-void InputQuery::addEquation( const Equation &equation )
+bool MarabouQuery::tightenLowerBound( unsigned variable, double bound )
 {
-    _equations.append( equation );
+    if ( variable >= _numberOfVariables )
+    {
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
+                            Stringf( "Variable = %u, number of variables = %u (setLowerBound)",
+                                     variable,
+                                     _numberOfVariables )
+                                .ascii() );
+    }
+
+    if ( !_lowerBounds.exists( variable ) || _lowerBounds[variable] < bound )
+    {
+        _lowerBounds[variable] = bound;
+        return true;
+    }
+    return false;
 }
 
-unsigned InputQuery::getNumberOfVariables() const
+bool MarabouQuery::tightenUpperBound( unsigned variable, double bound )
 {
-    return _numberOfVariables;
+    if ( variable >= _numberOfVariables )
+    {
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
+                            Stringf( "Variable = %u, number of variables = %u (setUpperBound)",
+                                     variable,
+                                     _numberOfVariables )
+                                .ascii() );
+    }
+
+    if ( !_upperBounds.exists( variable ) || _upperBounds[variable] > bound )
+    {
+        _upperBounds[variable] = bound;
+        return true;
+    }
+    return false;
 }
 
-unsigned InputQuery::getNewVariable()
+
+void MarabouQuery::addEquation( const Equation &equation )
 {
-    return _numberOfVariables++;
+    _equations.push_back( equation );
 }
 
-double InputQuery::getLowerBound( unsigned variable ) const
+double MarabouQuery::getLowerBound( unsigned variable ) const
 {
     if ( variable >= _numberOfVariables )
     {
@@ -121,7 +174,7 @@ double InputQuery::getLowerBound( unsigned variable ) const
     return _lowerBounds.get( variable );
 }
 
-double InputQuery::getUpperBound( unsigned variable ) const
+double MarabouQuery::getUpperBound( unsigned variable ) const
 {
     if ( variable >= _numberOfVariables )
     {
@@ -138,12 +191,12 @@ double InputQuery::getUpperBound( unsigned variable ) const
     return _upperBounds.get( variable );
 }
 
-List<Equation> &InputQuery::getEquations()
+MarabouQuery::EquationList &MarabouQuery::getEquations()
 {
     return _equations;
 }
 
-void InputQuery::removeEquationsByIndex( const Set<unsigned> indices )
+void MarabouQuery::removeEquationsByIndex( const Set<unsigned> indices )
 {
     unsigned m = _equations.size();
     List<Equation>::iterator it = _equations.begin();
@@ -157,17 +210,17 @@ void InputQuery::removeEquationsByIndex( const Set<unsigned> indices )
     }
 }
 
-const List<Equation> &InputQuery::getEquations() const
+const EquationList &MarabouQuery::getEquations() const
 {
     return _equations;
 }
 
-void InputQuery::setSolutionValue( unsigned variable, double value )
+void MarabouQuery::setSolutionValue( unsigned variable, double value )
 {
     _solution[variable] = value;
 }
 
-double InputQuery::getSolutionValue( unsigned variable ) const
+double MarabouQuery::getSolutionValue( unsigned variable ) const
 {
     if ( !_solution.exists( variable ) )
         throw MarabouError( MarabouError::VARIABLE_DOESNT_EXIST_IN_SOLUTION,
@@ -176,12 +229,12 @@ double InputQuery::getSolutionValue( unsigned variable ) const
     return _solution.get( variable );
 }
 
-void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
+void MarabouQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
 {
     _plConstraints.append( constraint );
 }
 
-void InputQuery::addClipConstraint( unsigned b, unsigned f, double floor, double ceiling )
+void MarabouQuery::addClipConstraint( unsigned b, unsigned f, double floor, double ceiling )
 {
     /*
       f = clip(b, floor, ceiling)
@@ -228,32 +281,32 @@ void InputQuery::addClipConstraint( unsigned b, unsigned f, double floor, double
     addEquation( eq3 );
 }
 
-List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints()
+List<PiecewiseLinearConstraint *> &MarabouQuery::getPiecewiseLinearConstraints()
 {
     return _plConstraints;
 }
 
-const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstraints() const
+const List<PiecewiseLinearConstraint *> &MarabouQuery::getPiecewiseLinearConstraints() const
 {
     return _plConstraints;
 }
 
-void InputQuery::addNonlinearConstraint( NonlinearConstraint *constraint )
+void MarabouQuery::addNonlinearConstraint( NonlinearConstraint *constraint )
 {
     _nlConstraints.append( constraint );
 }
 
-List<NonlinearConstraint *> &InputQuery::getNonlinearConstraints()
+List<NonlinearConstraint *> &MarabouQuery::getNonlinearConstraints()
 {
     return _nlConstraints;
 }
 
-const List<NonlinearConstraint *> &InputQuery::getNonlinearConstraints() const
+const List<NonlinearConstraint *> &MarabouQuery::getNonlinearConstraints() const
 {
     return _nlConstraints;
 }
 
-unsigned InputQuery::countInfiniteBounds()
+unsigned MarabouQuery::countInfiniteBounds()
 {
     unsigned result = 0;
 
@@ -276,7 +329,7 @@ unsigned InputQuery::countInfiniteBounds()
     return result;
 }
 
-void InputQuery::mergeIdenticalVariables( unsigned v1, unsigned v2 )
+void MarabouQuery::mergeIdenticalVariables( unsigned v1, unsigned v2 )
 {
     // Handle equations
     for ( auto &equation : getEquations() )
@@ -304,12 +357,12 @@ void InputQuery::mergeIdenticalVariables( unsigned v1, unsigned v2 )
     // TODO: update lower and upper bounds
 }
 
-void InputQuery::removeEquation( Equation e )
+void MarabouQuery::removeEquation( Equation e )
 {
     _equations.erase( e );
 }
 
-InputQuery &InputQuery::operator=( const InputQuery &other )
+MarabouQuery &MarabouQuery::operator=( const MarabouQuery &other )
 {
     INPUT_QUERY_LOG( "Calling deep copy constructor..." );
 
@@ -317,8 +370,10 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
 
     _numberOfVariables = other._numberOfVariables;
     _equations = other._equations;
-    _lowerBounds = other._lowerBounds;
-    _upperBounds = other._upperBounds;
+    for ( const auto &pair : other._lowerBounds )
+        _lowerBounds[pair.first] = pair.second;
+    for ( const auto &pair : other._upperBounds )
+        _upperBounds[pair.first] = pair.second;
     _solution = other._solution;
     _debuggingSolution = other._debuggingSolution;
 
@@ -401,13 +456,16 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     return *this;
 }
 
-InputQuery::InputQuery( const InputQuery &other )
-    : _networkLevelReasoner( NULL )
+MarabouQuery::MarabouQuery( const MarabouQuery &other )
+    : _userContext()
+    , _lowerBounds( &_userContext )
+    , _upperBounds( &_userContext )
+    , _networkLevelReasoner( NULL )
 {
     *this = other;
 }
 
-void InputQuery::freeConstraintsIfNeeded()
+void MarabouQuery::freeConstraintsIfNeeded()
 {
     for ( auto &it : _plConstraints )
         delete it;
@@ -420,28 +478,40 @@ void InputQuery::freeConstraintsIfNeeded()
     _nlConstraints.clear();
 }
 
-const Map<unsigned, double> &InputQuery::getLowerBounds() const
+const MarabouQuery::BoundMap &MarabouQuery::getLowerBounds() const
 {
     return _lowerBounds;
 }
 
-const Map<unsigned, double> &InputQuery::getUpperBounds() const
+const MarabouQuery::BoundMap &MarabouQuery::getUpperBounds() const
 {
     return _upperBounds;
 }
 
-void InputQuery::clearBounds()
+void MarabouQuery::getLowerBounds( Map<unsigned, double> &lowerBounds ) const
+{
+    for ( const auto &pair : _lowerBounds )
+        lowerBounds[pair.first] = pair.second;
+}
+
+void MarabouQuery::getUpperBounds( Map<unsigned, double> &upperBounds ) const
+{
+    for ( const auto &pair : _upperBounds )
+        upperBounds[pair.first] = pair.second;
+}
+
+void MarabouQuery::clearBounds()
 {
     _lowerBounds.clear();
     _upperBounds.clear();
 }
 
-void InputQuery::storeDebuggingSolution( unsigned variable, double value )
+void MarabouQuery::storeDebuggingSolution( unsigned variable, double value )
 {
     _debuggingSolution[variable] = value;
 }
 
-void InputQuery::saveQuery( const String &fileName )
+void MarabouQuery::saveQuery( const String &fileName )
 {
     AutoFile queryFile( fileName );
     queryFile->open( IFile::MODE_WRITE_TRUNCATE );
@@ -460,8 +530,8 @@ void InputQuery::saveQuery( const String &fileName )
     queryFile->write( Stringf( "%u", _plConstraints.size() + _nlConstraints.size() ) );
 
     printf( "Number of variables: %u\n", _numberOfVariables );
-    printf( "Number of lower bounds: %u\n", _lowerBounds.size() );
-    printf( "Number of upper bounds: %u\n", _upperBounds.size() );
+    printf( "Number of lower bounds: %zu\n", _lowerBounds.size() );
+    printf( "Number of upper bounds: %zu\n", _upperBounds.size() );
     printf( "Number of equations: %u\n", _equations.size() );
     printf( "Number of non-linear constraints: %u\n",
             _plConstraints.size() + _nlConstraints.size() );
@@ -539,41 +609,41 @@ void InputQuery::saveQuery( const String &fileName )
     queryFile->close();
 }
 
-void InputQuery::markInputVariable( unsigned variable, unsigned inputIndex )
+void MarabouQuery::markInputVariable( unsigned variable, unsigned inputIndex )
 {
     _variableToInputIndex[variable] = inputIndex;
     _inputIndexToVariable[inputIndex] = variable;
 }
 
-void InputQuery::markOutputVariable( unsigned variable, unsigned outputIndex )
+void MarabouQuery::markOutputVariable( unsigned variable, unsigned outputIndex )
 {
     _variableToOutputIndex[variable] = outputIndex;
     _outputIndexToVariable[outputIndex] = variable;
 }
 
-unsigned InputQuery::inputVariableByIndex( unsigned index ) const
+unsigned MarabouQuery::inputVariableByIndex( unsigned index ) const
 {
     ASSERT( _inputIndexToVariable.exists( index ) );
     return _inputIndexToVariable.get( index );
 }
 
-unsigned InputQuery::outputVariableByIndex( unsigned index ) const
+unsigned MarabouQuery::outputVariableByIndex( unsigned index ) const
 {
     ASSERT( _outputIndexToVariable.exists( index ) );
     return _outputIndexToVariable.get( index );
 }
 
-unsigned InputQuery::getNumInputVariables() const
+unsigned MarabouQuery::getNumInputVariables() const
 {
     return _inputIndexToVariable.size();
 }
 
-unsigned InputQuery::getNumOutputVariables() const
+unsigned MarabouQuery::getNumOutputVariables() const
 {
     return _outputIndexToVariable.size();
 }
 
-List<unsigned> InputQuery::getInputVariables() const
+List<unsigned> MarabouQuery::getInputVariables() const
 {
     List<unsigned> result;
     for ( const auto &pair : _variableToInputIndex )
@@ -582,7 +652,7 @@ List<unsigned> InputQuery::getInputVariables() const
     return result;
 }
 
-List<unsigned> InputQuery::getOutputVariables() const
+List<unsigned> MarabouQuery::getOutputVariables() const
 {
     List<unsigned> result;
     for ( const auto &pair : _variableToOutputIndex )
@@ -591,20 +661,20 @@ List<unsigned> InputQuery::getOutputVariables() const
     return result;
 }
 
-void InputQuery::printAllBounds() const
+void MarabouQuery::printAllBounds() const
 {
-    printf( "InputQuery: Dumping all bounds\n" );
+    printf( "MarabouQuery: Dumping all bounds\n" );
 
     for ( unsigned i = 0; i < _numberOfVariables; ++i )
     {
         printf( "\tx%u: [", i );
         if ( _lowerBounds.exists( i ) )
-            printf( "%lf, ", _lowerBounds[i] );
+            printf( "%lf, ", _lowerBounds.get( i ) );
         else
             printf( "-INF, " );
 
         if ( _upperBounds.exists( i ) )
-            printf( "%lf]", _upperBounds[i] );
+            printf( "%lf]", _upperBounds.get( i ) );
         else
             printf( "+INF]" );
         printf( "\n" );
@@ -613,7 +683,7 @@ void InputQuery::printAllBounds() const
     printf( "\n\n" );
 }
 
-void InputQuery::printInputOutputBounds() const
+void MarabouQuery::printInputOutputBounds() const
 {
     printf( "Dumping bounds of the input and output variables:\n" );
 
@@ -622,8 +692,8 @@ void InputQuery::printInputOutputBounds() const
         printf( "\tInput %u (var %u): [%lf, %lf]\n",
                 pair.second,
                 pair.first,
-                _lowerBounds[pair.first],
-                _upperBounds[pair.first] );
+                _lowerBounds.get( pair.first ),
+                _upperBounds.get( pair.first ) );
     }
 
     for ( const auto &pair : _variableToOutputIndex )
@@ -631,12 +701,12 @@ void InputQuery::printInputOutputBounds() const
         printf( "\tOutput %u (var %u): [%lf, %lf]\n",
                 pair.second,
                 pair.first,
-                _lowerBounds[pair.first],
-                _upperBounds[pair.first] );
+                _lowerBounds.get( pair.first ),
+                _upperBounds.get( pair.first ) );
     }
 }
 
-void InputQuery::dump() const
+void MarabouQuery::dump() const
 {
     printf( "Total number of variables: %u\n", _numberOfVariables );
     printf( "Input variables:\n" );
@@ -652,8 +722,9 @@ void InputQuery::dump() const
     {
         printf( "\t %u: [%s, %s]\n",
                 i,
-                _lowerBounds.exists( i ) ? Stringf( "%lf", _lowerBounds[i] ).ascii() : "-inf",
-                _upperBounds.exists( i ) ? Stringf( "%lf", _upperBounds[i] ).ascii() : "inf" );
+                _lowerBounds.exists( i ) ? Stringf( "%lf", _lowerBounds.get( i ) ).ascii() : "-inf",
+                _upperBounds.exists( i ) ? Stringf( "%lf", _upperBounds.get( i ) ).ascii()
+                                         : "inf" );
     }
 
     printf( "Constraints:\n" );
@@ -678,8 +749,8 @@ void InputQuery::dump() const
     }
 }
 
-void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                           const Map<unsigned, unsigned> &mergedVariables )
+void MarabouQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
+                                             const Map<unsigned, unsigned> &mergedVariables )
 {
     Map<unsigned, unsigned> newInputIndexToVariable;
     unsigned currentIndex = 0;
@@ -728,18 +799,18 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
         _variableToOutputIndex[it.second] = it.first;
 }
 
-void InputQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
+void MarabouQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
 {
     _networkLevelReasoner = nlr;
 }
 
-NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+NLR::NetworkLevelReasoner *MarabouQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
 }
 
-bool InputQuery::constructNetworkLevelReasoner( List<Equation> &unhandledEquations,
-                                                Set<unsigned> &varsInUnhandledConstraints )
+bool MarabouQuery::constructNetworkLevelReasoner( List<Equation> &unhandledEquations,
+                                                  Set<unsigned> &varsInUnhandledConstraints )
 {
     INPUT_QUERY_LOG( "PP: constructing an NLR... " );
 
@@ -859,7 +930,7 @@ bool InputQuery::constructNetworkLevelReasoner( List<Equation> &unhandledEquatio
     return success;
 }
 
-void InputQuery::mergeConsecutiveWeightedSumLayers(
+void MarabouQuery::mergeConsecutiveWeightedSumLayers(
     const List<Equation> &unhandledEquations,
     const Set<unsigned> &varsInUnhandledConstraints,
     Map<unsigned, LinearExpression> &eliminatedNeurons )
@@ -884,10 +955,10 @@ void InputQuery::mergeConsecutiveWeightedSumLayers(
     }
 }
 
-bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
-                                           Map<unsigned, unsigned> &handledVariableToLayer,
-                                           unsigned newLayerIndex,
-                                           Set<unsigned> &handledEquations )
+bool MarabouQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                             Map<unsigned, unsigned> &handledVariableToLayer,
+                                             unsigned newLayerIndex,
+                                             Set<unsigned> &handledEquations )
 {
     INPUT_QUERY_LOG( "Attempting to construct weightedSumLayer..." );
     struct NeuronInformation
@@ -1007,10 +1078,10 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
-                                     Map<unsigned, unsigned> &handledVariableToLayer,
-                                     unsigned newLayerIndex,
-                                     Set<PiecewiseLinearConstraint *> &handledPLConstraints )
+bool MarabouQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                                       Map<unsigned, unsigned> &handledVariableToLayer,
+                                       unsigned newLayerIndex,
+                                       Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct ReluLayer..." );
     struct NeuronInformation
@@ -1105,10 +1176,10 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
-                                          Map<unsigned, unsigned> &handledVariableToLayer,
-                                          unsigned newLayerIndex,
-                                          Set<PiecewiseLinearConstraint *> &handledPLConstraints )
+bool MarabouQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
+                                            Map<unsigned, unsigned> &handledVariableToLayer,
+                                            unsigned newLayerIndex,
+                                            Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct LeakyReLULayer..." );
     struct NeuronInformation
@@ -1213,10 +1284,10 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
-                                      Map<unsigned, unsigned> &handledVariableToLayer,
-                                      unsigned newLayerIndex,
-                                      Set<NonlinearConstraint *> &handledNLConstraints )
+bool MarabouQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
+                                        Map<unsigned, unsigned> &handledVariableToLayer,
+                                        unsigned newLayerIndex,
+                                        Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct RoundLayer..." );
     struct NeuronInformation
@@ -1310,10 +1381,10 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
-                                        Map<unsigned, unsigned> &handledVariableToLayer,
-                                        unsigned newLayerIndex,
-                                        Set<NonlinearConstraint *> &handledNLConstraints )
+bool MarabouQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
+                                          Map<unsigned, unsigned> &handledVariableToLayer,
+                                          unsigned newLayerIndex,
+                                          Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct SigmoidLayer..." );
     struct NeuronInformation
@@ -1408,7 +1479,7 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructAbsoluteValueLayer(
+bool MarabouQuery::constructAbsoluteValueLayer(
     NLR::NetworkLevelReasoner *nlr,
     Map<unsigned, unsigned> &handledVariableToLayer,
     unsigned newLayerIndex,
@@ -1507,10 +1578,10 @@ bool InputQuery::constructAbsoluteValueLayer(
     return true;
 }
 
-bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
-                                     Map<unsigned, unsigned> &handledVariableToLayer,
-                                     unsigned newLayerIndex,
-                                     Set<PiecewiseLinearConstraint *> &handledPLConstraints )
+bool MarabouQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
+                                       Map<unsigned, unsigned> &handledVariableToLayer,
+                                       unsigned newLayerIndex,
+                                       Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct SignLayer..." );
     struct NeuronInformation
@@ -1605,10 +1676,10 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
-                                    Map<unsigned, unsigned> &handledVariableToLayer,
-                                    unsigned newLayerIndex,
-                                    Set<PiecewiseLinearConstraint *> &handledPLConstraints )
+bool MarabouQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
+                                      Map<unsigned, unsigned> &handledVariableToLayer,
+                                      unsigned newLayerIndex,
+                                      Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct MaxLayer..." );
     struct NeuronInformation
@@ -1723,10 +1794,10 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
-                                         Map<unsigned, unsigned> &handledVariableToLayer,
-                                         unsigned newLayerIndex,
-                                         Set<NonlinearConstraint *> &handledNLConstraints )
+bool MarabouQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
+                                           Map<unsigned, unsigned> &handledVariableToLayer,
+                                           unsigned newLayerIndex,
+                                           Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct BilinearLayer..." );
     struct NeuronInformation
@@ -1830,10 +1901,10 @@ bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
-                                        Map<unsigned, unsigned> &handledVariableToLayer,
-                                        unsigned newLayerIndex,
-                                        Set<NonlinearConstraint *> &handledNLConstraints )
+bool MarabouQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
+                                          Map<unsigned, unsigned> &handledVariableToLayer,
+                                          unsigned newLayerIndex,
+                                          Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct SoftmaxLayer..." );
     struct NeuronInformation

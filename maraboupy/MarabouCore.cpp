@@ -543,7 +543,7 @@ calculateBounds( InputQuery &inputQuery, MarabouOptions &options, std::string re
         {
             // set lower bound and upper bound in tuple
             ret[i] =
-                std::make_tuple( inputQuery.getLowerBounds()[i], inputQuery.getUpperBounds()[i] );
+                std::make_tuple( inputQuery.getLowerBound( i ), inputQuery.getUpperBound( i ) );
         }
     }
     catch ( const MarabouError &e )
