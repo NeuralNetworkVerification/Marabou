@@ -4063,7 +4063,7 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
 
         Vector<int> support( 0 );
         toReturn = reduceClauseSizeWithLinearCombination(
-            explanationLinearCombination, gub, glb, support, clause, lemma );
+            explanationLinearCombination, gub, glb, support, toReturn, lemma );
     }
 
     ASSERT( !toReturn.empty() );
@@ -4155,7 +4155,7 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
 
         for ( const auto tightening : litSplit.getBoundTightenings() )
         {
-            Vector<double> temp = tightening._type == Tightening::UB ?   groundUpperBounds :   groundLowerBounds;
+            Vector<double> &temp = tightening._type == Tightening::UB ?   groundUpperBounds :   groundLowerBounds;
             temp[tightening._variable] = tightening._value;
         }
     }
