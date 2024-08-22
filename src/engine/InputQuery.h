@@ -16,6 +16,7 @@
 #ifndef __InputQuery_h__
 #define __InputQuery_h__
 
+#include "CommonError.h"
 #include "Equation.h"
 #include "IQuery.h"
 #include "List.h"
@@ -145,19 +146,22 @@ public:
     /*
       The following methods perform directly read/write to the _userContext object.
     */
-    inline unsigned getContextLevel()
+    inline unsigned getLevel()
     {
         return _userContext.getLevel();
     };
-    inline void pushContext()
+    inline void push()
     {
         _userContext.push();
     };
-    inline void popContext()
+    inline void pop()
     {
+        if ( getLevel() == 0 )
+            throw CommonError( CommonError::POPPING_ZERO_CONTEXT_LEVEL,
+                               "Cannot pop when context level is 0." );
         _userContext.pop();
     };
-    inline void popContextTo( unsigned toLevel )
+    inline void popTo( unsigned toLevel )
     {
         _userContext.popto( toLevel );
     };

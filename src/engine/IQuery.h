@@ -45,6 +45,7 @@ public:
     virtual unsigned getNumberOfEquations() const = 0;
 
     virtual void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint ) = 0;
+    virtual void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling ) = 0;
     virtual void addNonlinearConstraint( NonlinearConstraint *constraint ) = 0;
     virtual void getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const = 0;
 

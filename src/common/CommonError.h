@@ -39,6 +39,7 @@ public:
         GUROBI_EXCEPTION = 14,
         DIVISION_BY_ZERO = 15,
         UNEXPECTED_GUROBI_STATUS = 16,
+        POPPING_ZERO_CONTEXT_LEVEL = 17,
     };
 
     CommonError( CommonError::Code code )

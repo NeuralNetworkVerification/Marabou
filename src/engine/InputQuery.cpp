@@ -81,7 +81,7 @@ void InputQuery::setLowerBound( unsigned variable, double bound )
                                 .ascii() );
     }
 
-    if ( getContextLevel() > 0 && _lowerBounds.exists( variable ) )
+    if ( getLevel() > 0 && _lowerBounds.exists( variable ) )
         throw MarabouError(
             MarabouError::INPUT_QUERY_VARIABLE_BOUND_ALREADY_SET,
             Stringf( "Lower bound of variable %u has already been set, consider using "
@@ -103,7 +103,7 @@ void InputQuery::setUpperBound( unsigned variable, double bound )
                                 .ascii() );
     }
 
-    if ( getContextLevel() > 0 && _upperBounds.exists( variable ) )
+    if ( getLevel() > 0 && _upperBounds.exists( variable ) )
         throw MarabouError(
             MarabouError::INPUT_QUERY_VARIABLE_BOUND_ALREADY_SET,
             Stringf( "Upper bound of variable %u has already been set, consider using "
