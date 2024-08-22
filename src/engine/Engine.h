@@ -100,8 +100,8 @@ public:
       underlying tableau. Return false if query is found to be infeasible,
       true otherwise.
      */
-    bool processInputQuery( IQuery &inputQuery );
-    bool processInputQuery( IQuery &inputQuery, bool preprocess );
+    bool processInputQuery( const IQuery &inputQuery );
+    bool processInputQuery( const IQuery &inputQuery, bool preprocess );
 
     Query prepareSnCQuery();
     void exportQueryWithError( String errorMessage );
@@ -109,7 +109,7 @@ public:
     /*
       Methods for calculating bounds.
     */
-    bool calculateBounds( IQuery &inputQuery );
+    bool calculateBounds( const IQuery &inputQuery );
 
     /*
       Method for extracting the bounds.

@@ -918,12 +918,12 @@ void Engine::fixViolatedPlConstraintIfPossible()
     _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
 }
 
-bool Engine::processInputQuery( IQuery &inputQuery )
+bool Engine::processInputQuery( const IQuery &inputQuery )
 {
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
-bool Engine::calculateBounds( IQuery &inputQuery )
+bool Engine::calculateBounds( const IQuery &inputQuery )
 {
     ENGINE_LOG( "calculateBounds starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
@@ -1406,7 +1406,7 @@ void Engine::initializeNetworkLevelReasoning()
     }
 }
 
-bool Engine::processInputQuery( IQuery &inputQuery, bool preprocess )
+bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
