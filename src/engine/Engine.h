@@ -100,8 +100,8 @@ public:
       underlying tableau. Return false if query is found to be infeasible,
       true otherwise.
      */
-    bool processQuery( IQuery &inputQuery );
-    bool processQuery( IQuery &inputQuery, bool preprocess );
+    bool processInputQuery( IQuery &inputQuery );
+    bool processInputQuery( IQuery &inputQuery, bool preprocess );
 
     Query prepareSnCQuery();
     void exportQueryWithError( String errorMessage );

@@ -112,7 +112,7 @@ void Marabou::prepareQuery()
 
         if ( ( (String)networkFilePath ).endsWith( ".onnx" ) )
         {
-            QueryBuilder queryBuilder;
+            InputQueryBuilder queryBuilder;
             OnnxParser::parse( queryBuilder, networkFilePath, {}, {} );
             queryBuilder.generateQuery( _inputQuery );
         }
@@ -219,7 +219,7 @@ void Marabou::solveQuery()
 
     struct timespec start = TimeUtils::sampleMicro();
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-    if ( _engine->processQuery( _inputQuery ) )
+    if ( _engine->processInputQuery( _inputQuery ) )
     {
         _engine->solve( timeoutInSeconds );
         if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )

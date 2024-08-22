@@ -80,7 +80,7 @@ public:
         Engine engine;
 
         // should return 'false' = UNSAT
-        TS_ASSERT( !engine.processQuery( inputQuery ) );
+        TS_ASSERT( !engine.processInputQuery( inputQuery ) );
     }
 
     void test_sign_2()
@@ -131,7 +131,7 @@ public:
 
         Engine engine;
 
-        TS_ASSERT( engine.processQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
 
         TS_ASSERT( engine.solve() );
 
@@ -300,7 +300,7 @@ public:
         Engine engine;
         // should return 'false' = UNSAT
 
-        TS_ASSERT( !engine.processQuery( inputQuery ) );
+        TS_ASSERT( !engine.processInputQuery( inputQuery ) );
     }
 
     // more advanced BNN
@@ -398,7 +398,7 @@ public:
         Engine engine;
 
         // should return 'false' = UNSAT
-        TS_ASSERT( !engine.processQuery( inputQuery ) );
+        TS_ASSERT( !engine.processInputQuery( inputQuery ) );
     }
 
     void test_sign_5()
@@ -495,7 +495,7 @@ public:
         Engine engine;
 
         // should return SAT
-        TS_ASSERT( engine.processQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
         TS_ASSERT( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -714,7 +714,7 @@ public:
         // should return SAT
         Engine engine;
 
-        TS_ASSERT( engine.processQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
         TS_ASSERT( engine.solve() );
 
         engine.extractSolution( inputQuery );

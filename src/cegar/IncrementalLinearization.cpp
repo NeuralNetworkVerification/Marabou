@@ -72,7 +72,7 @@ void IncrementalLinearization::solve()
         _engine->setVerbosity( 0 );
 
         // Solve the refined abstraction
-        if ( _engine->processQuery( _inputQuery ) )
+        if ( _engine->processInputQuery( _inputQuery ) )
         {
             double timeoutInSeconds =
                 static_cast<long double>( _timeoutInMicroSeconds ) / MICROSECONDS_TO_SECONDS;

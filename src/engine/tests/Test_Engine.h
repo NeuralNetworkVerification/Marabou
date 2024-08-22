@@ -134,7 +134,7 @@ public:
 
         Engine engine;
 
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery, false ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
 
         TS_ASSERT( tableau->initializeTableauCalled );
         TS_ASSERT( costFunctionManager->initializeWasCalled );
@@ -340,7 +340,7 @@ public:
                                                              varsInUnhandledConstraints ) );
         TS_ASSERT( unhandledEquations.empty() );
         TS_ASSERT( varsInUnhandledConstraints.empty() );
-        engine.processQuery( inputQuery, false );
+        engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
         constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::Polarity );
@@ -446,7 +446,7 @@ public:
                                                              varsInUnhandledConstraints ) );
         TS_ASSERT( unhandledEquations.empty() );
         TS_ASSERT( varsInUnhandledConstraints.empty() );
-        engine.processQuery( inputQuery, false );
+        engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
         constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::EarliestReLU );
@@ -552,7 +552,7 @@ public:
                                                              varsInUnhandledConstraints ) );
         TS_ASSERT( unhandledEquations.empty() );
         TS_ASSERT( varsInUnhandledConstraints.empty() );
-        engine.processQuery( inputQuery, false );
+        engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::LargestInterval );
 

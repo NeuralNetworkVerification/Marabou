@@ -69,7 +69,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( abs2 );
 
         Engine engine;
-        if ( !engine.processQuery( inputQuery ) )
+        if ( !engine.processInputQuery( inputQuery ) )
         {
             // Expected result
             return;
@@ -115,7 +115,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( abs2 );
 
         Engine engine;
-        TS_ASSERT( engine.processQuery( inputQuery ) );
+        TS_ASSERT( engine.processInputQuery( inputQuery ) );
         TS_ASSERT( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -198,7 +198,7 @@ public:
 
         // Run the query
         Engine engine;
-        if ( !engine.processQuery( inputQuery ) )
+        if ( !engine.processInputQuery( inputQuery ) )
         {
             // No counter example found, this is acceptable
             return;

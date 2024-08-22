@@ -36,7 +36,7 @@ public:
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkPath.ascii() );
         }
 
-        InputQueryBuilder queryBuilder;
+        InputInputQueryBuilder queryBuilder;
         TS_ASSERT_THROWS_EQUALS( OnnxParser::parse( queryBuilder, networkPath, {}, {} ),
                                  const MarabouError &e,
                                  e.getCode(),
@@ -55,7 +55,7 @@ public:
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkPath.ascii() );
         }
 
-        InputQueryBuilder queryBuilder;
+        InputInputQueryBuilder queryBuilder;
         TS_ASSERT_THROWS_NOTHING( OnnxParser::parse( queryBuilder, networkPath, {}, {} ) );
 
         InputQuery inputQuery;

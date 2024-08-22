@@ -52,7 +52,7 @@
  * the network, they can be intermediate nodes. If empty, then defaults to the network's output
  * nodes.
  */
-void OnnxParser::parse( QueryBuilder &query,
+void OnnxParser::parse( InputQueryBuilder &query,
                         const String &path,
                         const Set<String> initialNodeNames,
                         const Set<String> terminalNodeNames )
@@ -553,7 +553,7 @@ void OnnxParser::transferValues( String oldName, String newName )
  * Private methods *
  *******************/
 
-OnnxParser::OnnxParser( QueryBuilder &query,
+OnnxParser::OnnxParser( InputQueryBuilder &query,
                         const String &path,
                         const Set<String> inputNames,
                         const Set<String> terminalNames )

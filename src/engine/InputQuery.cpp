@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file MarabouQuery.cpp
+/*! \file InputQuery.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Andrew Wu
@@ -13,7 +13,7 @@
 
  **/
 
-#include "MarabouQuery.h"
+#include "InputQuery.h"
 
 #include "AutoFile.h"
 #include "BilinearConstraint.h"
@@ -33,7 +33,7 @@
 
 using namespace CVC4::context;
 
-MarabouQuery::MarabouQuery()
+InputQuery::InputQuery()
     : _userContext()
     , _numberOfVariables( &_userContext )
     , _equations( &_userContext )
@@ -50,28 +50,28 @@ MarabouQuery::MarabouQuery()
 {
 }
 
-MarabouQuery::~MarabouQuery()
+InputQuery::~InputQuery()
 {
     freeConstraintsIfNeeded();
 }
 
-void MarabouQuery::setNumberOfVariables( unsigned numberOfVariables )
+void InputQuery::setNumberOfVariables( unsigned numberOfVariables )
 {
     _numberOfVariables = numberOfVariables;
 }
 
-unsigned MarabouQuery::getNumberOfVariables() const
+unsigned InputQuery::getNumberOfVariables() const
 {
     return _numberOfVariables;
 }
 
-unsigned MarabouQuery::getNewVariable()
+unsigned InputQuery::getNewVariable()
 {
     _numberOfVariables = _numberOfVariables + 1;
     return _numberOfVariables - 1;
 }
 
-void MarabouQuery::setLowerBound( unsigned variable, double bound )
+void InputQuery::setLowerBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
@@ -93,7 +93,7 @@ void MarabouQuery::setLowerBound( unsigned variable, double bound )
     _lowerBounds[variable] = bound;
 }
 
-void MarabouQuery::setUpperBound( unsigned variable, double bound )
+void InputQuery::setUpperBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
@@ -115,7 +115,7 @@ void MarabouQuery::setUpperBound( unsigned variable, double bound )
     _upperBounds[variable] = bound;
 }
 
-bool MarabouQuery::tightenLowerBound( unsigned variable, double bound )
+bool InputQuery::tightenLowerBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
@@ -134,7 +134,7 @@ bool MarabouQuery::tightenLowerBound( unsigned variable, double bound )
     return false;
 }
 
-bool MarabouQuery::tightenUpperBound( unsigned variable, double bound )
+bool InputQuery::tightenUpperBound( unsigned variable, double bound )
 {
     if ( variable >= _numberOfVariables )
     {
@@ -153,7 +153,7 @@ bool MarabouQuery::tightenUpperBound( unsigned variable, double bound )
     return false;
 }
 
-double MarabouQuery::getLowerBound( unsigned variable ) const
+double InputQuery::getLowerBound( unsigned variable ) const
 {
     if ( variable >= _numberOfVariables )
     {
@@ -170,7 +170,7 @@ double MarabouQuery::getLowerBound( unsigned variable ) const
     return _lowerBounds.get( variable );
 }
 
-double MarabouQuery::getUpperBound( unsigned variable ) const
+double InputQuery::getUpperBound( unsigned variable ) const
 {
     if ( variable >= _numberOfVariables )
     {
@@ -187,22 +187,22 @@ double MarabouQuery::getUpperBound( unsigned variable ) const
     return _upperBounds.get( variable );
 }
 
-void MarabouQuery::addEquation( const Equation &equation )
+void InputQuery::addEquation( const Equation &equation )
 {
     _equations.push_back( equation );
 }
 
-unsigned MarabouQuery::getNumberOfEquations() const
+unsigned InputQuery::getNumberOfEquations() const
 {
     return _equations.size();
 }
 
-void MarabouQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
+void InputQuery::addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint )
 {
     _plConstraints.push_back( constraint );
 }
 
-void MarabouQuery::addClipConstraint( unsigned b, unsigned f, double floor, double ceiling )
+void InputQuery::addClipConstraint( unsigned b, unsigned f, double floor, double ceiling )
 {
     /*
       f = clip(b, floor, ceiling)
@@ -249,12 +249,12 @@ void MarabouQuery::addClipConstraint( unsigned b, unsigned f, double floor, doub
     addEquation( eq3 );
 }
 
-void MarabouQuery::addNonlinearConstraint( NonlinearConstraint *constraint )
+void InputQuery::addNonlinearConstraint( NonlinearConstraint *constraint )
 {
     _nlConstraints.push_back( constraint );
 }
 
-void MarabouQuery::getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const
+void InputQuery::getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const
 {
     for ( const auto &constraint : _nlConstraints )
     {
@@ -262,41 +262,41 @@ void MarabouQuery::getNonlinearConstraints( Vector<NonlinearConstraint *> &const
     }
 }
 
-void MarabouQuery::markInputVariable( unsigned variable, unsigned inputIndex )
+void InputQuery::markInputVariable( unsigned variable, unsigned inputIndex )
 {
     _variableToInputIndex[variable] = inputIndex;
     _inputIndexToVariable[inputIndex] = variable;
 }
 
-void MarabouQuery::markOutputVariable( unsigned variable, unsigned outputIndex )
+void InputQuery::markOutputVariable( unsigned variable, unsigned outputIndex )
 {
     _variableToOutputIndex[variable] = outputIndex;
     _outputIndexToVariable[outputIndex] = variable;
 }
 
-unsigned MarabouQuery::inputVariableByIndex( unsigned index ) const
+unsigned InputQuery::inputVariableByIndex( unsigned index ) const
 {
     ASSERT( _inputIndexToVariable.exists( index ) );
     return _inputIndexToVariable.get( index );
 }
 
-unsigned MarabouQuery::outputVariableByIndex( unsigned index ) const
+unsigned InputQuery::outputVariableByIndex( unsigned index ) const
 {
     ASSERT( _outputIndexToVariable.exists( index ) );
     return _outputIndexToVariable.get( index );
 }
 
-unsigned MarabouQuery::getNumInputVariables() const
+unsigned InputQuery::getNumInputVariables() const
 {
     return _inputIndexToVariable.size();
 }
 
-unsigned MarabouQuery::getNumOutputVariables() const
+unsigned InputQuery::getNumOutputVariables() const
 {
     return _outputIndexToVariable.size();
 }
 
-List<unsigned> MarabouQuery::getInputVariables() const
+List<unsigned> InputQuery::getInputVariables() const
 {
     List<unsigned> result;
     for ( const auto &pair : _variableToInputIndex )
@@ -305,7 +305,7 @@ List<unsigned> MarabouQuery::getInputVariables() const
     return result;
 }
 
-List<unsigned> MarabouQuery::getOutputVariables() const
+List<unsigned> InputQuery::getOutputVariables() const
 {
     List<unsigned> result;
     for ( const auto &pair : _variableToOutputIndex )
@@ -314,12 +314,12 @@ List<unsigned> MarabouQuery::getOutputVariables() const
     return result;
 }
 
-void MarabouQuery::setSolutionValue( unsigned variable, double value )
+void InputQuery::setSolutionValue( unsigned variable, double value )
 {
     _solution[variable] = value;
 }
 
-double MarabouQuery::getSolutionValue( unsigned variable ) const
+double InputQuery::getSolutionValue( unsigned variable ) const
 {
     if ( !_solution.exists( variable ) )
         throw MarabouError( MarabouError::VARIABLE_DOESNT_EXIST_IN_SOLUTION,
@@ -328,24 +328,24 @@ double MarabouQuery::getSolutionValue( unsigned variable ) const
     return _solution.get( variable );
 }
 
-void MarabouQuery::storeDebuggingSolution( unsigned variable, double value )
+void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 {
     _debuggingSolution[variable] = value;
 }
 
-void MarabouQuery::saveQuery( const String &fileName )
+void InputQuery::saveQuery( const String &fileName )
 {
     Query *query = generateQuery();
     query->saveQuery( fileName );
     delete query;
 }
 
-Query *MarabouQuery::generateQuery() const
+Query *InputQuery::generateQuery() const
 {
     return nullptr;
 }
 
-void MarabouQuery::freeConstraintsIfNeeded()
+void InputQuery::freeConstraintsIfNeeded()
 {
     for ( auto &it : _plConstraints )
         delete it;

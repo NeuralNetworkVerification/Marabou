@@ -19,7 +19,7 @@
 #include "AcasParser.h"
 #include "Engine.h"
 #include "IncrementalLinearization.h"
-#include "MarabouQuery.h"
+#include "InputQuery.h"
 #include "OnnxParser.h"
 
 class Marabou
@@ -34,7 +34,7 @@ public:
     void run();
 
 private:
-    MarabouQuery _inputQuery;
+    InputQuery _inputQuery;
 
     /*
       Extract the options and input files (network and property), and

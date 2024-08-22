@@ -63,7 +63,7 @@ void DnCManager::dncSolve( WorkerQueue *workload,
 
     engine->setRandomSeed( seed );
     if ( threadId != 0 )
-        engine->processQuery( *inputQuery, false );
+        engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload,
                       engine,
@@ -375,7 +375,7 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
     _engines.append( _baseEngine );
-    if ( !_baseEngine->processQuery( *_baseQuery ) )
+    if ( !_baseEngine->processInputQuery( *_baseQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 

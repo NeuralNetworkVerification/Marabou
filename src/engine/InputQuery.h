@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file MarabouQuery.h
+/*! \file InputQuery.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Andrew Wu
@@ -13,8 +13,8 @@
 
  **/
 
-#ifndef __MarabouQuery_h__
-#define __MarabouQuery_h__
+#ifndef __InputQuery_h__
+#define __InputQuery_h__
 
 #include "Equation.h"
 #include "IQuery.h"
@@ -29,7 +29,7 @@
 #include <context/cdlist.h>
 #include <context/context.h>
 
-class MarabouQuery : public IQuery
+class InputQuery : public IQuery
 {
     using VariableValueMap = CVC4::context::CDHashMap<unsigned, double>;
     using VariableIndexMap = CVC4::context::CDHashMap<unsigned, unsigned>;
@@ -39,8 +39,8 @@ class MarabouQuery : public IQuery
     using NLConstraintsList = CVC4::context::CDList<NonlinearConstraint *>;
 
 public:
-    MarabouQuery();
-    ~MarabouQuery();
+    InputQuery();
+    ~InputQuery();
 
     void setNumberOfVariables( unsigned numberOfVariables );
     unsigned getNumberOfVariables() const;
@@ -171,4 +171,4 @@ private:
     void freeConstraintsIfNeeded();
 };
 
-#endif // __MarabouQuery_h__
+#endif // __InputQuery_h__

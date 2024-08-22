@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file QueryBuilder.cpp
+/*! \file InputQueryBuilder.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Matthew Daggitt
@@ -16,8 +16,8 @@
  ** Future parsers for individual network formats should extend this interface.
  **/
 
-#ifndef __QueryBuilder_h__
-#define __QueryBuilder_h__
+#ifndef __InputQueryBuilder_h__
+#define __InputQueryBuilder_h__
 
 #include "DisjunctionConstraint.h"
 #include "Equation.h"
@@ -37,7 +37,7 @@
 
 typedef unsigned int Variable;
 
-class QueryBuilder
+class InputQueryBuilder
 {
 private:
     unsigned int _numVars;
@@ -55,7 +55,7 @@ private:
     Map<Variable, float> _upperBounds;
 
 public:
-    QueryBuilder();
+    InputQueryBuilder();
 
     Variable getNewVariable();
 
@@ -77,4 +77,4 @@ public:
     Equation *findEquationWithOutputVariable( Variable variable );
 };
 
-#endif // __QueryBuilder_h__
+#endif // __InputQueryBuilder_h__

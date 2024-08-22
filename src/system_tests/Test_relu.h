@@ -93,7 +93,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
@@ -175,7 +175,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 

@@ -21,7 +21,7 @@
 #include "Map.h"
 
 class Equation;
-class Query;
+class IQuery;
 class String;
 
 class BerkeleyParser
@@ -42,7 +42,7 @@ public:
     };
 
     BerkeleyParser( const String &path );
-    void generateQuery( Query &inputQuery );
+    void generateQuery( IQuery &inputQuery );
 
     Set<unsigned> getOutputVariables() const;
 

@@ -49,7 +49,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -81,7 +81,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -113,7 +113,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -145,7 +145,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );

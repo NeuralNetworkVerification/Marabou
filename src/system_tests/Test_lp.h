@@ -68,7 +68,7 @@ public:
         inputQuery.addEquation( equation4 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         // Cost function: x0 - x1
@@ -134,7 +134,7 @@ public:
 
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -212,7 +212,7 @@ public:
         inputQuery.addEquation( equation3 );
 
         Engine engine;
-        bool result = engine.processQuery( inputQuery );
+        bool result = engine.processInputQuery( inputQuery );
         if ( !result )
         {
             // got UNSAT from the preprocessing

@@ -40,7 +40,7 @@ public:
         String queryPath = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib", vnnlibFile.ascii() );
         String onnxPath = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib", onnxFile.ascii() );
 
-        InputQueryBuilder queryBuilder;
+        InputInputQueryBuilder queryBuilder;
 
         printf( "%s\n", onnxPath.ascii() );
 

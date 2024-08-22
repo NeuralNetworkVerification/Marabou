@@ -179,7 +179,7 @@ Query Engine::prepareSnCQuery()
 
 void Engine::exportQueryWithError( String errorMessage )
 {
-    String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedMarabouQuery.ipq";
+    String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedInputQuery.ipq";
     prepareSnCQuery().saveQuery( ipqFileName );
     printf( "Engine: %s!\nInput query has been saved as %s. Please attach the input query when you "
             "open the issue on GitHub.\n",
@@ -918,9 +918,9 @@ void Engine::fixViolatedPlConstraintIfPossible()
     _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
 }
 
-bool Engine::processQuery( IQuery &inputQuery )
+bool Engine::processInputQuery( IQuery &inputQuery )
 {
-    return processQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
+    return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
 bool Engine::calculateBounds( IQuery &inputQuery )
@@ -975,7 +975,7 @@ bool Engine::calculateBounds( IQuery &inputQuery )
 void Engine::invokePreprocessor( const IQuery &inputQuery, bool preprocess )
 {
     if ( _verbosity > 0 )
-        printf( "Engine::processQuery: Input query (before preprocessing): "
+        printf( "Engine::processInputQuery: Input query (before preprocessing): "
                 "%u equations, %u variables\n",
                 inputQuery.getNumberOfEquations(),
                 inputQuery.getNumberOfVariables() );
@@ -989,7 +989,7 @@ void Engine::invokePreprocessor( const IQuery &inputQuery, bool preprocess )
         _preprocessedQuery = std::unique_ptr<Query>( inputQuery.generateQuery() );
 
     if ( _verbosity > 0 )
-        printf( "Engine::processQuery: Input query (after preprocessing): "
+        printf( "Engine::processInputQuery: Input query (after preprocessing): "
                 "%u equations, %u variables\n\n",
                 _preprocessedQuery->getNumberOfEquations(),
                 _preprocessedQuery->getNumberOfVariables() );
@@ -1403,9 +1403,9 @@ void Engine::initializeNetworkLevelReasoning()
     }
 }
 
-bool Engine::processQuery( IQuery &inputQuery, bool preprocess )
+bool Engine::processInputQuery( IQuery &inputQuery, bool preprocess )
 {
-    ENGINE_LOG( "processQuery starting\n" );
+    ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
 
     try
@@ -1540,7 +1540,7 @@ bool Engine::processQuery( IQuery &inputQuery, bool preprocess )
     }
     catch ( const InfeasibleQueryException & )
     {
-        ENGINE_LOG( "processQuery done\n" );
+        ENGINE_LOG( "processInputQuery done\n" );
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
@@ -1550,7 +1550,7 @@ bool Engine::processQuery( IQuery &inputQuery, bool preprocess )
         return false;
     }
 
-    ENGINE_LOG( "processQuery done\n" );
+    ENGINE_LOG( "processInputQuery done\n" );
 
     DEBUG( {
         // Initially, all constraints should be active

@@ -41,7 +41,7 @@ public:
         acasParser.generateQuery( inputQuery );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         engine.extractSolution( inputQuery );
@@ -85,7 +85,7 @@ public:
         }
 
         Engine engine;
-        bool result = engine.processQuery( inputQuery );
+        bool result = engine.processInputQuery( inputQuery );
         TS_ASSERT( result );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
@@ -130,7 +130,7 @@ public:
         }
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         engine.extractSolution( inputQuery );

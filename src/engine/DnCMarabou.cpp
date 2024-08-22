@@ -67,7 +67,7 @@ void DnCMarabou::run()
 
         if ( ( (String)networkFilePath ).endsWith( ".onnx" ) )
         {
-            QueryBuilder queryBuilder;
+            InputQueryBuilder queryBuilder;
             OnnxParser::parse( queryBuilder, networkFilePath, {}, {} );
             queryBuilder.generateQuery( _inputQuery );
         }
