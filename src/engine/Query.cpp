@@ -19,7 +19,6 @@
 #include "BilinearConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -33,13 +32,6 @@
     LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
 
 Query::Query()
-    : _ensureSameSourceLayerInNLR( Options::get()->getSymbolicBoundTighteningType() ==
-                                   SymbolicBoundTighteningType::DEEP_POLY )
-    , _networkLevelReasoner( NULL )
-{
-}
-
-Query::Query( const InputQuery & /*query*/ )
     : _ensureSameSourceLayerInNLR( Options::get()->getSymbolicBoundTighteningType() ==
                                    SymbolicBoundTighteningType::DEEP_POLY )
     , _networkLevelReasoner( NULL )

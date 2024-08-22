@@ -31,7 +31,6 @@ class Query : public IQuery
 {
 public:
     Query();
-    Query( const InputQuery & /*query*/ );
     ~Query();
 
     /*

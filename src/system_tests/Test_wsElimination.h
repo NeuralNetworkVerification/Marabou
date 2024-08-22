@@ -17,9 +17,9 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
+#include "InputQuery.h"
 #include "MarabouError.h"
 #include "Preprocessor.h"
-#include "Query.h"
 #include "QueryLoader.h"
 
 #include <cxxtest/TestSuite.h>
@@ -38,7 +38,8 @@ public:
     void test_nlr_to_query_and_back_1()
     {
         Engine engine;
-        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        InputQuery inputQuery;
+        QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original", inputQuery );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -70,7 +71,8 @@ public:
     void test_nlr_to_query_and_back_2()
     {
         Engine engine;
-        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        InputQuery inputQuery;
+        QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed", inputQuery );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -102,7 +104,8 @@ public:
     void test_nlr_to_query_and_back_3()
     {
         Engine engine;
-        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        InputQuery inputQuery;
+        QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original", inputQuery );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -134,7 +137,8 @@ public:
     void test_nlr_to_query_and_back_4()
     {
         Engine engine;
-        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        InputQuery inputQuery;
+        QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed", inputQuery );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )

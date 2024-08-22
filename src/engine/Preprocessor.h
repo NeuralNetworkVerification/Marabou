@@ -71,6 +71,8 @@ public:
     */
     void setSolutionValuesOfEliminatedNeurons( IQuery &inputQuery );
 
+    static void informConstraintsOfInitialBounds( Query &query );
+
 private:
     void freeMemoryIfNeeded();
 
@@ -202,8 +204,6 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
-
-    void informConstraintsOfInitialBounds();
 };
 
 #endif // __Preprocessor_h__

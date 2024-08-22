@@ -986,7 +986,10 @@ void Engine::invokePreprocessor( const IQuery &inputQuery, bool preprocess )
         _preprocessedQuery = _preprocessor.preprocess(
             inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
     else
+    {
         _preprocessedQuery = std::unique_ptr<Query>( inputQuery.generateQuery() );
+        Preprocessor().informConstraintsOfInitialBounds( *_preprocessedQuery );
+    }
 
     if ( _verbosity > 0 )
         printf( "Engine::processInputQuery: Input query (after preprocessing): "

@@ -63,7 +63,7 @@ std::unique_ptr<Query> Preprocessor::preprocess( const IQuery &query,
 {
     _preprocessed = std::unique_ptr<Query>( query.generateQuery() );
 
-    informConstraintsOfInitialBounds();
+    informConstraintsOfInitialBounds( *_preprocessed );
 
     /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
@@ -1118,25 +1118,25 @@ void Preprocessor::dumpAllBounds( const String &message )
     printf( "\n" );
 }
 
-void Preprocessor::informConstraintsOfInitialBounds()
+void Preprocessor::informConstraintsOfInitialBounds( Query &query )
 {
-    for ( const auto &plConstraint : _preprocessed->getPiecewiseLinearConstraints() )
+    for ( const auto &plConstraint : query.getPiecewiseLinearConstraints() )
     {
         List<unsigned> variables = plConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
         {
-            plConstraint->notifyLowerBound( variable, _preprocessed->getLowerBound( variable ) );
-            plConstraint->notifyUpperBound( variable, _preprocessed->getUpperBound( variable ) );
+            plConstraint->notifyLowerBound( variable, query.getLowerBound( variable ) );
+            plConstraint->notifyUpperBound( variable, query.getUpperBound( variable ) );
         }
     }
 
-    for ( const auto &nlConstraint : _preprocessed->getNonlinearConstraints() )
+    for ( const auto &nlConstraint : query.getNonlinearConstraints() )
     {
         List<unsigned> variables = nlConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
         {
-            nlConstraint->notifyLowerBound( variable, _preprocessed->getLowerBound( variable ) );
-            nlConstraint->notifyUpperBound( variable, _preprocessed->getUpperBound( variable ) );
+            nlConstraint->notifyLowerBound( variable, query.getLowerBound( variable ) );
+            nlConstraint->notifyUpperBound( variable, query.getUpperBound( variable ) );
         }
     }
 }

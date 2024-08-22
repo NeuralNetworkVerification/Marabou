@@ -52,7 +52,6 @@ InputQuery::InputQuery()
 
 InputQuery::~InputQuery()
 {
-    freeConstraintsIfNeeded();
 }
 
 void InputQuery::setNumberOfVariables( unsigned numberOfVariables )
@@ -189,7 +188,7 @@ double InputQuery::getUpperBound( unsigned variable ) const
 
 void InputQuery::addEquation( const Equation &equation )
 {
-    _equations.push_back( equation );
+    _equations.push_back( new Equation( equation ) );
 }
 
 unsigned InputQuery::getNumberOfEquations() const
@@ -342,14 +341,51 @@ void InputQuery::saveQuery( const String &fileName )
 
 Query *InputQuery::generateQuery() const
 {
-    return nullptr;
+    Query *query = new Query();
+
+    query->setNumberOfVariables( _numberOfVariables );
+
+    for ( const auto &equation : _equations )
+        query->addEquation( *equation );
+
+    for ( const auto &pair : _lowerBounds )
+        query->setLowerBound( pair.first, pair.second );
+
+    for ( const auto &pair : _upperBounds )
+        query->setUpperBound( pair.first, pair.second );
+
+    for ( const auto &c : _plConstraints )
+        query->addPiecewiseLinearConstraint( c->duplicateConstraint() );
+
+    for ( const auto &c : _nlConstraints )
+        query->addNonlinearConstraint( c->duplicateConstraint() );
+
+    for ( const auto &pair : _variableToInputIndex )
+    {
+        query->markInputVariable( pair.first, pair.second );
+    }
+
+    for ( const auto &pair : _variableToOutputIndex )
+    {
+        query->markOutputVariable( pair.first, pair.second );
+    }
+
+    for ( const auto &pair : _solution )
+    {
+        query->setSolutionValue( pair.first, pair.second );
+    }
+
+    for ( const auto &pair : _debuggingSolution )
+    {
+        query->storeDebuggingSolution( pair.first, pair.second );
+    }
+
+    return query;
 }
 
-void InputQuery::freeConstraintsIfNeeded()
+void InputQuery::dump() const
 {
-    for ( auto &it : _plConstraints )
-        delete it;
-
-    for ( auto &it : _nlConstraints )
-        delete it;
+    Query *query = generateQuery();
+    query->dump();
+    delete query;
 }

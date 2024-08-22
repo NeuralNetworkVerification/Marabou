@@ -338,13 +338,17 @@ public:
         Set<unsigned> varsInUnhandledConstraints;
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner( unhandledEquations,
                                                              varsInUnhandledConstraints ) );
+
         TS_ASSERT( unhandledEquations.empty() );
         TS_ASSERT( varsInUnhandledConstraints.empty() );
-        engine.processInputQuery( inputQuery, false );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
+
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
-        constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::Polarity );
-        constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity );
+        TS_ASSERT_THROWS_NOTHING( constraintToSplit =
+                                      engine.pickSplitPLConstraint( DivideStrategy::Polarity ) );
+        TS_ASSERT_THROWS_NOTHING(
+            constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity ) );
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
         TS_ASSERT( constraintToSplit );

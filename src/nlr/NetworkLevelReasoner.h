@@ -170,7 +170,7 @@ public:
       Generate an input query from this NLR, according to the
       discovered network topology
     */
-    Query generateQuery();
+    void generateQuery( Query &query );
 
     /*
       Finds logically consecutive WS layers and merges them, in order

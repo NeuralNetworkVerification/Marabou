@@ -17,9 +17,9 @@
 
 #include "File.h"
 #include "FloatUtils.h"
+#include "IQuery.h"
 #include "InputParserError.h"
 #include "MStringf.h"
-#include "Query.h"
 
 #include <cstdio>
 
@@ -302,7 +302,7 @@ double MpsParser::getLowerBound( unsigned index ) const
     return _varToLowerBounds.exists( index ) ? _varToLowerBounds[index] : -DBL_MAX;
 }
 
-void MpsParser::generateQuery( Query &inputQuery ) const
+void MpsParser::generateQuery( IQuery &inputQuery ) const
 {
     inputQuery.setNumberOfVariables( _numVars );
 
@@ -310,7 +310,7 @@ void MpsParser::generateQuery( Query &inputQuery ) const
     populateEquations( inputQuery );
 }
 
-void MpsParser::populateBounds( Query &inputQuery ) const
+void MpsParser::populateBounds( IQuery &inputQuery ) const
 {
     for ( const auto &it : _varToUpperBounds )
         inputQuery.setUpperBound( it.first, it.second );
@@ -319,7 +319,7 @@ void MpsParser::populateBounds( Query &inputQuery ) const
         inputQuery.setLowerBound( it.first, it.second );
 }
 
-void MpsParser::populateEquations( Query &inputQuery ) const
+void MpsParser::populateEquations( IQuery &inputQuery ) const
 {
     for ( unsigned index = 0; index < _numRows; ++index )
     {

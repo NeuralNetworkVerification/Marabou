@@ -31,12 +31,38 @@
 
 class InputQuery : public IQuery
 {
-    using VariableValueMap = CVC4::context::CDHashMap<unsigned, double>;
-    using VariableIndexMap = CVC4::context::CDHashMap<unsigned, unsigned>;
-    using IndexVariableMap = CVC4::context::CDHashMap<unsigned, unsigned>;
-    using EquationList = CVC4::context::CDList<Equation>;
-    using PLConstraintsList = CVC4::context::CDList<PiecewiseLinearConstraint *>;
-    using NLConstraintsList = CVC4::context::CDList<NonlinearConstraint *>;
+    typedef CVC4::context::CDHashMap<unsigned, double> VariableValueMap;
+    typedef CVC4::context::CDHashMap<unsigned, unsigned> VariableIndexMap;
+    typedef CVC4::context::CDHashMap<unsigned, unsigned> IndexVariableMap;
+
+    struct CleanUpEquation
+    {
+        void operator()( Equation **ptr ) const
+        {
+            delete *ptr;
+        }
+    };
+
+    struct CleanUpPLConstraint
+    {
+        void operator()( PiecewiseLinearConstraint **ptr ) const
+        {
+            delete *ptr;
+        }
+    };
+
+    struct CleanUpNLConstraint
+    {
+        void operator()( NonlinearConstraint **ptr ) const
+        {
+            delete *ptr;
+        }
+    };
+
+    typedef CVC4::context::CDList<Equation *, CleanUpEquation> EquationList;
+    typedef CVC4::context::CDList<PiecewiseLinearConstraint *, CleanUpPLConstraint>
+        PLConstraintsList;
+    typedef CVC4::context::CDList<NonlinearConstraint *, CleanUpNLConstraint> NLConstraintsList;
 
 public:
     InputQuery();
@@ -113,6 +139,8 @@ public:
       Generate a non-context-dependent version of the Query
     */
     Query *generateQuery() const;
+
+    void dump() const;
 
     /*
       The following methods perform directly read/write to the _userContext object.

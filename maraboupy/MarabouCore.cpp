@@ -375,6 +375,7 @@ struct MarabouOptions
     std::string _lpSolverString;
 };
 
+
 std::string exitCodeToString( IEngine::ExitCode code )
 {
     switch ( code )
@@ -566,24 +567,6 @@ PYBIND11_MODULE( MarabouCore, m )
     m.def( "createInputQuery",
            &createInputQuery,
            "Create input query from network and property file" );
-    m.def( "preprocess",
-           &preprocess,
-           R"pbdoc(
-         Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
-
-         Args:
-             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be preproccessed
-             options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
-             redirect (str, optional): Filepath to direct standard output, defaults to ""
-             returnFullyProcessedQuery (bool, optional): whether to return the fully processed query (symbolic and more), or just the initially processed query, default to False.
-
-         Returns:
-                 InputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): the preprocessed input query
-         )pbdoc",
-           py::arg( "inputQuery" ),
-           py::arg( "options" ),
-           py::arg( "redirect" ) = "",
-           py::arg( "returnFullyProcessedQuery" ) = false );
     m.def( "solve",
            &solve,
            R"pbdoc(
@@ -640,11 +623,10 @@ PYBIND11_MODULE( MarabouCore, m )
 
         Args:
             filename (str): Name of file to load into an InputQuery
-
-        Returns:
-            :class:`~maraboupy.MarabouCore.InputQuery`
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): the input query to store the constraints
         )pbdoc",
-           py::arg( "filename" ) );
+           py::arg( "filename" ),
+           py::arg( "inputQuery" ) );
     m.def( "addClipConstraint",
            &addClipConstraint,
            R"pbdoc(

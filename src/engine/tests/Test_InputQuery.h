@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_Query.h
+/*! \file Test_InputQuery.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Andrew Wu
@@ -13,7 +13,7 @@
 
 **/
 
-#include "CDQuery.h"
+#include "InputQuery.h"
 #include "MarabouError.h"
 #include "ReluConstraint.h"
 
@@ -25,7 +25,7 @@ class CDQueryTestSuite : public CxxTest::TestSuite
 public:
     void test_set_and_get_new_variable()
     {
-        Query inputQuery;
+        InputQuery inputQuery;
         TS_ASSERT_THROWS_NOTHING( inputQuery.setNumberOfVariables( 1 ) );
         TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 1u );
         TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 1u );

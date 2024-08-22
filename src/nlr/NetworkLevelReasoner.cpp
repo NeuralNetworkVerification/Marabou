@@ -387,10 +387,8 @@ void NetworkLevelReasoner::encodeAffineLayers( Query &inputQuery )
             generateQueryForWeightedSumLayer( inputQuery, pair.second );
 }
 
-Query NetworkLevelReasoner::generateQuery()
+void NetworkLevelReasoner::generateQuery( Query &result )
 {
-    Query result;
-
     // Number of variables
     unsigned numberOfVariables = 0;
     for ( const auto &it : _layerIndexToLayer )
@@ -427,8 +425,6 @@ Query NetworkLevelReasoner::generateQuery()
             result.setUpperBound( variable, layer->getUb( i ) );
         }
     }
-
-    return result;
 }
 
 void NetworkLevelReasoner::reindexNeurons()
