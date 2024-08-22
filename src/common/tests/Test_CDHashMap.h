@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file Test_HashMap.h
+/*! \file Test_CDHashMap.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Andrew Wu, Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
