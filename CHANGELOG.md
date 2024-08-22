@@ -1,6 +1,7 @@
 # Changelog
 
 ## Next Release
+  - Adding incremental infrastructure which allows pushing and popping constraints to/from the InputQuery.
 
 ## Version 2.0.0
 
