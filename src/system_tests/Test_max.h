@@ -14,8 +14,8 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "MaxConstraint.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -35,7 +35,7 @@ public:
     {
         double large = 1000;
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, -large );
@@ -92,7 +92,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( max2 );
 
         Engine engine;
-        if ( !engine.processInputQuery( inputQuery, true ) )
+        if ( !engine.processQuery( inputQuery, true ) )
         {
             // got infeasible in the preprocessing
             TS_ASSERT( 1 );
@@ -108,7 +108,7 @@ public:
     {
         double large = 1000;
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, 0 );
@@ -165,7 +165,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( max2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, true ) )
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery, true ) )
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 

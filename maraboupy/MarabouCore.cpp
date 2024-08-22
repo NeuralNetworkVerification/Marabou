@@ -22,11 +22,11 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
-#include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "MString.h"
 #include "MarabouError.h"
 #include "MarabouMain.h"
+#include "MarabouQuery.h"
 #include "MaxConstraint.h"
 #include "NonlinearConstraint.h"
 #include "Options.h"
@@ -111,7 +111,7 @@ void restoreOutputStream( int outputStream )
     close( outputStream );
 }
 
-void addClipConstraint( InputQuery &ipq,
+void addClipConstraint( MarabouQuery &ipq,
                         unsigned var1,
                         unsigned var2,
                         double floor,
@@ -120,43 +120,43 @@ void addClipConstraint( InputQuery &ipq,
     ipq.addClipConstraint( var1, var2, floor, ceiling );
 }
 
-void addLeakyReluConstraint( InputQuery &ipq, unsigned var1, unsigned var2, double slope )
+void addLeakyReluConstraint( MarabouQuery &ipq, unsigned var1, unsigned var2, double slope )
 {
     PiecewiseLinearConstraint *r = new LeakyReluConstraint( var1, var2, slope );
     ipq.addPiecewiseLinearConstraint( r );
 }
 
-void addReluConstraint( InputQuery &ipq, unsigned var1, unsigned var2 )
+void addReluConstraint( MarabouQuery &ipq, unsigned var1, unsigned var2 )
 {
     PiecewiseLinearConstraint *r = new ReluConstraint( var1, var2 );
     ipq.addPiecewiseLinearConstraint( r );
 }
 
-void addRoundConstraint( InputQuery &ipq, unsigned var1, unsigned var2 )
+void addRoundConstraint( MarabouQuery &ipq, unsigned var1, unsigned var2 )
 {
     NonlinearConstraint *r = new RoundConstraint( var1, var2 );
     ipq.addNonlinearConstraint( r );
 }
 
-void addBilinearConstraint( InputQuery &ipq, unsigned var1, unsigned var2, unsigned var3 )
+void addBilinearConstraint( MarabouQuery &ipq, unsigned var1, unsigned var2, unsigned var3 )
 {
     NonlinearConstraint *r = new BilinearConstraint( var1, var2, var3 );
     ipq.addNonlinearConstraint( r );
 }
 
-void addSigmoidConstraint( InputQuery &ipq, unsigned var1, unsigned var2 )
+void addSigmoidConstraint( MarabouQuery &ipq, unsigned var1, unsigned var2 )
 {
     NonlinearConstraint *s = new SigmoidConstraint( var1, var2 );
     ipq.addNonlinearConstraint( s );
 }
 
-void addSignConstraint( InputQuery &ipq, unsigned var1, unsigned var2 )
+void addSignConstraint( MarabouQuery &ipq, unsigned var1, unsigned var2 )
 {
     PiecewiseLinearConstraint *r = new SignConstraint( var1, var2 );
     ipq.addPiecewiseLinearConstraint( r );
 }
 
-void addMaxConstraint( InputQuery &ipq, std::set<unsigned> elements, unsigned v )
+void addMaxConstraint( MarabouQuery &ipq, std::set<unsigned> elements, unsigned v )
 {
     Set<unsigned> e;
     for ( unsigned var : elements )
@@ -165,7 +165,7 @@ void addMaxConstraint( InputQuery &ipq, std::set<unsigned> elements, unsigned v 
     ipq.addPiecewiseLinearConstraint( m );
 }
 
-void addSoftmaxConstraint( InputQuery &ipq,
+void addSoftmaxConstraint( MarabouQuery &ipq,
                            std::list<unsigned> inputs,
                            std::list<unsigned> outputs )
 {
@@ -181,12 +181,12 @@ void addSoftmaxConstraint( InputQuery &ipq,
     ipq.addNonlinearConstraint( s );
 }
 
-void addAbsConstraint( InputQuery &ipq, unsigned b, unsigned f )
+void addAbsConstraint( MarabouQuery &ipq, unsigned b, unsigned f )
 {
     ipq.addPiecewiseLinearConstraint( new AbsoluteValueConstraint( b, f ) );
 }
 
-void loadProperty( InputQuery &inputQuery, std::string propertyFilePath )
+void loadProperty( MarabouQuery &inputQuery, std::string propertyFilePath )
 {
     String propertyFilePathM = String( propertyFilePath );
     if ( propertyFilePath != "" )
@@ -205,7 +205,7 @@ void loadProperty( InputQuery &inputQuery, std::string propertyFilePath )
         printf( "Property: None\n" );
 }
 
-bool createInputQuery( InputQuery &inputQuery,
+bool createInputQuery( MarabouQuery &inputQuery,
                        std::string networkFilePath,
                        std::string propertyFilePath )
 {
@@ -561,9 +561,9 @@ void saveQuery( InputQuery &inputQuery, std::string filename )
     inputQuery.saveQuery( String( filename ) );
 }
 
-InputQuery loadQuery( std::string filename )
+void loadQuery( std::string filename, MarabouQuery &query )
 {
-    return QueryLoader::loadQuery( String( filename ) );
+    return QueryLoader::loadQuery( String( filename ), query );
 }
 
 // Code necessary to generate Python library

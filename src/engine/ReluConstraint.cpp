@@ -20,11 +20,11 @@
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Query.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -890,7 +890,7 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void ReluConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void ReluConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     /*
       We want to add the equation

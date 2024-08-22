@@ -16,7 +16,7 @@
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -35,7 +35,7 @@ public:
     {
         double large = 1000;
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, 0 );
@@ -132,7 +132,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( disjunction2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
@@ -179,7 +179,7 @@ public:
 
     void test_disjunction_2()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         double large = 1000;
@@ -268,7 +268,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( disjunction2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 

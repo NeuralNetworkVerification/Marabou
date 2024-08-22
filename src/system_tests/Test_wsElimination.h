@@ -17,9 +17,9 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "Preprocessor.h"
+#include "Query.h"
 #include "QueryLoader.h"
 
 #include <cxxtest/TestSuite.h>
@@ -38,8 +38,7 @@ public:
     void test_nlr_to_query_and_back_1()
     {
         Engine engine;
-        InputQuery inputQuery =
-            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -50,7 +49,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -71,8 +70,7 @@ public:
     void test_nlr_to_query_and_back_2()
     {
         Engine engine;
-        InputQuery inputQuery =
-            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -83,7 +81,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -104,8 +102,7 @@ public:
     void test_nlr_to_query_and_back_3()
     {
         Engine engine;
-        InputQuery inputQuery =
-            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -116,7 +113,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -137,8 +134,7 @@ public:
     void test_nlr_to_query_and_back_4()
     {
         Engine engine;
-        InputQuery inputQuery =
-            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        Query inputQuery = QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
@@ -149,7 +145,7 @@ public:
             inputQuery.setUpperBound( inputVariable, pixel );
         }
 
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );

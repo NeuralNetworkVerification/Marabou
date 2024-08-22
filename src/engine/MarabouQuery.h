@@ -17,6 +17,8 @@
 #define __MarabouQuery_h__
 
 #include "Equation.h"
+#include "IQuery.h"
+#include "List.h"
 #include "MString.h"
 #include "Map.h"
 #include "NonlinearConstraint.h"
@@ -27,7 +29,7 @@
 #include <context/cdlist.h>
 #include <context/context.h>
 
-class MarabouQuery
+class MarabouQuery : public IQuery
 {
     using VariableValueMap = CVC4::context::CDHashMap<unsigned, double>;
     using VariableIndexMap = CVC4::context::CDHashMap<unsigned, unsigned>;
@@ -60,15 +62,14 @@ public:
 
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
-    void getLowerBounds( Map<unsigned, double> &lowerBounds ) const;
-    void getUpperBounds( Map<unsigned, double> &upperBounds ) const;
-    void clearBounds();
 
     /*
       Note: currently there is no API call for removing equations, PLConstraints or NLConstraints,
       becaues CDList does not support removal.
     */
     void addEquation( const Equation &equation );
+    unsigned getNumberOfEquations() const;
+    ;
     void getEquations( List<Equation> &equations ) const;
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
@@ -76,7 +77,7 @@ public:
     void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling );
 
     void addNonlinearConstraint( NonlinearConstraint *constraint );
-    void getNonlinearConstraints( List<NonlinearConstraint *> &constraints ) const;
+    void getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const;
 
     /*
       Methods for handling input and output variables
@@ -89,6 +90,8 @@ public:
     unsigned getNumOutputVariables() const;
     void getInputVariables( List<unsigned> &inputVariables ) const;
     void getOutputVariables( List<unsigned> &outputVariables ) const;
+    List<unsigned> getInputVariables() const;
+    List<unsigned> getOutputVariables() const;
 
     /*
       Methods for setting and getting the solution.
@@ -107,11 +110,9 @@ public:
     void saveQuery( const String &fileName );
 
     /*
-      Print input and output bounds
+      Generate a non-context-dependent version of the Query
     */
-    void printInputOutputBounds() const;
-    void dump() const;
-    void printAllBounds() const;
+    Query *generateQuery() const;
 
     /*
       The following methods perform directly read/write to the _userContext object.

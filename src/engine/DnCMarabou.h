@@ -17,7 +17,7 @@
 #define __DnCMarabou_h__
 
 #include "DnCManager.h"
-#include "InputQuery.h"
+#include "MarabouQuery.h"
 #include "Options.h"
 
 class DnCMarabou
@@ -32,7 +32,7 @@ public:
 
 private:
     std::unique_ptr<DnCManager> _dncManager;
-    InputQuery _inputQuery;
+    MarabouQuery _inputQuery;
     /*
       Display the results
     */

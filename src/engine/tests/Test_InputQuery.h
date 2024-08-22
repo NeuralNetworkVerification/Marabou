@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_InputQuery.h
+/*! \file Test_Query.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Christopher Lazarus, Shantanu Thakoor
@@ -15,33 +15,33 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockFileFactory.h"
 #include "NetworkLevelReasoner.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 
 #include <cxxtest/TestSuite.h>
 #include <string.h>
 
-class MockForInputQuery
+class MockForQuery
     : public MockFileFactory
     , public MockErrno
 {
 public:
 };
 
-class InputQueryTestSuite : public CxxTest::TestSuite
+class QueryTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForInputQuery *mock;
+    MockForQuery *mock;
     MockFile *file;
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForInputQuery );
+        TS_ASSERT( mock = new MockForQuery );
 
         file = &( mock->mockFile );
     }
@@ -53,7 +53,7 @@ public:
 
     void test_get_new_variable()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 1 );
         TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 1u );
         TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 1u );
@@ -64,7 +64,7 @@ public:
 
     void test_lower_bounds()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         TS_ASSERT_THROWS_NOTHING( inputQuery.setNumberOfVariables( 5 ) );
         TS_ASSERT_EQUALS( inputQuery.getLowerBound( 3 ), FloatUtils::negativeInfinity() );
@@ -90,7 +90,7 @@ public:
 
     void test_upper_bounds()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         TS_ASSERT_THROWS_NOTHING( inputQuery.setNumberOfVariables( 5 ) );
         TS_ASSERT_EQUALS( inputQuery.getUpperBound( 2 ), FloatUtils::infinity() );
@@ -118,14 +118,14 @@ public:
     {
         ReluConstraint *relu1 = new ReluConstraint( 3, 5 );
 
-        InputQuery *inputQuery = new InputQuery;
+        Query *inputQuery = new Query;
 
         inputQuery->setNumberOfVariables( 5 );
         inputQuery->setLowerBound( 2, -4 );
         inputQuery->setUpperBound( 2, 55 );
         inputQuery->addPiecewiseLinearConstraint( relu1 );
 
-        InputQuery inputQuery2 = *inputQuery;
+        Query inputQuery2 = *inputQuery;
 
         TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
         TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
@@ -168,7 +168,7 @@ public:
         sigmoid1->notifyUpperBound( 3, 0.3 );
         sigmoid1->notifyUpperBound( 5, 0.4 );
 
-        InputQuery *inputQuery = new InputQuery;
+        Query *inputQuery = new Query;
 
         inputQuery->setNumberOfVariables( 6 );
         inputQuery->setLowerBound( 3, 0.1 );
@@ -177,7 +177,7 @@ public:
         inputQuery->setUpperBound( 5, 0.4 );
         inputQuery->addNonlinearConstraint( sigmoid1 );
 
-        InputQuery inputQuery2 = *inputQuery;
+        Query inputQuery2 = *inputQuery;
 
         TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 6U );
         TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 3 ), 0.1 );
@@ -218,7 +218,7 @@ public:
 
     void test_infinite_bounds()
     {
-        InputQuery *inputQuery = new InputQuery;
+        Query *inputQuery = new Query;
 
         inputQuery->setNumberOfVariables( 5 );
         inputQuery->setLowerBound( 2, -4 );
@@ -234,7 +234,7 @@ public:
     {
         TS_TRACE( "TODO" );
 
-        InputQuery *inputQuery = new InputQuery;
+        Query *inputQuery = new Query;
 
         // Todo: Load some stuff into the input query
 
@@ -257,7 +257,7 @@ public:
         // x4 = lRelu(x2)
         // x5 = lRelu(x3)
         // x6 = x2 + x3 + x4
-        InputQuery *inputQuery = new InputQuery;
+        Query *inputQuery = new Query;
         inputQuery->setNumberOfVariables( 7 );
         Equation eq1;
         eq1.addAddend( 1, 0 );

@@ -18,12 +18,12 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "Map.h"
 #include "MarabouError.h"
 #include "Options.h"
 #include "PiecewiseLinearFunctionType.h"
+#include "Query.h"
 #include "Statistics.h"
 #include "Tightening.h"
 
@@ -58,10 +58,12 @@ void Preprocessor::freeMemoryIfNeeded()
     }
 }
 
-std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query,
-                                                      bool attemptVariableElimination )
+std::unique_ptr<Query> Preprocessor::preprocess( const IQuery &query,
+                                                 bool attemptVariableElimination )
 {
-    _preprocessed = std::unique_ptr<InputQuery>( new InputQuery( query ) );
+    _preprocessed = std::unique_ptr<Query>( query.generateQuery() );
+
+    informConstraintsOfInitialBounds();
 
     /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
@@ -1046,7 +1048,7 @@ void Preprocessor::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
-void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery )
+void Preprocessor::setSolutionValuesOfEliminatedNeurons( IQuery &inputQuery )
 {
     Map<unsigned, double> assignment;
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
@@ -1114,4 +1116,27 @@ void Preprocessor::dumpAllBounds( const String &message )
     }
 
     printf( "\n" );
+}
+
+void Preprocessor::informConstraintsOfInitialBounds()
+{
+    for ( const auto &plConstraint : _preprocessed->getPiecewiseLinearConstraints() )
+    {
+        List<unsigned> variables = plConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            plConstraint->notifyLowerBound( variable, _preprocessed->getLowerBound( variable ) );
+            plConstraint->notifyUpperBound( variable, _preprocessed->getUpperBound( variable ) );
+        }
+    }
+
+    for ( const auto &nlConstraint : _preprocessed->getNonlinearConstraints() )
+    {
+        List<unsigned> variables = nlConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            nlConstraint->notifyLowerBound( variable, _preprocessed->getLowerBound( variable ) );
+            nlConstraint->notifyUpperBound( variable, _preprocessed->getUpperBound( variable ) );
+        }
+    }
 }

@@ -15,11 +15,11 @@
 #ifndef __OnnxParser_h__
 #define __OnnxParser_h__
 
-#include "InputQuery.h"
-#include "InputQueryBuilder.h"
 #include "List.h"
 #include "MString.h"
 #include "Map.h"
+#include "Query.h"
+#include "QueryBuilder.h"
 #include "Set.h"
 #include "TensorUtils.h"
 #include "Vector.h"
@@ -31,7 +31,7 @@
 class OnnxParser
 {
 public:
-    static void parse( InputQueryBuilder &query,
+    static void parse( QueryBuilder &query,
                        const String &path,
                        const Set<String> inputNames,
                        const Set<String> outputNames );
@@ -39,12 +39,12 @@ public:
 
 private:
     // Settings //
-    OnnxParser( InputQueryBuilder &query,
+    OnnxParser( QueryBuilder &query,
                 const String &path,
                 const Set<String> inputNames,
                 const Set<String> terminalNames );
 
-    InputQueryBuilder &_query;
+    QueryBuilder &_query;
     onnx::GraphProto _network;
     Set<String> _inputNames;
 

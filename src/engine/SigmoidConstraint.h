@@ -123,7 +123,7 @@ public:
     */
     static double sigmoidDerivative( double x );
 
-    virtual bool attemptToRefine( InputQuery &inputQuery ) const override;
+    virtual bool attemptToRefine( Query &inputQuery ) const override;
 
 private:
     unsigned _b, _f;

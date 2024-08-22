@@ -17,11 +17,11 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "List.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "Statistics.h"
 
 #include <algorithm>
@@ -540,7 +540,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _obsolete = true;
 }
 
-void MaxConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void MaxConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     if ( _auxToElement.size() > 0 )
         return;

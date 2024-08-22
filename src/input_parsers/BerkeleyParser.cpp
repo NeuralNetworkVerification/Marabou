@@ -16,7 +16,7 @@
 #include "BerkeleyParser.h"
 
 #include "FloatUtils.h"
-#include "InputQuery.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 
 BerkeleyParser::BerkeleyParser( const String &path )
@@ -24,7 +24,7 @@ BerkeleyParser::BerkeleyParser( const String &path )
 {
 }
 
-void BerkeleyParser::generateQuery( InputQuery &inputQuery )
+void BerkeleyParser::generateQuery( Query &inputQuery )
 {
     _berkeleyNeuralNetwork.parseFile();
 

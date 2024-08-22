@@ -15,8 +15,8 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "LinearExpression.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -33,7 +33,7 @@ public:
 
     void test_optimize_for_heuristic_cost()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 4 );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -68,7 +68,7 @@ public:
         inputQuery.addEquation( equation4 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         // Cost function: x0 - x1
@@ -110,7 +110,7 @@ public:
 
     void test_fesiablbe()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 4 );
 
         inputQuery.setLowerBound( 0, 0 );
@@ -134,7 +134,7 @@ public:
 
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
@@ -166,7 +166,7 @@ public:
 
     void test_infesiable()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 7 );
         inputQuery.setLowerBound( 0, 0 );
         inputQuery.setUpperBound( 0, 1 );
@@ -212,7 +212,7 @@ public:
         inputQuery.addEquation( equation3 );
 
         Engine engine;
-        bool result = engine.processInputQuery( inputQuery );
+        bool result = engine.processQuery( inputQuery );
         if ( !result )
         {
             // got UNSAT from the preprocessing

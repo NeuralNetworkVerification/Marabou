@@ -50,7 +50,7 @@ void DeepPolySoftmaxElement::execute(
     getConcreteBounds();
 
     // This function rely on the assumptions described in the
-    // constructSoftmaxLayer() method in the InputQuery class
+    // constructSoftmaxLayer() method in the Query class
 
     Set<unsigned> handledInputNeurons;
     // Update the symbolic and concrete upper- and lower- bounds

@@ -18,11 +18,11 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
 #include "MockErrno.h"
 #include "Preprocessor.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 
 #include <cxxtest/TestSuite.h>
@@ -50,7 +50,7 @@ public:
 
     void test_tighten_equation_bounds()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 4 );
         inputQuery.setLowerBound( 1, 0 );
@@ -68,7 +68,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery ) );
 
         // x0 = 10 - x1 + x2
         //
@@ -172,7 +172,7 @@ public:
         TS_ASSERT_THROWS( Preprocessor().preprocess( inputQuery ),
                           const InfeasibleQueryException &e );
 
-        InputQuery inputQuery2;
+        Query inputQuery2;
         inputQuery2.setNumberOfVariables( 5 );
         inputQuery2.setLowerBound( 1, 0 );
         inputQuery2.setUpperBound( 1, 1 );
@@ -203,7 +203,7 @@ public:
 
     void test_tighten_bounds_using_constraints()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 17 );
         inputQuery.setLowerBound( 1, 0 );
@@ -245,7 +245,7 @@ public:
         inputQuery.markInputVariable( 9, 5 );
         inputQuery.markInputVariable( 10, 6 );
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery, false ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         // x1 = Relu( x0 ) = max( 0, x0 )
         // x1 \in [0, 10]
@@ -308,7 +308,7 @@ public:
 
     void test_tighten_bounds_using_equations_and_constraints()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 7 );
         inputQuery.setLowerBound( 1, 0 );
@@ -353,7 +353,7 @@ public:
         equation.setScalar( 10 );
         inputQuery.addEquation( equation );
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery, false ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );
@@ -365,7 +365,7 @@ public:
 
     void test_variable_elimination()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 10 );
         inputQuery.setLowerBound( 0, 1 ); // fixed
@@ -404,7 +404,7 @@ public:
         equation2.setScalar( 12 );
         inputQuery.addEquation( equation2 );
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // Variables 2, 4, 5 and 9 are unused and should be eliminated.
         // Variables 0, 3 and 6 were fixed and should be eliminated.
@@ -435,7 +435,7 @@ public:
         // x5 = simoid(x3)
         // x6 = 0.2 x4 + 0.5 x5
         // x7 = 0.4 x4 - 0.2 x5
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 8 );
         inputQuery.setLowerBound( 0, 0.1 );
@@ -475,7 +475,7 @@ public:
         inputQuery.addNonlinearConstraint( new SigmoidConstraint( 2, 4 ) );
         inputQuery.addNonlinearConstraint( new SigmoidConstraint( 3, 5 ) );
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // All equations and varaibles should have been eliminated
         TS_ASSERT_EQUALS( processed.getEquations().size(), 0U );
@@ -485,7 +485,7 @@ public:
 
     void test_all_equations_become_equalities()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 3 );
         inputQuery.setLowerBound( 0, 1 );
@@ -503,7 +503,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery, false ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 4U );
 
@@ -530,7 +530,7 @@ public:
 
     void test_identical_variable_elimination()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 4 );
         for ( unsigned i = 0; i < 4; ++i )
@@ -560,7 +560,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu1 );
 
         Preprocessor preprocessor;
-        InputQuery processed = *( preprocessor.preprocess( inputQuery, true ) );
+        Query processed = *( preprocessor.preprocess( inputQuery, true ) );
 
         TS_ASSERT( processed.getEquations().size() > 1U );
 
@@ -593,7 +593,7 @@ public:
 
     void test_merge_and_fix_disjoint()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 20 );
 
         /* Input */
@@ -731,7 +731,7 @@ public:
         inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery ) );
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
@@ -749,7 +749,7 @@ public:
           x1 --- x3 ---> x5
               1
         */
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 7 );
 
@@ -797,7 +797,7 @@ public:
 
         // Invoke preprocessor
         TS_ASSERT( !inputQuery._networkLevelReasoner );
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery ) );
         TS_ASSERT( processed._networkLevelReasoner );
 
         NLR::NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
@@ -827,7 +827,7 @@ public:
           x1 --- x3 ---> x5
               1
         */
-        InputQuery inputQuery;
+        Query inputQuery;
 
         inputQuery.setNumberOfVariables( 7 );
 
@@ -877,7 +877,7 @@ public:
 
         // Invoke preprocessor
         TS_ASSERT( !inputQuery._networkLevelReasoner );
-        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
+        Query processed = *( Preprocessor().preprocess( inputQuery ) );
         TS_ASSERT( processed._networkLevelReasoner );
 
         NLR::NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
@@ -895,7 +895,7 @@ public:
 
     void test_preprocessor_handle_obsolete_constraints()
     {
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 3 );
         MaxConstraint *max1 = new MaxConstraint( 0, Set<unsigned>( { 1, 2 } ) );
         MaxConstraint *max2 = new MaxConstraint( 0, Set<unsigned>( { 0, 1, 2 } ) );
@@ -912,7 +912,7 @@ public:
         // max2 will be obsolete. And constraints x0 - x1 - aux3 = 0,
         // x0 - x2 - aux4 = 0 will be added to the processed ipq.
 
-        InputQuery processed;
+        Query processed;
         TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().preprocess( ipq ) ) );
 
         // Four more variables are added.
@@ -939,7 +939,7 @@ public:
 
     void test_preprocessor_with_input_bounds_in_disjunction()
     {
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 1 );
         ipq.markInputVariable( 0, 0 );
 
@@ -955,7 +955,7 @@ public:
         DisjunctionConstraint *disj = new DisjunctionConstraint( caseSplits );
         ipq.addPiecewiseLinearConstraint( disj );
 
-        InputQuery processed;
+        Query processed;
         TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().preprocess( ipq ) ) );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -4 );
@@ -964,7 +964,7 @@ public:
 
     void test_set_solution_for_eliminated_neurons()
     {
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 6 );
         {
             // x2 = x0 + x1 + 1

@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file InputQueryBuilder.cpp
+/*! \file QueryBuilder.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Matthew Daggitt, Luca Arnaboldi
@@ -12,79 +12,78 @@
  ** This file provides a general interface for parsing a neural network file.
  ** Keeps track of internal state such as equations and variables that
  ** may be altered during parsing of a network. Once the network has been parsed
- ** they are then loaded into an InputQuery.
+ ** they are then loaded into an Query.
  ** Future parsers for individual network formats should extend this interface.
  **/
 
-#include "InputQueryBuilder.h"
-
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "IQuery.h"
 #include "InputParserError.h"
-#include "InputQuery.h"
 #include "List.h"
 #include "MString.h"
 #include "MStringf.h"
 #include "Map.h"
+#include "QueryBuilder.h"
 #include "Set.h"
 
 #include <assert.h>
 
-InputQueryBuilder::InputQueryBuilder()
+QueryBuilder::QueryBuilder()
 {
     _numVars = 0;
 }
 
-Variable InputQueryBuilder::getNewVariable()
+Variable QueryBuilder::getNewVariable()
 {
     _numVars += 1;
     return _numVars - 1;
 }
 
-void InputQueryBuilder::markInputVariable( Variable var )
+void QueryBuilder::markInputVariable( Variable var )
 {
     _inputVars.append( var );
 }
 
-void InputQueryBuilder::markOutputVariable( Variable var )
+void QueryBuilder::markOutputVariable( Variable var )
 {
     _outputVars.append( var );
 }
 
-void InputQueryBuilder::addEquation( Equation &eq )
+void QueryBuilder::addEquation( Equation &eq )
 {
     _equationList.append( eq );
 }
 
-void InputQueryBuilder::setLowerBound( Variable var, float value )
+void QueryBuilder::setLowerBound( Variable var, float value )
 {
     _lowerBounds[var] = value;
 }
 
-void InputQueryBuilder::setUpperBound( Variable var, float value )
+void QueryBuilder::setUpperBound( Variable var, float value )
 {
     _upperBounds[var] = value;
 }
 
-void InputQueryBuilder::addRelu( Variable inputVar, Variable outputVar )
+void QueryBuilder::addRelu( Variable inputVar, Variable outputVar )
 {
     _reluList.append( new ReluConstraint( inputVar, outputVar ) );
     setLowerBound( outputVar, 0.0f );
 }
 
-void InputQueryBuilder::addLeakyRelu( Variable inputVar, Variable outputVar, float alpha )
+void QueryBuilder::addLeakyRelu( Variable inputVar, Variable outputVar, float alpha )
 {
     _leakyReluList.append( new LeakyReluConstraint( inputVar, outputVar, alpha ) );
 }
 
-void InputQueryBuilder::addSigmoid( Variable inputVar, Variable outputVar )
+void QueryBuilder::addSigmoid( Variable inputVar, Variable outputVar )
 {
     _sigmoidList.append( new SigmoidConstraint( inputVar, outputVar ) );
     setLowerBound( outputVar, 0.0 );
     setUpperBound( outputVar, 1.0 );
 }
 
-void InputQueryBuilder::addTanh( Variable inputVar, Variable outputVar )
+void QueryBuilder::addTanh( Variable inputVar, Variable outputVar )
 {
     // Uses the identity `tanh(x) = 2 * sigmoid(2x) - 1` to implement
     // it terms of a sigmoid constraint.
@@ -108,22 +107,22 @@ void InputQueryBuilder::addTanh( Variable inputVar, Variable outputVar )
     setUpperBound( outputVar, 1.0 );
 }
 
-void InputQueryBuilder::addMaxConstraint( Variable var, Set<Variable> elements )
+void QueryBuilder::addMaxConstraint( Variable var, Set<Variable> elements )
 {
     _maxList.append( new MaxConstraint( var, elements ) );
 }
 
-void InputQueryBuilder::addSignConstraint( Variable inputVar, Variable outputVar )
+void QueryBuilder::addSignConstraint( Variable inputVar, Variable outputVar )
 {
     _signList.append( new SignConstraint( inputVar, outputVar ) );
 }
 
-void InputQueryBuilder::addAbsConstraint( Variable inputVar, Variable outputVar )
+void QueryBuilder::addAbsConstraint( Variable inputVar, Variable outputVar )
 {
     _absList.append( new AbsoluteValueConstraint( inputVar, outputVar ) );
 }
 
-void InputQueryBuilder::generateQuery( InputQuery &query )
+void QueryBuilder::generateQuery( IQuery &query )
 {
     query.setNumberOfVariables( _numVars );
 
@@ -218,7 +217,7 @@ void InputQueryBuilder::generateQuery( InputQuery &query )
     }
 }
 
-Equation *InputQueryBuilder::findEquationWithOutputVariable( Variable variable )
+Equation *QueryBuilder::findEquationWithOutputVariable( Variable variable )
 {
     for ( Equation &equation : _equationList )
     {

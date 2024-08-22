@@ -170,7 +170,7 @@ public:
       non-negative. This way, case splits will be bound
       update of the aux variables.
     */
-    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( Query &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.

@@ -13,12 +13,12 @@
 
 **/
 
-#include "InputQuery.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "context/context.h"
 
@@ -301,7 +301,7 @@ public:
         relu.notifyUpperBound( f, 5 );
 
         unsigned auxVar = 10;
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( auxVar );
 
         relu.transformToUseAuxVariables( inputQuery );
@@ -534,7 +534,7 @@ public:
             ReluConstraint relu( b, f );
 
             relu.notifyLowerBound( b, -5 );
-            InputQuery dontCare;
+            Query dontCare;
             unsigned aux = 300;
             dontCare.setNumberOfVariables( aux );
             relu.transformToUseAuxVariables( dontCare );
@@ -551,7 +551,7 @@ public:
             ReluConstraint relu( b, f );
 
             relu.notifyLowerBound( b, -5 );
-            InputQuery dontCare;
+            Query dontCare;
             unsigned aux = 300;
             dontCare.setNumberOfVariables( aux );
             relu.transformToUseAuxVariables( dontCare );
@@ -655,7 +655,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        InputQuery dontCare;
+        Query dontCare;
         dontCare.setNumberOfVariables( 500 );
         unsigned aux = 500;
 
@@ -806,7 +806,7 @@ public:
         TS_ASSERT( !originalRelu.auxVariableInUse() );
         TS_ASSERT( !recoveredRelu.auxVariableInUse() );
 
-        InputQuery dontCare;
+        Query dontCare;
         dontCare.setNumberOfVariables( 500 );
 
         originalRelu.transformToUseAuxVariables( dontCare );
@@ -980,7 +980,7 @@ public:
     void test_add_auxiliary_equations()
     {
         ReluConstraint relu( 4, 6 );
-        InputQuery query;
+        Query query;
 
         query.setNumberOfVariables( 9 );
 
@@ -1016,7 +1016,7 @@ public:
 
         // Special case: add aux equations in active phase
         ReluConstraint relu2( 4, 6 );
-        InputQuery query2;
+        Query query2;
 
         query2.setNumberOfVariables( 9 );
 
@@ -1037,7 +1037,7 @@ public:
         ReluConstraint relu( b, f );
         boundManager->initialize( aux + 1 );
 
-        InputQuery dontCare;
+        Query dontCare;
         dontCare.setNumberOfVariables( aux );
 
         relu.notifyLowerBound( b, -10 );

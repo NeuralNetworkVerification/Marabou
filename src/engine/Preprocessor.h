@@ -17,11 +17,11 @@
 #define __Preprocessor_h__
 
 #include "Equation.h"
-#include "InputQuery.h"
 #include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Query.h"
 #include "Set.h"
 
 class Preprocessor
@@ -34,8 +34,8 @@ public:
     /*
       Main method of this class: preprocess the input query
     */
-    std::unique_ptr<InputQuery> preprocess( const InputQuery &query,
-                                            bool attemptVariableElimination = true );
+    std::unique_ptr<Query> preprocess( const IQuery &query,
+                                       bool attemptVariableElimination = true );
 
     /*
       Have the preprocessor start reporting statistics.
@@ -69,7 +69,7 @@ public:
       variables corresponding to eliminated neurons, compute the full
       assignment.
     */
-    void setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery );
+    void setSolutionValuesOfEliminatedNeurons( IQuery &inputQuery );
 
 private:
     void freeMemoryIfNeeded();
@@ -159,7 +159,7 @@ private:
     /*
       The preprocessed query
     */
-    std::unique_ptr<InputQuery> _preprocessed;
+    std::unique_ptr<Query> _preprocessed;
 
     /*
       Statistics collection
@@ -202,6 +202,8 @@ private:
       For debugging only
     */
     void dumpAllBounds( const String &message );
+
+    void informConstraintsOfInitialBounds();
 };
 
 #endif // __Preprocessor_h__

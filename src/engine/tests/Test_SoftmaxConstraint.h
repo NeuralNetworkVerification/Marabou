@@ -14,9 +14,9 @@
 **/
 
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
+#include "Query.h"
 #include "SoftmaxConstraint.h"
 #include "Tightening.h"
 

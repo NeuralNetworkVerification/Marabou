@@ -14,9 +14,9 @@
 **/
 
 #include "Engine.h"
-#include "InputQuery.h"
 #include "MString.h"
 #include "MpsParser.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -36,12 +36,12 @@ public:
         const String filename = RESOURCES_DIR "/mps/lp_infeasible_1.mps";
 
         // Extract an input query from the network
-        InputQuery inputQuery;
+        Query inputQuery;
 
         MpsParser mpsParser( filename );
         mpsParser.generateQuery( inputQuery );
         Engine engine;
-        if ( !engine.processInputQuery( inputQuery ) )
+        if ( !engine.processQuery( inputQuery ) )
         {
             // Got infeasible in preprocess stage
             TS_ASSERT( 1 );
@@ -58,12 +58,12 @@ public:
         const char *filename = RESOURCES_DIR "/mps/lp_feasible_1.mps";
 
         // Extract an input query from the network
-        InputQuery inputQuery;
+        Query inputQuery;
 
         MpsParser mpsParser( filename );
         mpsParser.generateQuery( inputQuery );
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processQuery( inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         engine.extractSolution( inputQuery );
 

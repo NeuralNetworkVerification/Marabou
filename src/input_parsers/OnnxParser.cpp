@@ -26,8 +26,8 @@
 
 #include "FloatUtils.h"
 #include "InputParserError.h"
-#include "InputQuery.h"
 #include "MString.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "TensorUtils.h"
 #include "onnx.proto3.pb.h"
@@ -52,7 +52,7 @@
  * the network, they can be intermediate nodes. If empty, then defaults to the network's output
  * nodes.
  */
-void OnnxParser::parse( InputQueryBuilder &query,
+void OnnxParser::parse( QueryBuilder &query,
                         const String &path,
                         const Set<String> initialNodeNames,
                         const Set<String> terminalNodeNames )
@@ -553,7 +553,7 @@ void OnnxParser::transferValues( String oldName, String newName )
  * Private methods *
  *******************/
 
-OnnxParser::OnnxParser( InputQueryBuilder &query,
+OnnxParser::OnnxParser( QueryBuilder &query,
                         const String &path,
                         const Set<String> inputNames,
                         const Set<String> terminalNames )

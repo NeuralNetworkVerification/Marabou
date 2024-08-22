@@ -13,11 +13,11 @@
 
 **/
 
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "SignConstraint.h"
 
 #include <cxxtest/TestSuite.h>
@@ -679,7 +679,7 @@ public:
             unsigned b = 1;
             unsigned f = 4;
 
-            InputQuery dontCare;
+            Query dontCare;
             dontCare.setNumberOfVariables( 500 );
 
             SignConstraint sign( b, f );
@@ -778,7 +778,7 @@ public:
             unsigned b2 = 1;
             unsigned f2 = 4;
 
-            InputQuery dontCare2;
+            Query dontCare2;
             dontCare.setNumberOfVariables( 500 );
 
             SignConstraint sign2( b2, f2 );
@@ -821,7 +821,7 @@ public:
 
         sign.registerBoundManager( boundManager );
 
-        InputQuery dontCare;
+        Query dontCare;
 
         sign.notifyLowerBound( b, -10 );
         sign.notifyUpperBound( b, 15 );
@@ -1227,7 +1227,7 @@ public:
     void test_add_auxiliary_equations()
     {
         SignConstraint sign( 4, 6 );
-        InputQuery query;
+        Query query;
 
         query.setNumberOfVariables( 9 );
 
