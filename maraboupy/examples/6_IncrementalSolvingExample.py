@@ -19,9 +19,6 @@ warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 
-import sys
-sys.path.append("../../")
-
 from maraboupy import Marabou
 from maraboupy import MarabouCore
 import numpy as np
