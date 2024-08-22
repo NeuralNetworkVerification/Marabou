@@ -132,29 +132,17 @@ class MarabouNetwork(InputQueryBuilder):
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
                 - maxClass (int): Output class which value is max within outputs if SAT.
         """
-        inputVars = None
-        if (type(self.inputVars) is list):
-            if (len(self.inputVars) != 1):
-                raise NotImplementedError("Operation for %d inputs is not implemented" % len(self.inputVars))
-            inputVars = self.inputVars[0][0]
-        elif (type(self.inputVars) is np.ndarray):
-            inputVars = self.inputVars[0]
-        else:
-            err_msg = "Unpexpected type of input vars."
-            raise RuntimeError(err_msg)
+        assert(type(self.inputVars) is list)
+        if (len(self.inputVars) != 1):
+            raise NotImplementedError("Operation for %d inputs is not implemented" % len(self.inputVars))
+        inputVars = self.inputVars[0][0]
 
         if inputVars.shape != input.shape:
             raise RuntimeError("Input shape of the model should be same as the input shape\n input shape of the model: {0}, shape of the input: {1}".format(inputVars.shape, input.shape))
 
-        if (type(self.outputVars) is list):
-            if (len(self.outputVars) != 1):
-                raise NotImplementedError("Operation for %d outputs is not implemented" % len(self.outputVars))
-        elif (type(self.outputVars) is np.ndarray):
-            if (len(self.outputVars) != 1):
-                raise NotImplementedError("Operation for %d outputs is not implemented" % len(self.outputVars))
-        else:
-            err_msg = "Unpexpected type of output vars."
-            raise RuntimeError(err_msg)
+        assert(type(self.outputVars) is list)
+        if (len(self.outputVars) != 1):
+            raise NotImplementedError("Operation for %d outputs is not implemented" % len(self.outputVars))
 
         if options == None:
             options = MarabouCore.Options()
@@ -165,7 +153,7 @@ class MarabouNetwork(InputQueryBuilder):
         for i in range(flattenInput.size):
             self.setLowerBound(flattenInputVars[i], flattenInput[i] - epsilon)
             self.setUpperBound(flattenInputVars[i], flattenInput[i] + epsilon)
-        
+
         maxClass = None
         outputStartIndex = self.outputVars[0][0][0]
 

@@ -111,6 +111,8 @@ public:
     void setPhaseStatusInCurrentPhasePattern( PiecewiseLinearConstraint *constraint,
                                               PhaseStatus phase );
 
+    void
+    setPLConstraintsInCurrentPhasePattern( const Vector<PiecewiseLinearConstraint *> &constraints );
 
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
