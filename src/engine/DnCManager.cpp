@@ -329,6 +329,8 @@ void DnCManager::printResult()
     {
         std::cout << "sat\n" << std::endl;
 
+        // TODO: update the variable assignment using NLR if possible and double-check that all the
+        // constraints are indeed satisfied.
         extractSolution( *_baseQuery );
 
         printf( "Input assignment:\n" );

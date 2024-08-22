@@ -243,7 +243,8 @@ void Marabou::solveQuery()
         }
     }
 
-
+    // TODO: update the variable assignment using NLR if possible and double-check that all the
+    // constraints are indeed satisfied.
     if ( _engine->getExitCode() == Engine::SAT )
         _engine->extractSolution( _inputQuery );
 }
