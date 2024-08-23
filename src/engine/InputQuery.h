@@ -9,32 +9,32 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** This implementation of the IQuery abstract class allows the pushing/poping
+ ** of constraints in an incremental manner.
+ **
  **/
 
 #ifndef __InputQuery_h__
 #define __InputQuery_h__
 
+#include "CDMap.h"
 #include "CommonError.h"
 #include "Equation.h"
 #include "IQuery.h"
 #include "List.h"
 #include "MString.h"
-#include "Map.h"
 #include "NonlinearConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 #include "context/cdo.h"
 
-#include <context/cdhashmap.h>
 #include <context/cdlist.h>
 #include <context/context.h>
 
 class InputQuery : public IQuery
 {
-    typedef CVC4::context::CDHashMap<unsigned, double> VariableValueMap;
-    typedef CVC4::context::CDHashMap<unsigned, unsigned> VariableIndexMap;
-    typedef CVC4::context::CDHashMap<unsigned, unsigned> IndexVariableMap;
+    typedef CDMap<unsigned, double> VariableValueMap;
+    typedef CDMap<unsigned, unsigned> VariableIndexMap;
+    typedef CDMap<unsigned, unsigned> IndexVariableMap;
 
     struct CleanUpEquation
     {

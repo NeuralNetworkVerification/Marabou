@@ -23,7 +23,7 @@
 
 /*
   This class reads a property from a text file, and stores the property's
-  constraints within an Query object.
+  constraints within an IQuery object.
   Currently, properties can involve the input variables (X's) and the output
   variables (Y's) of a neural network.
 */

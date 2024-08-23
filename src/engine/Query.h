@@ -9,8 +9,9 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ **	This class represents a non-incremental verification query and is intended
+ ** for internal use only (i.e., should not be exposed to the users).
+ **
  **/
 
 #ifndef __Query_h__

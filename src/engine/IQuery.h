@@ -9,8 +9,7 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** This is an abstract class that contains methods to encode a verification query
  **/
 
 #ifndef __IQuery_h__
