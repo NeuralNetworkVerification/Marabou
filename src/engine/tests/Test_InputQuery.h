@@ -215,7 +215,7 @@ public:
 
         compare_query( query, *queryGeneratedFromInputQuery );
 
-        TS_ASSERT_THROWS_NOTHING( delete queryGeneratedFromInputQuery );
+        delete queryGeneratedFromInputQuery;
     }
 
 
