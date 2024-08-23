@@ -13,6 +13,7 @@ wget -q https://sourceforge.net/projects/boost/files/boost/$version/boost_$under
 
 echo "Unzipping boost"
 tar xzvf boost-$version.tar.gz >> /dev/null
+
 mv boost_$underscore_version boost-$version
 
 echo "Installing boost"

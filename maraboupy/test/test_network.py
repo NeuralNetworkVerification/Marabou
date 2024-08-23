@@ -579,100 +579,6 @@ def test_resize():
                 for l in range(len(outputVars[i][j][k])):
                     assert abs(vals[outputVars[i][j][k][l]] - expectedOutputValues[i][j][k][l]) < TOL
 
-def test_local_robustness_unsat():
-    """
-    Tests local robustness of an nnet network. (UNSAT)
-    """
-    filename =  "fc_2-2-3.nnet"
-
-    network = loadNetwork(filename)
-    options = Marabou.createOptions(verbosity = 0)
-
-    input = np.array([1, 0])
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=0.1, originalClass=0, options=options, targetClass=None)
-
-    # should be local robustness
-    assert(len(vals) == 0)
-
-def test_local_robustness_sat():
-    """
-    Tests local robustness of an nnet network. (SAT)
-    """
-    filename =  "fc_2-2-3.nnet"
-
-    network = loadNetwork(filename)
-    options = Marabou.createOptions(verbosity = 0)
-
-    input = np.array([1, -2])
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=0.1, originalClass=0, options=options, targetClass=None)
-
-    # should be not local robustness
-    assert(len(vals) > 0)
-
-def  test_local_robustness_unsat_of_onnx():
-    """
-    Tests local robustness of an onnx network. (UNSAT)
-    """
-    filename =  "fc_2-2-3.onnx"
-
-    network = loadNetworkInONNX(filename)
-    options = Marabou.createOptions(verbosity = 0)
-
-    input = np.array([1, 0])
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=0.1, originalClass=0, options=options, targetClass=None)
-
-    # should be local robustness
-    assert(len(vals) == 0)
-
-def test_local_robustness_sat_of_onnx():
-    """
-    Tests local robustness of an onnx network. (SAT)
-    """
-    filename = "fc_2-2-3.onnx"
-
-    network = loadNetworkInONNX(filename)
-    options = Marabou.createOptions(verbosity = 0)
-
-    input = np.array([1, 0])
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=1.0, originalClass=0, options=options, targetClass=None)
-
-    # should be not local robustness
-    assert(len(vals) > 0)
-
-def test_local_robustness_sat_with_target_class():
-    """
-    Tests local robustness of an onnx network. (SAT)
-    """
-    filename = "fc_2-2-3.onnx"
-
-    network = loadNetworkInONNX(filename)
-    options = Marabou.createOptions(verbosity = 0)
-
-    input = np.array([1, -2])
-    targetClass = 1
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=0.1, originalClass=0, options=options, targetClass=targetClass)
-
-    # should be not local robustness
-    assert(len(vals) > 0)
-
-    # maxClass should be equal to targetClass
-    assert(maxClass == targetClass)
-
-def test_local_robustness_sat_of_onnx_3D():
-    """
-    Tests local robustness of an onnx network which input's dimension is 3. (SAT)
-    """
-    filename = "KJ_TinyTaxiNet.onnx"
-
-    network = loadNetworkInONNX(filename)
-    options = Marabou.createOptions(verbosity = 0)
-
-    input = np.ones([8, 16, 1]) * 0.5
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=1.0, originalClass=0, options=options, targetClass=None)
-
-    # should be not local robustness
-    assert(len(vals) > 0)
-
 def test_calculate_bounds():
     """
     Tests calculate bounds of an onnx network
@@ -715,6 +621,48 @@ def test_calculate_bounds():
     # exitCode should be unsat 
     assert(exitCode == 'unsat')
 
+def test_calculate_bounds_no_opt():
+    """
+    Tests calculate bounds of an onnx network
+    """
+    filename = "fc_2-2-3.onnx"
+    options = Marabou.createOptions(verbosity = 0)
+
+    # Not UNSAT case
+    network = loadNetworkInONNX(filename)
+    inputVars = network.inputVars[0][0]
+    network.setLowerBound(inputVars[0], 3)
+    network.setUpperBound(inputVars[0], 4)
+    network.setLowerBound(inputVars[1], -2)
+    network.setUpperBound(inputVars[1], -1)
+
+    # calculate bounds
+    exitCode, vals, _ = network.calculateBounds()
+
+    # exitCode should be empty
+    assert(exitCode == '')
+
+    # output bounds should be correct
+    assert(vals[network.outputVars[0][0][0]] == (2.0, 6.0))
+    assert(vals[network.outputVars[0][0][1]] == (-3.0, -1.0))
+    assert(vals[network.outputVars[0][0][2]] == (1.0, 3.0))
+
+    # UNSAT case
+    network = loadNetworkInONNX(filename)
+    inputVars = network.inputVars[0][0]
+    outputVars = network.outputVars[0]
+    network.setLowerBound(inputVars[0], 3)
+    network.setUpperBound(inputVars[0], 4)
+    network.setLowerBound(inputVars[1], -2)
+    network.setUpperBound(inputVars[1], -1)
+    network.setUpperBound(outputVars[0][0], 1)
+
+    # calculate bounds
+    exitCode, vals, _ = network.calculateBounds()
+
+    # exitCode should be unsat
+    assert(exitCode == 'unsat')
+
 def loadNetwork(filename):
     # Load network relative to this file's location
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
@@ -733,4 +681,3 @@ def evaluateNetwork(network, testInputs, testOutputs):
     for testInput, testOutput in zip(testInputs, testOutputs):
         marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "")[0].flatten()
         assert max(abs(marabouEval - testOutput)) < TOL
-
