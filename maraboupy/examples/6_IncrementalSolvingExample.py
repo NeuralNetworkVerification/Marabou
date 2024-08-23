@@ -47,7 +47,7 @@ random_images = [np.random.random((784,1)) for _ in range(NUM_SAMPLES)]
 
 # Step 1: load the network and get the input query
 network = Marabou.read_onnx(filename)
-ipq = network.getInputQuery()
+query = network.getInputQuery()
 
 # Step 2: iterate over images
 for idx, img in enumerate(random_images):
@@ -59,27 +59,27 @@ for idx, img in enumerate(random_images):
         if y_idx == correctLabel:
             continue
         # push the context before verifying
-        ipq.push()
+        query.push()
 
         # Step 3.1: add constraints to check local robustness against the adversarial label
         for i, x in enumerate(np.array(network.inputVars[0]).flatten()):
-            ipq.setLowerBound(x, max(0, img[i] - EPSILON))
-            ipq.setUpperBound(x, min(1, img[i] + EPSILON))
+            query.setLowerBound(x, max(0, img[i] - EPSILON))
+            query.setUpperBound(x, min(1, img[i] + EPSILON))
         # y_correct - y_i <= 0
         equation = MarabouCore.Equation(MarabouCore.Equation.LE)
         equation.addAddend(1, outputVars[correctLabel])
         equation.addAddend(-1, outputVars[y_idx])
         equation.setScalar(0)
-        ipq.addEquation(equation)
+        query.addEquation(equation)
 
         # Step 3.3: check whether it is possible that y_correct is less than
         # y_i.
         print(f"Checking test image {idx} with target label {y_idx}")
-        res, vals, _ = Marabou.solve_query(ipq, options=OPT)
+        res, vals, _ = Marabou.solve_query(query, options=OPT)
 
         # Remove the constraints added since last push(), the verification results
         # has been stored in res and vals
-        ipq.pop()
+        query.pop()
 
         if res == 'sat':
             # It is possible that y_correct <= y_i.
