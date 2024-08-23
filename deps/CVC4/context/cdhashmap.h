@@ -449,21 +449,6 @@ public:
     }
   }
 
-  // The following two methods were added for the Marabou project
-  Data get( const Key &k ) const
-  {
-	  auto it = find( k );
-	  if ( it != end() )
-	  {
-		  return ( *it ).second;
-	  }
-	  throw CommonError( CommonError::KEY_DOESNT_EXIST_IN_HASHMAP );
-  }
-
-  bool exists( const Key &k ) const
- {
-	 return find( k ) != end();
- }
 
 };/* class CDHashMap<> */
 
