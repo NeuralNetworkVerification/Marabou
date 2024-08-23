@@ -1239,7 +1239,7 @@ class ONNXParser:
         nodeName = node.output[0]
         inputName1, inputName2 = node.input[0], node.input[1]
         assert inputName1 in self.shapeMap and inputName2 in self.shapeMap
-        assert self.shapeMap[inputName1] == self.shapeMap[inputName2]
+        assert list(self.shapeMap[inputName1]) == list(self.shapeMap[inputName2])
         self.shapeMap[nodeName] = self.shapeMap[inputName1]
 
         if not makeEquations:
@@ -1258,7 +1258,7 @@ class ONNXParser:
             e = MarabouUtils.Equation()
             e.addAddend(1, inputVars[i])
             e.addAddend(-1, outputVars[i])
-            e.setScalar(-constants[i])
+            e.setScalar(constants[i])
             self.query.addEquation(e)
 
     def sigmoidEquations(self, node, makeEquations):

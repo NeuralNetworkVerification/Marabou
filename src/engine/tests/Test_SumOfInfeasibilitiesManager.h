@@ -290,6 +290,8 @@ public:
                                       new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         TS_ASSERT_THROWS_NOTHING( soiManager->initializePhasePattern() );
+        TS_ASSERT_THROWS_NOTHING(
+            soiManager->setPLConstraintsInCurrentPhasePattern( plConstraints ) );
 
         for ( const auto &plConstraint : plConstraints )
         {
@@ -312,6 +314,7 @@ public:
             cost1, *( plConstraints[2]->getAllCases().begin() ) ) );
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent(
             cost1, *( plConstraints[3]->getAllCases().begin() ) ) );
+
 
         TS_ASSERT_EQUALS( soiManager->getConstraintsUpdatedInLastProposal().size(), 1u );
         TS_ASSERT_EQUALS( *soiManager->getConstraintsUpdatedInLastProposal().begin(),
