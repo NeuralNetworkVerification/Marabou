@@ -210,14 +210,11 @@ public:
         TS_ASSERT_THROWS_NOTHING( encodeQuery( inputQuery, true ) );
         TS_ASSERT_THROWS_NOTHING( encodeQuery( query ) );
 
-        Query *queryGeneratedFromInputQuery;
-        TS_ASSERT_THROWS_NOTHING( queryGeneratedFromInputQuery = inputQuery.generateQuery() );
+        Query *queryGeneratedFromInputQuery = inputQuery.generateQuery();
 
         compare_query( query, *queryGeneratedFromInputQuery );
-        if ( queryGeneratedFromInputQuery )
-            delete queryGeneratedFromInputQuery;
+        delete queryGeneratedFromInputQuery;
     }
-
 
     void compare_query( const Query &query1, const Query &query2 )
     {
