@@ -343,8 +343,8 @@ public:
         TS_ASSERT( varsInUnhandledConstraints.empty() );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
 
-        PiecewiseLinearConstraint *constraintToSplit;
-        PiecewiseLinearConstraint *constraintToSplitSnC;
+        PiecewiseLinearConstraint *constraintToSplit = nullptr;
+        PiecewiseLinearConstraint *constraintToSplitSnC = nullptr;
         TS_ASSERT_THROWS_NOTHING( constraintToSplit =
                                       engine.pickSplitPLConstraint( DivideStrategy::Polarity ) );
         TS_ASSERT_THROWS_NOTHING(
