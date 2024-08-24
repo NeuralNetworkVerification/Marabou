@@ -66,7 +66,7 @@
 class Equation;
 class BoundManager;
 class ITableau;
-class InputQuery;
+class Query;
 class String;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
@@ -248,7 +248,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ){};
+    virtual void transformToUseAuxVariables( Query & ){};
 
     void setStatistics( Statistics *statistics );
 
@@ -256,7 +256,7 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery & /* inputQuery */ )
+    virtual void addAuxiliaryEquationsAfterPreprocessing( Query & /* inputQuery */ )
     {
     }
 

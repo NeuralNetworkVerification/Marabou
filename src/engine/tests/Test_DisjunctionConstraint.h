@@ -14,10 +14,10 @@
 **/
 
 #include "DisjunctionConstraint.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -460,7 +460,7 @@ public:
 
     void test_disjunction_make_all_disjuncts_bounds()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         PiecewiseLinearCaseSplit cs4;
 

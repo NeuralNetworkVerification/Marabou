@@ -16,6 +16,7 @@ macro(common_add_unit_test name)
 endmacro()
 
 common_add_unit_test(ConstSimpleData)
+common_add_unit_test(CDMap)
 common_add_unit_test(Error)
 common_add_unit_test(File)
 common_add_unit_test(FloatUtils)

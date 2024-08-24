@@ -15,15 +15,15 @@
 #ifndef __IncrementalLinearization_h__
 #define __IncrementalLinearization_h__
 
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "Map.h"
+#include "Query.h"
 
 #define INCREMENTAL_LINEARIZATION_LOG( x, ... )                                                    \
     LOG( GlobalConfiguration::CEGAR_LOGGING, "IncrementalLinearization: %s\n", x )
 
 class Engine;
-class InputQuery;
+class IQuery;
 
 namespace CEGAR {
 
@@ -34,7 +34,7 @@ public:
         MICROSECONDS_TO_SECONDS = 1000000,
     };
 
-    IncrementalLinearization( InputQuery &inputQuery, Engine *engine );
+    IncrementalLinearization( IQuery &inputQuery, Engine *engine );
 
     /*
       Solve with incremental linarizations.
@@ -52,10 +52,10 @@ public:
 
       Returns the number of refined non-linear constraints
     */
-    unsigned refine( InputQuery &inputQuery );
+    unsigned refine( Query &inputQuery );
 
 private:
-    InputQuery &_inputQuery;
+    IQuery &_inputQuery;
     std::unique_ptr<Engine> _engine;
 
     /*

@@ -19,7 +19,7 @@
 #include "AcasNeuralNetwork.h"
 #include "Map.h"
 
-class InputQuery;
+class IQuery;
 class String;
 
 class AcasParser
@@ -40,7 +40,7 @@ public:
     };
 
     AcasParser( const String &path );
-    void generateQuery( InputQuery &inputQuery );
+    void generateQuery( IQuery &inputQuery );
 
     unsigned getNumInputVaribales() const;
     unsigned getNumOutputVariables() const;

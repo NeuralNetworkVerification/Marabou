@@ -20,12 +20,12 @@
 
 class Equation;
 class ITableau;
-class InputQuery;
+class Query;
 
 class DegradationChecker
 {
 public:
-    void storeEquations( const InputQuery &query );
+    void storeEquations( const Query &query );
     double computeDegradation( ITableau &tableau ) const;
 
 private:

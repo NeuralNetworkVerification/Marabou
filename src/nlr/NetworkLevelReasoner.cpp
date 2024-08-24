@@ -19,7 +19,6 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "IterativePropagator.h"
 #include "LPFormulator.h"
 #include "MILPFormulator.h"
@@ -29,6 +28,7 @@
 #include "MaxConstraint.h"
 #include "NLRError.h"
 #include "Options.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
 
@@ -310,7 +310,7 @@ void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> 
         layer.second->updateVariableIndices( oldIndexToNewIndex, mergedVariables );
 }
 
-void NetworkLevelReasoner::obtainCurrentBounds( const InputQuery &inputQuery )
+void NetworkLevelReasoner::obtainCurrentBounds( const Query &inputQuery )
 {
     for ( const auto &layer : _layerIndexToLayer )
         layer.second->obtainCurrentBounds( inputQuery );
@@ -380,17 +380,15 @@ void NetworkLevelReasoner::removeConstraintFromTopologicalOrder(
         _constraintsInTopologicalOrder.erase( constraint );
 }
 
-void NetworkLevelReasoner::encodeAffineLayers( InputQuery &inputQuery )
+void NetworkLevelReasoner::encodeAffineLayers( Query &inputQuery )
 {
     for ( const auto &pair : _layerIndexToLayer )
         if ( pair.second->getLayerType() == Layer::WEIGHTED_SUM )
-            generateInputQueryForWeightedSumLayer( inputQuery, pair.second );
+            generateQueryForWeightedSumLayer( inputQuery, pair.second );
 }
 
-InputQuery NetworkLevelReasoner::generateInputQuery()
+void NetworkLevelReasoner::generateQuery( Query &result )
 {
-    InputQuery result;
-
     // Number of variables
     unsigned numberOfVariables = 0;
     for ( const auto &it : _layerIndexToLayer )
@@ -404,7 +402,7 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
 
     // Handle the various layers
     for ( const auto &it : _layerIndexToLayer )
-        generateInputQueryForLayer( result, *it.second );
+        generateQueryForLayer( result, *it.second );
 
     // Mark the input variables
     const Layer *inputLayer = _layerIndexToLayer[0];
@@ -427,8 +425,6 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
             result.setUpperBound( variable, layer->getUb( i ) );
         }
     }
-
-    return result;
 }
 
 void NetworkLevelReasoner::reindexNeurons()
@@ -444,7 +440,7 @@ void NetworkLevelReasoner::reindexNeurons()
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateQueryForLayer( Query &inputQuery, const Layer &layer )
 {
     switch ( layer.getLayerType() )
     {
@@ -452,27 +448,27 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery, c
         break;
 
     case Layer::WEIGHTED_SUM:
-        generateInputQueryForWeightedSumLayer( inputQuery, layer );
+        generateQueryForWeightedSumLayer( inputQuery, layer );
         break;
 
     case Layer::RELU:
-        generateInputQueryForReluLayer( inputQuery, layer );
+        generateQueryForReluLayer( inputQuery, layer );
         break;
 
     case Layer::SIGMOID:
-        generateInputQueryForSigmoidLayer( inputQuery, layer );
+        generateQueryForSigmoidLayer( inputQuery, layer );
         break;
 
     case Layer::SIGN:
-        generateInputQueryForSignLayer( inputQuery, layer );
+        generateQueryForSignLayer( inputQuery, layer );
         break;
 
     case Layer::ABSOLUTE_VALUE:
-        generateInputQueryForAbsoluteValueLayer( inputQuery, layer );
+        generateQueryForAbsoluteValueLayer( inputQuery, layer );
         break;
 
     case Layer::MAX:
-        generateInputQueryForMaxLayer( inputQuery, layer );
+        generateQueryForMaxLayer( inputQuery, layer );
         break;
 
     default:
@@ -482,8 +478,7 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery, c
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuery,
-                                                           const Layer &layer )
+void NetworkLevelReasoner::generateQueryForReluLayer( Query &inputQuery, const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -495,8 +490,7 @@ void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuer
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQuery,
-                                                              const Layer &layer )
+void NetworkLevelReasoner::generateQueryForSigmoidLayer( Query &inputQuery, const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -508,8 +502,7 @@ void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQ
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForSignLayer( InputQuery &inputQuery,
-                                                           const Layer &layer )
+void NetworkLevelReasoner::generateQueryForSignLayer( Query &inputQuery, const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -521,8 +514,8 @@ void NetworkLevelReasoner::generateInputQueryForSignLayer( InputQuery &inputQuer
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery,
-                                                                    const Layer &layer )
+void NetworkLevelReasoner::generateQueryForAbsoluteValueLayer( Query &inputQuery,
+                                                               const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -534,8 +527,7 @@ void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery,
-                                                          const Layer &layer )
+void NetworkLevelReasoner::generateQueryForMaxLayer( Query &inputQuery, const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -551,8 +543,7 @@ void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &inputQuery,
-                                                                  const Layer &layer )
+void NetworkLevelReasoner::generateQueryForWeightedSumLayer( Query &inputQuery, const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {

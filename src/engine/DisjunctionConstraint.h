@@ -160,7 +160,7 @@ public:
       Transform the disjunction into a disjunction where each disjunct only
       contains variable bounds.
     */
-    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( Query &inputQuery ) override;
 
     /*
       Dump the current state of the constraint.

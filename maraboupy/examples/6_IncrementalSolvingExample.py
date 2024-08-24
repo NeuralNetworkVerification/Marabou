@@ -18,6 +18,7 @@ import warnings
 warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
+
 from maraboupy import Marabou
 from maraboupy import MarabouCore
 import numpy as np
@@ -44,8 +45,10 @@ filename = os.path.join(os.path.dirname(__file__), ONNX_FILE)
 # The set of images to check local robustness against
 random_images = [np.random.random((784,1)) for _ in range(NUM_SAMPLES)]
 
-# Step 1: load the network
+# Step 1: load the network and get the input query
 network = Marabou.read_onnx(filename)
+query = network.getInputQuery()
+
 # Step 2: iterate over images
 for idx, img in enumerate(random_images):
     robust = True
@@ -55,19 +58,29 @@ for idx, img in enumerate(random_images):
     for y_idx, _ in enumerate(outputVars):
         if y_idx == correctLabel:
             continue
-        # Step 3.1: clear the user defined constraints in the last round.
-        network.clearProperty()
-        # Step 3.2: add new constraints
+        # push the context before verifying
+        query.push()
+
+        # Step 3.1: add constraints to check local robustness against the adversarial label
         for i, x in enumerate(np.array(network.inputVars[0]).flatten()):
-            network.setLowerBound(x, max(0, img[i] - EPSILON))
-            network.setUpperBound(x, min(1, img[i] + EPSILON))
+            query.setLowerBound(x, max(0, img[i] - EPSILON))
+            query.setUpperBound(x, min(1, img[i] + EPSILON))
         # y_correct - y_i <= 0
-        network.addInequality([outputVars[correctLabel],
-                               outputVars[y_idx]],
-                              [1, -1], 0, isProperty=True)
+        equation = MarabouCore.Equation(MarabouCore.Equation.LE)
+        equation.addAddend(1, outputVars[correctLabel])
+        equation.addAddend(-1, outputVars[y_idx])
+        equation.setScalar(0)
+        query.addEquation(equation)
+
         # Step 3.3: check whether it is possible that y_correct is less than
         # y_i.
-        res, _, _ = network.solve(verbose=False, options=OPT)
+        print(f"Checking test image {idx} with target label {y_idx}")
+        res, vals, _ = Marabou.solve_query(query, options=OPT)
+
+        # Remove the constraints added since last push(), the verification results
+        # has been stored in res and vals
+        query.pop()
+
         if res == 'sat':
             # It is possible that y_correct <= y_i.
             print(f"not locally robust at image {idx}")

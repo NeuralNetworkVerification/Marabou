@@ -18,10 +18,10 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "NonlinearConstraint.h"
+#include "Query.h"
 #include "Statistics.h"
 
 #ifdef _WIN32
@@ -142,7 +142,7 @@ List<unsigned> RoundConstraint::getParticipatingVariables() const
     return List<unsigned>( { _b, _f } );
 }
 
-void RoundConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery )
+void RoundConstraint::addAuxiliaryEquationsAfterPreprocessing( Query &inputQuery )
 {
     // Since at this point we can only encode equality,
     // we encode the following:

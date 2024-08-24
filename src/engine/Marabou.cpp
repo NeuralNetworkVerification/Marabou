@@ -59,7 +59,7 @@ void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    prepareInputQuery();
+    prepareQuery();
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -71,7 +71,7 @@ void Marabou::run()
         exportAssignment();
 }
 
-void Marabou::prepareInputQuery()
+void Marabou::prepareQuery()
 {
     String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
     if ( inputQueryFilePath.length() > 0 )
@@ -86,8 +86,8 @@ void Marabou::prepareInputQuery()
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
 
-        printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
-        _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
+        printf( "Query: %s\n", inputQueryFilePath.ascii() );
+        QueryLoader::loadQuery( inputQueryFilePath, _inputQuery );
     }
     else
     {
@@ -243,7 +243,8 @@ void Marabou::solveQuery()
         }
     }
 
-
+    // TODO: update the variable assignment using NLR if possible and double-check that all the
+    // constraints are indeed satisfied.
     if ( _engine->getExitCode() == Engine::SAT )
         _engine->extractSolution( _inputQuery );
 }
@@ -269,36 +270,13 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
                     i,
                     _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
-        if ( _inputQuery._networkLevelReasoner )
-        {
-            double *input = new double[_inputQuery.getNumInputVariables()];
-            for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-                input[i] = _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) );
-
-            NLR::NetworkLevelReasoner *nlr = _inputQuery._networkLevelReasoner;
-            NLR::Layer *lastLayer = nlr->getLayer( nlr->getNumberOfLayers() - 1 );
-            double *output = new double[lastLayer->getSize()];
-
-            nlr->evaluate( input, output );
-
-            printf( "\n" );
-            printf( "Output:\n" );
-            for ( unsigned i = 0; i < lastLayer->getSize(); ++i )
-                printf( "\ty%u = %lf\n", i, output[i] );
-            printf( "\n" );
-            delete[] input;
-            delete[] output;
-        }
-        else
-        {
-            printf( "\n" );
-            printf( "Output:\n" );
-            for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-                printf( "\ty%u = %lf\n",
-                        i,
-                        _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
-            printf( "\n" );
-        }
+        printf( "\n" );
+        printf( "Output:\n" );
+        for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
+            printf( "\ty%u = %lf\n",
+                    i,
+                    _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+        printf( "\n" );
     }
     else if ( result == Engine::TIMEOUT )
     {

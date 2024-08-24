@@ -29,7 +29,7 @@
 
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
-    , _inputQuery( InputQuery() )
+    , _inputQuery()
 {
 }
 
@@ -48,8 +48,8 @@ void DnCMarabou::run()
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
 
-        printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
-        _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
+        printf( "Query: %s\n", inputQueryFilePath.ascii() );
+        QueryLoader::loadQuery( inputQueryFilePath, _inputQuery );
     }
     else
     {

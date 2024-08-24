@@ -15,11 +15,11 @@
 #ifndef __OnnxParser_h__
 #define __OnnxParser_h__
 
-#include "InputQuery.h"
 #include "InputQueryBuilder.h"
 #include "List.h"
 #include "MString.h"
 #include "Map.h"
+#include "Query.h"
 #include "Set.h"
 #include "TensorUtils.h"
 #include "Vector.h"

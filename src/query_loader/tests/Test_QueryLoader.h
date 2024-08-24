@@ -15,8 +15,8 @@
 
 #include "AutoFile.h"
 #include "Equation.h"
-#include "InputQuery.h"
 #include "MockFileFactory.h"
+#include "Query.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "T/unistd.h"
@@ -55,7 +55,7 @@ public:
     void test_load_query()
     {
         // Set up simple query as a test
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 10 );
 
         // Input layer with one variable
@@ -128,7 +128,8 @@ public:
         mock->mockFile.wasCreated = false;
         mock->mockFile.wasDiscarded = false;
 
-        InputQuery inputQuery2 = QueryLoader::loadQuery( QUERY_TEST_FILE );
+        Query inputQuery2;
+        QueryLoader::loadQuery( QUERY_TEST_FILE, inputQuery2 );
 
         // Check that inputQuery is unchanged when saving and loading the query
         // Number of variables unchanged

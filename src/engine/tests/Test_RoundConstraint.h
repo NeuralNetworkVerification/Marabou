@@ -13,9 +13,9 @@
 
 **/
 
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
+#include "Query.h"
 #include "RoundConstraint.h"
 
 #include <cxxtest/TestSuite.h>

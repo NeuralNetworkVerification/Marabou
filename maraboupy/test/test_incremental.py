@@ -4,6 +4,7 @@ warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 from maraboupy import Marabou
+from maraboupy import MarabouCore
 import numpy as np
 import os
 
@@ -60,5 +61,30 @@ def test_incremental():
         res, _, _ = network.solve(verbose=False, options=OPT)
         result_inc.append(res)
 
+    # Now check robustness with incremental mode of the input query.
+    result_inc2 = []
+    network = Marabou.read_onnx(filename)
+    ipq = network.getInputQuery()
+    for img in random_images:
+        ipq.push()
+        for i, x in enumerate(np.array(network.inputVars[0]).flatten()):
+            ipq.setLowerBound(x, max(0, img[i] - EPSILON))
+            ipq.setUpperBound(x, min(1, img[i] + EPSILON))
+            outputVars = network.outputVars[0].flatten()
+        for outputIndex in range(len(outputVars)):
+            if outputIndex != LABEL:
+                equation = MarabouCore.Equation(MarabouCore.Equation.LE)
+                equation.addAddend(1, outputVars[outputIndex])
+                equation.addAddend(-1, outputVars[LABEL])
+                equation.setScalar(0)
+                ipq.addEquation(equation)
+
+        res, _, _ = Marabou.solve_query(ipq, options=OPT)
+        result_inc2.append(res)
+        ipq.pop()
+
     for i in range(len(result_inc)):
         assert(result_noninc[i] == result_inc[i])
+
+    for i in range(len(result_inc2)):
+        assert(result_noninc[i] == result_inc2[i])

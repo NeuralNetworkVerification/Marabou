@@ -27,9 +27,7 @@ MILPEncoder::MILPEncoder( const ITableau &tableau )
 {
 }
 
-void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
-                                    const InputQuery &inputQuery,
-                                    bool relax )
+void MILPEncoder::encodeQuery( GurobiWrapper &gurobi, const Query &inputQuery, bool relax )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -79,7 +77,7 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
             break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT,
-                                "GurobiWrapper::encodeInputQuery: "
+                                "GurobiWrapper::encodeQuery: "
                                 "Unsupported piecewise-linear constraints\n" );
         }
     }
@@ -103,7 +101,7 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
             break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_TRANSCENDENTAL_CONSTRAINT,
-                                "GurobiWrapper::encodeInputQuery: "
+                                "GurobiWrapper::encodeQuery: "
                                 "Unsupported non-linear constraints\n" );
         }
     }

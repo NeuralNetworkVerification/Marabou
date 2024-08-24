@@ -20,11 +20,11 @@
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Query.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -768,7 +768,7 @@ String LeakyReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void LeakyReluConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void LeakyReluConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     /*
       We want to add the equations

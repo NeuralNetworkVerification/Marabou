@@ -20,7 +20,7 @@
 #include "Options.h"
 #include "Set.h"
 
-SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery &inputQuery,
+SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const Query &inputQuery,
                                                           const ITableau &tableau )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
     , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )

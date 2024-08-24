@@ -16,8 +16,8 @@
 #include "AcasParser.h"
 
 #include "FloatUtils.h"
+#include "IQuery.h"
 #include "InputParserError.h"
-#include "InputQuery.h"
 #include "MString.h"
 #include "ReluConstraint.h"
 
@@ -40,7 +40,7 @@ AcasParser::AcasParser( const String &path )
 {
 }
 
-void AcasParser::generateQuery( InputQuery &inputQuery )
+void AcasParser::generateQuery( IQuery &inputQuery )
 {
     // First encode the actual network
     // _acasNeuralNetwork doesn't count the input layer, so add 1

@@ -13,13 +13,13 @@
 
 **/
 
-#include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "context/context.h"
 
 #include <cxxtest/TestSuite.h>
@@ -327,7 +327,7 @@ public:
 
         unsigned auxVarActive = 10;
         unsigned auxVarInactive = 11;
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( auxVarActive );
 
         lrelu.transformToUseAuxVariables( inputQuery );
@@ -643,7 +643,7 @@ public:
         TS_ASSERT( !originalLRelu.auxVariablesInUse() );
         TS_ASSERT( !recoveredLRelu.auxVariablesInUse() );
 
-        InputQuery dontCare;
+        Query dontCare;
         dontCare.setNumberOfVariables( 500 );
 
         originalLRelu.transformToUseAuxVariables( dontCare );
@@ -666,7 +666,7 @@ public:
         LeakyReluConstraint lrelu( b, f, slope );
         boundManager->initialize( activeAux + 2 );
 
-        InputQuery dontCare;
+        Query dontCare;
         dontCare.setNumberOfVariables( activeAux );
         lrelu.registerBoundManager( boundManager );
 

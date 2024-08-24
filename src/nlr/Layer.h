@@ -134,7 +134,7 @@ public:
         return _alpha;
     }
 
-    void obtainCurrentBounds( const InputQuery &inputQuery );
+    void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
