@@ -30,8 +30,7 @@ def test_sat_query(tmpdir):
     # Save this query to a temporary file, and reload the query
     queryFile = tmpdir.mkdir("query").join("query.txt").strpath
     network.saveQuery(queryFile)
-    ipq = MarabouCore.InputQuery()
-    Marabou.load_query(queryFile, ipq)
+    ipq = Marabou.load_query(queryFile)
 
     # Solve the query loaded from the file and compare to the solution of the original query
     # The result should be the same regardless of verbosity options used, or if a file redirect is used
@@ -61,8 +60,7 @@ def test_unsat_query(tmpdir):
     # Save this query to a temporary file, and reload the query):
     queryFile = tmpdir.mkdir("query").join("query.txt").strpath
     network.saveQuery(queryFile)
-    ipq = MarabouCore.InputQuery()
-    Marabou.load_query(queryFile, ipq)
+    ipq = Marabou.load_query(queryFile)
 
     # Solve the query loaded from the file and compare to the solution of the original query
     opt = Marabou.createOptions(verbosity = 0)
@@ -93,8 +91,7 @@ def test_to_query(tmpdir):
     # Save this query to a temporary file, and reload the query):
     queryFile = tmpdir.mkdir("query").join("query.txt").strpath
     network.saveQuery(queryFile)
-    ipq = MarabouCore.InputQuery()
-    Marabou.load_query(queryFile, ipq)
+    ipq = Marabou.load_query(queryFile)
 
     # Solve the query loaded from the file and compare to the solution of the original query
     opt = Marabou.createOptions(verbosity = 0, timeoutInSeconds = 1)
