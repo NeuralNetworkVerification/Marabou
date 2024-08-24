@@ -214,8 +214,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( queryGeneratedFromInputQuery = inputQuery.generateQuery() );
 
         compare_query( query, *queryGeneratedFromInputQuery );
-
-        delete queryGeneratedFromInputQuery;
+        if ( queryGeneratedFromInputQuery )
+            delete queryGeneratedFromInputQuery;
     }
 
 
