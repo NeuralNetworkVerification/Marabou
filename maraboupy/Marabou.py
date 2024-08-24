@@ -61,7 +61,9 @@ def load_query(filename):
     Returns:
         :class:`~maraboupy.MarabouCore.InputQuery`
     """
-    return MarabouCore.loadQuery(filename)
+    query = MarabouCore.InputQuery()
+    MarabouCore.loadQuery(filename, query)
+    return query
 
 def solve_query(ipq, filename="", verbose=True, options=None, propertyFilename=""):
     """Function to solve query represented by this network
