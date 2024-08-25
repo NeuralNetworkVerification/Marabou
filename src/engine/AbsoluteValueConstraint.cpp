@@ -1009,8 +1009,6 @@ int AbsoluteValueConstraint::propagatePhaseAsLit() const
 void AbsoluteValueConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( ( lit > 0 && getPhaseStatus() != ABS_PHASE_NEGATIVE ) ||
-            ( lit < 0 && getPhaseStatus() != ABS_PHASE_POSITIVE ) )
 
     setActiveConstraint( false );
 

@@ -3430,6 +3430,16 @@ void Engine::explainSimplexFailure()
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
 
+    // If both bounds are ground bounds, explanation would be empty and the clause trivial
+    if ( _boundManager.getUpperBound( infeasibleVar ) ==
+             getGroundBound( infeasibleVar, Tightening::UB ) &&
+         _boundManager.getLowerBound( infeasibleVar ) ==
+             getGroundBound( infeasibleVar, Tightening::LB ) )
+    {
+        _smtCore.addTrivialConflictClause();
+        return;
+    }
+
     SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
                                             leafContradictionVec.size() );
     Set<int> clause = clauseFromContradictionVector(
@@ -3841,7 +3851,10 @@ bool Engine::propagateBoundManagerTightenings()
     try
     {
         _boundManager.propagateTightenings();
-        return true;
+        if ( !consistentBounds() )
+            explainSimplexFailure();
+
+        return consistentBounds();
     }
     catch ( InfeasibleQueryException )
     {
@@ -4045,26 +4058,22 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
         return aVal < bVal;
     } );
 
-    // TODO apply to additional types of PLCs
-    if ( !lemma || lemma->getConstraintType() == RELU )
+    Vector<double> explanationLinearCombination( 0 );
+    UNSATCertificateUtils::getExplanationRowCombination(
+        explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
+
+    if ( lemma )
     {
-        Vector<double> explanationLinearCombination( 0 );
-        UNSATCertificateUtils::getExplanationRowCombination(
-            explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
-
-        if ( lemma )
-        {
-            ASSERT( lemma->getCausingVars().size() == 1 );
-            explanationLinearCombination[lemma->getCausingVars().front()]++;
-        }
-
-        Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
-        Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
-
-        Vector<int> support( 0 );
-        toReturn = reduceClauseSizeWithLinearCombination(
-            explanationLinearCombination, gub, glb, support, toReturn, lemma );
+        ASSERT( lemma->getCausingVars().size() == 1 );
+        explanationLinearCombination[lemma->getCausingVars().front()]++;
     }
+
+    Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
+    Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
+
+    Vector<int> support( 0 );
+    toReturn = reduceClauseSizeWithLinearCombination(
+        explanationLinearCombination, gub, glb, support, toReturn, lemma );
 
     ASSERT( !toReturn.empty() );
     Set<int> newClause = Set<int>();
@@ -4108,14 +4117,15 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
         return reduceClauseSizeWithLinearCombination(
             linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
-    Vector<int> can1 = support + r;
-    Vector<int> newL = reduceClauseSizeWithLinearCombination(
-        linearCombination, groundUpperBounds, groundLowerBounds, can1, l, lemma );
-
-    // Then try eliminating elements from the right half of the clause
-    Vector<int> can2 = support + newL;
+    // Try eliminating elements from the right half of the clause
+    Vector<int> can1 = support + l;
     Vector<int> newR = reduceClauseSizeWithLinearCombination(
-        linearCombination, groundUpperBounds, groundLowerBounds, can2, r, lemma );
+        linearCombination, groundUpperBounds, groundLowerBounds, can1, r, lemma );
+
+    // Then try eliminating elements from the left half of the clause
+    Vector<int> can2 = support + newR;
+    Vector<int> newL = reduceClauseSizeWithLinearCombination(
+        linearCombination, groundUpperBounds, groundLowerBounds, can2, l, lemma );
 
     return newL + newR;
 }
@@ -4155,7 +4165,8 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
 
         for ( const auto tightening : litSplit.getBoundTightenings() )
         {
-            Vector<double> &temp = tightening._type == Tightening::UB ?   groundUpperBounds :   groundLowerBounds;
+            Vector<double> &temp =
+                tightening._type == Tightening::UB ? groundUpperBounds : groundLowerBounds;
             temp[tightening._variable] = tightening._value;
         }
     }

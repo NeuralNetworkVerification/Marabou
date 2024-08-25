@@ -698,8 +698,6 @@ int SignConstraint::propagatePhaseAsLit() const
 void SignConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( ( lit > 0 && getPhaseStatus() != SIGN_PHASE_NEGATIVE ) ||
-            ( lit < 0 && getPhaseStatus() != SIGN_PHASE_POSITIVE ) )
 
     setActiveConstraint( false );
 

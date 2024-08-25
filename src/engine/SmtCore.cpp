@@ -660,25 +660,31 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
                       is_fixed )
                  .ascii() );
 
-    // TODO rethink
-    // Could happen if lit is deduced by SAT solver. Thus propagating -lit will lead to UNSAT.
-    if ( isLiteralToBePropagated( -lit ) )
-        return;
-
     // Allow notifying a negation of assigned literal only when a conflict is already discovered
     ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
 
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
-
     // Pick the split to perform
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+    PhaseStatus originalPlcPhase = plc->getPhaseStatus();
     plc->propagateLitAsSplit( lit );
 
-    _engine->applyPlcPhaseFixingTightenings( *plc );
 
+    _engine->applyPlcPhaseFixingTightenings( *plc );
     plc->setActiveConstraint( false );
     _assignedLiterals.push_back( lit );
+    // Could happen if lit is deduced by SAT solver. Thus propagating lit will lead to a conflict.
+    if ( isLiteralToBePropagated( -lit ) )
+    {
+        _engine->propagateBoundManagerTightenings();
+        ASSERT( cb_has_external_clause() );
+    }
+    // Check that propagation of literal did not change a previously fixed phase
+    else
+    {
+        ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
+    }
 }
 
 void SmtCore::notify_new_decision_level()
@@ -772,7 +778,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     if ( _statistics )
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-//        printCurrentState();
+        //        printCurrentState();
     }
 
     checkIfShouldExitDueToTimeout();
@@ -851,7 +857,7 @@ int SmtCore::cb_propagate()
         if ( _statistics )
         {
             _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-//            printCurrentState();
+            //            printCurrentState();
         }
 
         // If no literals left to propagate, and no clause already found, attempt solving
@@ -1014,7 +1020,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _cadicalWrapper.addObservedVar( var );
 
         _engine->preSolve();
-//        printCurrentState();
+        //        printCurrentState();
         if ( _engine->solve() )
         {
             _exitCode = SAT;

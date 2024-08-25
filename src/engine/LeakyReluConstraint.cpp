@@ -1040,9 +1040,6 @@ int LeakyReluConstraint::propagatePhaseAsLit() const
 void LeakyReluConstraint::propagateLitAsSplit( int lit )
 {
     ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
-    ASSERT( ( lit > 0 && getPhaseStatus() != RELU_PHASE_INACTIVE ) ||
-            ( lit < 0 && getPhaseStatus() != RELU_PHASE_ACTIVE ) )
-
     setActiveConstraint( false );
 
     if ( lit > 0 )
