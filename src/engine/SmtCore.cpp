@@ -1201,10 +1201,28 @@ void SmtCore::printCurrentState() const
               << " Time " << _statistics->getTotalTimeInMicro() << " : ";
     for ( unsigned v = size - 1; v > 0; --v )
     {
-        if ( _cadicalVarToPlc[v]->getPhaseStatus() == RELU_PHASE_ACTIVE )
-            std::cout << size - v << " ";
-        else if ( _cadicalVarToPlc[v]->getPhaseStatus() == RELU_PHASE_INACTIVE )
-            std::cout << -(int)( size - v ) << " ";
+        if ( _cadicalVarToPlc[v]->getType() == RELU ||
+             _cadicalVarToPlc[v]->getType() == LEAKY_RELU )
+        {
+            if ( _cadicalVarToPlc[v]->getPhaseStatus() == RELU_PHASE_ACTIVE )
+                std::cout << size - v << " ";
+            else if ( _cadicalVarToPlc[v]->getPhaseStatus() == RELU_PHASE_INACTIVE )
+                std::cout << -(int)( size - v ) << " ";
+        }
+        else if ( _cadicalVarToPlc[v]->getType() == SIGN )
+        {
+            if ( _cadicalVarToPlc[v]->getPhaseStatus() == SIGN_PHASE_POSITIVE )
+                std::cout << size - v << " ";
+            else if ( _cadicalVarToPlc[v]->getPhaseStatus() == SIGN_PHASE_NEGATIVE )
+                std::cout << -(int)( size - v ) << " ";
+        }
+        else if ( _cadicalVarToPlc[v]->getType() == ABSOLUTE_VALUE )
+        {
+            if ( _cadicalVarToPlc[v]->getPhaseStatus() == ABS_PHASE_POSITIVE )
+                std::cout << size - v << " ";
+            else if ( _cadicalVarToPlc[v]->getPhaseStatus() == ABS_PHASE_NEGATIVE )
+                std::cout << -(int)( size - v ) << " ";
+        }
     }
     std::cout << std::endl;
 }
