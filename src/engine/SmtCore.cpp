@@ -670,34 +670,33 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
 
-    if ( !isLiteralAssigned( lit ) )
+    // TODO: notify_assignment may be called on already assigned literals (to notify they are
+    //  fixed), maybe the following code should not be executed in this case
+
+    for ( unsigned clause : _literalToClauses[lit] )
+        if ( !isClauseSatisfied( clause ) )
+            _satisfiedClauses.push_back( clause );
+
+    // Pick the split to perform
+    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+    PhaseStatus originalPlcPhase = plc->getPhaseStatus();
+    plc->propagateLitAsSplit( lit );
+
+    _engine->applyPlcPhaseFixingTightenings( *plc );
+    plc->setActiveConstraint( false );
+    _assignedLiterals.push_back( lit );
+
+    // Could happen if lit is deduced by SAT solver. Thus propagating lit will lead to a
+    // conflict.
+    if ( isLiteralToBePropagated( -lit ) )
     {
-        for ( unsigned clause : _literalToClauses[lit] )
-            if ( !isClauseSatisfied( clause ) )
-                _satisfiedClauses.push_back( clause );
-
-        // Pick the split to perform
-        PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-        PhaseStatus originalPlcPhase = plc->getPhaseStatus();
-        plc->propagateLitAsSplit( lit );
-
-        _engine->applyPlcPhaseFixingTightenings( *plc );
-        plc->setActiveConstraint( false );
-        _assignedLiterals.push_back( lit );
-
-        // Could happen if lit is deduced by SAT solver. Thus propagating lit will lead to a
-        // conflict.
-        if ( isLiteralToBePropagated( -lit ) )
-        {
-            _engine->propagateBoundManagerTightenings();
-            ASSERT( cb_has_external_clause() );
-        }
-        // Check that propagation of literal did not change a previously fixed phase
-        else
-        {
-            ASSERT( originalPlcPhase == PHASE_NOT_FIXED ||
-                    plc->getPhaseStatus() == originalPlcPhase );
-        }
+        _engine->propagateBoundManagerTightenings();
+        ASSERT( cb_has_external_clause() );
+    }
+    // Check that propagation of literal did not change a previously fixed phase
+    else
+    {
+        ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
     }
 }
 
