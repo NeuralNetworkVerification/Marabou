@@ -39,6 +39,8 @@ class String;
 
 using CVC4::context::Context;
 
+typedef Set<int> Clause;
+
 class SmtCore
     : CaDiCaL::ExternalPropagator
     , CaDiCaL::Terminator
@@ -431,11 +433,16 @@ private:
 
     double _timeoutInSeconds;
 
+    unsigned _numOfClauses;
+    CVC4::context::CDList<unsigned> _satisfiedClauses;
+    Map<int, Set<unsigned>> _literalToClauses;
+
     /*
       Access info in the internal data structures
     */
     bool isLiteralAssigned( int literal ) const;
     bool isLiteralToBePropagated( int literal ) const;
+    bool isClauseSatisfied( unsigned clause ) const;
 };
 
 #endif // __SmtCore_h__

@@ -55,6 +55,10 @@ SmtCore::SmtCore( IEngine *engine )
     , _reasonClauseLiterals()
     , _isReasonClauseInitialized( false )
     , _fixedCadicalVars()
+    , _timeoutInSeconds( 0 )
+    , _numOfClauses( 0 )
+    , _satisfiedClauses( &_engine->getContext() )
+    , _literalToClauses()
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -665,25 +669,35 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
     if ( is_fixed )
         _fixedCadicalVars.insert( lit );
-    // Pick the split to perform
-    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-    PhaseStatus originalPlcPhase = plc->getPhaseStatus();
-    plc->propagateLitAsSplit( lit );
 
+    if ( !isLiteralAssigned( lit ) )
+    {
+        for ( unsigned clause : _literalToClauses[lit] )
+            if ( !isClauseSatisfied( clause ) )
+                _satisfiedClauses.push_back( clause );
 
-    _engine->applyPlcPhaseFixingTightenings( *plc );
-    plc->setActiveConstraint( false );
-    _assignedLiterals.push_back( lit );
-    // Could happen if lit is deduced by SAT solver. Thus propagating lit will lead to a conflict.
-    if ( isLiteralToBePropagated( -lit ) )
-    {
-        _engine->propagateBoundManagerTightenings();
-        ASSERT( cb_has_external_clause() );
-    }
-    // Check that propagation of literal did not change a previously fixed phase
-    else
-    {
-        ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
+        // Pick the split to perform
+        PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+        PhaseStatus originalPlcPhase = plc->getPhaseStatus();
+        plc->propagateLitAsSplit( lit );
+
+        _engine->applyPlcPhaseFixingTightenings( *plc );
+        plc->setActiveConstraint( false );
+        _assignedLiterals.push_back( lit );
+
+        // Could happen if lit is deduced by SAT solver. Thus propagating lit will lead to a
+        // conflict.
+        if ( isLiteralToBePropagated( -lit ) )
+        {
+            _engine->propagateBoundManagerTightenings();
+            ASSERT( cb_has_external_clause() );
+        }
+        // Check that propagation of literal did not change a previously fixed phase
+        else
+        {
+            ASSERT( originalPlcPhase == PHASE_NOT_FIXED ||
+                    plc->getPhaseStatus() == originalPlcPhase );
+        }
     }
 }
 
@@ -695,8 +709,6 @@ void SmtCore::notify_new_decision_level()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Notified new decision level" );
     _numRejectedPhasePatternProposal = 0;
-
-    //    struct timespec start = TimeUtils::sampleMicro();
 
     _needToSplit = false;
     if ( _constraintForSplitting && !_constraintForSplitting->isActive() )
@@ -817,22 +829,67 @@ int SmtCore::cb_decide()
 
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
-    // First, try to decide according to Marabou heuristics
-    if ( _constraintForSplitting && !_constraintForSplitting->phaseFixed() )
+
+    int literalToDecide = 0;
+    unsigned maxNumOfClausesSatisfied = 0;
+    for ( int literal : _literalToClauses.keys() )
     {
-        int lit = _constraintForSplitting->getLiteralForDecision();
-        ASSERT( !isLiteralAssigned( -lit ) && !isLiteralAssigned( lit ) );
-        _constraintForSplitting = NULL;
-        ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        SMT_LOG( Stringf( "Decided literal %d", lit ).ascii() );
+        ASSERT( literal != 0 );
+        if ( isLiteralAssigned( literal ) || isLiteralAssigned( -literal ) )
+            continue;
+
+        unsigned numOfClausesSatisfiedByLiteral = 0;
+        for ( unsigned clause : _literalToClauses[literal] )
+            if ( !isClauseSatisfied( clause ) )
+                ++numOfClausesSatisfiedByLiteral;
+
+        if ( numOfClausesSatisfiedByLiteral > maxNumOfClausesSatisfied )
+        {
+            literalToDecide = literal;
+            maxNumOfClausesSatisfied = numOfClausesSatisfiedByLiteral;
+        }
+    }
+
+    if ( literalToDecide )
+    {
+        _assignedLiterals.push_back( literalToDecide );
+        for ( unsigned clause : _literalToClauses[literalToDecide] )
+            if ( !isClauseSatisfied( literalToDecide ) )
+                _satisfiedClauses.push_back( clause );
+
+        SMT_LOG( Stringf( "Decided literal %d; Satisfying %d clauses",
+                          literalToDecide,
+                          maxNumOfClausesSatisfied )
+                     .ascii() );
         if ( _statistics )
             _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
-        return lit;
+        _constraintForSplitting = NULL;
     }
-    SMT_LOG( "No decision made" );
-    if ( _statistics )
-        _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
-    return 0;
+    else
+    {
+        SMT_LOG( "No decision made" );
+        if ( _statistics )
+            _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
+    }
+
+    return literalToDecide;
+
+    //    // First, try to decide according to Marabou heuristics
+    //    if ( _constraintForSplitting && !_constraintForSplitting->phaseFixed() )
+    //    {
+    //        int lit = _constraintForSplitting->getLiteralForDecision();
+    //        ASSERT( !isLiteralAssigned( -lit ) && !isLiteralAssigned( lit ) );
+    //        _constraintForSplitting = NULL;
+    //        ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+    //        SMT_LOG( Stringf( "Decided literal %d", lit ).ascii() );
+    //        if ( _statistics )
+    //            _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
+    //        return lit;
+    //    }
+    //    SMT_LOG( "No decision made" );
+    //    if ( _statistics )
+    //        _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
+    //    return 0;
 }
 
 int SmtCore::cb_propagate()
@@ -880,19 +937,24 @@ int SmtCore::cb_propagate()
 
     // In case of assigned boolean variable with opposite assignment, find a conflict clause and
     // terminate propagating
-    if ( lit && isLiteralAssigned( -lit ) )
+    if ( lit )
     {
-        if ( !cb_has_external_clause() )
-            _engine->explainSimplexFailure();
-        ASSERT( cb_has_external_clause() );
-        _literalsToPropagate.clear();
-        _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+        if ( isLiteralAssigned( -lit ) )
+        {
+            if ( !cb_has_external_clause() )
+                _engine->explainSimplexFailure();
+            ASSERT( cb_has_external_clause() );
+            _literalsToPropagate.clear();
+            _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+        }
+
+        // TODO: rethink the following, maybe shouldn't happen here, and may cause bugs
         _assignedLiterals.push_back( lit );
-        return lit;
+        for ( unsigned clause : _literalToClauses[lit] )
+            if ( !isClauseSatisfied( clause ) )
+                _satisfiedClauses.push_back( clause );
     }
 
-    if ( lit )
-        _assignedLiterals.push_back( lit );
     SMT_LOG( Stringf( "Propagating literal %d", lit ).ascii() );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
     return lit;
@@ -925,12 +987,17 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
                 // Remove fixed literals from clause, as they are redundant
                 if ( !_fixedCadicalVars.exists( -lit ) )
+                {
                     _reasonClauseLiterals.append( -lit );
+                    _literalToClauses[-lit].insert( _numOfClauses );
+                }
             }
         }
 
         ASSERT( !_reasonClauseLiterals.exists( -propagated_lit ) );
         _reasonClauseLiterals.append( propagated_lit );
+        _literalToClauses[propagated_lit].insert( _numOfClauses );
+        ++_numOfClauses;
         _isReasonClauseInitialized = true;
 
         // Unit clause fixes the propagated literal
@@ -992,7 +1059,12 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     // Remove fixed literals as they are redundant
     for ( int lit : clause )
         if ( !_fixedCadicalVars.exists( -lit ) )
+        {
             toAdd.append( -lit );
+            _literalToClauses[-lit].insert( _numOfClauses );
+        }
+
+    ++_numOfClauses;
     _externalClausesToAdd.append( toAdd );
 }
 
@@ -1225,4 +1297,13 @@ void SmtCore::printCurrentState() const
         }
     }
     std::cout << std::endl;
+}
+
+bool SmtCore::isClauseSatisfied( unsigned int clause ) const
+{
+    for ( unsigned c : _satisfiedClauses )
+        if ( clause == c )
+            return true;
+
+    return false;
 }
