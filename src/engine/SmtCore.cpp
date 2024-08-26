@@ -851,11 +851,6 @@ int SmtCore::cb_decide()
 
     if ( literalToDecide )
     {
-        _assignedLiterals.push_back( literalToDecide );
-        for ( unsigned clause : _literalToClauses[literalToDecide] )
-            if ( !isClauseSatisfied( literalToDecide ) )
-                _satisfiedClauses.push_back( clause );
-
         SMT_LOG( Stringf( "Decided literal %d; Satisfying %d clauses",
                           literalToDecide,
                           maxNumOfClausesSatisfied )
