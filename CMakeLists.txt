@@ -21,7 +21,7 @@ option(RUN_MEMORY_TEST "Run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
-option(CODE_COVERAGE "Add code coverage" ON)  # Available only in debug mode
+option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
 
 ###################
 ## Git variables ##

@@ -664,6 +664,9 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
                       is_fixed )
                  .ascii() );
 
+    if ( isLiteralToBePropagated( -lit ) || isLiteralAssigned( -lit ) )
+        return;
+
     // Allow notifying a negation of assigned literal only when a conflict is already discovered
     ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
 
@@ -686,18 +689,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     plc->setActiveConstraint( false );
     _assignedLiterals.push_back( lit );
 
-    // Could happen if lit is deduced by SAT solver. Thus propagating lit will lead to a
-    // conflict.
-    if ( isLiteralToBePropagated( -lit ) )
-    {
-        _engine->propagateBoundManagerTightenings();
-        ASSERT( cb_has_external_clause() );
-    }
-    // Check that propagation of literal did not change a previously fixed phase
-    else
-    {
-        ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
-    }
+    ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
 }
 
 void SmtCore::notify_new_decision_level()
