@@ -9,8 +9,8 @@ CustomMaxPool::CustomMaxPool(const NLR::NetworkLevelReasoner* nlr, unsigned laye
 
 torch::Tensor CustomMaxPool::forward( torch::Tensor x ) const
 {
-    std::cout << "start time: " << TimeUtils::now().ascii() << std::endl;
-    fflush( stdout );
+    // std::cout << "start time: " << TimeUtils::now().ascii() << std::endl;
+    // fflush( stdout );
 
     const NLR::Layer *layer = networkLevelReasoner->getLayer( maxLayerIndex );
     torch::Tensor maxOutputs = torch::zeros( { 1, layer->getSize() } );
@@ -30,8 +30,8 @@ torch::Tensor CustomMaxPool::forward( torch::Tensor x ) const
         maxOutputs.index_put_( { 0, static_cast<int>( neuron ) }, torch::max( maxSource ) );
     }
 
-    std::cout << "end time: " << TimeUtils::now().ascii() << std::endl;
-    fflush( stdout );
+    // std::cout << "end time: " << TimeUtils::now().ascii() << std::endl;
+    // fflush( stdout );
 
     return maxOutputs;
 }

@@ -43,7 +43,6 @@ public:
     void weightedSum( unsigned i, const NLR::Layer *layer );
     explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
-    torch::Tensor customMaxPool(unsigned max_layer_inxes, torch::Tensor x ) const;
     torch::Tensor forward( torch::Tensor x );
 };
 
