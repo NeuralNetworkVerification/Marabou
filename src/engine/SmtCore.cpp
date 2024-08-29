@@ -822,7 +822,8 @@ int SmtCore::cb_decide()
     SMT_LOG( "Callback for decision:" );
 
     int literalToDecide = 0;
-    unsigned maxNumOfClausesSatisfied = 0;
+    unsigned maxScore = 0;
+    bool isVSIDS = true;
     for ( int literal : _literalToClauses.keys() )
     {
         ASSERT( literal != 0 );
@@ -834,18 +835,34 @@ int SmtCore::cb_decide()
             if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
 
-        if ( numOfClausesSatisfiedByLiteral > maxNumOfClausesSatisfied )
+        if ( numOfClausesSatisfiedByLiteral > maxScore )
         {
             literalToDecide = literal;
-            maxNumOfClausesSatisfied = numOfClausesSatisfiedByLiteral;
+            maxScore = numOfClausesSatisfiedByLiteral;
+        }
+    }
+
+    for ( PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys() )
+    {
+        if (plc->getPhaseStatus() != PHASE_NOT_FIXED)
+            continue;
+
+        if ( _constraintToViolationCount[plc] > maxScore )
+        {
+            literalToDecide = plc->getLiteralForDecision();
+            maxScore = _constraintToViolationCount[plc];
+            isVSIDS = false;
         }
     }
 
     if ( literalToDecide )
     {
-        SMT_LOG( Stringf( "Decided literal %d; Satisfying %d clauses",
+        ASSERT( !isLiteralAssigned( -literalToDecide ) && !isLiteralAssigned( literalToDecide ) );
+        ASSERT( FloatUtils::abs( literalToDecide ) <= _cadicalWrapper.vars() )
+        SMT_LOG( Stringf( "Decided literal %d; Score: %d; is score from VSIDS: %d",
                           literalToDecide,
-                          maxNumOfClausesSatisfied )
+                          maxScore,
+                          isVSIDS )
                      .ascii() );
         if ( _statistics )
             _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
@@ -859,23 +876,6 @@ int SmtCore::cb_decide()
     }
 
     return literalToDecide;
-
-    //    // First, try to decide according to Marabou heuristics
-    //    if ( _constraintForSplitting && !_constraintForSplitting->phaseFixed() )
-    //    {
-    //        int lit = _constraintForSplitting->getLiteralForDecision();
-    //        ASSERT( !isLiteralAssigned( -lit ) && !isLiteralAssigned( lit ) );
-    //        _constraintForSplitting = NULL;
-    //        ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    //        SMT_LOG( Stringf( "Decided literal %d", lit ).ascii() );
-    //        if ( _statistics )
-    //            _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
-    //        return lit;
-    //    }
-    //    SMT_LOG( "No decision made" );
-    //    if ( _statistics )
-    //        _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
-    //    return 0;
 }
 
 int SmtCore::cb_propagate()
