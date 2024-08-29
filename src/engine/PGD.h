@@ -6,7 +6,7 @@
 #include <torch/torch.h>
 
 constexpr float LR = 0.05;
-constexpr unsigned DEFAULT_NUM_ITER = 100;
+constexpr unsigned DEFAULT_NUM_ITER = 300;
 constexpr unsigned DEFAULT_NUM_RESTARTS = 3;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
