@@ -5,7 +5,6 @@
 #undef Warning
 #include <torch/torch.h>
 
-constexpr float LR = 0.05;
 constexpr unsigned DEFAULT_NUM_ITER = 350;
 constexpr unsigned DEFAULT_NUM_RESTARTS = 2;
 constexpr unsigned INPUT = 0;
