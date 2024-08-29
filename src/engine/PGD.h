@@ -6,8 +6,8 @@
 #include <torch/torch.h>
 
 constexpr float LR = 0.05;
-constexpr unsigned DEFAULT_NUM_ITER = 300;
-constexpr unsigned DEFAULT_NUM_RESTARTS = 3;
+constexpr unsigned DEFAULT_NUM_ITER = 350;
+constexpr unsigned DEFAULT_NUM_RESTARTS = 2;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
 constexpr unsigned RANGE = 1000.0f;
