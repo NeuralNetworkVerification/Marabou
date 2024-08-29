@@ -219,6 +219,10 @@ void Marabou::solveQuery()
 
     struct timespec start = TimeUtils::sampleMicro();
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
+    if (_engine->getExitCode() == Engine::ATTACK_SAT)
+    {
+        return;
+    }
     if ( _engine->processInputQuery( _inputQuery ) )
     {
         _engine->solve( timeoutInSeconds );
@@ -299,6 +303,11 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
                         _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
             printf( "\n" );
         }
+    }
+    else if (result == Engine::ATTACK_SAT)
+    {
+        resultString = "sat";
+        printf( "sat\n" );
     }
     else if ( result == Engine::TIMEOUT )
     {

@@ -48,6 +48,7 @@ public:
         UNKNOWN = 3,
         TIMEOUT = 4,
         QUIT_REQUESTED = 5,
+        ATTACK_SAT = 6,
 
         NOT_DONE = 999,
     };

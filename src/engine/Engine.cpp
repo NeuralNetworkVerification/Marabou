@@ -1441,10 +1441,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
-        for (auto& inputVar : inputQuery.getInputVariables()) {
-            inputQuery.setLowerBound(inputVar, -1.5);
-            inputQuery.setUpperBound(inputVar, 1.6);
-        }
+        // for (auto& inputVar : inputQuery.getInputVariables()) {
+        //     inputQuery.setLowerBound(inputVar, -3);
+        //     inputQuery.setUpperBound(inputVar, 3);
+        // }
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
@@ -1452,8 +1452,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
         if (_networkLevelReasoner)
         {
             CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
+            std::cout<< network <<std::endl;
             PGDAttack pgd_attack(network, _networkLevelReasoner);
-            pgd_attack.displayAdversarialExample();
+            if( pgd_attack.displayAdversarialExample() )
+            {
+                _exitCode = Engine::ATTACK_SAT;
+            }
         }
 
         if ( preprocess )
