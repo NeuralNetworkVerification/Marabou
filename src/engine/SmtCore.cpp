@@ -821,8 +821,8 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
 
-    int literalToDecide = 0;
-    unsigned maxScore = 0;
+    Map<int, unsigned> scores;
+
     for ( int literal : _literalToClauses.keys() )
     {
         ASSERT( literal != 0 );
@@ -838,10 +838,27 @@ int SmtCore::cb_decide()
             if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
 
-        unsigned score = numOfClausesSatisfiedByLiteral +
-                         _constraintToViolationCount[_cadicalVarToPlc[abs( literal )]];
+        scores[literal] = numOfClausesSatisfiedByLiteral;
+    }
 
-        if ( score > maxScore )
+    for (PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys())
+    {
+        if (plc->getPhaseStatus() != PHASE_NOT_FIXED)
+            continue;
+
+        int literal = plc->getLiteralForDecision();
+        scores[literal] += _constraintToViolationCount[plc];
+    }
+
+    int literalToDecide = 0;
+    unsigned maxScore = 0;
+
+    for (const auto &pair : scores)
+    {
+        int literal = pair.first;
+        unsigned score = pair.second;
+
+        if (score > maxScore)
         {
             literalToDecide = literal;
             maxScore = score;
