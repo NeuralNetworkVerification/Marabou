@@ -823,11 +823,14 @@ int SmtCore::cb_decide()
 
     int literalToDecide = 0;
     unsigned maxScore = 0;
-    bool isVSIDS = true;
     for ( int literal : _literalToClauses.keys() )
     {
         ASSERT( literal != 0 );
         if ( isLiteralAssigned( literal ) || isLiteralAssigned( -literal ) )
+            continue;
+
+        // For stability
+        if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
             continue;
 
         unsigned numOfClausesSatisfiedByLiteral = 0;
@@ -835,23 +838,13 @@ int SmtCore::cb_decide()
             if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
 
-        if ( numOfClausesSatisfiedByLiteral > maxScore )
+        unsigned score = numOfClausesSatisfiedByLiteral +
+                         _constraintToViolationCount[_cadicalVarToPlc[abs( literal )]];
+
+        if ( score > maxScore )
         {
             literalToDecide = literal;
-            maxScore = numOfClausesSatisfiedByLiteral;
-        }
-    }
-
-    for ( PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys() )
-    {
-        if (plc->getPhaseStatus() != PHASE_NOT_FIXED)
-            continue;
-
-        if ( _constraintToViolationCount[plc] > maxScore )
-        {
-            literalToDecide = plc->getLiteralForDecision();
-            maxScore = _constraintToViolationCount[plc];
-            isVSIDS = false;
+            maxScore = score;
         }
     }
 
@@ -861,8 +854,7 @@ int SmtCore::cb_decide()
         ASSERT( FloatUtils::abs( literalToDecide ) <= _cadicalWrapper.vars() )
         SMT_LOG( Stringf( "Decided literal %d; Score: %d; is score from VSIDS: %d",
                           literalToDecide,
-                          maxScore,
-                          isVSIDS )
+                          maxScore )
                      .ascii() );
         if ( _statistics )
             _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
