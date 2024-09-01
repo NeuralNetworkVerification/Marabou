@@ -830,7 +830,7 @@ int SmtCore::cb_decide()
             continue;
 
         // For stability
-        if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
+        if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() == literal )
             continue;
 
         unsigned numOfClausesSatisfiedByLiteral = 0;
@@ -838,7 +838,7 @@ int SmtCore::cb_decide()
             if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
 
-        scores[literal] = numOfClausesSatisfiedByLiteral;
+        scores[-literal] = numOfClausesSatisfiedByLiteral;
     }
 
     for (PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys())
