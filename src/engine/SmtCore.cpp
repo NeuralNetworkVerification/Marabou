@@ -821,7 +821,7 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
 
-    Map<int, unsigned> scores;
+    Map<int, double> scores;
 
     for ( int literal : _literalToClauses.keys() )
     {
@@ -833,17 +833,17 @@ int SmtCore::cb_decide()
         if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
             continue;
 
-        unsigned numOfClausesSatisfiedByLiteral = 0;
+        double numOfClausesSatisfiedByLiteral = 0;
         for ( unsigned clause : _literalToClauses[literal] )
             if ( !isClauseSatisfied( clause ) )
-                ++numOfClausesSatisfiedByLiteral;
+                numOfClausesSatisfiedByLiteral += (1.0 /  std::pow(2.0, (_numOfClauses- clause)/VSIDS_DECAY_CONSTANT));
 
         scores[literal] = numOfClausesSatisfiedByLiteral;
     }
 
     for (PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys())
     {
-        if (plc->getPhaseStatus() != PHASE_NOT_FIXED)
+        if ( plc->getPhaseStatus() != PHASE_NOT_FIXED )
             continue;
 
         int literal = plc->getLiteralForDecision();
@@ -851,12 +851,12 @@ int SmtCore::cb_decide()
     }
 
     int literalToDecide = 0;
-    unsigned maxScore = 0;
+    double maxScore = 0;
 
     for (const auto &pair : scores)
     {
         int literal = pair.first;
-        unsigned score = pair.second;
+        double score = pair.second;
 
         if (score > maxScore)
         {
@@ -1302,3 +1302,5 @@ bool SmtCore::isClauseSatisfied( unsigned int clause ) const
 
     return false;
 }
+
+const unsigned  SmtCore::VSIDS_DECAY_CONSTANT = 400;
