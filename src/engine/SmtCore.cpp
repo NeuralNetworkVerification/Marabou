@@ -821,47 +821,66 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
 
-    Map<int, double> scores;
-
-    for ( int literal : _literalToClauses.keys() )
-    {
-        ASSERT( literal != 0 );
-        if ( isLiteralAssigned( literal ) || isLiteralAssigned( -literal ) )
-            continue;
-
-        // For stability
-        if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
-            continue;
-
-        double numOfClausesSatisfiedByLiteral = 0;
-        for ( unsigned clause : _literalToClauses[literal] )
-            if ( !isClauseSatisfied( clause ) )
-                numOfClausesSatisfiedByLiteral += (1.0 /  std::pow(2.0, (_numOfClauses- clause)/VSIDS_DECAY_CONSTANT));
-
-        scores[literal] = numOfClausesSatisfiedByLiteral;
-    }
-
-    for (PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys())
-    {
-        if ( plc->getPhaseStatus() != PHASE_NOT_FIXED )
-            continue;
-
-        int literal = plc->getLiteralForDecision();
-        scores[literal] += _constraintToViolationCount[plc];
-    }
-
     int literalToDecide = 0;
-    double maxScore = 0;
 
-    for (const auto &pair : scores)
+    if ( _branchingHeuristic == DivideStrategy::ReLUViolation )
     {
-        int literal = pair.first;
-        double score = pair.second;
-
-        if (score > maxScore)
+        Map<int, double> scores;
+        for ( int literal : _literalToClauses.keys() )
         {
-            literalToDecide = literal;
-            maxScore = score;
+            ASSERT( literal != 0 );
+            if ( isLiteralAssigned( literal ) || isLiteralAssigned( -literal ) )
+                continue;
+
+            // For stability
+            if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
+                continue;
+
+            double numOfClausesSatisfiedByLiteral = 0;
+            for ( unsigned clause : _literalToClauses[literal] )
+                if ( !isClauseSatisfied( clause ) )
+                    numOfClausesSatisfiedByLiteral +=
+                        ( 1.0 /
+                          std::pow( 2.0, ( _numOfClauses - clause ) / VSIDS_DECAY_CONSTANT ) );
+
+            scores[literal] = numOfClausesSatisfiedByLiteral;
+        }
+
+        for ( PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys() )
+        {
+            if ( plc->getPhaseStatus() != PHASE_NOT_FIXED )
+                continue;
+
+            plc->updateDirection();
+            int literal = plc->getLiteralForDecision();
+            scores[literal] += _constraintToViolationCount[plc];
+        }
+
+        double maxScore = 0;
+
+        for ( const auto &pair : scores )
+        {
+            int literal = pair.first;
+            double score = pair.second;
+
+            if ( score > maxScore )
+            {
+                literalToDecide = literal;
+                maxScore = score;
+            }
+        }
+    }
+    else
+    {
+        if ( _constraintForSplitting && !_constraintForSplitting->phaseFixed() )
+        {
+            int lit = _constraintForSplitting->getLiteralForDecision();
+            ASSERT( !isLiteralAssigned( -lit ) && !isLiteralAssigned( lit ) );
+            _constraintForSplitting = NULL;
+            ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+            if ( _statistics )
+                _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
+            literalToDecide = lit;
         }
     }
 
@@ -869,10 +888,7 @@ int SmtCore::cb_decide()
     {
         ASSERT( !isLiteralAssigned( -literalToDecide ) && !isLiteralAssigned( literalToDecide ) );
         ASSERT( FloatUtils::abs( literalToDecide ) <= _cadicalWrapper.vars() )
-        SMT_LOG( Stringf( "Decided literal %d; Score: %d; is score from VSIDS: %d",
-                          literalToDecide,
-                          maxScore )
-                     .ascii() );
+        SMT_LOG( Stringf( "Decided literal %d", literalToDecide ).ascii() );
         if ( _statistics )
             _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
         _constraintForSplitting = NULL;
@@ -1303,4 +1319,4 @@ bool SmtCore::isClauseSatisfied( unsigned int clause ) const
     return false;
 }
 
-const unsigned  SmtCore::VSIDS_DECAY_CONSTANT = 400;
+const unsigned SmtCore::VSIDS_DECAY_CONSTANT = 400;
