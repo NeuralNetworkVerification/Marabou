@@ -371,6 +371,9 @@ public:
         return LPSolverType::NATIVE;
     }
 
+    void updateDirections() override
+    {
+    }
 };
 
 #endif // __MockEngine_h__
