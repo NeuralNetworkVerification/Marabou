@@ -821,7 +821,8 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
 
-    _engine->updateDirections();
+    for ( PiecewiseLinearConstraint *plc : *_engine->getPiecewiseLinearConstraints() )
+        plc->updateDirection();
 
     int literalToDecide = 0;
 
