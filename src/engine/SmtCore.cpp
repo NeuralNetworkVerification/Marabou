@@ -821,9 +821,6 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     SMT_LOG( "Callback for decision:" );
 
-    for ( PiecewiseLinearConstraint *plc : *_engine->getPiecewiseLinearConstraints() )
-        plc->updateDirection();
-
     int literalToDecide = 0;
 
     if ( _branchingHeuristic == DivideStrategy::ReLUViolation )
@@ -854,6 +851,7 @@ int SmtCore::cb_decide()
             if ( plc->getPhaseStatus() != PHASE_NOT_FIXED )
                 continue;
 
+            plc->updateDirection();
             int literal = plc->getLiteralForDecision();
             scores[literal] += _constraintToViolationCount[plc];
         }
