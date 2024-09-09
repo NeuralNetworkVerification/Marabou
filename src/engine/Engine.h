@@ -784,7 +784,7 @@ private:
       Update the preferred direction to perform fixes and the preferred order
       to handle case splits
     */
-    void updateDirections() override;
+    void updateDirections();
 
     /*
       Decide which branch heuristics to use.
