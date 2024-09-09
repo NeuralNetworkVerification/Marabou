@@ -4339,3 +4339,8 @@ LPSolverType Engine::getLpSolverType() const
 {
     return _lpSolverType;
 }
+
+NLR::NetworkLevelReasoner *Engine::getNetworkLevelReasoner() const
+{
+    return _networkLevelReasoner;
+}

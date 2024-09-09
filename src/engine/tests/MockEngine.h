@@ -371,6 +371,10 @@ public:
         return LPSolverType::NATIVE;
     }
 
+    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override
+    {
+        return nullptr;
+    }
 };
 
 #endif // __MockEngine_h__

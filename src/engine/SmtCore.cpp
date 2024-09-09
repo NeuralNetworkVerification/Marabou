@@ -704,7 +704,8 @@ void SmtCore::notify_new_decision_level()
     _needToSplit = false;
     if ( _constraintForSplitting && !_constraintForSplitting->isActive() )
     {
-        _constraintToViolationCount[_constraintForSplitting] = 0;
+        if ( _branchingHeuristic == DivideStrategy::ReLUViolation )
+            _constraintToViolationCount[_constraintForSplitting] = 0;
         _constraintForSplitting = NULL;
     }
 
@@ -836,12 +837,7 @@ int SmtCore::cb_decide()
             if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
                 continue;
 
-            double numOfClausesSatisfiedByLiteral = 0;
-            for ( unsigned clause : _literalToClauses[literal] )
-                if ( !isClauseSatisfied( clause ) )
-                    numOfClausesSatisfiedByLiteral +=
-                        ( 1.0 /
-                          std::pow( 2.0, ( _numOfClauses - clause ) / VSIDS_DECAY_CONSTANT ) );
+            double numOfClausesSatisfiedByLiteral = getVSIDSScore( literal );
 
             scores[literal] = numOfClausesSatisfiedByLiteral;
         }
@@ -851,7 +847,6 @@ int SmtCore::cb_decide()
             if ( plc->getPhaseStatus() != PHASE_NOT_FIXED )
                 continue;
 
-            plc->updateDirection();
             int literal = plc->getLiteralForDecision();
             scores[literal] += _constraintToViolationCount[plc];
         }
@@ -872,15 +867,39 @@ int SmtCore::cb_decide()
     }
     else
     {
-        if ( _constraintForSplitting && !_constraintForSplitting->phaseFixed() )
+        NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
+        ASSERT( networkLevelReasoner );
+
+        List<PiecewiseLinearConstraint *> constraints =
+            networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+        Map<double, PiecewiseLinearConstraint *> polarityScoreToConstraint;
+        for ( auto &plConstraint : constraints )
         {
-            int lit = _constraintForSplitting->getLiteralForDecision();
-            ASSERT( !isLiteralAssigned( -lit ) && !isLiteralAssigned( lit ) );
-            _constraintForSplitting = NULL;
-            ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-            if ( _statistics )
-                _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
-            literalToDecide = lit;
+            if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
+                 !plConstraint->phaseFixed() )
+            {
+                plConstraint->updateScoreBasedOnPolarity();
+                polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
+                if ( polarityScoreToConstraint.size() >=
+                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                    break;
+            }
+        }
+
+        if ( !polarityScoreToConstraint.empty() )
+        {
+            double maxScore = 0;
+            for ( double polarityScore : polarityScoreToConstraint.keys() )
+            {
+                int literal = polarityScoreToConstraint[polarityScore]->getLiteralForDecision();
+                double score = ( getVSIDSScore( literal ) + 1 ) * polarityScore;
+                if ( score > maxScore )
+                {
+                    literalToDecide = literal;
+                    maxScore = score;
+                }
+            }
         }
     }
 
@@ -1320,3 +1339,14 @@ bool SmtCore::isClauseSatisfied( unsigned int clause ) const
 }
 
 const unsigned SmtCore::VSIDS_DECAY_CONSTANT = 400;
+
+double SmtCore::getVSIDSScore( int literal ) const
+{
+    double numOfClausesSatisfiedByLiteral = 0;
+    if ( _literalToClauses.exists( literal ) )
+        for ( unsigned clause : _literalToClauses[literal] )
+            if ( !isClauseSatisfied( clause ) )
+                numOfClausesSatisfiedByLiteral +=
+                    ( 1.0 / std::pow( 2.0, ( _numOfClauses - clause ) / VSIDS_DECAY_CONSTANT ) );
+    return numOfClausesSatisfiedByLiteral;
+}

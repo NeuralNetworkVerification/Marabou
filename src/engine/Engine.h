@@ -354,6 +354,11 @@ public:
      */
     LPSolverType getLpSolverType() const override;
 
+    /*
+      Returns a pointer to the internal NLR object.
+     */
+    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override;
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,

@@ -444,6 +444,8 @@ private:
     bool isLiteralAssigned( int literal ) const;
     bool isLiteralToBePropagated( int literal ) const;
     bool isClauseSatisfied( unsigned clause ) const;
+
+    double getVSIDSScore( int literal ) const;
 };
 
 #endif // __SmtCore_h__

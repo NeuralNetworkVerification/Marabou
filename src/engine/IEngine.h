@@ -17,11 +17,11 @@
 #define __IEngine_h__
 
 #include "BoundExplainer.h"
-#include "ExitCode.h"
 #include "DivideStrategy.h"
+#include "ExitCode.h"
 #include "GroundBoundManager.h"
-#include "List.h"
 #include "LPSolverType.h"
+#include "List.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
 #include "TableauStateStorageLevel.h"
@@ -34,6 +34,9 @@
 
 class EngineState;
 class Equation;
+namespace NLR {
+class NetworkLevelReasoner;
+}
 class PiecewiseLinearCaseSplit;
 class SmtState;
 class String;
@@ -54,7 +57,7 @@ public:
     /*
       Apply tighetenings implied from phase fixing of the given piecewise linear constraint;
      */
-    virtual void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint) = 0;
+    virtual void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint ) = 0;
 
     /*
       Register initial SnC split
@@ -238,6 +241,11 @@ public:
       Returns the type of the LP Solver in use.
      */
     virtual LPSolverType getLpSolverType() const = 0;
+
+    /*
+      Returns a pointer to the internal NLR object.
+     */
+    virtual NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const = 0;
 };
 
 #endif // __IEngine_h__
