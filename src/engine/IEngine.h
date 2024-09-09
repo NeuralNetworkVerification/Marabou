@@ -238,6 +238,12 @@ public:
       Returns the type of the LP Solver in use.
      */
     virtual LPSolverType getLpSolverType() const = 0;
+
+    /*
+      Update the preferred direction to perform fixes and the preferred order
+      to handle case splits
+    */
+    virtual void updateDirections() = 0;
 };
 
 #endif // __IEngine_h__
