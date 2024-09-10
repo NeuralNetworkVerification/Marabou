@@ -199,6 +199,9 @@ void Engine::preSolve() // TODO: change the name of this method
     for ( auto &nlConstraint : _nlConstraints )
         nlConstraint->registerBoundManager( &_boundManager );
 
+    tightenBoundsOnConstraintMatrix();
+    _boundManager.propagateTightenings();
+
     // Before encoding, make sure all valid constraints are applied.
     applyAllValidConstraintCaseSplits();
 
