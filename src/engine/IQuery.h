@@ -37,6 +37,8 @@ public:
 
     virtual void setLowerBound( unsigned variable, double bound ) = 0;
     virtual void setUpperBound( unsigned variable, double bound ) = 0;
+    virtual bool tightenLowerBound( unsigned variable, double bound ) = 0;
+    virtual bool tightenUpperBound( unsigned variable, double bound ) = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
 

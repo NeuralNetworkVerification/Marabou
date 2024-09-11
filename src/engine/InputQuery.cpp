@@ -119,7 +119,7 @@ bool InputQuery::tightenLowerBound( unsigned variable, double bound )
     if ( variable >= _numberOfVariables )
     {
         throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
-                            Stringf( "Variable = %u, number of variables = %u (setLowerBound)",
+                            Stringf( "Variable = %u, number of variables = %u (tightenLowerBound)",
                                      variable,
                                      getNumberOfVariables() )
                                 .ascii() );
@@ -138,7 +138,7 @@ bool InputQuery::tightenUpperBound( unsigned variable, double bound )
     if ( variable >= _numberOfVariables )
     {
         throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
-                            Stringf( "Variable = %u, number of variables = %u (setUpperBound)",
+                            Stringf( "Variable = %u, number of variables = %u (tightenUpperBound)",
                                      variable,
                                      getNumberOfVariables() )
                                 .ascii() );

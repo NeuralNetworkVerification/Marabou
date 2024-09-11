@@ -81,6 +81,45 @@ void Query::setUpperBound( unsigned variable, double bound )
     _upperBounds[variable] = bound;
 }
 
+bool Query::tightenLowerBound( unsigned variable, double bound )
+{
+    if ( variable >= _numberOfVariables )
+    {
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
+                            Stringf( "Variable = %u, number of variables = %u (tightenLowerBound)",
+                                     variable,
+                                     getNumberOfVariables() )
+                                .ascii() );
+    }
+
+    if ( !_lowerBounds.exists( variable ) || _lowerBounds[variable] < bound )
+    {
+        _lowerBounds[variable] = bound;
+        return true;
+    }
+    return false;
+}
+
+bool Query::tightenUpperBound( unsigned variable, double bound )
+{
+    if ( variable >= _numberOfVariables )
+    {
+        throw MarabouError( MarabouError::VARIABLE_INDEX_OUT_OF_RANGE,
+                            Stringf( "Variable = %u, number of variables = %u (tightenUpperBound)",
+                                     variable,
+                                     getNumberOfVariables() )
+                                .ascii() );
+    }
+
+    if ( !_upperBounds.exists( variable ) || _upperBounds[variable] > bound )
+    {
+        _upperBounds[variable] = bound;
+        return true;
+    }
+    return false;
+}
+
+
 void Query::addEquation( const Equation &equation )
 {
     _equations.append( equation );

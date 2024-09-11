@@ -3765,16 +3765,16 @@ void Engine::extractBounds( IQuery &inputQuery )
             // Symbolically fixed variables are ignored
             if ( _preprocessor.variableIsUnusedAndSymbolicallyFixed( i ) )
             {
-                inputQuery.setLowerBound( i, FloatUtils::negativeInfinity() );
-                inputQuery.setUpperBound( i, FloatUtils::infinity() );
+                inputQuery.tightenLowerBound( i, FloatUtils::negativeInfinity() );
+                inputQuery.tightenUpperBound( i, FloatUtils::infinity() );
                 continue;
             }
 
             // Fixed variables are easy: return the value they've been fixed to.
             if ( _preprocessor.variableIsFixed( variable ) )
             {
-                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.tightenLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.tightenUpperBound( i, _preprocessor.getFixedValue( variable ) );
                 continue;
             }
 
@@ -3782,13 +3782,13 @@ void Engine::extractBounds( IQuery &inputQuery )
             // a new index, due to variable elimination
             variable = _preprocessor.getNewIndex( variable );
 
-            inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( variable ) );
-            inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( variable ) );
+            inputQuery.tightenLowerBound( i, _preprocessedQuery->getLowerBound( variable ) );
+            inputQuery.tightenUpperBound( i, _preprocessedQuery->getUpperBound( variable ) );
         }
         else
         {
-            inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
-            inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+            inputQuery.tightenLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+            inputQuery.tightenUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
         }
     }
 }
