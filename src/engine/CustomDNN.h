@@ -7,6 +7,17 @@
 #undef Warning
 #include <torch/torch.h>
 
+class CustomMaxPoolFunction : public torch::autograd::Function<CustomMaxPoolFunction> {
+public:
+    static torch::Tensor forward(torch::autograd::AutogradContext *ctx,
+                                  torch::Tensor x,
+                                  const NLR::NetworkLevelReasoner *nlr,
+                                  unsigned layerIndex);
+
+    static std::vector<torch::Tensor> backward(torch::autograd::AutogradContext *ctx, std::vector<torch::Tensor>
+        grad_output);
+};
+
 class CustomMaxPool : public torch::nn::Module {
 public:
     CustomMaxPool(const NLR::NetworkLevelReasoner* nlr, unsigned layerIndex);

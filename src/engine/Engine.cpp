@@ -1457,6 +1457,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
             if( pgd_attack.displayAdversarialExample() )
             {
                 _exitCode = Engine::ATTACK_SAT;
+                return false;
             }
         }
 
