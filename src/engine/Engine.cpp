@@ -518,10 +518,12 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
     {
         // We have violated piecewise-linear constraints.
         performConstraintFixingStep();
-        // Finally, take this opportunity to tighten any bounds
+
+        // Finally, take this opporunity to tighten any bounds
         // and perform any valid case splits.
         tightenBoundsOnConstraintMatrix();
         _boundManager.propagateTightenings();
+
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
 
