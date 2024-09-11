@@ -60,21 +60,8 @@ cmake --build ./
 ```
 To enable multiprocess build change the last command to:
 ```bash
-cmake --build ./ -- -jN // where N is the number of processes
+cmake --build . -j PROC_NUM
 ```
-
-To find how many jobs you can run in parallel, run 
-```bash
-nproc
-```
-
-for Linux and
-```bash
-sysctl -n hw.ncpu
-```
-
-for MacOS.
-
 After building Marabou, the compiled binary is located at `build/Marabou`, and the 
 shared library for the Python API is located in `maraboupy/`. Building the Python 
 interface requires *pybind11* (which is automatically downloaded).
