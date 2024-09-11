@@ -114,13 +114,7 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     ++_constraintToViolationCount[constraint];
 
     if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
-    {
         _needToSplit = true;
-        if ( !pickSplitPLConstraint() )
-            // If pickSplitConstraint failed to pick one, use the native
-            // relu-violation based splitting heuristic.
-            _constraintForSplitting = constraint;
-    }
 }
 
 unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const

@@ -518,7 +518,10 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
     {
         // We have violated piecewise-linear constraints.
         performConstraintFixingStep();
-
+        // Finally, take this opportunity to tighten any bounds
+        // and perform any valid case splits.
+        tightenBoundsOnConstraintMatrix();
+        _boundManager.propagateTightenings();
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
 
@@ -2299,7 +2302,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
-             GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY ==
+             GlobalConfiguration::BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY ==
          0 )
     {
         _rowBoundTightener->examineConstraintMatrix( true );

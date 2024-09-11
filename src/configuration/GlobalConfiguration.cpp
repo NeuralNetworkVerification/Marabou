@@ -62,7 +62,7 @@ const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy::ReLUViolation;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY = 10;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 1;
-const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
+const unsigned GlobalConfiguration::BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
@@ -110,7 +110,7 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
-const double GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING = 0.01;
+const double GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING = 0.001;
 const double GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE = 0.000001;
 const bool GlobalConfiguration::WRITE_JSON_PROOF = false;
 
@@ -173,8 +173,8 @@ void GlobalConfiguration::print()
     printf( "  GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD: %.15lf\n",
             GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD );
     printf( "  MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS: %u\n", MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS );
-    printf( "  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
-            BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY );
+    printf( "  BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
+            BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY );
     printf( "  COST_FUNCTION_ERROR_THRESHOLD: %.15lf\n", COST_FUNCTION_ERROR_THRESHOLD );
     printf( "  USE_HARRIS_RATIO_TEST: %s\n", USE_HARRIS_RATIO_TEST ? "Yes" : "No" );
 
