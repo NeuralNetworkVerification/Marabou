@@ -40,6 +40,8 @@ public:
     void setNumberOfVariables( unsigned numberOfVariables );
     void setLowerBound( unsigned variable, double bound );
     void setUpperBound( unsigned variable, double bound );
+    bool tightenLowerBound( unsigned variable, double bound );
+    bool tightenUpperBound( unsigned variable, double bound );
 
     void addEquation( const Equation &equation );
     unsigned getNumberOfEquations() const;
