@@ -141,9 +141,6 @@ public:
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 
-    // How often should we perform explicit basis bound tightening.
-    static const unsigned EXPLICIT_BASIS_BOUND_TIGHTENING_FREQUENCY;
-
     // When the row bound tightener is asked to run until saturation, it can enter an infinite loop
     // due to tiny increments in bounds. This number limits the number of iterations it can perform.
     static const unsigned ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS;

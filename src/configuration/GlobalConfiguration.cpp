@@ -63,7 +63,6 @@ const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy:
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY = 10;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 1;
 const unsigned GlobalConfiguration::BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
-const unsigned GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_FREQUENCY = 5;
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
