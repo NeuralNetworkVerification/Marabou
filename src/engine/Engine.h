@@ -36,6 +36,7 @@
 #include "MILPEncoder.h"
 #include "Map.h"
 #include "Options.h"
+#include "PGD.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
@@ -47,6 +48,7 @@
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 #include "UnsatCertificateNode.h"
+
 
 #include <atomic>
 #include <context/context.h>
