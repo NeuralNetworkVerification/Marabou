@@ -128,7 +128,8 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
     memcpy( output, outputLayer->getAssignment(), sizeof( double ) * outputLayer->getSize() );
 }
 
-void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &assignment )
+void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &assignment,
+                                                      const double *pgdAdversarialInput )
 {
     Layer *inputLayer = _layerIndexToLayer[0];
     ASSERT( inputLayer->getLayerType() == Layer::INPUT );
@@ -144,7 +145,12 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &ass
         if ( !inputLayer->neuronEliminated( index ) )
         {
             unsigned variable = inputLayer->neuronToVariable( index );
-            double value = _tableau->getValue( variable );
+            double value;
+            if (pgdAdversarialInput)
+                value = pgdAdversarialInput[index];
+            else
+                value = _tableau->getValue( variable );
+
             input[index] = value;
             assignment[variable] = value;
         }

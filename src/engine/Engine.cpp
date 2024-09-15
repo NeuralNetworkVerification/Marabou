@@ -26,14 +26,13 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "NLRError.h"
+#include "PGD.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 #include "VariableOutOfBoundDuringOptimizationException.h"
 #include "Vector.h"
-#include "CustomDNN.h"
-#include "PGD.h"
 
 #include <random>
 
@@ -1433,7 +1432,7 @@ void Engine::initializeNetworkLevelReasoning()
     }
 }
 
-bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
+bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
@@ -1449,14 +1448,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess)
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
-        if (_networkLevelReasoner)
+        if ( _networkLevelReasoner )
         {
-            CustomDNNImpl network = CustomDNNImpl(_networkLevelReasoner);
-            std::cout<< network <<std::endl;
-            PGDAttack pgd_attack(network, _networkLevelReasoner);
-            if( pgd_attack.displayAdversarialExample() )
+            _pgdAttack = new PGDAttack(_networkLevelReasoner);
+            if ( _pgdAttack->displayAdversarialExample() )
             {
-                _exitCode = Engine::ATTACK_SAT;
+                _exitCode = Engine::SAT;
+                _isAttackSuccessful = true;
                 return false;
             }
         }
@@ -1776,11 +1774,17 @@ void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor
             variable = preprocessorInUse->getNewIndex( variable );
 
             // Finally, set the assigned value
-            inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
+            if ( _isAttackSuccessful )
+                inputQuery.setSolutionValue( i, _pgdAttack->getAssignment( variable ) );
+            else
+                inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
         }
         else
         {
-            inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+            if ( _isAttackSuccessful )
+                inputQuery.setSolutionValue( i, _pgdAttack->getAssignment( i ) );
+            else
+                inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
         }
     }
 

@@ -79,7 +79,8 @@ public:
       Perform an evaluation of the network for the current input variable
       assignment and store the resulting variable assignment in the assignment.
     */
-    void concretizeInputAssignment( Map<unsigned, double> &assignment );
+    void concretizeInputAssignment( Map<unsigned, double> &assignment,
+                                    const double *pgdAdversarialInput = nullptr );
 
     /*
       Perform a simulation of the network for a specific input

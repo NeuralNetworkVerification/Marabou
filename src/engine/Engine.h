@@ -51,6 +51,7 @@
 #include <atomic>
 #include <context/context.h>
 
+class PGDAttack;
 
 #ifdef _WIN32
 #undef ERROR
@@ -535,6 +536,9 @@ private:
     unsigned _statisticsPrintingFrequency;
 
     LinearExpression _heuristicCost;
+
+    PGDAttack *_pgdAttack;
+    bool _isAttackSuccessful = false;
 
     /*
       Perform a simplex step: compute the cost function, pick the
