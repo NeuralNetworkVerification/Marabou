@@ -347,14 +347,12 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                                                           _boundManager.getUpperBound( v ) ) );
                         } );
 
-
                         // TODO: update time measurements
                         //                        mainLoopEnd = TimeUtils::sampleMicro();
                         //                        _statistics.incLongAttribute(
                         //                            Statistics::TIME_MAIN_LOOP_MICRO,
                         //                            TimeUtils::timePassed( mainLoopStart,
                         //                            mainLoopEnd ) );
-
 
                         // TODO: how to construct proof tree with CDCL
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
@@ -2320,22 +2318,27 @@ void Engine::explicitBasisBoundTightening()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
-
-    _statistics.incLongAttribute( Statistics::NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS );
-
-    switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
+    if ( _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
+             GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_FREQUENCY ==
+         0 )
     {
-    case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
-        break;
+        bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
-    case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
-        break;
+        _statistics.incLongAttribute( Statistics::NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS );
 
-    case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
-        break;
+        switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
+        {
+        case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
+            _rowBoundTightener->examineInvertedBasisMatrix( saturation );
+            break;
+
+        case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
+            _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
+            break;
+
+        case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
+            break;
+        }
     }
 
     struct timespec end = TimeUtils::sampleMicro();
