@@ -34,7 +34,8 @@
 
 #include <cstring>
 
-#define NLR_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
+#define NLR_LOG( x, ... )                                                                          \
+    MARABOU_LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
 
 namespace NLR {
 
@@ -144,7 +145,15 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &ass
         if ( !inputLayer->neuronEliminated( index ) )
         {
             unsigned variable = inputLayer->neuronToVariable( index );
-            double value = _tableau->getValue( variable );
+            double value;
+//            if ( pgd != nullptr )
+//            {
+//                value = pgd->getAssignment( index );
+//            }
+//            else
+//            {
+                value = _tableau->getValue( variable );
+//            }
             input[index] = value;
             assignment[variable] = value;
         }

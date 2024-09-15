@@ -1,9 +1,6 @@
 #include "CustomDNN.h"
-
-#include "NetworkLevelReasoner.h"
 #include "Vector.h"
-
-#include <TimeUtils.h>
+#include "TimeUtils.h"
 
 
 CustomMaxPool::CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
@@ -174,8 +171,6 @@ torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *
                                               const NLR::NetworkLevelReasoner *nlr,
                                               unsigned int layerIndex )
 {
-    //     std::cout << "start time: " << TimeUtils::now().ascii() << std::endl;
-    //     fflush( stdout );
     ctx->save_for_backward( { x } );
 
     const NLR::Layer *layer = nlr->getLayer( layerIndex );
@@ -185,7 +180,7 @@ torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *
     for ( unsigned neuron = 0; neuron < layer->getSize(); ++neuron )
     {
         auto sources = layer->getActivationSources( neuron );
-        torch::Tensor maxSource = torch::zeros( sources.size(), torch::kFloat );
+        torch::Tensor sourceValues = torch::zeros( sources.size(), torch::kFloat );
         torch::Tensor sourceIndices = torch::zeros( sources.size() );
 
         for ( int i = sources.size() - 1; i >= 0; --i )
@@ -193,16 +188,14 @@ torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *
             const NLR::NeuronIndex &activationNeuron = sources.back();
             sources.popBack();
             int index = static_cast<int>( activationNeuron._neuron );
-            maxSource[i] = x.index( { 0, index } );
+            sourceValues[i] = x.index( { 0, index } );
             sourceIndices[i] = index;
         }
-        maxOutputs.index_put_( { 0, static_cast<int>( neuron ) }, torch::max( maxSource ) );
-        argMaxOutputs.index_put_( { 0, static_cast<int>( neuron ) },
-                                  sourceIndices[torch::argmax( maxSource )] );
-    }
 
-    //     std::cout << "end time: " << TimeUtils::now().ascii() << std::endl;
-    //     fflush( stdout );
+        maxOutputs.index_put_( { 0, static_cast<int>( neuron ) }, torch::max( sourceValues ) );
+        argMaxOutputs.index_put_( { 0, static_cast<int>( neuron ) },
+                                  sourceIndices[torch::argmax( sourceValues )] );
+    }
 
     ctx->saved_data["argMaxOutputs"] = argMaxOutputs;
 
@@ -219,7 +212,7 @@ std::vector<torch::Tensor> CustomMaxPoolFunction::backward( torch::autograd::Aut
 
     auto indices = ctx->saved_data["argMaxOutputs"].toTensor();
 
-    grad_input.index_add_( 1, indices.flatten(), grad_output[0] );
+    grad_input[0].index_add_( 0, indices.flatten(), grad_output[0].flatten() );
 
     return { grad_input, torch::Tensor(), torch::Tensor() };
 }

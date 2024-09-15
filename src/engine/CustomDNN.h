@@ -1,5 +1,5 @@
-#ifndef CUSTOM_DNN_H
-#define CUSTOM_DNN_H
+#ifndef __CustomDNN_h__
+#define __CustomDNN_h__
 
 #include "NetworkLevelReasoner.h"
 #include <vector>
@@ -58,4 +58,4 @@ public:
 };
 
 
-#endif
+#endif // __CustomDNN_h__
