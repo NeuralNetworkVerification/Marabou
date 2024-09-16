@@ -188,8 +188,8 @@ bool PGDAttack::displayAdversarialExample()
 {
     std::cout << "-----Starting PGD attack-----" << std::endl;
     auto adversarial = _findAdvExample();
-    torch::Tensor advInput = adversarial.first;
-    torch::Tensor advPred = adversarial.second;
+    torch::Tensor advInput = adversarial.first.to(torch::kDouble);
+    torch::Tensor advPred = adversarial.second.to(torch::kDouble);
 
     bool isFooled =
         _isWithinBounds( advInput, inputBounds ) && _isWithinBounds( advPred, outputBounds );
