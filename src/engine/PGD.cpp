@@ -136,46 +136,40 @@ torch::Tensor PGDAttack::_calculateLoss( const torch::Tensor &predictions )
         torch::tensor( outputBounds.second.data(), torch::kFloat32 ).to( device );
 
     // Compute the penalty: We want high loss if predictions are outside the bounds
-    torch::Tensor ubViolation = torch::sum(torch::relu(predictions - upperBoundTensor)).to(device);
-    torch::Tensor lbViolation = torch::sum(torch::relu(lowerBoundTensor - predictions)).to(device);
-    return ubViolation + lbViolation;
-
+    torch::Tensor ubViolation = torch::sum(torch::square(
+                                torch::relu(predictions - upperBoundTensor ))).to(device);
+    torch::Tensor lbViolation = torch::sum(torch::square(
+                                torch::relu(lowerBoundTensor - predictions) )).to(device);
+    return torch::sum(ubViolation + lbViolation).to(device);
 }
-
 
 std::pair<torch::Tensor, torch::Tensor> PGDAttack::_findAdvExample()
 {
-    torch::Tensor currentExample;
+    torch::Tensor currentExample = InputExample;
     torch::Tensor currentPrediction;
     torch::Tensor lowerBoundTensor = torch::tensor(inputBounds.first.data(), torch::kFloat32).to(device);
     torch::Tensor upperBoundTensor = torch::tensor(inputBounds.second.data(), torch::kFloat32).to(device);
-
+    torch::Tensor delta = torch::zeros(inputSize).to(device).requires_grad_(true);
     for ( unsigned i = 0; i < restarts; ++i )
     {
-        torch::Tensor delta = torch::zeros(inputSize).to(device).requires_grad_(true);
         torch::optim::Adam optimizer({delta}, torch::optim::AdamOptions());
-
         for ( unsigned j = 0; j < iters; ++j )
         {
-            currentExample = torch::clamp(InputExample + delta, lowerBoundTensor, upperBoundTensor);
+            currentExample = currentExample + delta;
             currentPrediction = model.forward( currentExample );
-            torch::Tensor loss = _calculateLoss( currentPrediction );
+            if ( _isWithinBounds( currentPrediction, outputBounds ) )
+            {
+                return { currentExample, currentPrediction };
+            }
             optimizer.zero_grad();
+            torch::Tensor loss = _calculateLoss( currentPrediction );
             loss.backward();
             optimizer.step();
             delta.data() = delta.data().clamp( -epsilon, epsilon );
         }
-
-        currentPrediction = model.forward( currentExample );
-        torch::Tensor currentLoss = _calculateLoss( currentPrediction );
-        if ( _isWithinBounds( currentPrediction, outputBounds ) )
-        {
-            return { currentExample, currentPrediction };
-        }
+        delta = (torch::rand(inputSize) * 2 - 1).mul(epsilon).to(device).requires_grad_(true);
     }
-
     return { currentExample, currentPrediction };
-    ;
 }
 
 double PGDAttack::getAssignment(  int index )

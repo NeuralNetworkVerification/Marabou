@@ -37,7 +37,7 @@
 #include <random>
 
 #undef Warning
-#include <torch/torch.h>  
+#include <torch/torch.h>
 
 
 Engine::Engine()
@@ -1440,23 +1440,25 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
-        // for (auto& inputVar : inputQuery.getInputVariables()) {
-        //     inputQuery.setLowerBound(inputVar, -3);
-        //     inputQuery.setUpperBound(inputVar, 3);
-        // }
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
         if ( _networkLevelReasoner )
         {
+            std::cout << "start time attack: " << TimeUtils::now().ascii() << std::endl;
+            fflush( stdout );
             _pgdAttack = new PGDAttack(_networkLevelReasoner);
             if ( _pgdAttack->displayAdversarialExample() )
             {
+                std::cout << "end time attack: " << TimeUtils::now().ascii() << std::endl;
+                fflush( stdout );
                 _exitCode = Engine::SAT;
                 _isAttackSuccessful = true;
                 return false;
             }
+            std::cout << "end time attack: " << TimeUtils::now().ascii() << std::endl;
+            fflush( stdout );
         }
 
         if ( preprocess )

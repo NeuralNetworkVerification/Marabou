@@ -6,8 +6,8 @@
 #undef Warning
 #include <torch/torch.h>
 
-constexpr unsigned DEFAULT_NUM_ITER = 50;
-constexpr unsigned DEFAULT_NUM_RESTARTS = 4;
+constexpr unsigned DEFAULT_NUM_ITER = 100;
+constexpr unsigned DEFAULT_NUM_RESTARTS = 3;
 constexpr unsigned INPUT = 0;
 constexpr unsigned OUTPUT = 1;
 constexpr unsigned RANGE = 1000.0f;
