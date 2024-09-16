@@ -2327,11 +2327,19 @@ void Engine::explicitBasisBoundTightening()
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
+        if ( _rowBoundTightener->examineInvertedBasisMatrix( saturation ) <
+             ( _tableau->getN() *
+               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD ) /
+                 50 )
+            _smtCore.setNeedToSplit( true );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-        _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
+        if ( _rowBoundTightener->examineInvertedBasisMatrix( saturation ) <
+             ( _tableau->getN() *
+               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD ) /
+                 50 )
+            _smtCore.setNeedToSplit( true );
         break;
 
     case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:

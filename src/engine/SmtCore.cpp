@@ -158,6 +158,11 @@ bool SmtCore::needToSplit() const
     return _needToSplit;
 }
 
+void SmtCore::setNeedToSplit( bool needToSplit )
+{
+    _needToSplit = needToSplit;
+}
+
 void SmtCore::performSplit()
 {
     ASSERT( _needToSplit );

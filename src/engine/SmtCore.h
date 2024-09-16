@@ -326,6 +326,9 @@ public:
 
     void printCurrentState() const;
 
+    void setNeedToSplit( bool needToSplit );
+
+
 private:
     /*
       A code indicating how the run terminated.
