@@ -191,6 +191,10 @@ public:
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
+    // Percentage of bounds (out of 2*num of variables) learned during basis bound tightening, to be
+    // used as a threshold to require a split
+    static const double EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD;
+
     /*
       Symbolic bound tightening options
     */
