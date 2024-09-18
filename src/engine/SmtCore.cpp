@@ -1340,7 +1340,8 @@ double SmtCore::getVSIDSScore( int literal ) const
     if ( _literalToClauses.exists( literal ) )
         for ( unsigned clause : _literalToClauses[literal] )
             if ( !isClauseSatisfied( clause ) )
-                numOfClausesSatisfiedByLiteral +=
-                    ( 1.0 / std::pow( 2.0, ( _numOfClauses - clause ) / VSIDS_DECAY_CONSTANT ) );
+                ++numOfClausesSatisfiedByLiteral;
+//                numOfClausesSatisfiedByLiteral +=
+//                    ( 1.0 / std::pow( 2.0, ( _numOfClauses - clause ) / VSIDS_DECAY_CONSTANT ) )
     return numOfClausesSatisfiedByLiteral;
 }
