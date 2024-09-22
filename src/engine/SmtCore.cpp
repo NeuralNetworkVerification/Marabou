@@ -1142,13 +1142,14 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         int result = _cadicalWrapper.solve();
 
+        std::cout << "Number of Clauses learned: " << _numOfClauses << std::endl;
+
         if ( _statistics && _engine->getVerbosity() )
         {
             printf( "\nSmtCore::Final statistics:\n" );
             _statistics->print();
         }
 
-        std::cout << "Number of Clauses learned: " << _numOfClauses << std::endl;
 
         if ( result == 0 )
         {
