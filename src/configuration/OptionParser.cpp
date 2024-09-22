@@ -210,7 +210,13 @@ void OptionParser::initialize()
             &( ( *_intOptions )[Options::CONSTRAINT_VIOLATION_THRESHOLD] ) )
             ->default_value( ( *_intOptions )[Options::CONSTRAINT_VIOLATION_THRESHOLD] ),
         "Max number of tries to repair a relu before splitting when the Reluplex procedure is "
-        "used." )( "preprocessor-bound-tolerance",
+        "used." )(
+        "vsids-decay-threshold",
+        boost::program_options::value<int>(
+            &( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ) )
+            ->default_value( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ),
+        "The number of clauses on which the literal to decide will be chosen according to the "
+        "VSIDS branching huristic." )( "preprocessor-bound-tolerance",
                    boost::program_options::value<float>(
                        &( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ) )
                        ->default_value( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ),

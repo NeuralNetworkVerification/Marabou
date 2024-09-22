@@ -59,6 +59,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _numOfClauses( 0 )
     , _satisfiedClauses( &_engine->getContext() )
     , _literalToClauses()
+    , _vsidsDecayThreshold( Options::get()->getInt( Options::VSIDS_DECAY_THRESHOLD ) )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -1340,14 +1341,12 @@ bool SmtCore::isClauseSatisfied( unsigned int clause ) const
     return false;
 }
 
-const unsigned SmtCore::VSIDS_DECAY_CONSTANT = 100000;
-
 double SmtCore::getVSIDSScore( int literal ) const
 {
     double numOfClausesSatisfiedByLiteral = 0;
     if ( _literalToClauses.exists( literal ) )
         for ( unsigned clause : _literalToClauses[literal] )
-            if ( _numOfClauses - clause < VSIDS_DECAY_CONSTANT && !isClauseSatisfied( clause ) )
+            if ( _numOfClauses - clause < _vsidsDecayThreshold && !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
     return numOfClausesSatisfiedByLiteral;
 }

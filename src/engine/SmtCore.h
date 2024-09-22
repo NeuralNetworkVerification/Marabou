@@ -439,7 +439,7 @@ private:
     unsigned _numOfClauses;
     CVC4::context::CDList<unsigned> _satisfiedClauses;
     Map<int, Set<unsigned>> _literalToClauses;
-    static const unsigned VSIDS_DECAY_CONSTANT;
+    unsigned _vsidsDecayThreshold;
 
     /*
       Access info in the internal data structures
