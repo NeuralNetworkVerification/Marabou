@@ -1148,6 +1148,8 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _statistics->print();
         }
 
+        std::cout << "Number of Clauses learned: " << _numOfClauses << std::endl;
+
         if ( result == 0 )
         {
             if ( _exitCode != NOT_DONE )
@@ -1337,16 +1339,14 @@ bool SmtCore::isClauseSatisfied( unsigned int clause ) const
     return false;
 }
 
-const unsigned SmtCore::VSIDS_DECAY_CONSTANT = 400;
+const unsigned SmtCore::VSIDS_DECAY_CONSTANT = 100000;
 
 double SmtCore::getVSIDSScore( int literal ) const
 {
     double numOfClausesSatisfiedByLiteral = 0;
     if ( _literalToClauses.exists( literal ) )
         for ( unsigned clause : _literalToClauses[literal] )
-            if ( !isClauseSatisfied( clause ) )
+            if ( _numOfClauses - clause < VSIDS_DECAY_CONSTANT && !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
-//                numOfClausesSatisfiedByLiteral +=
-//                    ( 1.0 / std::pow( 2.0, ( _numOfClauses - clause ) / VSIDS_DECAY_CONSTANT ) )
     return numOfClausesSatisfiedByLiteral;
 }
