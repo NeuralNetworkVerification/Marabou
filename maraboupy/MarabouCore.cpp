@@ -525,6 +525,11 @@ void saveQuery( InputQuery &inputQuery, std::string filename )
     inputQuery.saveQuery( String( filename ) );
 }
 
+void saveQueryAsSmtLib( InputQuery &query, std::string filename )
+{
+    query.saveQueryAsSmtLib( String( filename ) );
+}
+
 void loadQuery( std::string filename, InputQuery &inputQuery )
 {
     return QueryLoader::loadQuery( String( filename ), inputQuery );
@@ -609,6 +614,17 @@ PYBIND11_MODULE( MarabouCore, m )
            &saveQuery,
            R"pbdoc(
         Serializes the inputQuery in the given filename
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
+            filename (str): Name of file to save query
+        )pbdoc",
+           py::arg( "inputQuery" ),
+           py::arg( "filename" ) );
+    m.def( "saveQueryAsSmtLib",
+           &saveQueryAsSmtLib,
+           R"pbdoc(
+        Serializes the inputQuery in the given filename as an SMTLIB file
 
         Args:
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
