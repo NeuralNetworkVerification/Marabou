@@ -72,7 +72,9 @@ public:
     }
     unsigned examineInvertedBasisMatrix( bool /* untilSaturation */ )
     {
+        return 0;
     }
+
     void examineConstraintMatrix( bool /* untilSaturation */ )
     {
     }
@@ -87,6 +89,7 @@ public:
     }
     unsigned examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ )
     {
+        return 0;
     }
     void setBoundsPointers( const double * /* lower */, const double * /* upper */ )
     {
