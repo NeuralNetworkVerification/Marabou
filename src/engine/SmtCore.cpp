@@ -115,7 +115,10 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     ++_constraintToViolationCount[constraint];
 
     if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
+    {
         _needToSplit = true;
+        assert( !constraint->phaseFixed() );
+    }
 }
 
 unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const

@@ -280,15 +280,16 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             // If smtCore demands splitting, stop the loop before performing other actions
             if ( _smtCore.needToSplit() )
             {
-                // Make sure this is the case solve is called for propagation, and not for checking
-                // model
-                ASSERT(
-                    std::any_of( _plConstraints.begin(),
-                                 _plConstraints.end(),
-                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
-
-                _boundManager.propagateTightenings();
-                return false;
+                if ( std::any_of(
+                         _plConstraints.begin(),
+                         _plConstraints.end(),
+                         []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } ) )
+                {
+                    _boundManager.propagateTightenings();
+                    return false;
+                }
+                else
+                    _smtCore.setNeedToSplit( false );
             }
 
             if ( _lpSolverType == LPSolverType::NATIVE )
@@ -2323,6 +2324,9 @@ void Engine::explicitBasisBoundTightening()
     bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     _statistics.incLongAttribute( Statistics::NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS );
+    bool canSplit = std::any_of( _plConstraints.begin(),
+                                 _plConstraints.end(),
+                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } );
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
@@ -2331,7 +2335,7 @@ void Engine::explicitBasisBoundTightening()
              ( _tableau->getN() *
                GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD ) /
                  50 )
-            _smtCore.setNeedToSplit( true );
+            _smtCore.setNeedToSplit( canSplit );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
@@ -2339,7 +2343,7 @@ void Engine::explicitBasisBoundTightening()
              ( _tableau->getN() *
                GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD ) /
                  50 )
-            _smtCore.setNeedToSplit( true );
+            _smtCore.setNeedToSplit( canSplit );
         break;
 
     case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
