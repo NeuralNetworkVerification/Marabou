@@ -2704,6 +2704,38 @@ void Engine::decideBranchingHeuristics()
     _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
+{
+    ENGINE_LOG( Stringf( "Using BaBsr heuristic..." ).ascii() );
+
+    if ( !_networkLevelReasoner )
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+
+    List<PiecewiseLinearConstraint *> constraints =
+        _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+    Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
+    for ( auto &plConstraint : constraints )
+    {
+        if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
+             !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScoreBasedOnBaBsr();
+            scoreToConstraint[plConstraint->getScore()] = plConstraint;
+
+            // add global threshold then break loop
+        }
+    }
+    if ( scoreToConstraint.size() > 0 )
+    {
+        ENGINE_LOG( Stringf( "Score of the picked ReLU: %f", ( *scoreToConstraint.begin() ).first )
+                        .ascii() );
+        return ( *scoreToConstraint.begin() ).second;
+    }
+    else
+        return NULL;
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );

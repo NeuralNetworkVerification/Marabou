@@ -308,6 +308,15 @@ public:
 
     /*
       Return true if and only if this piecewise linear constraint supports
+      the BaBsr Heuristic metric
+    */
+    virtual bool supportBaBsr() const
+    {
+        return false;
+    }
+
+    /*
+      Return true if and only if this piecewise linear constraint supports
       the polarity metric
     */
     virtual bool supportPolarity() const
@@ -327,6 +336,9 @@ public:
         return _score;
     }
 
+    virtual void updateScoreBasedOnBaBsr()
+    {
+    }
 
     virtual void updateScoreBasedOnPolarity()
     {

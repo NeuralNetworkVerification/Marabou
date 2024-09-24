@@ -213,6 +213,8 @@ public:
     bool auxVariableInUse() const;
     unsigned getAux() const;
 
+    bool supportBaBsr() const override;
+
     bool supportPolarity() const override;
 
     /*
@@ -227,6 +229,8 @@ public:
       always between -1 and 1. The closer it is to 0, the more symmetric the
       bound is.
     */
+    double computeBaBsr() const;
+
     double computePolarity() const;
 
     /*
@@ -236,6 +240,8 @@ public:
 
 
     PhaseStatus getDirection() const;
+
+    void updateScoreBasedOnBaBsr() override;
 
     void updateScoreBasedOnPolarity() override;
 

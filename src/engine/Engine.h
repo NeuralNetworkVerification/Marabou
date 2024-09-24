@@ -747,6 +747,11 @@ private:
     void decideBranchingHeuristics();
 
     /*
+      Pick the ReLU with the highest BaBSR heuristic score.
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnBaBsrHeuristic();
+
+    /*
       Among the earliest K ReLUs, pick the one with Polarity closest to 0.
       K is equal to GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD
     */

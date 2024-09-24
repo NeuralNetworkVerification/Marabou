@@ -1014,6 +1014,11 @@ unsigned ReluConstraint::getF() const
     return _f;
 }
 
+bool ReluConstraint::supportBaBsr() const
+{
+    return true;
+}
+
 bool ReluConstraint::supportPolarity() const
 {
     return true;
@@ -1027,6 +1032,25 @@ bool ReluConstraint::auxVariableInUse() const
 unsigned ReluConstraint::getAux() const
 {
     return _aux;
+}
+
+double ReluConstraint::computeBaBsr() const
+{
+    // get upper and lower bound
+    double currentLb = getLowerBound( _b );
+    double currentUb = getUpperBound( _b );
+
+    // get ReLU output and bias term associated with ReLU
+    double reluOutput = 0; // getReluOutput();
+    double bias = 0;       // getBias();
+
+    // compute ReLU score
+    double scaler = currentUb / ( currentUb - currentLb );
+    double term1 = std::min( scaler * reluOutput * bias, ( scaler - 1.0 ) * reluOutput * bias );
+    double term2 = std::max( scaler * currentLb, 0.0 ) * std::max( 0.0, reluOutput );
+
+    // return score
+    return abs( term1 - term2 );
 }
 
 double ReluConstraint::computePolarity() const
@@ -1050,6 +1074,11 @@ void ReluConstraint::updateDirection()
 PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScoreBasedOnBaBsr()
+{
+    _score = computeBaBsr();
 }
 
 void ReluConstraint::updateScoreBasedOnPolarity()

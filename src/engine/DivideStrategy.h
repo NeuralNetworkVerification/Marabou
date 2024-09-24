@@ -24,8 +24,7 @@ enum class DivideStrategy {
     LargestInterval, // Pick the largest interval every K split steps, use ReLUViolation in other
                      // steps
     PseudoImpact,    // The pseudo-impact heuristic associated with SoI.
-    BaBsrHeuristic,  // Pick a ReLU based on the BaBSR heuristic
-    Auto,            // See decideBranchingHeursitics() in Engine.h
+    Auto,            // See decideBranchingHeuristics() in Engine.h
 };
 
 #endif // __DivideStrategy_h__
