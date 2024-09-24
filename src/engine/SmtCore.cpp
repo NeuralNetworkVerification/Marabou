@@ -690,7 +690,8 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
     _engine->applyPlcPhaseFixingTightenings( *plc );
     plc->setActiveConstraint( false );
-    _assignedLiterals.push_back( lit );
+    if ( !isLiteralAssigned( lit ) )
+        _assignedLiterals.push_back( lit );
 
     ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
 }
@@ -982,10 +983,10 @@ int SmtCore::cb_propagate()
         }
 
         // TODO: rethink the following, maybe shouldn't happen here, and may cause bugs
-        _assignedLiterals.push_back( lit );
-        for ( unsigned clause : _literalToClauses[lit] )
-            if ( !isClauseSatisfied( clause ) )
-                _satisfiedClauses.push_back( clause );
+        //        _assignedLiterals.push_back( lit );
+        //        for ( unsigned clause : _literalToClauses[lit] )
+        //            if ( !isClauseSatisfied( clause ) )
+        //                _satisfiedClauses.push_back( clause );
     }
 
     SMT_LOG( Stringf( "Propagating literal %d", lit ).ascii() );
