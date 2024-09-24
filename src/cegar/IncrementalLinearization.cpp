@@ -19,15 +19,16 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
-#include "InputQuery.h"
+#include "IQuery.h"
 #include "Options.h"
+#include "Query.h"
 #include "TimeUtils.h"
 
 #include <random>
 
 namespace CEGAR {
 
-IncrementalLinearization::IncrementalLinearization( InputQuery &inputQuery, Engine *engine )
+IncrementalLinearization::IncrementalLinearization( IQuery &inputQuery, Engine *engine )
     : _inputQuery( inputQuery )
     , _engine( std::unique_ptr<Engine>( engine ) )
     , _timeoutInMicroSeconds( 0 )
@@ -40,8 +41,7 @@ IncrementalLinearization::IncrementalLinearization( InputQuery &inputQuery, Engi
           Options::get()->getFloat( Options::REFINEMENT_SCALING_FACTOR_INC_LIN ) )
 {
     srand( Options::get()->getInt( Options::SEED ) );
-    for ( const auto &c : _inputQuery.getNonlinearConstraints() )
-        _nlConstraints.append( c );
+    _inputQuery.getNonlinearConstraints( _nlConstraints );
 }
 
 void IncrementalLinearization::solve()
@@ -57,7 +57,7 @@ void IncrementalLinearization::solve()
 
         // Refine the non-linear constraints using the counter-example stored
         // in the _inputQuery
-        InputQuery refinement;
+        Query refinement;
         refinement.setNumberOfVariables( _inputQuery.getNumberOfVariables() );
         _engine->extractSolution( refinement );
         _engine->extractBounds( refinement );
@@ -101,7 +101,7 @@ void IncrementalLinearization::solve()
     }
 }
 
-unsigned IncrementalLinearization::refine( InputQuery &refinement )
+unsigned IncrementalLinearization::refine( Query &refinement )
 {
     INCREMENTAL_LINEARIZATION_LOG( "Performing abstraction refinement..." );
 

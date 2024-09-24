@@ -13,11 +13,11 @@
 
  **/
 
-#include "InputQuery.h"
 #include "MockEngine.h"
 #include "MockErrno.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
 
@@ -475,7 +475,7 @@ public:
         // ReLU(x2, x3)
         // ReLU(x4, x5)
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         ReluConstraint relu1 = ReluConstraint( 0, 1 );

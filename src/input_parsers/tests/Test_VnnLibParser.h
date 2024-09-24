@@ -13,8 +13,8 @@
  **/
 
 #include "Engine.h"
-#include "InputQuery.h"
 #include "OnnxParser.h"
+#include "Query.h"
 #include "VnnLibParser.h"
 
 #include <cxxtest/TestSuite.h>
@@ -23,16 +23,16 @@
 class VnnLibParserTestSuite : public CxxTest::TestSuite
 {
 public:
-    InputQuery *inputQuery;
+    Query *_query;
 
     void setUp()
     {
-        inputQuery = new InputQuery();
+        _query = new Query();
     }
 
     void tearDown()
     {
-        delete inputQuery;
+        delete _query;
     }
 
     void parse( String vnnlibFile, String onnxFile )
@@ -45,19 +45,19 @@ public:
         printf( "%s\n", onnxPath.ascii() );
 
         TS_ASSERT_THROWS_NOTHING( OnnxParser::parse( queryBuilder, onnxPath, {}, {} ) );
-        queryBuilder.generateQuery( *inputQuery );
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( queryPath, *inputQuery ) );
+        queryBuilder.generateQuery( *_query );
+        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( queryPath, *_query ) );
     }
 
     void test_nano_vnncomp()
     {
         parse( "test_nano_vnncomp.vnnlib", "test_nano_vnncomp.onnx" );
 
-        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
+        unsigned int inputVar = _query->inputVariableByIndex( 0 );
+        unsigned int outputVar = _query->outputVariableByIndex( 0 );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == -1 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )
@@ -68,11 +68,11 @@ public:
     {
         parse( "test_tiny_vnncomp.vnnlib", "test_tiny_vnncomp.onnx" );
 
-        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
+        unsigned int inputVar = _query->inputVariableByIndex( 0 );
+        unsigned int outputVar = _query->outputVariableByIndex( 0 );
 
         auto *disjunction =
-            (DisjunctionConstraint *)( inputQuery->getPiecewiseLinearConstraints().back() );
+            (DisjunctionConstraint *)( _query->getPiecewiseLinearConstraints().back() );
         const auto &caseSplits = disjunction->getCaseSplits();
         const auto &caseSplitsIter = caseSplits.begin();
         auto boundsIter = ( *caseSplitsIter ).getBoundTightenings().begin();
@@ -93,11 +93,11 @@ public:
     {
         parse( "test_small_vnncomp.vnnlib", "test_small_vnncomp.onnx" );
 
-        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
+        unsigned int inputVar = _query->inputVariableByIndex( 0 );
+        unsigned int outputVar = _query->outputVariableByIndex( 0 );
 
         auto *disjunction =
-            (DisjunctionConstraint *)( inputQuery->getPiecewiseLinearConstraints().back() );
+            (DisjunctionConstraint *)( _query->getPiecewiseLinearConstraints().back() );
         const auto &caseSplits = disjunction->getCaseSplits();
         const auto &caseSplitsIter = caseSplits.begin();
         auto boundsIter = ( *caseSplitsIter ).getBoundTightenings().begin();
@@ -119,14 +119,14 @@ public:
         parse( "test_prop_vnncomp.vnnlib", "test_sat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
-        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
+        unsigned int input0 = _query->inputVariableByIndex( 0 );
+        unsigned int input1 = _query->inputVariableByIndex( 1 );
+        unsigned int input2 = _query->inputVariableByIndex( 2 );
+        unsigned int input3 = _query->inputVariableByIndex( 3 );
+        unsigned int input4 = _query->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -148,41 +148,41 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        auto eqIter = inputQuery->getEquations().rbegin();
+        auto eqIter = _query->getEquations().rbegin();
 
         Equation &eq = *eqIter;
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 4 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 4 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 3 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 3 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 2 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 2 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 1 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 1 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         Engine engine;
         engine.setVerbosity( 0 );
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *_query ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == Engine::ExitCode::SAT )
     }
@@ -192,14 +192,14 @@ public:
         parse( "test_prop_vnncomp.vnnlib", "test_unsat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
-        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
+        unsigned int input0 = _query->inputVariableByIndex( 0 );
+        unsigned int input1 = _query->inputVariableByIndex( 1 );
+        unsigned int input2 = _query->inputVariableByIndex( 2 );
+        unsigned int input3 = _query->inputVariableByIndex( 3 );
+        unsigned int input4 = _query->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -221,41 +221,41 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        auto eqIter = inputQuery->getEquations().rbegin();
+        auto eqIter = _query->getEquations().rbegin();
 
         Equation &eq = *eqIter;
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 4 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 4 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 3 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 3 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 2 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 2 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 1 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 1 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         Engine engine;
         engine.setVerbosity( 0 );
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *_query ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == Engine::ExitCode::UNSAT )
     }
@@ -264,11 +264,11 @@ public:
     {
         parse( "test_add_const.vnnlib", "test_nano_vnncomp.onnx" );
 
-        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
+        unsigned int inputVar = _query->inputVariableByIndex( 0 );
+        unsigned int outputVar = _query->outputVariableByIndex( 0 );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 0 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )
@@ -280,14 +280,14 @@ public:
         parse( "test_add_var.vnnlib", "test_sat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
-        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
+        unsigned int input0 = _query->inputVariableByIndex( 0 );
+        unsigned int input1 = _query->inputVariableByIndex( 1 );
+        unsigned int input2 = _query->inputVariableByIndex( 2 );
+        unsigned int input3 = _query->inputVariableByIndex( 3 );
+        unsigned int input4 = _query->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -309,15 +309,15 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        unsigned int output0 = inputQuery->outputVariableByIndex( 0 );
-        unsigned int output1 = inputQuery->outputVariableByIndex( 1 );
-        unsigned int output2 = inputQuery->outputVariableByIndex( 2 );
+        unsigned int output0 = _query->outputVariableByIndex( 0 );
+        unsigned int output1 = _query->outputVariableByIndex( 1 );
+        unsigned int output2 = _query->outputVariableByIndex( 2 );
 
         TS_ASSERT( lowerBounds.exists( output0 ) && lowerBounds.get( output0 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output1 ) && lowerBounds.get( output1 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output2 ) && lowerBounds.get( output2 ) == 0 )
 
-        auto eqIter = inputQuery->getEquations().rbegin();
+        auto eqIter = _query->getEquations().rbegin();
 
         Equation &eq = *eqIter;
         testEq.addAddend( 1, output0 );
@@ -330,11 +330,11 @@ public:
     {
         parse( "test_sub_const.vnnlib", "test_nano_vnncomp.onnx" );
 
-        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
+        unsigned int inputVar = _query->inputVariableByIndex( 0 );
+        unsigned int outputVar = _query->outputVariableByIndex( 0 );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 2 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 3 )
@@ -346,14 +346,14 @@ public:
         parse( "test_sub_var.vnnlib", "test_sat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
-        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
+        unsigned int input0 = _query->inputVariableByIndex( 0 );
+        unsigned int input1 = _query->inputVariableByIndex( 1 );
+        unsigned int input2 = _query->inputVariableByIndex( 2 );
+        unsigned int input3 = _query->inputVariableByIndex( 3 );
+        unsigned int input4 = _query->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -375,19 +375,19 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        unsigned int output0 = inputQuery->outputVariableByIndex( 0 );
-        unsigned int output1 = inputQuery->outputVariableByIndex( 1 );
-        unsigned int output2 = inputQuery->outputVariableByIndex( 2 );
+        unsigned int output0 = _query->outputVariableByIndex( 0 );
+        unsigned int output1 = _query->outputVariableByIndex( 1 );
+        unsigned int output2 = _query->outputVariableByIndex( 2 );
 
         TS_ASSERT( lowerBounds.exists( output0 ) && lowerBounds.get( output0 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output1 ) && lowerBounds.get( output1 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output2 ) && lowerBounds.get( output2 ) == 0 )
 
-        auto eqIter = inputQuery->getEquations().rbegin();
+        auto eqIter = _query->getEquations().rbegin();
 
         Equation &eq = *eqIter;
-        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 1 ) );
+        testEq.addAddend( 1, _query->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, _query->outputVariableByIndex( 1 ) );
         testEq.setScalar( 1 );
         TS_ASSERT( eq.equivalent( testEq ) )
     }
@@ -396,11 +396,11 @@ public:
     {
         parse( "test_mul_var_const.vnnlib", "test_nano_vnncomp.onnx" );
 
-        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
+        unsigned int inputVar = _query->inputVariableByIndex( 0 );
+        unsigned int outputVar = _query->outputVariableByIndex( 0 );
 
-        const auto &lowerBounds = inputQuery->getLowerBounds();
-        const auto &upperBounds = inputQuery->getUpperBounds();
+        const auto &lowerBounds = _query->getLowerBounds();
+        const auto &upperBounds = _query->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 0 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )

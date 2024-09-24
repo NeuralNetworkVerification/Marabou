@@ -22,7 +22,7 @@
 #include "DisjunctionConstraint.h"
 #include "Equation.h"
 #include "GlobalConfiguration.h"
-#include "InputQuery.h"
+#include "IQuery.h"
 #include "LeakyReluConstraint.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -32,7 +32,7 @@
 #include "SignConstraint.h"
 #include "SoftmaxConstraint.h"
 
-InputQuery QueryLoader::loadQuery( const String &fileName )
+void QueryLoader::loadQuery( const String &fileName, IQuery &inputQuery )
 {
     if ( !IFile::exists( fileName ) )
     {
@@ -40,7 +40,6 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
                             Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
     }
 
-    InputQuery inputQuery;
     AutoFile input( fileName );
     input->open( IFile::MODE_READ );
 
@@ -267,6 +266,4 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
                 Stringf( "Unsupported non-linear constraint: %s\n", coType.ascii() ).ascii() );
         }
     }
-
-    return inputQuery;
 }

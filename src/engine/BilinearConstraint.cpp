@@ -19,10 +19,10 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "NonlinearConstraint.h"
+#include "Query.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 

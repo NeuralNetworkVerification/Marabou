@@ -24,13 +24,13 @@
 #include <time.h>
 #endif
 
-void Simulator::runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations )
+void Simulator::runSimulations( const Query &inputQuery, unsigned numberOfSimulations )
 {
     unsigned seed = time( NULL );
     runSimulations( inputQuery, numberOfSimulations, seed );
 }
 
-void Simulator::runSimulations( const InputQuery &inputQuery,
+void Simulator::runSimulations( const Query &inputQuery,
                                 unsigned numberOfSimulations,
                                 unsigned seed )
 {
@@ -45,7 +45,7 @@ void Simulator::runSimulations( const InputQuery &inputQuery,
         runSingleSimulation();
 }
 
-void Simulator::storeOriginalQuery( const InputQuery &inputQuery )
+void Simulator::storeOriginalQuery( const Query &inputQuery )
 {
     _originalQuery = inputQuery;
 
@@ -72,7 +72,7 @@ void Simulator::storeOriginalQuery( const InputQuery &inputQuery )
 
 void Simulator::runSingleSimulation()
 {
-    InputQuery query = _originalQuery;
+    Query query = _originalQuery;
 
     List<unsigned> inputs = query.getInputVariables();
     for ( const auto &input : inputs )

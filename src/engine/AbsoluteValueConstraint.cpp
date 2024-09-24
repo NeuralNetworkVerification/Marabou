@@ -17,10 +17,10 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
@@ -685,7 +685,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     /*
       We want to add the two equations

@@ -19,10 +19,10 @@
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "SignConstraint.h"
 #include "Statistics.h"
 
@@ -223,7 +223,7 @@ bool SignConstraint::phaseFixed() const
     return _phaseStatus != PHASE_NOT_FIXED;
 }
 
-void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery )
+void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( Query &inputQuery )
 {
     /*
       If the phase is not fixed, add _f <= -2/lb_b * _b + 1

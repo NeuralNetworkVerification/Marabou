@@ -14,8 +14,8 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "MaxConstraint.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -35,7 +35,7 @@ public:
     {
         double large = 1000;
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, -large );
@@ -108,7 +108,7 @@ public:
     {
         double large = 1000;
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, 0 );

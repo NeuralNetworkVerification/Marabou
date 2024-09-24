@@ -13,12 +13,12 @@
 
 **/
 
-#include "InputQuery.h"
 #include "List.h"
 #include "MStringf.h"
 #include "MockEngine.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PolarityBasedDivider.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "SubQuery.h"
 #include "Vector.h"

@@ -16,9 +16,9 @@
 
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "Query.h"
 #include "Statistics.h"
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
@@ -250,7 +250,7 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
     return getImpliedCaseSplit();
 }
 
-void DisjunctionConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void DisjunctionConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     Vector<PiecewiseLinearCaseSplit> newDisjuncts;
     for ( const auto &disjunct : _disjuncts )

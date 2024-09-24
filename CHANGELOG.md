@@ -1,6 +1,8 @@
 # Changelog
 
 ## Next Release
+  - Adding incremental infrastructure which allows pushing and popping constraints to/from the InputQuery.
+  - Dropped support for parsing Tensorflow network format. Newest Marabou version that supports Tensorflow is at commit 190555573e4702.
 
 ## Version 2.0.0
 

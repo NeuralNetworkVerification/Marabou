@@ -47,7 +47,7 @@ public:
         Engine *dummy = new Engine();
         IncrementalLinearization cegarEngine( ipq, dummy );
 
-        InputQuery refinement;
+        Query refinement;
         refinement.setNumberOfVariables( 2 );
         refinement.setLowerBound( 0, lb );
         refinement.setUpperBound( 0, ub );

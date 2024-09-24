@@ -66,10 +66,10 @@ After building Marabou, the compiled binary is located at `build/Marabou`, and t
 shared library for the Python API is located in `maraboupy/`. Building the Python 
 interface requires *pybind11* (which is automatically downloaded).
 
-Export `maraboupy` folder to Python and Jupyter paths:
+Export `Marabou` folder to Python and Jupyter paths:
 ```
-PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
-JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
+export PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
+export JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
 ```
 and the built `maraboupy` is ready to be used from a Python or a Jupyter script.
 
@@ -82,20 +82,20 @@ in-house LP solver and enable a few additional solving modes.
 
 Gurobi requires a license (a free academic license is available), after 
 getting one the software can be downloaded [here](https://www.gurobi.com/downloads/gurobi-optimizer-eula/) 
-and [here](https://www.gurobi.com/documentation/9.5/quickstart_linux/software_installation_guid.html#section:Installation) are
+and [here](https://www.gurobi.com/documentation/11.0/quickstart_linux/software_installation_guid.html#section:Installation) are
 installation steps, there is a [compatibility issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-on-Linux)
 that should be addressed.
 A quick installation reference:
 ```bash
 export INSTALL_DIR=/opt
-sudo tar xvfz gurobi9.5.1_linux64.tar.gz -C $INSTALL_DIR
-cd $INSTALL_DIR/gurobi951/linux64/src/build
+sudo tar xvfz gurobi11.0.3_linux64.tar.gz -C $INSTALL_DIR
+cd $INSTALL_DIR/gurobi1103/linux64/src/build
 sudo make
 sudo cp libgurobi_c++.a ../../lib/
 ```
 Next, set the following environment variables (e.g., by adding the following to the `.bashrc` and invoke `source .bashrc`): 
 ```bash
-export GUROBI_HOME="/opt/gurobi951/linux64"
+export GUROBI_HOME="/opt/gurobi1103/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 export GRB_LICENSE_FILE=/path/to/license.lic

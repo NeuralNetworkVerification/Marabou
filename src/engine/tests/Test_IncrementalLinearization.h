@@ -15,10 +15,10 @@
 
 #include "FloatUtils.h"
 #include "IncrementalLinearization.h"
-#include "InputQuery.h"
 #include "MILPEncoder.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 #include <string.h>
@@ -43,7 +43,7 @@ public:
          */
         GurobiWrapper gurobi1;
 
-        InputQuery inputQuery1 = InputQuery();
+        Query inputQuery1 = Query();
         inputQuery1.setNumberOfVariables( 2 );
 
         MockTableau tableau1 = MockTableau();
@@ -64,7 +64,7 @@ public:
         tableau1.setUpperBound( 1, sigmoid1->sigmoid( 1 ) );
 
         MILPEncoder milp1( tableau1 );
-        milp1.encodeInputQuery( gurobi1, inputQuery1 );
+        milp1.encodeQuery( gurobi1, inputQuery1 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
 

@@ -12,7 +12,7 @@
  ** This file provides a general interface for parsing a neural network file.
  ** Keeps track of internal state such as equations and variables that
  ** may be altered during parsing of a network. Once the network has been parsed
- ** they are then loaded into an InputQuery.
+ ** they are then loaded into an Query.
  ** Future parsers for individual network formats should extend this interface.
  **/
 
@@ -20,8 +20,8 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "IQuery.h"
 #include "InputParserError.h"
-#include "InputQuery.h"
 #include "List.h"
 #include "MString.h"
 #include "MStringf.h"
@@ -123,7 +123,7 @@ void InputQueryBuilder::addAbsConstraint( Variable inputVar, Variable outputVar 
     _absList.append( new AbsoluteValueConstraint( inputVar, outputVar ) );
 }
 
-void InputQueryBuilder::generateQuery( InputQuery &query )
+void InputQueryBuilder::generateQuery( IQuery &query )
 {
     query.setNumberOfVariables( _numVars );
 

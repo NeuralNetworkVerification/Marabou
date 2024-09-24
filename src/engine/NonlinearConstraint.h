@@ -27,7 +27,7 @@
 
 class Equation;
 class ITableau;
-class InputQuery;
+class Query;
 class String;
 
 class NonlinearConstraint : public ITableau::VariableWatcher
@@ -85,7 +85,7 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery & /* inputQuery */ ){};
+    virtual void addAuxiliaryEquationsAfterPreprocessing( Query & /* inputQuery */ ){};
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -94,11 +94,11 @@ public:
 
     /*
       Given a set of constraints and a solution, both stored in the given
-      InputQuery, check  if the current solution violates the current constraint.
+      Query, check  if the current solution violates the current constraint.
       If so, add additional constraints (equations or PLConstraints)
       to exclude the violation. Return true if new constraints are added.
     */
-    virtual bool attemptToRefine( InputQuery & /*inputQuery*/ ) const
+    virtual bool attemptToRefine( Query & /*inputQuery*/ ) const
     {
         return false;
     };

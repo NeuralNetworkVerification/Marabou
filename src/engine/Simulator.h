@@ -16,7 +16,7 @@
 #ifndef __Simulator_h__
 #define __Simulator_h__
 
-#include "InputQuery.h"
+#include "Query.h"
 #include "Simulator.h"
 
 /*
@@ -37,9 +37,8 @@ public:
       The seed will be used to initialize randomness. A specific seed can be
       passed for determinism; otherwise, time() will be used.
     */
-    void runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations );
-    void
-    runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations, unsigned seed );
+    void runSimulations( const Query &inputQuery, unsigned numberOfSimulations );
+    void runSimulations( const Query &inputQuery, unsigned numberOfSimulations, unsigned seed );
 
     /*
       Obtain the results from previously-run simulations.
@@ -47,14 +46,14 @@ public:
     const List<Simulator::Result> *getResults();
 
 private:
-    InputQuery _originalQuery;
+    Query _originalQuery;
     List<Simulator::Result> _results;
 
     /*
       Store a copy of the original input query, and run an initial
       round of preprocessing
     */
-    void storeOriginalQuery( const InputQuery &inputQuery );
+    void storeOriginalQuery( const Query &inputQuery );
 
     /*
       Run a single simulation of the stored and preprocessed input

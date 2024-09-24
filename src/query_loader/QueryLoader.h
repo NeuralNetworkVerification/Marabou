@@ -17,7 +17,7 @@
 #ifndef __QueryLoader_h__
 #define __QueryLoader_h__
 
-#include "InputQuery.h"
+#include "IQuery.h"
 
 #define QL_LOG( x, ... ) LOG( GlobalConfiguration::QUERY_LOADER_LOGGING, "QueryLoader: %s\n", x )
 
@@ -29,9 +29,9 @@ public:
     unsigned _numConstraunsigneds;
 
     /*
-      Parse a serialized query and return it in InputQuery form
+      Parse a serialized query and return it in Query form
     */
-    static InputQuery loadQuery( const String &fileName );
+    static void loadQuery( const String &fileName, IQuery &inputQuery );
 };
 
 #endif // __QueryLoader_h__

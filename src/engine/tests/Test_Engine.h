@@ -14,7 +14,6 @@
 **/
 
 #include "Engine.h"
-#include "InputQuery.h"
 #include "MockConstraintMatrixAnalyzerFactory.h"
 #include "MockCostFunctionManagerFactory.h"
 #include "MockErrno.h"
@@ -23,6 +22,7 @@
 #include "MockTableauFactory.h"
 #include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 
 #include <cxxtest/TestSuite.h>
@@ -90,7 +90,7 @@ public:
         //
         //  aux var x6 added to equation 1, x7 to equation 2
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 5 );
 
         inputQuery.setLowerBound( 0, 0 );
@@ -269,7 +269,7 @@ public:
         // Based on the polarity, relu(x7, x9) should be picked
         // And the picked ReLU must have |polarity| not larger than the other unfixed ReLUs
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 10 );
         inputQuery.markInputVariable( 0, 0 );
         inputQuery.markInputVariable( 1, 1 );
@@ -338,9 +338,11 @@ public:
         Set<unsigned> varsInUnhandledConstraints;
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner( unhandledEquations,
                                                              varsInUnhandledConstraints ) );
+
         TS_ASSERT( unhandledEquations.empty() );
         TS_ASSERT( varsInUnhandledConstraints.empty() );
-        engine.processInputQuery( inputQuery, false );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) );
+
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
         constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::Polarity );
@@ -350,9 +352,8 @@ public:
         TS_ASSERT( constraintToSplit );
         TS_ASSERT( !constraintToSplit->phaseFixed() );
         TS_ASSERT( constraintToSplit->isActive() );
-        for ( const auto &constraint : engine.getInputQuery()
-                                           ->getNetworkLevelReasoner()
-                                           ->getConstraintsInTopologicalOrder() )
+        for ( const auto &constraint :
+              engine.getQuery()->getNetworkLevelReasoner()->getConstraintsInTopologicalOrder() )
         {
             TS_ASSERT( std::abs( ( (ReluConstraint *)constraintToSplit )->computePolarity() ) <=
                        std::abs( ( (ReluConstraint *)constraint )->computePolarity() ) );
@@ -376,7 +377,7 @@ public:
         // x6 = -x4 + x5  ( x6 \in [-2, 8] )
         // x7 = -x4 + x5 - 3 ( x7 \in [-5, 5] )
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 10 );
         inputQuery.markInputVariable( 0, 0 );
         inputQuery.markInputVariable( 1, 1 );
@@ -455,7 +456,7 @@ public:
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
         PiecewiseLinearConstraint *firstConstraintInTopologicalOrder;
-        firstConstraintInTopologicalOrder = *( engine.getInputQuery()
+        firstConstraintInTopologicalOrder = *( engine.getQuery()
                                                    ->getNetworkLevelReasoner()
                                                    ->getConstraintsInTopologicalOrder()
                                                    .begin() );
@@ -481,7 +482,7 @@ public:
         // x6 = -x4 + x5  ( x6 \in [-2, 8] )
         // x7 = -x4 + x5 - 3 ( x7 \in [-5, 5] )
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 10 );
         inputQuery.markInputVariable( 0, 0 );
         inputQuery.markInputVariable( 1, 1 );
@@ -572,7 +573,7 @@ public:
 
     void test_calculate_bounds()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, 3 );

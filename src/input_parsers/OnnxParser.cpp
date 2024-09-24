@@ -26,8 +26,8 @@
 
 #include "FloatUtils.h"
 #include "InputParserError.h"
-#include "InputQuery.h"
 #include "MString.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "TensorUtils.h"
 #include "onnx.proto3.pb.h"

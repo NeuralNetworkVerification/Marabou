@@ -15,10 +15,10 @@
 
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "InputQuery.h"
 #include "MILPEncoder.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 #include <string.h>
@@ -54,7 +54,7 @@ public:
         //
         GurobiWrapper gurobi1;
 
-        InputQuery inputQuery1 = InputQuery();
+        Query inputQuery1 = Query();
         inputQuery1.setNumberOfVariables( 4 );
 
         MockTableau tableau1 = MockTableau();
@@ -95,7 +95,7 @@ public:
         max1->transformToUseAuxVariables( inputQuery1 );
         inputQuery1.addPiecewiseLinearConstraint( max1 );
         MILPEncoder milp1( tableau1 );
-        milp1.encodeInputQuery( gurobi1, inputQuery1 );
+        milp1.encodeQuery( gurobi1, inputQuery1 );
         gurobi1.solve();
 
         TS_ASSERT( !gurobi1.haveFeasibleSolution() );
@@ -110,7 +110,7 @@ public:
         //
         GurobiWrapper gurobi2;
 
-        InputQuery inputQuery2 = InputQuery();
+        Query inputQuery2 = Query();
         inputQuery2.setNumberOfVariables( 4 );
 
         MockTableau tableau2 = MockTableau();
@@ -153,7 +153,7 @@ public:
         max2->transformToUseAuxVariables( inputQuery2 );
         inputQuery2.addPiecewiseLinearConstraint( max2 );
         MILPEncoder milp2( tableau2 );
-        milp2.encodeInputQuery( gurobi2, inputQuery2 );
+        milp2.encodeQuery( gurobi2, inputQuery2 );
         gurobi2.solve();
 
         TS_ASSERT( !gurobi2.haveFeasibleSolution() );
@@ -168,7 +168,7 @@ public:
         //
         GurobiWrapper gurobi3;
 
-        InputQuery inputQuery3 = InputQuery();
+        Query inputQuery3 = Query();
         inputQuery3.setNumberOfVariables( 4 );
 
         MockTableau tableau3 = MockTableau();
@@ -211,7 +211,7 @@ public:
         max3->transformToUseAuxVariables( inputQuery3 );
         inputQuery3.addPiecewiseLinearConstraint( max3 );
         MILPEncoder milp3( tableau3 );
-        milp3.encodeInputQuery( gurobi3, inputQuery3 );
+        milp3.encodeQuery( gurobi3, inputQuery3 );
         gurobi3.solve();
 
         TS_ASSERT( gurobi3.haveFeasibleSolution() );
@@ -241,7 +241,7 @@ public:
         //
         GurobiWrapper gurobi4;
 
-        InputQuery inputQuery4 = InputQuery();
+        Query inputQuery4 = Query();
         inputQuery4.setNumberOfVariables( 4 );
 
         MockTableau tableau4 = MockTableau();
@@ -284,7 +284,7 @@ public:
         max4->transformToUseAuxVariables( inputQuery4 );
         inputQuery4.addPiecewiseLinearConstraint( max4 );
         MILPEncoder milp4( tableau4 );
-        milp4.encodeInputQuery( gurobi4, inputQuery4 );
+        milp4.encodeQuery( gurobi4, inputQuery4 );
         gurobi4.solve();
 
         TS_ASSERT( gurobi4.haveFeasibleSolution() );
@@ -314,7 +314,7 @@ public:
         //
         GurobiWrapper gurobi5;
 
-        InputQuery inputQuery5 = InputQuery();
+        Query inputQuery5 = Query();
         inputQuery5.setNumberOfVariables( 4 );
 
         MockTableau tableau5 = MockTableau();
@@ -357,7 +357,7 @@ public:
         max5->transformToUseAuxVariables( inputQuery5 );
         inputQuery5.addPiecewiseLinearConstraint( max5 );
         MILPEncoder milp5( tableau5 );
-        milp5.encodeInputQuery( gurobi5, inputQuery5 );
+        milp5.encodeQuery( gurobi5, inputQuery5 );
         gurobi5.solve();
 
         TS_ASSERT( !gurobi5.haveFeasibleSolution() );
@@ -379,7 +379,7 @@ public:
 
         GurobiWrapper gurobi1;
 
-        InputQuery inputQuery1 = InputQuery();
+        Query inputQuery1 = Query();
         inputQuery1.setNumberOfVariables( 5 );
 
         MockTableau tableau1 = MockTableau();
@@ -428,11 +428,11 @@ public:
         inputQuery1.addPiecewiseLinearConstraint( relu2 );
 
         MILPEncoder milp1( tableau1 );
-        TS_ASSERT_THROWS_NOTHING( milp1.encodeInputQuery( gurobi1, inputQuery1 ) );
+        TS_ASSERT_THROWS_NOTHING( milp1.encodeQuery( gurobi1, inputQuery1 ) );
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
         TS_ASSERT( gurobi1.haveFeasibleSolution() );
 
-        InputQuery inputQuery2 = inputQuery1;
+        Query inputQuery2 = inputQuery1;
 
         Equation eq1;
         eq1.addAddend( 1, 4 );
@@ -441,7 +441,7 @@ public:
 
         GurobiWrapper gurobi2;
         MILPEncoder milp2( tableau1 );
-        TS_ASSERT_THROWS_NOTHING( milp2.encodeInputQuery( gurobi2, inputQuery2 ) );
+        TS_ASSERT_THROWS_NOTHING( milp2.encodeQuery( gurobi2, inputQuery2 ) );
         TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
         TS_ASSERT( gurobi2.haveFeasibleSolution() );
         Map<String, double> values;
@@ -466,7 +466,7 @@ public:
 
         GurobiWrapper gurobi1;
 
-        InputQuery inputQuery1 = InputQuery();
+        Query inputQuery1 = Query();
         inputQuery1.setNumberOfVariables( 5 );
 
         MockTableau tableau1 = MockTableau();
@@ -515,11 +515,11 @@ public:
         inputQuery1.addPiecewiseLinearConstraint( relu2 );
 
         MILPEncoder milp1( tableau1 );
-        TS_ASSERT_THROWS_NOTHING( milp1.encodeInputQuery( gurobi1, inputQuery1, true ) );
+        TS_ASSERT_THROWS_NOTHING( milp1.encodeQuery( gurobi1, inputQuery1, true ) );
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
         TS_ASSERT( gurobi1.haveFeasibleSolution() );
 
-        InputQuery inputQuery2 = inputQuery1;
+        Query inputQuery2 = inputQuery1;
 
         Equation eq1;
         eq1.addAddend( 1, 4 );
@@ -528,7 +528,7 @@ public:
 
         GurobiWrapper gurobi2;
         MILPEncoder milp2( tableau1 );
-        TS_ASSERT_THROWS_NOTHING( milp2.encodeInputQuery( gurobi2, inputQuery2, true ) );
+        TS_ASSERT_THROWS_NOTHING( milp2.encodeQuery( gurobi2, inputQuery2, true ) );
         TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
         TS_ASSERT( gurobi2.haveFeasibleSolution() );
 #else
@@ -545,7 +545,7 @@ public:
          */
         GurobiWrapper gurobi1;
 
-        InputQuery inputQuery1 = InputQuery();
+        Query inputQuery1 = Query();
         inputQuery1.setNumberOfVariables( 2 );
 
         MockTableau tableau1 = MockTableau();
@@ -566,7 +566,7 @@ public:
         tableau1.setUpperBound( 1, sigmoid1->sigmoid( 1 ) );
 
         MILPEncoder milp1( tableau1 );
-        milp1.encodeInputQuery( gurobi1, inputQuery1 );
+        milp1.encodeQuery( gurobi1, inputQuery1 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
 
@@ -586,7 +586,7 @@ public:
          */
         GurobiWrapper gurobi2;
 
-        InputQuery inputQuery2 = InputQuery();
+        Query inputQuery2 = Query();
         inputQuery2.setNumberOfVariables( 2 );
 
         MockTableau tableau2 = MockTableau();
@@ -607,7 +607,7 @@ public:
         tableau2.setUpperBound( 1, sigmoid2->sigmoid( -0.1 ) );
 
         MILPEncoder milp2( tableau2 );
-        milp2.encodeInputQuery( gurobi2, inputQuery2 );
+        milp2.encodeQuery( gurobi2, inputQuery2 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
 
@@ -626,7 +626,7 @@ public:
          */
         GurobiWrapper gurobi3;
 
-        InputQuery inputQuery3 = InputQuery();
+        Query inputQuery3 = Query();
         inputQuery3.setNumberOfVariables( 2 );
 
         MockTableau tableau3 = MockTableau();
@@ -647,7 +647,7 @@ public:
         tableau3.setUpperBound( 1, sigmoid3->sigmoid( 1 ) );
 
         MILPEncoder milp3( tableau3 );
-        milp3.encodeInputQuery( gurobi3, inputQuery3 );
+        milp3.encodeQuery( gurobi3, inputQuery3 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi3.solve() );
 
@@ -667,7 +667,7 @@ public:
          */
         GurobiWrapper gurobi4;
 
-        InputQuery inputQuery4 = InputQuery();
+        Query inputQuery4 = Query();
         inputQuery4.setNumberOfVariables( 2 );
 
         MockTableau tableau4 = MockTableau();
@@ -688,7 +688,7 @@ public:
         tableau4.setUpperBound( 1, sigmoid4->sigmoid( 0 ) );
 
         MILPEncoder milp4( tableau4 );
-        milp4.encodeInputQuery( gurobi4, inputQuery4 );
+        milp4.encodeQuery( gurobi4, inputQuery4 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi4.solve() );
 
@@ -708,7 +708,7 @@ public:
          */
         GurobiWrapper gurobi5;
 
-        InputQuery inputQuery5 = InputQuery();
+        Query inputQuery5 = Query();
         inputQuery5.setNumberOfVariables( 2 );
 
         MockTableau tableau5 = MockTableau();
@@ -729,7 +729,7 @@ public:
         tableau5.setUpperBound( 1, sigmoid5->sigmoid( 0 ) );
 
         MILPEncoder milp5( tableau5 );
-        milp5.encodeInputQuery( gurobi5, inputQuery5 );
+        milp5.encodeQuery( gurobi5, inputQuery5 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi5.solve() );
 
@@ -749,7 +749,7 @@ public:
          */
         GurobiWrapper gurobi6;
 
-        InputQuery inputQuery6 = InputQuery();
+        Query inputQuery6 = Query();
         inputQuery6.setNumberOfVariables( 2 );
 
         MockTableau tableau6 = MockTableau();
@@ -770,7 +770,7 @@ public:
         tableau6.setUpperBound( 1, sigmoid6->sigmoid( 1 ) );
 
         MILPEncoder milp6( tableau6 );
-        milp6.encodeInputQuery( gurobi6, inputQuery6 );
+        milp6.encodeQuery( gurobi6, inputQuery6 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi6.solve() );
 
@@ -803,7 +803,7 @@ public:
          */
         GurobiWrapper gurobi1;
 
-        InputQuery inputQuery1 = InputQuery();
+        Query inputQuery1 = Query();
         inputQuery1.setNumberOfVariables( 3 );
 
         MockTableau tableau1 = MockTableau();
@@ -835,7 +835,7 @@ public:
         tableau1.setUpperBound( x2, 0.5 * sigmoid1->sigmoid( 1 ) );
 
         MILPEncoder milp1( tableau1 );
-        milp1.encodeInputQuery( gurobi1, inputQuery1 );
+        milp1.encodeQuery( gurobi1, inputQuery1 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
 
@@ -846,7 +846,7 @@ public:
          */
         GurobiWrapper gurobi2;
 
-        InputQuery inputQuery2 = InputQuery();
+        Query inputQuery2 = Query();
         inputQuery2.setNumberOfVariables( 3 );
 
         MockTableau tableau2 = MockTableau();
@@ -878,7 +878,7 @@ public:
         tableau2.setUpperBound( x2, 0.5 * sigmoid2->sigmoid( -0.1 ) );
 
         MILPEncoder milp2( tableau2 );
-        milp2.encodeInputQuery( gurobi2, inputQuery2 );
+        milp2.encodeQuery( gurobi2, inputQuery2 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
 
@@ -889,7 +889,7 @@ public:
          */
         GurobiWrapper gurobi3;
 
-        InputQuery inputQuery3 = InputQuery();
+        Query inputQuery3 = Query();
         inputQuery3.setNumberOfVariables( 3 );
 
         MockTableau tableau3 = MockTableau();
@@ -921,7 +921,7 @@ public:
         tableau3.setUpperBound( x2, 0.5 * sigmoid3->sigmoid( -1 ) );
 
         MILPEncoder milp3( tableau3 );
-        milp3.encodeInputQuery( gurobi3, inputQuery3 );
+        milp3.encodeQuery( gurobi3, inputQuery3 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi3.solve() );
 
@@ -932,7 +932,7 @@ public:
          */
         GurobiWrapper gurobi4;
 
-        InputQuery inputQuery4 = InputQuery();
+        Query inputQuery4 = Query();
         inputQuery4.setNumberOfVariables( 3 );
 
         MockTableau tableau4 = MockTableau();
@@ -964,7 +964,7 @@ public:
         tableau4.setUpperBound( x2, 0.5 * sigmoid4->sigmoid( 0 ) );
 
         MILPEncoder milp4( tableau4 );
-        milp4.encodeInputQuery( gurobi4, inputQuery4 );
+        milp4.encodeQuery( gurobi4, inputQuery4 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi4.solve() );
 
@@ -975,7 +975,7 @@ public:
          */
         GurobiWrapper gurobi5;
 
-        InputQuery inputQuery5 = InputQuery();
+        Query inputQuery5 = Query();
         inputQuery5.setNumberOfVariables( 3 );
 
         MockTableau tableau5 = MockTableau();
@@ -1007,7 +1007,7 @@ public:
 
         inputQuery5.addNonlinearConstraint( sigmoid5 );
         MILPEncoder milp5( tableau5 );
-        milp5.encodeInputQuery( gurobi5, inputQuery5 );
+        milp5.encodeQuery( gurobi5, inputQuery5 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi5.solve() );
 
@@ -1018,7 +1018,7 @@ public:
          */
         GurobiWrapper gurobi6;
 
-        InputQuery inputQuery6 = InputQuery();
+        Query inputQuery6 = Query();
         inputQuery6.setNumberOfVariables( 3 );
 
         MockTableau tableau6 = MockTableau();
@@ -1050,7 +1050,7 @@ public:
         tableau6.setUpperBound( x2, 0.5 * sigmoid6->sigmoid( 1 ) );
 
         MILPEncoder milp6( tableau6 );
-        milp6.encodeInputQuery( gurobi6, inputQuery6 );
+        milp6.encodeQuery( gurobi6, inputQuery6 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi6.solve() );
 
@@ -1075,7 +1075,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         MockTableau tableau = MockTableau();
@@ -1103,7 +1103,7 @@ public:
         inputQuery.addNonlinearConstraint( bilinear2 );
 
         MILPEncoder milp( tableau );
-        milp.encodeInputQuery( gurobi, inputQuery );
+        milp.encodeQuery( gurobi, inputQuery );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1141,7 +1141,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         MockTableau tableau = MockTableau();
@@ -1169,7 +1169,7 @@ public:
         inputQuery.addNonlinearConstraint( bilinear2 );
 
         MILPEncoder milp( tableau );
-        milp.encodeInputQuery( gurobi, inputQuery );
+        milp.encodeQuery( gurobi, inputQuery );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1190,7 +1190,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         SoftmaxConstraint *softmax = new SoftmaxConstraint( { 0, 1 }, { 2, 3 } );
@@ -1230,7 +1230,7 @@ public:
         inputQuery.addNonlinearConstraint( softmax );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1256,7 +1256,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         Equation equation( Equation::EQ );
@@ -1301,7 +1301,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau.setUpperBound( 9, 100 ) );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1329,7 +1329,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         Equation equation( Equation::EQ );
@@ -1374,7 +1374,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau.setUpperBound( 9, 100 ) );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1403,7 +1403,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         Equation equation( Equation::EQ );
@@ -1448,7 +1448,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau.setUpperBound( 9, 100 ) );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1476,7 +1476,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 4 );
 
         Equation equation( Equation::EQ );
@@ -1521,7 +1521,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau.setUpperBound( 9, 100 ) );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1547,7 +1547,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 2 );
 
         RoundConstraint *round = new RoundConstraint( 0, 1 );
@@ -1579,7 +1579,7 @@ public:
         inputQuery.addNonlinearConstraint( round );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1604,7 +1604,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 2 );
 
         RoundConstraint *round = new RoundConstraint( 0, 1 );
@@ -1634,7 +1634,7 @@ public:
         inputQuery.addNonlinearConstraint( round );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1659,7 +1659,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 2 );
 
         RoundConstraint *round = new RoundConstraint( 0, 1 );
@@ -1691,7 +1691,7 @@ public:
         inputQuery.addNonlinearConstraint( round );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 
@@ -1716,7 +1716,7 @@ public:
         */
         GurobiWrapper gurobi;
 
-        InputQuery inputQuery = InputQuery();
+        Query inputQuery = Query();
         inputQuery.setNumberOfVariables( 2 );
 
         RoundConstraint *round = new RoundConstraint( 0, 1 );
@@ -1750,7 +1750,7 @@ public:
         inputQuery.addNonlinearConstraint( round );
 
         MILPEncoder milp( tableau );
-        TS_ASSERT_THROWS_NOTHING( milp.encodeInputQuery( gurobi, inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( milp.encodeQuery( gurobi, inputQuery ) );
 
         TS_ASSERT_THROWS_NOTHING( gurobi.solve() );
 

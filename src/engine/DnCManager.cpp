@@ -25,6 +25,7 @@
 #include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PolarityBasedDivider.h"
+#include "Query.h"
 #include "QueryDivider.h"
 #include "SnCDivideStrategy.h"
 #include "TimeUtils.h"
@@ -41,7 +42,7 @@
 
 void DnCManager::dncSolve( WorkerQueue *workload,
                            std::shared_ptr<Engine> engine,
-                           std::unique_ptr<InputQuery> inputQuery,
+                           std::unique_ptr<Query> inputQuery,
                            std::atomic_int &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId,
@@ -80,34 +81,16 @@ void DnCManager::dncSolve( WorkerQueue *workload,
     }
 }
 
-DnCManager::DnCManager( InputQuery *inputQuery )
-    : _baseInputQuery( inputQuery )
+DnCManager::DnCManager( IQuery *inputQuery )
+    : _baseQuery( inputQuery )
     , _exitCode( DnCManager::NOT_DONE )
     , _workload( NULL )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _runParallelDeepSoI( Options::get()->getBool( Options::PARALLEL_DEEPSOI ) )
+    , _sncSplittingStrategy( Options::get()->getSnCDivideStrategy() )
 {
-    SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
-    if ( sncSplittingStrategy == SnCDivideStrategy::Auto )
-    {
-        DNC_MANAGER_LOG( Stringf( "Deciding splitting strategy automatically...\n" ).ascii() );
-        if ( inputQuery->getNumInputVariables() <
-                 GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ||
-             inputQuery->getPiecewiseLinearConstraints().empty() )
-        {
-            DNC_MANAGER_LOG( Stringf( "\tUsing Largest Interval Heuristics\n" ).ascii() );
-            _sncSplittingStrategy = SnCDivideStrategy::LargestInterval;
-        }
-        else
-        {
-            DNC_MANAGER_LOG( Stringf( "\tUsing Polarity-based Heuristics\n" ).ascii() );
-            _sncSplittingStrategy = SnCDivideStrategy::Polarity;
-        }
-    }
-    else
-        _sncSplittingStrategy = sncSplittingStrategy;
 }
 
 DnCManager::~DnCManager()
@@ -211,17 +194,16 @@ void DnCManager::solve()
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
     unsigned seed = Options::get()->getInt( Options::SEED );
 
-    auto baseInputQuery =
-        std::unique_ptr<InputQuery>( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+    auto baseQuery = std::unique_ptr<Query>( new Query( *( _baseEngine->getQuery() ) ) );
 
     // Spawn threads and start solving
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < numWorkers; ++threadId )
     {
-        std::unique_ptr<InputQuery> inputQuery = nullptr;
+        std::unique_ptr<Query> inputQuery = nullptr;
         if ( threadId != 0 )
             // Get the processed input query from the base engine
-            inputQuery = std::unique_ptr<InputQuery>( new InputQuery( *( baseInputQuery ) ) );
+            inputQuery = std::unique_ptr<Query>( new Query( *( baseQuery ) ) );
 
         threads.push_back( std::thread( dncSolve,
                                         workload,
@@ -325,13 +307,13 @@ String DnCManager::getResultString()
     }
 }
 
-void DnCManager::extractSolution( InputQuery &inputQuery )
+void DnCManager::extractSolution( IQuery &inputQuery )
 {
     ASSERT( _engineWithSATAssignment != nullptr );
     _engineWithSATAssignment->extractSolution( inputQuery, _baseEngine->getPreprocessor() );
 }
 
-void DnCManager::getSolution( std::map<int, double> &ret, InputQuery &inputQuery )
+void DnCManager::getSolution( std::map<int, double> &ret, IQuery &inputQuery )
 {
     extractSolution( inputQuery );
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
@@ -347,39 +329,25 @@ void DnCManager::printResult()
     {
         std::cout << "sat\n" << std::endl;
 
-        extractSolution( *_baseInputQuery );
-
-        Vector<double> inputVector( _baseInputQuery->getNumInputVariables() );
-        Vector<double> outputVector( _baseInputQuery->getNumOutputVariables() );
-        double *inputs( inputVector.data() );
-        double *outputs( outputVector.data() );
+        // TODO: update the variable assignment using NLR if possible and double-check that all the
+        // constraints are indeed satisfied.
+        extractSolution( *_baseQuery );
 
         printf( "Input assignment:\n" );
-        for ( unsigned i = 0; i < _baseInputQuery->getNumInputVariables(); ++i )
+        for ( unsigned i = 0; i < _baseQuery->getNumInputVariables(); ++i )
         {
-            printf(
-                "\tx%u = %lf\n",
-                i,
-                _baseInputQuery->getSolutionValue( _baseInputQuery->inputVariableByIndex( i ) ) );
-            inputs[i] =
-                _baseInputQuery->getSolutionValue( _baseInputQuery->inputVariableByIndex( i ) );
+            printf( "\tx%u = %lf\n",
+                    i,
+                    _baseQuery->getSolutionValue( _baseQuery->inputVariableByIndex( i ) ) );
         }
-
-        NLR::NetworkLevelReasoner *nlr = _baseInputQuery->getNetworkLevelReasoner();
-        if ( nlr )
-            nlr->evaluate( inputs, outputs );
 
         printf( "\n" );
         printf( "Output:\n" );
-        for ( unsigned i = 0; i < _baseInputQuery->getNumOutputVariables(); ++i )
+        for ( unsigned i = 0; i < _baseQuery->getNumOutputVariables(); ++i )
         {
-            if ( nlr )
-                printf( "\tnlr y%u = %lf\n", i, outputs[i] );
-            else
-                printf( "\ty%u = %lf\n",
-                        i,
-                        _baseInputQuery->getSolutionValue(
-                            _baseInputQuery->outputVariableByIndex( i ) ) );
+            printf( "\ty%u = %lf\n",
+                    i,
+                    _baseQuery->getSolutionValue( _baseQuery->outputVariableByIndex( i ) ) );
         }
         printf( "\n" );
         break;
@@ -409,7 +377,7 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
     _engines.append( _baseEngine );
-    if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
+    if ( !_baseEngine->processInputQuery( *_baseQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 
@@ -428,6 +396,24 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
 
 void DnCManager::initialDivide( SubQueries &subQueries )
 {
+    if ( _sncSplittingStrategy == SnCDivideStrategy::Auto )
+    {
+        DNC_MANAGER_LOG( Stringf( "Deciding splitting strategy automatically...\n" ).ascii() );
+        Query *processedQuery = _baseEngine->getQuery();
+        if ( processedQuery->getNumInputVariables() <
+                 GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ||
+             processedQuery->getPiecewiseLinearConstraints().empty() )
+        {
+            DNC_MANAGER_LOG( Stringf( "\tUsing Largest Interval Heuristics\n" ).ascii() );
+            _sncSplittingStrategy = SnCDivideStrategy::LargestInterval;
+        }
+        else
+        {
+            DNC_MANAGER_LOG( Stringf( "\tUsing Polarity-based Heuristics\n" ).ascii() );
+            _sncSplittingStrategy = SnCDivideStrategy::Polarity;
+        }
+    }
+
     auto split = std::unique_ptr<PiecewiseLinearCaseSplit>( new PiecewiseLinearCaseSplit() );
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
     if ( _sncSplittingStrategy == SnCDivideStrategy::Polarity )
@@ -439,7 +425,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
         const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
         queryDivider =
             std::unique_ptr<QueryDivider>( new LargestIntervalDivider( inputVariables ) );
-        InputQuery *inputQuery = _baseEngine->getInputQuery();
+        Query *inputQuery = _baseEngine->getQuery();
         // Add bound as equations for each input variable
         for ( const auto &variable : inputVariables )
         {

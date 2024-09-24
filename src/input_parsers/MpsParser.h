@@ -22,7 +22,7 @@
 
 #define MPS_LOG( x, ... ) LOG( GlobalConfiguration::MPS_PARSER_LOGGING, "MpsParser: %s\n", x )
 
-class InputQuery;
+class IQuery;
 class String;
 
 class MpsParser
@@ -37,7 +37,7 @@ public:
     MpsParser( const String &path );
 
     // Extract an input query from the input file
-    void generateQuery( InputQuery &inputQuery ) const;
+    void generateQuery( IQuery &inputQuery ) const;
 
     // Getters
     unsigned getNumVars() const;
@@ -57,8 +57,8 @@ private:
     void setRemainingBounds();
 
     // Helpers for preparing the input query
-    void populateBounds( InputQuery &inputQuery ) const;
-    void populateEquations( InputQuery &inputQuery ) const;
+    void populateBounds( IQuery &inputQuery ) const;
+    void populateEquations( IQuery &inputQuery ) const;
     void populateEquation( Equation &equation, unsigned index ) const;
 
     // Number of equations and variables

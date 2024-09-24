@@ -2,7 +2,7 @@
 /*! \file PropertyParser.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -32,7 +32,7 @@ static double extractScalar( const String &token )
     return value;
 }
 
-void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQuery )
+void PropertyParser::parse( const String &propertyFilePath, IQuery &inputQuery )
 {
     if ( !File::exists( propertyFilePath ) )
     {
@@ -63,7 +63,7 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
     }
 }
 
-void PropertyParser::processSingleLine( const String &line, InputQuery &inputQuery )
+void PropertyParser::processSingleLine( const String &line, IQuery &inputQuery )
 {
     List<String> tokens = line.tokenize( " " );
 
@@ -132,6 +132,16 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         }
         else if ( hiddenVariable )
         {
+            if ( !_helperQuery )
+            {
+                _helperQuery = std::unique_ptr<Query>( inputQuery.generateQuery() );
+
+                List<Equation> unhandledEquations;
+                Set<unsigned> varsInUnhandledConstraints;
+                _helperQuery->constructNetworkLevelReasoner( unhandledEquations,
+                                                             varsInUnhandledConstraints );
+            }
+
             // These variables are of the form h_2_5
             subTokens = token.tokenize( "_" );
 
@@ -144,7 +154,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
             ++subToken;
             unsigned nodeIndex = atoi( subToken->ascii() );
 
-            NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+            NLR::NetworkLevelReasoner *nlr = _helperQuery->getNetworkLevelReasoner();
             if ( !nlr )
                 throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
 

@@ -17,7 +17,7 @@
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -34,7 +34,7 @@ public:
 
     void test_absoluate_value_unsat()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         inputQuery.setLowerBound( 0, -1 );
@@ -80,7 +80,7 @@ public:
 
     void test_absoluate_value_sat()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         inputQuery.setLowerBound( 0, -1 );
@@ -141,7 +141,7 @@ public:
 
     void test_absoluate_value_on_acas()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         AcasParser acasParser( RESOURCES_DIR "/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet" );
         acasParser.generateQuery( inputQuery );
 
@@ -204,11 +204,11 @@ public:
             return;
         }
 
-        TS_ASSERT( engine.getInputQuery()->getNetworkLevelReasoner() );
+        TS_ASSERT( engine.getQuery()->getNetworkLevelReasoner() );
 
         auto constraintsInTopologicalOrder =
-            engine.getInputQuery()->getNetworkLevelReasoner()->getConstraintsInTopologicalOrder();
-        auto allConstraints = engine.getInputQuery()->getPiecewiseLinearConstraints();
+            engine.getQuery()->getNetworkLevelReasoner()->getConstraintsInTopologicalOrder();
+        auto allConstraints = engine.getQuery()->getPiecewiseLinearConstraints();
         TS_ASSERT_EQUALS( constraintsInTopologicalOrder.size(), allConstraints.size() );
 
         bool result = engine.solve();

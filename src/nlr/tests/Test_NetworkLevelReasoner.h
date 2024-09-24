@@ -2,7 +2,7 @@
 /*! \file Test_NetworkLevelReasoner.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -15,10 +15,10 @@
 
 #include "../../engine/tests/MockTableau.h" // TODO: fix this
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "Layer.h"
 #include "NetworkLevelReasoner.h"
 #include "Options.h"
+#include "Query.h"
 #include "Tightening.h"
 #include "Vector.h"
 
@@ -1742,7 +1742,8 @@ public:
         nlr.addActivationSource( 3, 1, 4, 1 );
 
         // Start the testing
-        InputQuery ipq = nlr.generateInputQuery();
+        Query ipq;
+        nlr.generateQuery( ipq );
         List<Equation> unhandledEquations;
         Set<unsigned> varsInUnhandledConstraints;
         TS_ASSERT(
@@ -2137,44 +2138,44 @@ public:
         NLR::NetworkLevelReasoner nlr;
         populateNetwork( nlr );
 
-        InputQuery inputQuery;
-        inputQuery.setNumberOfVariables( 14 );
+        Query query;
+        query.setNumberOfVariables( 14 );
 
 
         // Initialize the bounds
-        inputQuery.setLowerBound( 0, -1 );
-        inputQuery.setUpperBound( 0, 1 );
-        inputQuery.setLowerBound( 1, -1 );
-        inputQuery.setUpperBound( 1, 1 );
+        query.setLowerBound( 0, -1 );
+        query.setUpperBound( 0, 1 );
+        query.setLowerBound( 1, -1 );
+        query.setUpperBound( 1, 1 );
 
         double large = 1000;
-        inputQuery.setLowerBound( 2, -large );
-        inputQuery.setUpperBound( 2, large );
-        inputQuery.setLowerBound( 3, -large );
-        inputQuery.setUpperBound( 3, large );
-        inputQuery.setLowerBound( 4, -large );
-        inputQuery.setUpperBound( 4, large );
-        inputQuery.setLowerBound( 5, -large );
-        inputQuery.setUpperBound( 5, large );
-        inputQuery.setLowerBound( 6, -large );
-        inputQuery.setUpperBound( 6, large );
-        inputQuery.setLowerBound( 7, -large );
-        inputQuery.setUpperBound( 7, large );
-        inputQuery.setLowerBound( 8, -large );
-        inputQuery.setUpperBound( 8, large );
-        inputQuery.setLowerBound( 9, -large );
-        inputQuery.setUpperBound( 9, large );
-        inputQuery.setLowerBound( 10, -large );
-        inputQuery.setUpperBound( 10, large );
-        inputQuery.setLowerBound( 11, -large );
-        inputQuery.setUpperBound( 11, large );
-        inputQuery.setLowerBound( 12, -large );
-        inputQuery.setUpperBound( 12, large );
-        inputQuery.setLowerBound( 13, -large );
-        inputQuery.setUpperBound( 13, large );
+        query.setLowerBound( 2, -large );
+        query.setUpperBound( 2, large );
+        query.setLowerBound( 3, -large );
+        query.setUpperBound( 3, large );
+        query.setLowerBound( 4, -large );
+        query.setUpperBound( 4, large );
+        query.setLowerBound( 5, -large );
+        query.setUpperBound( 5, large );
+        query.setLowerBound( 6, -large );
+        query.setUpperBound( 6, large );
+        query.setLowerBound( 7, -large );
+        query.setUpperBound( 7, large );
+        query.setLowerBound( 8, -large );
+        query.setUpperBound( 8, large );
+        query.setLowerBound( 9, -large );
+        query.setUpperBound( 9, large );
+        query.setLowerBound( 10, -large );
+        query.setUpperBound( 10, large );
+        query.setLowerBound( 11, -large );
+        query.setUpperBound( 11, large );
+        query.setLowerBound( 12, -large );
+        query.setUpperBound( 12, large );
+        query.setLowerBound( 13, -large );
+        query.setUpperBound( 13, large );
 
         // Initialize
-        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds( query ) );
 
         // Perform the tightening pass
         TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );

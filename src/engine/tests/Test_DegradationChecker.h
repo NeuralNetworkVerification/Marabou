@@ -15,8 +15,8 @@
  **/
 
 #include "DegradationChecker.h"
-#include "InputQuery.h"
 #include "MockTableau.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -45,7 +45,7 @@ public:
 
     void test_single_equation()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         // x0 + x1 - x2 = 10
         Equation equation1;
@@ -75,7 +75,7 @@ public:
 
     void test_two_equation()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
 
         // x0 + x1 - x2 = 10
         Equation equation1;

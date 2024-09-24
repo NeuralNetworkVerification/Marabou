@@ -15,8 +15,8 @@
 
 #include "Layer.h"
 
-#include "InputQuery.h"
 #include "Options.h"
+#include "Query.h"
 #include "SoftmaxConstraint.h"
 #include "SymbolicBoundTighteningType.h"
 
@@ -570,7 +570,7 @@ void Layer::setNeuronVariable( unsigned neuron, unsigned variable )
     _variableToNeuron[variable] = neuron;
 }
 
-void Layer::obtainCurrentBounds( const InputQuery &inputQuery )
+void Layer::obtainCurrentBounds( const Query &inputQuery )
 {
     for ( unsigned i = 0; i < _size; ++i )
     {
