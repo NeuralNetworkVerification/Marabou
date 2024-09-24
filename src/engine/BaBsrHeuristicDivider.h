@@ -36,13 +36,18 @@ public:
     /*
       Returns the variable based on the BaBSR heuristic
     */
-    unsigned getBaBsrHeuristic( const InputRegion &inputRegion );
+    unsigned getNodeToSplit( const InputRegion &inputRegion );
 
 private:
     /*
       All input variables of the network
     */
     const List<unsigned> _inputVariables;
+
+    /*
+      Calculate the heuristic score for a given node
+    */
+    unsigned calculateHeuristicScore( unsigned node, double upper_bound, double lower_bound );
 };
 
 #endif // __BaBsrHeuristicDivider_h__
@@ -53,4 +58,3 @@ private:
 // tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
-//
