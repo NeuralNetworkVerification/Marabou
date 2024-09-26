@@ -203,8 +203,11 @@ public:
         // Total amount of time spent applying previously stored bound tightenings
         TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO,
 
-        // Total amount of time spent within the SMT core
-        TOTAL_TIME_SMT_CORE_MICRO,
+        // Total amount of time spent within the SMT core as a result of CaDiCal callbacks
+        TIME_SMT_CORE_CALLBACKS_MICRO,
+
+        // Total amount of time spent within the SMT core from Engine main loop
+        TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
 
         // Total time heuristically updating the SoI phase pattern
         TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO,

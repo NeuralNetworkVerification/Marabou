@@ -187,7 +187,7 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
     CD_SMT_LOG( "Performing a ReLU split - DONE" );
@@ -280,7 +280,7 @@ bool CDSmtCore::backtrackAndContinueSearch()
         if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 

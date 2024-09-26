@@ -896,8 +896,10 @@ PYBIND11_MODULE( MarabouCore, m )
     py::enum_<Statistics::StatisticsLongAttribute>( m, "StatisticsLongAttribute" )
         .value( "NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS",
                 Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS )
-        .value( "TOTAL_TIME_SMT_CORE_MICRO",
-                Statistics::StatisticsLongAttribute::TOTAL_TIME_SMT_CORE_MICRO )
+        .value( "TIME_SMT_CORE_CALLBACKS_MICRO",
+                Statistics::StatisticsLongAttribute::TIME_SMT_CORE_CALLBACKS_MICRO )
+        .value( "TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO",
+                Statistics::StatisticsLongAttribute::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO )
         .value( "TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO",
                 Statistics::StatisticsLongAttribute::TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO )
         .value( "PREPROCESSING_TIME_MICRO",

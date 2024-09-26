@@ -87,7 +87,8 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_PRECISION_RESTORATION] = 0;
     _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
     _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
-    _longAttributes[TOTAL_TIME_SMT_CORE_MICRO] = 0;
+    _longAttributes[TIME_SMT_CORE_CALLBACKS_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO] = 0;
     _longAttributes[TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO] = 0;
     _longAttributes[NUM_PROPOSED_PHASE_PATTERN_UPDATE] = 0;
     _longAttributes[NUM_ACCEPTED_PHASE_PATTERN_UPDATE] = 0;
@@ -152,7 +153,19 @@ void Statistics::print()
             minutes - ( hours * 60 ),
             seconds - ( minutes * 60 ) );
 
-    unsigned long long totalUnknown = totalElapsed - timeMainLoopMicro - preprocessingTimeMicro;
+    unsigned long long timeSmtCoreMicro =
+        getLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO );
+    seconds = timeSmtCoreMicro / 1000000;
+    minutes = seconds / 60;
+    hours = minutes / 60;
+    printf( "\t\tSmtCore callbacks time: %llu milli (%02u:%02u:%02u)\n",
+            timeSmtCoreMicro / 1000,
+            hours,
+            minutes - ( hours * 60 ),
+            seconds - ( minutes * 60 ) );
+
+    unsigned long long totalUnknown = totalElapsed - timeMainLoopMicro - preprocessingTimeMicro -
+                                      timeSmtCoreMicro;
 
     seconds = totalUnknown / 1000000;
     minutes = seconds / 60;
@@ -213,11 +226,11 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n",
             printPercents( totalTimeApplyingStoredTighteningsMicro, timeMainLoopMicro ),
             totalTimeApplyingStoredTighteningsMicro / 1000 );
-    unsigned long long totalTimeSmtCoreMicro =
-        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO );
+    unsigned long long totalTimeSmtCoreMainLoopMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO );
     printf( "\t\t[%.2lf%%] SMT core: %llu milli\n",
-            printPercents( totalTimeSmtCoreMicro, timeMainLoopMicro ),
-            totalTimeSmtCoreMicro / 1000 );
+            printPercents( totalTimeSmtCoreMainLoopMicro, timeMainLoopMicro ),
+            totalTimeSmtCoreMainLoopMicro / 1000 );
     unsigned long long totalTimePerformingSymbolicBoundTightening =
         getLongAttribute( Statistics::TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING );
     printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n",
@@ -239,7 +252,7 @@ void Statistics::print()
         totalTimePerformingValidCaseSplitsMicro + totalTimeHandlingStatisticsMicro +
         totalTimeExplicitBasisBoundTighteningMicro + totalTimeDegradationChecking +
         totalTimePrecisionRestoration + totalTimeConstraintMatrixBoundTighteningMicro +
-        totalTimeApplyingStoredTighteningsMicro + totalTimeSmtCoreMicro +
+        totalTimeApplyingStoredTighteningsMicro + totalTimeSmtCoreMainLoopMicro +
         totalTimePerformingSymbolicBoundTightening;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",

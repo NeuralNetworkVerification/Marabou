@@ -614,7 +614,7 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
     //        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
     //            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
     //        struct timespec end = TimeUtils::sampleMicro();
-    //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+    //        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
     //                                       TimeUtils::timePassed( start, end ) );
     //    }
 }
@@ -640,7 +640,16 @@ bool SmtCore::pickSplitPLConstraint()
 
 void SmtCore::initBooleanAbstraction( PiecewiseLinearConstraint *plc )
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     plc->booleanAbstraction( _cadicalWrapper, _cadicalVarToPlc );
+
+    if ( _statistics )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
 }
 
 bool SmtCore::isLiteralAssigned( int literal ) const
@@ -675,7 +684,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
         if ( _statistics )
         {
             struct timespec end = TimeUtils::sampleMicro();
-            _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+            _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                            TimeUtils::timePassed( start, end ) );
         }
         return;
@@ -710,7 +719,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -750,7 +759,7 @@ void SmtCore::notify_new_decision_level()
         _statistics->incUnsignedAttribute( Statistics::SUM_DECISION_LEVELS, level );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -795,7 +804,7 @@ void SmtCore::notify_backtrack( size_t new_level )
             _statistics->setUnsignedAttribute( Statistics::MAX_BACKJUMP, jumpSize );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -949,7 +958,7 @@ int SmtCore::cb_decide()
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -1077,7 +1086,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -1121,7 +1130,7 @@ int SmtCore::cb_add_external_clause_lit()
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -1149,7 +1158,7 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -1287,7 +1296,7 @@ void SmtCore::addLiteralToPropagate( int literal )
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -1313,7 +1322,7 @@ Set<int> SmtCore::addTrivialConflictClause()
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -1369,7 +1378,7 @@ unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
     if (_statistics)
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
