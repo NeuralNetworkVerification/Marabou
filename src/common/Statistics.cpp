@@ -136,7 +136,8 @@ void Statistics::print()
     seconds = timeMainLoopMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tMain loop: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] Main loop: %llu milli (%02u:%02u:%02u)\n",
+            printPercents(timeMainLoopMicro, totalElapsed),
             timeMainLoopMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -147,7 +148,8 @@ void Statistics::print()
     seconds = preprocessingTimeMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tPreprocessing time: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] Preprocessing time: %llu milli (%02u:%02u:%02u)\n",
+            printPercents(preprocessingTimeMicro, totalElapsed),
             preprocessingTimeMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -158,7 +160,8 @@ void Statistics::print()
     seconds = timeSmtCoreMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tSmtCore callbacks time: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] SmtCore callbacks time: %llu milli (%02u:%02u:%02u)\n",
+            printPercents(timeSmtCoreMicro, totalElapsed),
             timeSmtCoreMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -170,7 +173,8 @@ void Statistics::print()
     seconds = totalUnknown / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tUnknown: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] Unknown: %llu milli (%02u:%02u:%02u)\n",
+            printPercents(totalUnknown, totalElapsed),
             totalUnknown / 1000,
             hours,
             minutes - ( hours * 60 ),
