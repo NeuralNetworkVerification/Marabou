@@ -482,8 +482,6 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
             constraint.setPhaseFixingEntry( phaseFixingEntry );
         }
     }
-    else
-        _engine->removeLiteralFromPropagations( constraint.propagatePhaseAsLit() );
 
     return true;
 }

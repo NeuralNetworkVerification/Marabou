@@ -652,6 +652,7 @@ bool SmtCore::isLiteralAssigned( int literal ) const
                     !_cadicalVarToPlc.at( abs( literal ) )->isActive() )
             return true;
         }
+
     return false;
 }
 
@@ -667,8 +668,18 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
                       is_fixed )
                  .ascii() );
 
+    struct timespec start = TimeUtils::sampleMicro();
+
     if ( isLiteralToBePropagated( -lit ) || isLiteralAssigned( -lit ) )
+    {
+        if ( _statistics )
+        {
+            struct timespec end = TimeUtils::sampleMicro();
+            _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                           TimeUtils::timePassed( start, end ) );
+        }
         return;
+    }
 
     // Allow notifying a negation of assigned literal only when a conflict is already discovered
     ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
@@ -679,10 +690,6 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     // TODO: notify_assignment may be called on already assigned literals (to notify they are
     //  fixed), maybe the following code should not be executed in this case
 
-    for ( unsigned clause : _literalToClauses[lit] )
-        if ( !isClauseSatisfied( clause ) )
-            _satisfiedClauses.push_back( clause );
-
     // Pick the split to perform
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
     PhaseStatus originalPlcPhase = plc->getPhaseStatus();
@@ -691,9 +698,21 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     _engine->applyPlcPhaseFixingTightenings( *plc );
     plc->setActiveConstraint( false );
     if ( !isLiteralAssigned( lit ) )
+    {
         _assignedLiterals.push_back( lit );
+        for ( unsigned clause : _literalToClauses[lit] )
+            if ( !isClauseSatisfied( clause ) )
+                _satisfiedClauses.push_back( clause );
+    }
 
     ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
+
+    if ( _statistics )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
 }
 
 void SmtCore::notify_new_decision_level()
@@ -702,7 +721,9 @@ void SmtCore::notify_new_decision_level()
         return;
 
     checkIfShouldExitDueToTimeout();
+    struct timespec start = TimeUtils::sampleMicro();
     SMT_LOG( "Notified new decision level" );
+
     _numRejectedPhasePatternProposal = 0;
 
     _needToSplit = false;
@@ -728,10 +749,9 @@ void SmtCore::notify_new_decision_level()
         _statistics->incUnsignedAttribute( Statistics::NUM_DECISION_LEVELS );
         _statistics->incUnsignedAttribute( Statistics::SUM_DECISION_LEVELS, level );
 
-        // TODO : Update statistics about time passed in SMTCore
-        //        struct timespec end = TimeUtils::sampleMicro();
-        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-        //                                       TimeUtils::timePassed( start, end ) );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -739,8 +759,11 @@ void SmtCore::notify_backtrack( size_t new_level )
 {
     if ( _exitCode != NOT_DONE )
         return;
+
     checkIfShouldExitDueToTimeout();
+    struct timespec start = TimeUtils::sampleMicro();
     SMT_LOG( Stringf( "Backtracking to level %d", new_level ).ascii() );
+
     //    struct timespec start = TimeUtils::sampleMicro();
     unsigned oldLevel = _context.getLevel();
 
@@ -771,10 +794,9 @@ void SmtCore::notify_backtrack( size_t new_level )
         if ( jumpSize > _statistics->getUnsignedAttribute( Statistics::MAX_BACKJUMP ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_BACKJUMP, jumpSize );
 
-        // TODO : Update statistics about time passed in SMTCore
-        //        struct timespec end = TimeUtils::sampleMicro();
-        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-        //                                       TimeUtils::timePassed( start, end ) );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -783,13 +805,13 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     if ( _exitCode != NOT_DONE )
         return false;
 
+    checkIfShouldExitDueToTimeout();
+
     if ( _statistics )
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
         //        printCurrentState();
     }
-
-    checkIfShouldExitDueToTimeout();
     SMT_LOG( "Checking model found by SAT solver" );
     ASSERT( _externalClausesToAdd.empty() );
     for ( const auto &lit : model )
@@ -824,6 +846,7 @@ int SmtCore::cb_decide()
         return 0;
 
     checkIfShouldExitDueToTimeout();
+    struct timespec start = TimeUtils::sampleMicro();
     SMT_LOG( "Callback for decision:" );
 
     int literalToDecide = 0;
@@ -923,6 +946,13 @@ int SmtCore::cb_decide()
             _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
     }
 
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
+
     return literalToDecide;
 }
 
@@ -973,7 +1003,7 @@ int SmtCore::cb_propagate()
     // terminate propagating
     if ( lit )
     {
-        if ( isLiteralAssigned( -lit ) )
+        if ( isLiteralAssigned( -lit ) ) // TODO: currently not counted for smt core time, maybe add
         {
             if ( !cb_has_external_clause() )
                 _engine->explainSimplexFailure();
@@ -981,12 +1011,6 @@ int SmtCore::cb_propagate()
             _literalsToPropagate.clear();
             _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
         }
-
-        // TODO: rethink the following, maybe shouldn't happen here, and may cause bugs
-        //        _assignedLiterals.push_back( lit );
-        //        for ( unsigned clause : _literalToClauses[lit] )
-        //            if ( !isClauseSatisfied( clause ) )
-        //                _satisfiedClauses.push_back( clause );
     }
 
     SMT_LOG( Stringf( "Propagating literal %d", lit ).ascii() );
@@ -1001,6 +1025,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         return 0;
 
     checkIfShouldExitDueToTimeout();
+    struct timespec start = TimeUtils::sampleMicro();
     ASSERT( propagated_lit )
     ASSERT( !_cadicalWrapper.isDecision( propagated_lit ) );
 
@@ -1039,15 +1064,23 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
             _fixedCadicalVars.insert( propagated_lit );
     }
 
-    if ( _reasonClauseLiterals.empty() )
+    int lit = 0;
+    if ( !_reasonClauseLiterals.empty() )
     {
+        lit = _reasonClauseLiterals.pop();
+        ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+        SMT_LOG( Stringf( "\tAdding Literal %d for Reason Clause", lit ).ascii() )
+    }
+    else
         _isReasonClauseInitialized = false;
-        return 0;
+
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 
-    int lit = _reasonClauseLiterals.pop();
-    ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-    SMT_LOG( Stringf( "\tAdding Literal %d for Reason Clause", lit ).ascii() )
     return lit;
 }
 
@@ -1069,24 +1102,36 @@ int SmtCore::cb_add_external_clause_lit()
         return 0;
 
     checkIfShouldExitDueToTimeout();
+    struct timespec start = TimeUtils::sampleMicro();
+
     ASSERT( !_externalClausesToAdd.empty() );
 
     // Add literal from the last conflict clause learned
     Vector<int> &currentClause = _externalClausesToAdd[_externalClausesToAdd.size() - 1];
+    int lit = 0;
     if ( !currentClause.empty() )
     {
-        int lit = currentClause.pop();
+        lit = currentClause.pop();
         ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
         SMT_LOG( Stringf( "\tAdding Literal %d to Conflict Clause", lit ).ascii() )
-        return lit;
+    }
+    else
+        _externalClausesToAdd.pop();
+
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 
-    _externalClausesToAdd.pop();
-    return 0;
+    return lit;
 }
 
 void SmtCore::addExternalClause( const Set<int> &clause )
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     ASSERT( !clause.exists( 0 ) )
     Vector<int> toAdd( 0 );
 
@@ -1100,6 +1145,13 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 
     ++_numOfClauses;
     _externalClausesToAdd.append( toAdd );
+
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
 }
 
 const PiecewiseLinearConstraint *SmtCore::getConstraintFromLit( int lit ) const
@@ -1223,11 +1275,20 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
 void SmtCore::addLiteralToPropagate( int literal )
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     ASSERT( literal );
     if ( !isLiteralAssigned( literal ) && !isLiteralToBePropagated( literal ) )
     {
         ASSERT( !isLiteralAssigned( -literal ) && !isLiteralToBePropagated( -literal ) );
         _literalsToPropagate.append( Pair<int, int>( literal, _context.getLevel() ) );
+    }
+
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -1236,15 +1297,25 @@ bool SmtCore::isLiteralToBePropagated( int literal ) const
     for ( const Pair<int, int> &pair : _literalsToPropagate )
         if ( pair.first() == literal )
             return true;
+
     return false;
 }
 
 Set<int> SmtCore::addTrivialConflictClause()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     Set<int> clause = Set<int>();
     for ( int lit : _assignedLiterals )
         if ( _cadicalWrapper.isDecision( lit ) && !_fixedCadicalVars.exists( lit ) )
             clause.insert( lit );
+
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
 
     addExternalClause( clause );
 
@@ -1285,12 +1356,21 @@ bool SmtCore::terminate()
 
 unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     unsigned counter = 0;
     for ( int curLiteral : _assignedLiterals )
     {
         if ( curLiteral == literal )
             return counter;
         ++counter;
+    }
+
+    if (_statistics)
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 
     return _assignedLiterals.size();
