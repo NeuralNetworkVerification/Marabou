@@ -686,6 +686,8 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
             struct timespec end = TimeUtils::sampleMicro();
             _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                            TimeUtils::timePassed( start, end ) );
+            _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO,
+                                           TimeUtils::timePassed( start, end ) );
         }
         return;
     }
@@ -720,6 +722,8 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -761,6 +765,9 @@ void SmtCore::notify_new_decision_level()
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute(
+            Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO,
+            TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -805,6 +812,8 @@ void SmtCore::notify_backtrack( size_t new_level )
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_BACKTRACK_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
@@ -955,10 +964,12 @@ int SmtCore::cb_decide()
             _statistics->incUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS );
     }
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_CB_DECIDE_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -1083,11 +1094,14 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     else
         _isReasonClauseInitialized = false;
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute(
+            Statistics::TOTAL_TIME_SMT_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO,
+            TimeUtils::timePassed( start, end ) );
     }
 
     return lit;
@@ -1127,11 +1141,14 @@ int SmtCore::cb_add_external_clause_lit()
     else
         _externalClausesToAdd.pop();
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute(
+            Statistics::TOTAL_TIME_SMT_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO,
+            TimeUtils::timePassed( start, end ) );
     }
 
     return lit;
@@ -1155,7 +1172,7 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     ++_numOfClauses;
     _externalClausesToAdd.append( toAdd );
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
@@ -1293,7 +1310,7 @@ void SmtCore::addLiteralToPropagate( int literal )
         _literalsToPropagate.append( Pair<int, int>( literal, _context.getLevel() ) );
     }
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
@@ -1319,7 +1336,7 @@ Set<int> SmtCore::addTrivialConflictClause()
         if ( _cadicalWrapper.isDecision( lit ) && !_fixedCadicalVars.exists( lit ) )
             clause.insert( lit );
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
@@ -1375,7 +1392,7 @@ unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
         ++counter;
     }
 
-    if (_statistics)
+    if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,

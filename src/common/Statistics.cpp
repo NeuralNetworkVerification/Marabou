@@ -88,6 +88,12 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
     _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
     _longAttributes[TIME_SMT_CORE_CALLBACKS_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_BACKTRACK_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_CB_DECIDE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO] = 0;
     _longAttributes[TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO] = 0;
     _longAttributes[NUM_PROPOSED_PHASE_PATTERN_UPDATE] = 0;
@@ -137,7 +143,7 @@ void Statistics::print()
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\t[%.2lf%%] Main loop: %llu milli (%02u:%02u:%02u)\n",
-            printPercents(timeMainLoopMicro, totalElapsed),
+            printPercents( timeMainLoopMicro, totalElapsed ),
             timeMainLoopMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -149,7 +155,7 @@ void Statistics::print()
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\t[%.2lf%%] Preprocessing time: %llu milli (%02u:%02u:%02u)\n",
-            printPercents(preprocessingTimeMicro, totalElapsed),
+            printPercents( preprocessingTimeMicro, totalElapsed ),
             preprocessingTimeMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -161,20 +167,20 @@ void Statistics::print()
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\t[%.2lf%%] SmtCore callbacks time: %llu milli (%02u:%02u:%02u)\n",
-            printPercents(timeSmtCoreMicro, totalElapsed),
+            printPercents( timeSmtCoreMicro, totalElapsed ),
             timeSmtCoreMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
             seconds - ( minutes * 60 ) );
 
-    unsigned long long totalUnknown = totalElapsed - timeMainLoopMicro - preprocessingTimeMicro -
-                                      timeSmtCoreMicro;
+    unsigned long long totalUnknown =
+        totalElapsed - timeMainLoopMicro - preprocessingTimeMicro - timeSmtCoreMicro;
 
     seconds = totalUnknown / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\t[%.2lf%%] Unknown: %llu milli (%02u:%02u:%02u)\n",
-            printPercents(totalUnknown, totalElapsed),
+            printPercents( totalUnknown, totalElapsed ),
             totalUnknown / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -262,6 +268,48 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
             printPercents( timeMainLoopMicro - total, timeMainLoopMicro ),
             timeMainLoopMicro > total ? ( timeMainLoopMicro - total ) / 1000 : 0 );
+
+    printf( "\tBreakdown for SmtCore callbacks:\n" );
+    unsigned long long timeNotifyAssignmentMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO );
+    printf( "\t\t[%.2lf%%] notify_assignment: %llu milli\n",
+            printPercents( timeNotifyAssignmentMicro, timeSmtCoreMicro ),
+            timeNotifyAssignmentMicro / 1000 );
+    unsigned long long timeNotifyNewDecisionLevelMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO );
+    printf( "\t\t[%.2lf%%] notify_new_decision_level: %llu milli\n",
+            printPercents( timeNotifyNewDecisionLevelMicro, timeSmtCoreMicro ),
+            timeNotifyNewDecisionLevelMicro / 1000 );
+    unsigned long long timeNotifyBacktrackMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_BACKTRACK_MICRO );
+    printf( "\t\t[%.2lf%%] notify_backtrack: %llu milli\n",
+            printPercents( timeNotifyBacktrackMicro, timeSmtCoreMicro ),
+            timeNotifyBacktrackMicro / 1000 );
+    unsigned long long timeCbDecideMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_CB_DECIDE_MICRO );
+    printf( "\t\t[%.2lf%%] cb_decide: %llu milli\n",
+            printPercents( timeCbDecideMicro, timeSmtCoreMicro ),
+            timeCbDecideMicro / 1000 );
+    unsigned long long timeCbAddReasonClauseLitMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO );
+    printf( "\t\t[%.2lf%%] cb_add_reason_clause_lit: %llu milli\n",
+            printPercents( timeCbAddReasonClauseLitMicro, timeSmtCoreMicro ),
+            timeCbAddReasonClauseLitMicro / 1000 );
+    unsigned long long timeCbAddExternalClauseLitMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO );
+    printf( "\t\t[%.2lf%%] cb_add_external_clause_lit: %llu milli\n",
+            printPercents( timeCbAddExternalClauseLitMicro, timeSmtCoreMicro ),
+            timeCbAddExternalClauseLitMicro / 1000 );
+
+    unsigned long long totalSmtCoreCallbacks =
+        timeNotifyAssignmentMicro + timeNotifyNewDecisionLevelMicro + timeNotifyBacktrackMicro +
+        timeCbDecideMicro + timeCbAddReasonClauseLitMicro + timeCbAddExternalClauseLitMicro;
+
+    printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
+            printPercents( timeSmtCoreMicro - totalSmtCoreCallbacks, timeSmtCoreMicro ),
+            timeSmtCoreMicro > totalSmtCoreCallbacks
+                ? ( timeSmtCoreMicro - totalSmtCoreCallbacks ) / 1000
+                : 0 );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
     printf( "\tNumber of preprocessor bound-tightening loop iterations: %u\n",
