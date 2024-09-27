@@ -581,6 +581,37 @@ void Query::saveQuery( const String &fileName )
     queryFile->close();
 }
 
+void Query::saveQueryAsSmtLib( const String &fileName ) const
+{
+    if ( !_nlConstraints.empty() )
+    {
+        printf( "SMTLIB conversion does not support nonlinear constraints yet. Aborting "
+                "Conversion.\n" );
+        return;
+    }
+
+    List<Equation> equations;
+
+    Vector<double> upperBounds( _numberOfVariables, 0 );
+    Vector<double> lowerBounds( _numberOfVariables, 0 );
+
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        upperBounds[i] = _upperBounds.exists( i ) ? _upperBounds[i] : FloatUtils::infinity();
+        lowerBounds[i] =
+            _lowerBounds.exists( i ) ? _lowerBounds[i] : FloatUtils::negativeInfinity();
+    }
+
+    SmtLibWriter::writeToSmtLibFile( fileName,
+                                     0,
+                                     _numberOfVariables,
+                                     upperBounds,
+                                     lowerBounds,
+                                     NULL,
+                                     _equations,
+                                     _plConstraints );
+}
+
 void Query::markInputVariable( unsigned variable, unsigned inputIndex )
 {
     _variableToInputIndex[variable] = inputIndex;

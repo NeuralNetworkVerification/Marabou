@@ -135,6 +135,7 @@ public:
       Serializes the query to a file which can then be loaded using QueryLoader.
     */
     void saveQuery( const String &fileName );
+    void saveQueryAsSmtLib( const String &filename ) const;
 
     /*
       Generate a non-context-dependent version of the Query
