@@ -4062,7 +4062,7 @@ bool Engine::solveWithCadical( double timeoutInSeconds )
 
 Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
                                             const Vector<int> &clause,
-                                            const std::shared_ptr<PLCLemma> lemma ) const
+                                            const std::shared_ptr<PLCLemma> lemma )
 {
     ASSERT( !clause.empty() && !explanation.empty() );
 

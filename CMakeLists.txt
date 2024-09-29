@@ -21,7 +21,7 @@ option(RUN_MEMORY_TEST "Run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
-option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
+option(CODE_COVERAGE "Add code coverage" ON)  # Available only in debug mode
 
 ###################
 ## Git variables ##
@@ -280,8 +280,8 @@ message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
 if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
   message(STATUS "Building with code coverage")
   set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage" CACHE INTERNAL "")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -p ${COVERAGE_COMPILER_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg --coverage")
 endif()
 
 # We build a static library that is the core of the project, the link it to the

@@ -25,7 +25,8 @@
 #include "Stack.h"
 #include "Statistics.h"
 #include "TimeoutException.h"
-#include "context/cdlist.h"
+#include "context/cdhashset.h"
+#include "context/cdhashmap.h"
 #include "context/context.h"
 
 #include <cadical.hpp>
@@ -317,7 +318,7 @@ public:
      Get the index of an assigned literal in the assigned literals list
      return the size of the list if element not found
      */
-    unsigned getLiteralAssignmentIndex( int literal ) const;
+    unsigned getLiteralAssignmentIndex( int literal );
 
     /*
       Return true iff the literal is fixed by the SAT solver
@@ -425,7 +426,7 @@ private:
       and reason and conflict clauses
     */
     List<Pair<int, int>> _literalsToPropagate;
-    CVC4::context::CDList<int> _assignedLiterals;
+    CVC4::context::CDHashMap<int, unsigned> _assignedLiterals;
 
     Vector<int> _reasonClauseLiterals;
     bool _isReasonClauseInitialized;
@@ -437,7 +438,7 @@ private:
     double _timeoutInSeconds;
 
     unsigned _numOfClauses;
-    CVC4::context::CDList<unsigned> _satisfiedClauses;
+    CVC4::context::CDHashSet<unsigned, std::hash<unsigned>> _satisfiedClauses;
     Map<int, Set<unsigned>> _literalToClauses;
     unsigned _vsidsDecayThreshold;
 

@@ -654,13 +654,12 @@ void SmtCore::initBooleanAbstraction( PiecewiseLinearConstraint *plc )
 
 bool SmtCore::isLiteralAssigned( int literal ) const
 {
-    for ( int curLiteral : _assignedLiterals )
-        if ( curLiteral == literal )
-        {
-            ASSERT( _cadicalVarToPlc.at( abs( literal ) )->phaseFixed() ||
-                    !_cadicalVarToPlc.at( abs( literal ) )->isActive() )
-            return true;
-        }
+    if ( _assignedLiterals.count( literal ) > 0 )
+    {
+        ASSERT( _cadicalVarToPlc.at( abs( literal ) )->phaseFixed() ||
+                !_cadicalVarToPlc.at( abs( literal ) )->isActive() )
+        return true;
+    }
 
     return false;
 }
@@ -710,10 +709,10 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
     plc->setActiveConstraint( false );
     if ( !isLiteralAssigned( lit ) )
     {
-        _assignedLiterals.push_back( lit );
+        _assignedLiterals.insert( lit, _assignedLiterals.size() );
         for ( unsigned clause : _literalToClauses[lit] )
             if ( !isClauseSatisfied( clause ) )
-                _satisfiedClauses.push_back( clause );
+                _satisfiedClauses.insert( clause );
     }
 
     ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
@@ -1332,9 +1331,12 @@ Set<int> SmtCore::addTrivialConflictClause()
     struct timespec start = TimeUtils::sampleMicro();
 
     Set<int> clause = Set<int>();
-    for ( int lit : _assignedLiterals )
+    for ( const auto &pair : _assignedLiterals )
+    {
+        int lit = pair.first;
         if ( _cadicalWrapper.isDecision( lit ) && !_fixedCadicalVars.exists( lit ) )
             clause.insert( lit );
+    }
 
     if ( _statistics )
     {
@@ -1380,17 +1382,12 @@ bool SmtCore::terminate()
     return _exitCode != NOT_DONE;
 }
 
-unsigned SmtCore::getLiteralAssignmentIndex( int literal ) const
+unsigned SmtCore::getLiteralAssignmentIndex( int literal )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    unsigned counter = 0;
-    for ( int curLiteral : _assignedLiterals )
-    {
-        if ( curLiteral == literal )
-            return counter;
-        ++counter;
-    }
+    if ( _assignedLiterals.count( literal ) > 0 )
+        return _assignedLiterals[literal].get();
 
     if ( _statistics )
     {
@@ -1444,11 +1441,7 @@ void SmtCore::printCurrentState() const
 
 bool SmtCore::isClauseSatisfied( unsigned int clause ) const
 {
-    for ( unsigned c : _satisfiedClauses )
-        if ( clause == c )
-            return true;
-
-    return false;
+    return _satisfiedClauses.contains( clause );
 }
 
 double SmtCore::getVSIDSScore( int literal ) const

@@ -960,7 +960,7 @@ private:
     */
     Set<int> reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
                                         const Vector<int> &clause,
-                                        const std::shared_ptr<PLCLemma> lemma ) const;
+                                        const std::shared_ptr<PLCLemma> lemma );
 
     /*
       Attempts to reduce a conflict clause's size, while linear combination can still be used to
