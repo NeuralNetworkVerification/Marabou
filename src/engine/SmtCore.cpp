@@ -793,6 +793,8 @@ void SmtCore::notify_backtrack( size_t new_level )
         if ( propagation.second() <= (int)new_level )
             _literalsToPropagate.append( propagation );
 
+    struct timespec end = TimeUtils::sampleMicro();
+
     for ( const auto &lit : _fixedCadicalVars )
         notify_assignment( lit, true );
 
@@ -809,7 +811,6 @@ void SmtCore::notify_backtrack( size_t new_level )
         if ( jumpSize > _statistics->getUnsignedAttribute( Statistics::MAX_BACKJUMP ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_BACKJUMP, jumpSize );
 
-        struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
                                        TimeUtils::timePassed( start, end ) );
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_BACKTRACK_MICRO,
