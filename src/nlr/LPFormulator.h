@@ -20,6 +20,7 @@
 #include "LayerOwner.h"
 #include "Map.h"
 #include "ParallelSolver.h"
+#include "PolygonalTightening.h"
 
 #include <atomic>
 #include <boost/chrono.hpp>
@@ -53,6 +54,8 @@ public:
     */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                          bool backward = false );
+    void optimizeBoundsWithInvprop( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsWithPreimageApproximation( const Map<unsigned, Layer *> &layers );
     void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                                    unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
@@ -124,6 +127,50 @@ private:
                                             bool createVariables );
 
     void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args, bool backward );
+    
+    
+    // Create LP relaxations depending on an external parameter. 
+    void addLayerToParameterisedModel( GurobiWrapper &gurobi,
+                                 const Layer *layer,
+                                 bool createVariables,
+                                 double coeff );
+    
+    void
+    addInputLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, double coeff );
+    
+    void
+    addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addMaxLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addRoundLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addAbsoluteValueLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addSigmoidLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addSoftmaxLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
+    
+    void
+    addWeightedSumLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                           const Layer *layer,
+                                           bool createVariables,
+                                           double coeff );
+
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints
