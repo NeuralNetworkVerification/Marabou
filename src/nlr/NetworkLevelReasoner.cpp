@@ -198,6 +198,22 @@ void NetworkLevelReasoner::clearConstraintTightenings()
     _boundTightenings.clear();
 }
 
+void NetworkLevelReasoner::receivePolygonalTighterBound( PolygonalTightening polygonal_tightening )
+{
+    _polygonalBoundTightenings.append( polygonal_tightening );
+}
+
+void NetworkLevelReasoner::getConstraintPolygonalTightenings( List<PolygonalTightening> &polygonal_tightenings )
+{
+    polygonal_tightenings = _polygonalBoundTightenings;
+    _polygonalBoundTightenings.clear();
+}
+
+void NetworkLevelReasoner::clearConstraintPolygonalTightenings()
+{
+    _polygonalBoundTightenings.clear();
+}
+
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
