@@ -724,8 +724,30 @@ void Layer::computeIntervalArithmeticBounds()
     case SIGN:
         computeIntervalArithmeticBoundsForSign();
         break;
-
+        
+    case ROUND:
+        computeIntervalArithmeticBoundsForRound();
+        break;
+    
+    case LEAKY_RELU:
+        computeIntervalArithmeticBoundsForLeakyRelu();
+        break;
+        
+    case SIGMOID:
+        computeIntervalArithmeticBoundsForSigmoid();
+        break;
+        
     case MAX:
+        computeIntervalArithmeticBoundsForMax();
+        break;
+        
+    case SOFTMAX:
+        computeIntervalArithmeticBoundsForSoftmax();
+        break;
+    
+    case BILINEAR:
+        computeIntervalArithmeticBoundsForBilinear();
+        break;
 
     default:
         printf( "Error! Activation type %u unsupported\n", _type );
@@ -779,13 +801,13 @@ void Layer::computeIntervalArithmeticBoundsForWeightedSum()
         if ( _eliminatedNeurons.exists( i ) )
             continue;
 
-        if ( newLb[i] > _lb[i] )
+        if ( _lb[i] < newLb[i] )
         {
             _lb[i] = newLb[i];
             _layerOwner->receiveTighterBound(
                 Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
         }
-        if ( newUb[i] < _ub[i] )
+        if ( _ub[i] > newUb[i] )
         {
             _ub[i] = newUb[i];
             _layerOwner->receiveTighterBound(
@@ -813,13 +835,13 @@ void Layer::computeIntervalArithmeticBoundsForRelu()
         if ( lb < 0 )
             lb = 0;
 
-        if ( lb > _lb[i] )
+        if ( _lb[i] < lb )
         {
             _lb[i] = lb;
             _layerOwner->receiveTighterBound(
                 Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
         }
-        if ( ub < _ub[i] )
+        if ( _ub[i] > ub )
         {
             _ub[i] = ub;
             _layerOwner->receiveTighterBound(
@@ -843,13 +865,13 @@ void Layer::computeIntervalArithmeticBoundsForAbs()
 
         if ( lb > 0 )
         {
-            if ( lb > _lb[i] )
+            if ( _lb[i] < lb )
             {
                 _lb[i] = lb;
                 _layerOwner->receiveTighterBound(
                     Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
             }
-            if ( ub < _ub[i] )
+            if ( _ub[i] > ub )
             {
                 _ub[i] = ub;
                 _layerOwner->receiveTighterBound(
@@ -858,13 +880,13 @@ void Layer::computeIntervalArithmeticBoundsForAbs()
         }
         else if ( ub < 0 )
         {
-            if ( -ub > _lb[i] )
+            if ( _lb[i] < -ub )
             {
                 _lb[i] = -ub;
                 _layerOwner->receiveTighterBound(
                     Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
             }
-            if ( -lb < _ub[i] )
+            if ( _ub[i] > -lb )
             {
                 _ub[i] = -lb;
                 _layerOwner->receiveTighterBound(
@@ -881,7 +903,7 @@ void Layer::computeIntervalArithmeticBoundsForAbs()
                     Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
             }
 
-            if ( FloatUtils::max( ub, -lb ) < _ub[i] )
+            if ( _ub[i] > FloatUtils::max( ub, -lb ) )
             {
                 _ub[i] = FloatUtils::max( ub, -lb );
                 _layerOwner->receiveTighterBound(
@@ -903,21 +925,408 @@ void Layer::computeIntervalArithmeticBoundsForSign()
 
         double lb = sourceLayer->getLb( sourceIndex._neuron );
         double ub = sourceLayer->getUb( sourceIndex._neuron );
+        
+        double new_lb;
+        double new_ub;
 
         if ( !FloatUtils::isNegative( lb ) )
         {
-            _lb[i] = 1;
-            _ub[i] = 1;
+            new_lb = 1;
+            new_ub = 1;
         }
         else if ( FloatUtils::isNegative( ub ) )
         {
-            _lb[i] = -1;
-            _ub[i] = -1;
+            new_lb = -1;
+            new_ub = -1;
         }
         else
         {
-            _lb[i] = -1;
-            _ub[i] = 1;
+            new_lb = -1;
+            new_ub = 1;
+        }
+        
+        /*
+          We now have the tightest bounds we can for the relu
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( _lb[i] < new_lb )
+        {
+            _lb[i] = new_lb;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+
+        if ( _ub[i] > new_ub )
+        {
+            _ub[i] = new_ub;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForLeakyRelu()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+
+        if ( lb > 0 )
+        {
+            if ( _lb[i] < lb )
+            {
+                _lb[i] = lb;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+            if ( _ub[i] > ub )
+            {
+                _ub[i] = ub;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+        else if ( ub < 0 )
+        {
+            if ( _lb[i] < _alpha * lb )
+            {
+                _lb[i] = _alpha * lb;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+            if ( _ub[i] > _alpha * ub )
+            {
+                _ub[i] = _alpha * ub;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+        else
+        {
+            // lb < 0 < ub
+            if ( _lb[i] < _alpha * lb )
+            {
+                _lb[i] = _alpha * lb;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > ub )
+            {
+                _ub[i] = ub;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForSigmoid()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+        
+        double lbSigmoid = SigmoidConstraint::sigmoid( lb );
+        double ubSigmoid = SigmoidConstraint::sigmoid( ub );
+        
+
+        if ( _lb[i] < lbSigmoid )
+        {
+            _lb[i] = lbSigmoid;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+        if ( _ub[i] > ubSigmoid )
+        {
+            _ub[i] = ubSigmoid;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+}
+
+
+void Layer::computeIntervalArithmeticBoundsForRound()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+        
+        double lbRound = FloatUtils::round( lb );
+        double ubRound = FloatUtils::round( ub );
+        
+
+        if ( _lb[i] < lbRound )
+        {
+            _lb[i] = lbRound;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+        if ( _ub[i] > ubRound )
+        {
+            _ub[i] = ubRound;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+}
+
+
+void Layer::computeIntervalArithmeticBoundsForMax()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        List<NeuronIndex> sources = getActivationSources( i );
+        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+
+        NeuronIndex indexOfMaxLowerBound = *( sources.begin() );
+        double maxLowerBound = FloatUtils::negativeInfinity();
+        double maxUpperBound = FloatUtils::negativeInfinity();
+
+        Map<NeuronIndex, double> sourceLbs;
+        Map<NeuronIndex, double> sourceUbs;
+        unsigned counter = 0;
+        for ( const auto &sourceIndex : sources )
+        {
+            unsigned sourceNeuron = sourceIndex._neuron;
+            double sourceLb = sourceLayer->getLb( sourceNeuron );
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+            
+            sourceLbs[sourceIndex] = sourceLb;
+            sourceUbs[sourceIndex] = sourceUb;
+
+            if ( maxLowerBound < sourceLb )
+            {
+                indexOfMaxLowerBound = sourceIndex;
+                maxLowerBound = sourceLb;
+            }
+            if ( maxUpperBound < sourceUb )
+            {
+                maxUpperBound = sourceUb;
+            }
+            ++counter;
+        }
+
+        // The phase is fixed if the lower-bound of a source variable x_b is
+        // larger than the upper-bounds of the other source variables.
+        bool phaseFixed = true;
+        for ( const auto &sourceIndex : sources )
+        {
+            if ( sourceIndex != indexOfMaxLowerBound &&
+                 FloatUtils::gt( sourceUbs[sourceIndex], maxLowerBound ) )
+            {
+                phaseFixed = false;
+                break;
+            }
+        }
+
+        if ( phaseFixed )
+        {
+            // Phase fixed
+            // Concrete bound: lb_b <= x_f <= ub_b
+            if ( _lb[i] < maxLowerBound )
+            {
+                _lb[i] = maxLowerBound;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+            
+            if ( _ub[i] > sourceUbs[indexOfMaxLowerBound] )
+            {
+                _ub[i] = sourceUbs[indexOfMaxLowerBound];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+        else
+        {
+            // MaxPool not fixed
+            // Concrete bounds: lb_b <= x_f <= maxUpperBound
+            if ( _lb[i] < maxLowerBound )
+            {
+                _lb[i] = maxLowerBound;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+            
+            if ( _ub[i] > maxUpperBound )
+            {
+                _ub[i] = maxUpperBound;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForSoftmax()
+{
+    Set<unsigned> handledInputNeurons;
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        List<NeuronIndex> sources = getActivationSources( i );
+        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+        
+        ASSERT( sourceLayer->getSize() == _size );
+        
+        Vector<double> sourceLbs;
+        Vector<double> sourceUbs;
+        for ( const auto &sourceIndex : sources )
+        {
+            unsigned sourceNeuron = sourceIndex._neuron;
+            double sourceLb = sourceLayer->getLb( sourceNeuron );
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+            
+            sourceLbs.append( sourceLb - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+            sourceUbs.append( sourceUb + GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+        }
+
+        // Find the index of i in the softmax
+        unsigned index = 0;
+        for ( const auto &sourceIndex : sources )
+        {
+            if ( handledInputNeurons.exists( sourceIndex._neuron ) )
+                ++index;
+            else
+            {
+                handledInputNeurons.insert( sourceIndex._neuron );
+                break;
+            }
+        }
+
+        double lb = softmaxLinearLowerBound( sourceLbs, sourceUbs, index );
+        double ub = softmaxLinearUpperBound( sourceLbs, sourceUbs, index );
+        if ( _lb[i] < lb )
+        {
+            _lb[i] = lb;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+        if ( _ub[i] > ub )
+        {
+            _ub[i] = ub;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+}
+
+void Layer::computeIntervalArithmeticBoundsForBilinear()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        List<NeuronIndex> sources = getActivationSources( i );
+        ASSERT( sources.size() == 2 );
+        
+        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+        
+        Vector<double> sourceLbs;
+        Vector<double> sourceUbs;
+        Vector<double> sourceValues;
+        bool allConstant = true;
+        for ( const auto &sourceIndex : sources )
+        {
+            unsigned sourceNeuron = sourceIndex._neuron;
+            double sourceLb = sourceLayer->getLb( sourceNeuron );
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+            
+            sourceLbs.append( sourceLb - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+            sourceUbs.append( sourceUb + GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+            
+            if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
+            {
+                allConstant = false;
+            }
+            else
+            {
+                double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
+                sourceValues.append( sourceValue );
+            }
+        }
+        
+        if ( allConstant )
+        {
+            // If the both source neurons have been eliminated, this neuron is constant
+            double value = sourceValues[0] * sourceValues[1];
+            
+            if ( _lb[i] < value )
+            {
+                _lb[i] = value;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+    
+            if ( _ub[i] > value )
+            {
+                _ub[i] = value;
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+            continue;
+        }
+        
+        double lb = FloatUtils::infinity();
+        double ub = FloatUtils::negativeInfinity();
+        List<double> values = { sourceLbs[0] * sourceLbs[1],
+                                sourceLbs[0] * sourceUbs[1],
+                                sourceUbs[0] * sourceLbs[1],
+                                sourceUbs[0] * sourceUbs[1] };
+        for ( const auto &v : values )
+        {
+            if ( v < lb )
+                lb = v;
+            if ( v > ub )
+                ub = v;
+        }
+        
+        
+        if ( _lb[i] < lb )
+        {
+            _lb[i] = lb;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+
+        if ( _ub[i] > ub )
+        {
+            _ub[i] = ub;
+            _layerOwner->receiveTighterBound(
+                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
@@ -1678,6 +2087,317 @@ void Layer::computeSymbolicBoundsForWeightedSum()
                 Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
+}
+
+double Layer::softmaxLSELowerBound( const Vector<double> &inputs,
+                                              const Vector<double> &inputLbs,
+                                              const Vector<double> &inputUbs,
+                                              unsigned i )
+{
+    double sum = 0;
+    for ( unsigned j = 0; j < inputs.size(); ++j )
+    {
+        double lj = inputLbs[j];
+        double uj = inputUbs[j];
+        double xj = inputs[j];
+        sum +=
+            ( uj - xj ) / ( uj - lj ) * std::exp( lj ) + ( xj - lj ) / ( uj - lj ) * std::exp( uj );
+    }
+
+    return std::exp( inputs[i] ) / sum;
+}
+
+double Layer::softmaxdLSELowerBound( const Vector<double> &inputMids,
+                                               const Vector<double> &inputLbs,
+                                               const Vector<double> &inputUbs,
+                                               unsigned i,
+                                               unsigned di )
+{
+    double val = 0;
+    if ( i == di )
+        val += softmaxLSELowerBound( inputMids, inputLbs, inputUbs, i );
+
+    double ldi = inputLbs[di];
+    double udi = inputUbs[di];
+
+    double sum = 0;
+    for ( unsigned j = 0; j < inputMids.size(); ++j )
+    {
+        double lj = inputLbs[j];
+        double uj = inputUbs[j];
+        double xj = inputMids[j];
+
+        sum +=
+            ( uj - xj ) / ( uj - lj ) * std::exp( lj ) + ( xj - lj ) / ( uj - lj ) * std::exp( uj );
+    }
+
+    val -= std::exp( inputMids[i] ) / ( sum * sum ) * ( std::exp( udi ) - std::exp( ldi ) ) /
+           ( udi - ldi );
+
+    return val;
+}
+
+double Layer::softmaxLSELowerBound2( const Vector<double> &inputMids,
+                                               const Vector<double> &inputLbs,
+                                               const Vector<double> &inputUbs,
+                                               unsigned i )
+{
+    double max = FloatUtils::negativeInfinity();
+    unsigned maxInputIndex = 0;
+    unsigned index = 0;
+    for ( const auto &mid : inputMids )
+    {
+        if ( mid > max )
+        {
+            max = mid;
+            maxInputIndex = index;
+        }
+        ++index;
+    }
+
+    if ( maxInputIndex == i )
+        return softmaxERLowerBound( inputMids, inputLbs, inputUbs, i );
+    else
+    {
+        double sum = 0;
+        for ( unsigned j = 0; j < inputMids.size(); ++j )
+        {
+            if ( j == maxInputIndex )
+                sum += 1;
+            else
+            {
+                double ljjstar = inputLbs[j] - inputUbs[maxInputIndex];
+                double ujjstar = inputUbs[j] - inputLbs[maxInputIndex];
+                double xjjstar = inputMids[j] - inputMids[maxInputIndex];
+
+                sum += ( ujjstar - xjjstar ) / ( ujjstar - ljjstar ) * std::exp( ljjstar ) +
+                       ( xjjstar - ljjstar ) / ( ujjstar - ljjstar ) * std::exp( ujjstar );
+            }
+        }
+
+        return std::exp( inputMids[i] - inputMids[maxInputIndex] ) / sum;
+    }
+}
+
+double Layer::softmaxdLSELowerBound2( const Vector<double> &inputMids,
+                                                const Vector<double> &inputLbs,
+                                                const Vector<double> &inputUbs,
+                                                unsigned i,
+                                                unsigned di )
+{
+    double max = FloatUtils::negativeInfinity();
+    unsigned maxInputIndex = 0;
+    unsigned index = 0;
+    for ( const auto &mid : inputMids )
+    {
+        if ( mid > max )
+        {
+            max = mid;
+            maxInputIndex = index;
+        }
+        ++index;
+    }
+
+    if ( maxInputIndex == i )
+        return softmaxdERLowerBound( inputMids, inputLbs, inputUbs, i, di );
+    else
+    {
+        double val = softmaxLSELowerBound2( inputMids, inputLbs, inputUbs, i );
+
+        double sum = 0;
+        for ( unsigned j = 0; j < inputMids.size(); ++j )
+        {
+            if ( j == maxInputIndex )
+                sum += 1;
+            else
+            {
+                double ljjstar = inputLbs[j] - inputUbs[maxInputIndex];
+                double ujjstar = inputUbs[j] - inputLbs[maxInputIndex];
+                double xjjstar = inputMids[j] - inputMids[maxInputIndex];
+                sum += ( ujjstar - xjjstar ) / ( ujjstar - ljjstar ) * std::exp( ljjstar ) +
+                       ( xjjstar - ljjstar ) / ( ujjstar - ljjstar ) * std::exp( ujjstar );
+            }
+        }
+        double val2 = std::exp( inputMids[i] - inputMids[maxInputIndex] ) / ( sum * sum );
+
+        if ( i == di )
+        {
+            double ldijstar = inputLbs[i] - inputUbs[maxInputIndex];
+            double udijstar = inputUbs[i] - inputLbs[maxInputIndex];
+            return val -
+                   val2 * ( std::exp( udijstar ) - std::exp( ldijstar ) ) / ( udijstar - ldijstar );
+        }
+        else if ( maxInputIndex == di )
+        {
+            double sum2 = 0;
+            for ( unsigned j = 0; j < inputMids.size(); ++j )
+            {
+                if ( j == maxInputIndex )
+                    continue;
+                else
+                {
+                    double ljjstar = inputLbs[j] - inputUbs[maxInputIndex];
+                    double ujjstar = inputUbs[j] - inputLbs[maxInputIndex];
+                    sum2 += ( std::exp( ujjstar ) - std::exp( ljjstar ) ) / ( ujjstar - ljjstar );
+                }
+            }
+            return -val + val2 * sum2;
+        }
+        else
+        {
+            double ldijstar = inputLbs[di] - inputUbs[maxInputIndex];
+            double udijstar = inputUbs[di] - inputLbs[maxInputIndex];
+            return -val2 * ( std::exp( udijstar ) - std::exp( ldijstar ) ) /
+                   ( udijstar - ldijstar );
+        }
+    }
+}
+
+double Layer::softmaxLSEUpperBound( const Vector<double> &inputs,
+                                              const Vector<double> &outputLb,
+                                              const Vector<double> &outputUb,
+                                              unsigned i )
+{
+    double li = outputLb[i];
+    double ui = outputUb[i];
+
+    Vector<double> inputTilda;
+    SoftmaxConstraint::xTilda( inputs, inputs[i], inputTilda );
+
+    return ( ( li * std::log( ui ) - ui * std::log( li ) ) / ( std::log( ui ) - std::log( li ) ) -
+             ( ui - li ) / ( std::log( ui ) - std::log( li ) ) *
+                 SoftmaxConstraint::logSumOfExponential( inputTilda ) );
+}
+
+double Layer::softmaxdLSEUpperbound( const Vector<double> &inputMids,
+                                               const Vector<double> &outputLb,
+                                               const Vector<double> &outputUb,
+                                               unsigned i,
+                                               unsigned di )
+{
+    double li = outputLb[i];
+    double ui = outputUb[i];
+
+    double val = -( ui - li ) / ( std::log( ui ) - std::log( li ) );
+
+    double val2 = std::exp( inputMids[di] ) / SoftmaxConstraint::sumOfExponential( inputMids );
+    if ( i == di )
+        val2 -= 1;
+
+    return val * val2;
+}
+
+double Layer::softmaxERLowerBound( const Vector<double> &inputs,
+                                             const Vector<double> &inputLbs,
+                                             const Vector<double> &inputUbs,
+                                             unsigned i )
+{
+    Vector<double> inputTilda;
+    SoftmaxConstraint::xTilda( inputs, inputs[i], inputTilda );
+
+    double sum = 0;
+    for ( unsigned j = 0; j < inputs.size(); ++j )
+    {
+        if ( i == j )
+            sum += 1;
+        else
+        {
+            double ljTilda = inputLbs[j] - inputUbs[i];
+            double ujTilda = inputUbs[j] - inputLbs[i];
+            double xjTilda = inputTilda[j];
+
+            sum += ( ujTilda - xjTilda ) / ( ujTilda - ljTilda ) * std::exp( ljTilda ) +
+                   ( xjTilda - ljTilda ) / ( ujTilda - ljTilda ) * std::exp( ujTilda );
+        }
+    }
+
+    return 1 / sum;
+}
+
+double Layer::softmaxdERLowerBound( const Vector<double> &inputMids,
+                                              const Vector<double> &inputLbs,
+                                              const Vector<double> &inputUbs,
+                                              unsigned i,
+                                              unsigned di )
+{
+    double val = softmaxERLowerBound( inputMids, inputLbs, inputUbs, i );
+
+    if ( i != di )
+    {
+        double ldiTilda = inputLbs[di] - inputUbs[i];
+        double udiTilda = inputUbs[di] - inputLbs[i];
+        return -val * val * ( std::exp( udiTilda ) - std::exp( ldiTilda ) ) /
+               ( udiTilda - ldiTilda );
+    }
+    else
+    {
+        double val2 = 0;
+        for ( unsigned j = 0; j < inputMids.size(); ++j )
+        {
+            if ( j != i )
+            {
+                double ljTilda = inputLbs[j] - inputUbs[i];
+                double ujTilda = inputUbs[j] - inputLbs[i];
+                val2 += ( std::exp( ujTilda ) - std::exp( ljTilda ) ) / ( ujTilda - ljTilda );
+            }
+        }
+        return val * val * val2;
+    }
+}
+
+double Layer::softmaxERUpperBound( const Vector<double> &inputs,
+                                             const Vector<double> &outputLb,
+                                             const Vector<double> &outputUb,
+                                             unsigned i )
+{
+    double li = outputLb[i];
+    double ui = outputUb[i];
+
+    Vector<double> inputTilda;
+    SoftmaxConstraint::xTilda( inputs, inputs[i], inputTilda );
+
+    return ui + li - ui * li * SoftmaxConstraint::sumOfExponential( inputTilda );
+}
+
+double Layer::softmaxdERUpperBound( const Vector<double> &inputMids,
+                                              const Vector<double> &outputLb,
+                                              const Vector<double> &outputUb,
+                                              unsigned i,
+                                              unsigned di )
+{
+    double li = outputLb[i];
+    double ui = outputUb[i];
+
+
+    if ( i == di )
+    {
+        double val2 = -1;
+        for ( unsigned j = 0; j < inputMids.size(); ++j )
+            val2 += std::exp( inputMids[j] - inputMids[i] );
+        return li * ui * val2;
+    }
+    else
+        return -li * ui * std::exp( inputMids[di] - inputMids[i] );
+}
+
+double Layer::softmaxLinearLowerBound( const Vector<double> &inputLbs,
+                                                 const Vector<double> &inputUbs,
+                                                 unsigned i )
+{
+    Vector<double> uTilda;
+    SoftmaxConstraint::xTilda( inputUbs, inputLbs[i], uTilda );
+    uTilda[i] = 0;
+    return 1 / SoftmaxConstraint::sumOfExponential( uTilda );
+}
+
+double Layer::softmaxLinearUpperBound( const Vector<double> &inputLbs,
+                                                 const Vector<double> &inputUbs,
+                                                 unsigned i )
+{
+    Vector<double> lTilda;
+    SoftmaxConstraint::xTilda( inputLbs, inputUbs[i], lTilda );
+    lTilda[i] = 0;
+    return 1 / SoftmaxConstraint::sumOfExponential( lTilda );
 }
 
 void Layer::eliminateVariable( unsigned variable, double value )
