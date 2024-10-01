@@ -399,6 +399,63 @@ void Layer::computeSimulations()
                 _simulations[i][j] = 1 / ( 1 + std::exp( -simulations.get( j ) ) );
         }
     }
+    else if ( _type == ROUND )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations =
+                ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::round( simulations.get( j ) );
+        }
+    }
+    else if ( _type == SOFTMAX )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            for ( unsigned j = 0; j < simulationSize; ++j )
+            {
+                _simulations[i][j] = FloatUtils::negativeInfinity();
+                
+                Vector<double> inputs;
+                Vector<double> outputs;
+                unsigned outputIndex = 0;
+                unsigned index = 0;
+
+                for ( const auto &input : _neuronToActivationSources[i] )
+                {
+                    if ( input._neuron == i )
+                        outputIndex = index;
+                    double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) )
+                                       .get( input._neuron )
+                                       .get( j );
+                    inputs.append( value );
+                    ++index;
+                }
+                
+                SoftmaxConstraint::softmax( inputs, outputs );
+                _simulations[i][j] = outputs[outputIndex];
+            }
+        }
+    }
+    else if ( _type == BILINEAR )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            for ( unsigned j = 0; j < simulationSize; ++j )
+            {
+                _simulations[i][j] = 1;
+                for ( const auto &input : _neuronToActivationSources[i] )
+                {
+                    double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) )
+                                       .get( input._neuron )
+                                       .get( j );
+                    _simulations[i][j] *= value;
+                }
+            }
+        }
+    }
     else
     {
         printf( "Error! Neuron type %u unsupported\n", _type );
