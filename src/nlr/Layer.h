@@ -2,7 +2,7 @@
 /*! \file Layer.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Ido Shmuel
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -275,6 +275,22 @@ private:
     double softmaxLinearUpperBound( const Vector<double> &inputLbs,
                                     const Vector<double> &inputUbs,
                                     unsigned i );
+                                    
+    /*
+      Helper functions for symbolic bound tightening
+    */
+    void computeSymbolicBoundsForInput();
+    void computeSymbolicBoundsForRelu();
+    void computeSymbolicBoundsForSign();
+    void computeSymbolicBoundsForAbsoluteValue();
+    void computeSymbolicBoundsForWeightedSum();
+    void computeSymbolicBoundsForMax();
+    void computeSymbolicBoundsForLeakyRelu();
+    void computeSymbolicBoundsForSigmoid();
+    void computeSymbolicBoundsForRound();
+    void computeSymbolicBoundsForSoftmax();
+    void computeSymbolicBoundsForBilinear();
+    void computeSymbolicBoundsDefault();
 
     /*
       Helper functions for interval bound tightening
