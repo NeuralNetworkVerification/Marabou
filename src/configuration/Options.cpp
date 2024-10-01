@@ -207,6 +207,10 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
             return MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE;
         if ( strategyString == "backward-converge" )
             return MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE;
+        if ( strategyString == "backward-invprop" )
+            return MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_INVPROP;
+        if ( strategyString == "backward-preimage-approx" )
+            return MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX;
         else if ( strategyString == "milp" )
             return MILPSolverBoundTighteningType::MILP_ENCODING;
         else if ( strategyString == "milp-inc" )
