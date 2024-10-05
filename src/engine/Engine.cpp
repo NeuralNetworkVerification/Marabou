@@ -2709,23 +2709,36 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
     ENGINE_LOG( Stringf( "Using BaBsr heuristic..." ).ascii() );
 
     if ( !_networkLevelReasoner )
-        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+        return NULL;
 
+    // get constraints from NLR
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
+    // initialize hashmap for scores
     Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
+
+    // filter for ReLU constraints
     for ( auto &plConstraint : constraints )
     {
         if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
              !plConstraint->phaseFixed() )
         {
-            plConstraint->updateScoreBasedOnBaBsr();
-            scoreToConstraint[plConstraint->getScore()] = plConstraint;
+            // get bias term
+            ReluConstraint *reluConstraint = dynamic_cast<ReluConstraint *>( plConstraint );
 
-            // add global threshold then break loop
+            if ( reluConstraint )
+            {
+                double bias = _networkLevelReasoner->getReluBias( reluConstraint );
+
+                // calculate heuristic score
+                plConstraint->updateScoreBasedOnBaBsr( bias );
+                scoreToConstraint[plConstraint->getScore()] = plConstraint;
+            }
         }
     }
+
+    // split on neuron or constraint with highest
     if ( scoreToConstraint.size() > 0 )
     {
         ENGINE_LOG( Stringf( "Score of the picked ReLU: %f", ( *scoreToConstraint.begin() ).first )
@@ -2847,6 +2860,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
                 candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
         }
     }
+    else if ( strategy == DivideStrategy::ReLUViolation )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnBaBsrHeuristic();
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
@@ -2869,7 +2884,9 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy strategy )
 {
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( strategy == SnCDivideStrategy::Polarity )
+    if ( strategy == SnCDivideStrategy::BaBsrHeuristic )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnBaBsrHeuristic();
+    else if ( strategy == SnCDivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == SnCDivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();

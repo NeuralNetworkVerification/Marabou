@@ -173,6 +173,10 @@ public:
     void generateQuery( Query &query );
 
     /*
+     */
+    double getReluBias( const ReluConstraint *relu ) const;
+
+    /*
       Finds logically consecutive WS layers and merges them, in order
       to reduce the total number of layers and variables in the
       network

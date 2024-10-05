@@ -1014,12 +1014,12 @@ unsigned ReluConstraint::getF() const
     return _f;
 }
 
-bool ReluConstraint::supportBaBsr() const
+bool ReluConstraint::supportPolarity() const
 {
     return true;
 }
 
-bool ReluConstraint::supportPolarity() const
+bool ReluConstraint::supportBaBsr() const
 {
     return true;
 }
@@ -1034,23 +1034,23 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
-double ReluConstraint::computeBaBsr() const
+double ReluConstraint::computeBaBsr( double biasTerm ) const
 {
-    // get upper and lower bound
-    double currentLb = getLowerBound( _b );
-    double currentUb = getUpperBound( _b );
+    // get upper and lower bounds
+    double ub = getUpperBound( _b );
+    double lb = getLowerBound( _b );
 
-    // get ReLU output and bias term associated with ReLU
-    double reluOutput = 0; // getReluOutput();
-    double bias = 0;       // getBias();
+    // cast _b and _f to doubles
+    double reluInput = _tableau->getValue( _b );  // ReLU input before activation
+    double reluOutput = _tableau->getValue( _f ); // ReLU output after activation
 
     // compute ReLU score
-    double scaler = currentUb / ( currentUb - currentLb );
-    double term1 = std::min( scaler * reluOutput * bias, ( scaler - 1.0 ) * reluOutput * bias );
-    double term2 = std::max( scaler * currentLb, 0.0 ) * std::max( 0.0, reluOutput );
+    double scaler = ub / ( ub - lb );
+    double term1 =
+        std::min( scaler * reluInput * biasTerm, ( scaler - 1.0 ) * reluInput * biasTerm );
+    double term2 = ( scaler * lb ) * reluOutput;
 
-    // return score
-    return abs( term1 - term2 );
+    return term1 - term2;
 }
 
 double ReluConstraint::computePolarity() const
@@ -1076,9 +1076,9 @@ PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
-void ReluConstraint::updateScoreBasedOnBaBsr()
+void ReluConstraint::updateScoreBasedOnBaBsr( double biasTerm )
 {
-    _score = computeBaBsr();
+    _score = std::abs( computeBaBsr( biasTerm ) );
 }
 
 void ReluConstraint::updateScoreBasedOnPolarity()

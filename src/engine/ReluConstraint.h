@@ -213,9 +213,11 @@ public:
     bool auxVariableInUse() const;
     unsigned getAux() const;
 
+    bool supportPolarity() const override;
+
     bool supportBaBsr() const override;
 
-    bool supportPolarity() const override;
+    double computeBaBsr( double biasTerm ) const;
 
     /*
       Return the polarity of this ReLU, which computes how symmetric
@@ -229,7 +231,6 @@ public:
       always between -1 and 1. The closer it is to 0, the more symmetric the
       bound is.
     */
-    double computeBaBsr() const;
 
     double computePolarity() const;
 
@@ -241,7 +242,10 @@ public:
 
     PhaseStatus getDirection() const;
 
-    void updateScoreBasedOnBaBsr() override;
+    /*
+      Update the score based on the BaBsr heuristic
+    */
+    void updateScoreBasedOnBaBsr( double biasTerm ) override;
 
     void updateScoreBasedOnPolarity() override;
 
