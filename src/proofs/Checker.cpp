@@ -309,92 +309,16 @@ Checker::getCorrespondingConstraint( const List<PiecewiseLinearCaseSplit> &split
 
 void Checker::writeToFile()
 {
-    List<String> leafInstance;
+    String filename = "delegated" + std::to_string( _delegationCounter ) + ".smtlib";
 
-    // Write with SmtLibWriter
-    unsigned b, f;
-    unsigned m = _proofSize;
-    unsigned n = _groundUpperBounds.size();
-
-    SmtLibWriter::addHeader( n, leafInstance );
-    SmtLibWriter::addGroundUpperBounds( _groundUpperBounds, leafInstance );
-    SmtLibWriter::addGroundLowerBounds( _groundLowerBounds, leafInstance );
-
-    auto tableauRow = SparseUnsortedList();
-
-    for ( unsigned i = 0; i < m; ++i )
-    {
-        tableauRow = SparseUnsortedList();
-        _initialTableau->getRow( i, &tableauRow );
-
-        // Fix correct size
-        if ( !tableauRow.getSize() && !tableauRow.empty() )
-            for ( auto it = tableauRow.begin(); it != tableauRow.end(); ++it )
-                tableauRow.incrementSize();
-
-        SmtLibWriter::addTableauRow( tableauRow, leafInstance );
-    }
-
-    for ( auto &constraint : _problemConstraints )
-    {
-        auto vars = constraint->getParticipatingVariables();
-        Vector<unsigned> conVars( vars.begin(), vars.end() );
-
-        if ( constraint->getType() == RELU )
-        {
-            b = conVars[0];
-            f = conVars[1];
-            SmtLibWriter::addReLUConstraint( b, f, constraint->getPhaseStatus(), leafInstance );
-        }
-        else if ( constraint->getType() == SIGN )
-        {
-            b = conVars[0];
-            f = conVars[1];
-            SmtLibWriter::addSignConstraint( b, f, constraint->getPhaseStatus(), leafInstance );
-        }
-        else if ( constraint->getType() == ABSOLUTE_VALUE )
-        {
-            b = conVars[0];
-            f = conVars[1];
-            SmtLibWriter::addAbsConstraint( b, f, constraint->getPhaseStatus(), leafInstance );
-        }
-        else if ( constraint->getType() == MAX )
-        {
-            MaxConstraint *maxConstraint = (MaxConstraint *)constraint;
-
-            Set<unsigned> elements = maxConstraint->getParticipatingElements();
-            double info = 0;
-
-            if ( constraint->getPhaseStatus() == MAX_PHASE_ELIMINATED )
-                info = maxConstraint->getMaxValueOfEliminatedPhases();
-            else if ( constraint->phaseFixed() )
-                info = maxConstraint->phaseToVariable( constraint->getPhaseStatus() );
-            else
-                for ( const auto &element : maxConstraint->getParticipatingVariables() )
-                    elements.erase( element );
-
-            SmtLibWriter::addMaxConstraint( constraint->getParticipatingVariables().back(),
-                                            elements,
-                                            constraint->getPhaseStatus(),
-                                            info,
-                                            leafInstance );
-        }
-        else if ( constraint->getType() == DISJUNCTION )
-            SmtLibWriter::addDisjunctionConstraint(
-                ( (DisjunctionConstraint *)constraint )->getFeasibleDisjuncts(), leafInstance );
-        else if ( constraint->getType() == LEAKY_RELU )
-        {
-            b = conVars[0];
-            f = conVars[1];
-            double slope = ( (LeakyReluConstraint *)constraint )->getSlope();
-            SmtLibWriter::addLeakyReLUConstraint(
-                b, f, slope, constraint->getPhaseStatus(), leafInstance );
-        }
-    }
-
-    SmtLibWriter::addFooter( leafInstance );
-    File file( "delegated" + std::to_string( _delegationCounter ) + ".smtlib" );
-    SmtLibWriter::writeInstanceToFile( file, leafInstance );
+    SmtLibWriter::writeToSmtLibFile( filename,
+                                     _proofSize,
+                                     _groundUpperBounds.size(),
+                                     _groundUpperBounds,
+                                     _groundLowerBounds,
+                                     _initialTableau,
+                                     List<Equation>(),
+                                     _problemConstraints );
 
     ++_delegationCounter;
 }

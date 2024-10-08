@@ -339,6 +339,13 @@ void InputQuery::saveQuery( const String &fileName )
     delete query;
 }
 
+void InputQuery::saveQueryAsSmtLib( const String &fileName ) const
+{
+    Query *query = generateQuery();
+    query->saveQueryAsSmtLib( fileName );
+    delete query;
+}
+
 Query *InputQuery::generateQuery() const
 {
     Query *query = new Query();

@@ -14,8 +14,114 @@
 
 #include "SmtLibWriter.h"
 
+#include "DisjunctionConstraint.h"
+#include "LeakyReluConstraint.h"
+#include "MaxConstraint.h"
+#include "ReluConstraint.h"
+#include "SignConstraint.h"
+
 const unsigned SmtLibWriter::SMTLIBWRITER_PRECISION =
     (unsigned)std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+
+
+void SmtLibWriter::writeToSmtLibFile( const String &fileName,
+                                      unsigned numOfTableauRows,
+                                      unsigned numOfVariables,
+                                      const Vector<double> &upperBounds,
+                                      const Vector<double> &lowerBounds,
+                                      const SparseMatrix *tableau,
+                                      const List<Equation> &additionalEquations,
+                                      const List<PiecewiseLinearConstraint *> &problemConstraints )
+{
+    List<String> instance;
+
+    // Write with SmtLibWriter
+    unsigned b, f;
+
+    SmtLibWriter::addHeader( numOfVariables, instance );
+    SmtLibWriter::addGroundUpperBounds( upperBounds, instance );
+    SmtLibWriter::addGroundLowerBounds( lowerBounds, instance );
+
+    auto tableauRow = SparseUnsortedList();
+
+    for ( unsigned i = 0; i < numOfTableauRows; ++i )
+    {
+        tableauRow = SparseUnsortedList();
+        tableau->getRow( i, &tableauRow );
+
+        // Fix correct size
+        if ( !tableauRow.getSize() && !tableauRow.empty() )
+            for ( auto it = tableauRow.begin(); it != tableauRow.end(); ++it )
+                tableauRow.incrementSize();
+
+        SmtLibWriter::addTableauRow( tableauRow, instance );
+    }
+
+    for ( const auto &eq : additionalEquations )
+        SmtLibWriter::addEquation( eq, instance, true );
+
+    for ( auto &constraint : problemConstraints )
+    {
+        auto vars = constraint->getParticipatingVariables();
+        Vector<unsigned> conVars( vars.begin(), vars.end() );
+
+        if ( constraint->getType() == RELU )
+        {
+            b = conVars[0];
+            f = conVars[1];
+            SmtLibWriter::addReLUConstraint( b, f, constraint->getPhaseStatus(), instance );
+        }
+        else if ( constraint->getType() == SIGN )
+        {
+            b = conVars[0];
+            f = conVars[1];
+            SmtLibWriter::addSignConstraint( b, f, constraint->getPhaseStatus(), instance );
+        }
+        else if ( constraint->getType() == ABSOLUTE_VALUE )
+        {
+            b = conVars[0];
+            f = conVars[1];
+            SmtLibWriter::addAbsConstraint( b, f, constraint->getPhaseStatus(), instance );
+        }
+        else if ( constraint->getType() == MAX )
+        {
+            MaxConstraint *maxConstraint = (MaxConstraint *)constraint;
+
+            Set<unsigned> elements = maxConstraint->getParticipatingElements();
+            double info = 0;
+
+            if ( constraint->getPhaseStatus() == MAX_PHASE_ELIMINATED )
+                info = maxConstraint->getMaxValueOfEliminatedPhases();
+            else if ( constraint->phaseFixed() )
+                info = maxConstraint->phaseToVariable( constraint->getPhaseStatus() );
+            //            else
+            //                for ( const auto &element : maxConstraint->getParticipatingVariables()
+            //                )
+            //                    elements.erase( element );
+
+            SmtLibWriter::addMaxConstraint( constraint->getParticipatingVariables().back(),
+                                            elements,
+                                            constraint->getPhaseStatus(),
+                                            info,
+                                            instance );
+        }
+        else if ( constraint->getType() == DISJUNCTION )
+            SmtLibWriter::addDisjunctionConstraint(
+                ( (DisjunctionConstraint *)constraint )->getFeasibleDisjuncts(), instance );
+        else if ( constraint->getType() == LEAKY_RELU )
+        {
+            b = conVars[0];
+            f = conVars[1];
+            double slope = ( (LeakyReluConstraint *)constraint )->getSlope();
+            SmtLibWriter::addLeakyReLUConstraint(
+                b, f, slope, constraint->getPhaseStatus(), instance );
+        }
+    }
+
+    SmtLibWriter::addFooter( instance );
+    File file( fileName );
+    SmtLibWriter::writeInstanceToFile( file, instance );
+}
 
 void SmtLibWriter::addHeader( unsigned numberOfVariables, List<String> &instance )
 {
@@ -147,7 +253,7 @@ void SmtLibWriter::addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit
         ASSERT( size )
         // If disjucnt is a single equation or a single tightening, simply add them
         if ( size == 1 && disjunct.getEquations().size() == 1 )
-            SmtLibWriter::addEquation( disjunct.getEquations().back(), instance );
+            SmtLibWriter::addEquation( disjunct.getEquations().back(), instance, false );
         else if ( size == 1 && disjunct.getBoundTightenings().size() == 1 )
             SmtLibWriter::addTightening( disjunct.getBoundTightenings().back(), instance );
         else
@@ -160,7 +266,7 @@ void SmtLibWriter::addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit
                 if ( counter < size - 1 )
                     instance.append( "( and " );
                 ++counter;
-                SmtLibWriter::addEquation( eq, instance );
+                SmtLibWriter::addEquation( eq, instance, false );
             }
 
             for ( const auto &bound : disjunct.getBoundTightenings() )
@@ -248,7 +354,7 @@ void SmtLibWriter::addTableauRow( const SparseUnsortedList &row, List<String> &i
     instance.append( assertRowLine + "\n" );
 }
 
-void SmtLibWriter::addGroundUpperBounds( Vector<double> &bounds, List<String> &instance )
+void SmtLibWriter::addGroundUpperBounds( const Vector<double> &bounds, List<String> &instance )
 {
     unsigned n = bounds.size();
     for ( unsigned i = 0; i < n; ++i )
@@ -256,7 +362,7 @@ void SmtLibWriter::addGroundUpperBounds( Vector<double> &bounds, List<String> &i
                          signedValue( bounds[i] ) + " ) )\n" );
 }
 
-void SmtLibWriter::addGroundLowerBounds( Vector<double> &bounds, List<String> &instance )
+void SmtLibWriter::addGroundLowerBounds( const Vector<double> &bounds, List<String> &instance )
 {
     unsigned n = bounds.size();
     for ( unsigned i = 0; i < n; ++i )
@@ -282,7 +388,7 @@ String SmtLibWriter::signedValue( double val )
                     : String( "( - " + s.str() ).trimZerosFromRight() + " )";
 }
 
-void SmtLibWriter::addEquation( const Equation &eq, List<String> &instance )
+void SmtLibWriter::addEquation( const Equation &eq, List<String> &instance, bool assertEquations )
 {
     unsigned size = eq._addends.size();
 
@@ -292,6 +398,9 @@ void SmtLibWriter::addEquation( const Equation &eq, List<String> &instance )
     unsigned counter = 0;
 
     String assertRowLine = "";
+
+    if ( assertEquations )
+        assertRowLine += "( assert ";
 
     if ( eq._type == Equation::EQ )
         assertRowLine += "( = ";
@@ -307,7 +416,12 @@ void SmtLibWriter::addEquation( const Equation &eq, List<String> &instance )
     for ( const auto &addend : eq._addends )
     {
         if ( FloatUtils::isZero( addend._coefficient ) )
+        {
+            // If the last addend has coefficient zero, add 0 to close previously opened addition
+            if ( addend == eq._addends.back() )
+                assertRowLine += String( " 0 )" );
             continue;
+        }
 
         if ( !( addend == eq._addends.back() ) )
             assertRowLine += String( " ( + " );
@@ -330,7 +444,7 @@ void SmtLibWriter::addEquation( const Equation &eq, List<String> &instance )
     for ( unsigned i = 0; i < counter; ++i )
         assertRowLine += String( " )" );
 
-    instance.append( assertRowLine + " " );
+    instance.append( assertRowLine + ( assertEquations ? " ) \n" : " " ) );
 }
 
 void SmtLibWriter::addTightening( Tightening bound, List<String> &instance )

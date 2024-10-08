@@ -95,17 +95,17 @@ public:
     /*
      Adds a line representing an equation , in SMTLIB format, to the SMTLIB instance
    */
-    static void addEquation( const Equation &eq, List<String> &instance );
+    static void addEquation( const Equation &eq, List<String> &instance, bool assertEquations );
 
     /*
       Adds lines representing the ground upper bounds, in SMTLIB format, to the SMTLIB instance
     */
-    static void addGroundUpperBounds( Vector<double> &bounds, List<String> &instance );
+    static void addGroundUpperBounds( const Vector<double> &bounds, List<String> &instance );
 
     /*
       Adds lines representing the ground lower bounds, in SMTLIB format, to the SMTLIB instance
     */
-    static void addGroundLowerBounds( Vector<double> &bounds, List<String> &instance );
+    static void addGroundLowerBounds( const Vector<double> &bounds, List<String> &instance );
 
     /*
       Adds lines representing a tightening, in SMTLIB format, to the SMTLIB instance
@@ -121,6 +121,17 @@ public:
       Returns a string representing the value of a double
      */
     static String signedValue( double val );
+    /*
+      A wrapper function calling all previous functions
+    */
+    static void writeToSmtLibFile( const String &fileName,
+                                   unsigned numOfTableauRows,
+                                   unsigned numOfVariables,
+                                   const Vector<double> &upperBounds,
+                                   const Vector<double> &lowerBounds,
+                                   const SparseMatrix *tableau,
+                                   const List<Equation> &additionalEquations,
+                                   const List<PiecewiseLinearConstraint *> &problemConstraints );
 };
 
 #endif //__SmtLibWriter_h__
