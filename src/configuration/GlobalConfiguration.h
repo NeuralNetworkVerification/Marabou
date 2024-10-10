@@ -150,6 +150,12 @@ public:
 
     // Random seed for generating simulation values.
     static const unsigned SIMULATION_RANDOM_SEED;
+    
+    // Random seed for EstimateVolume procedure (PreimageApproximation).
+    static const unsigned VOLUME_ESTIMATION_RANDOM_SEED;
+    
+    // Random seed for PreimageApproximation optimization.
+    static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED;
 
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
