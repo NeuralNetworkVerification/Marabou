@@ -26,6 +26,7 @@
 #include <boost/chrono.hpp>
 #include <boost/lockfree/queue.hpp>
 #include <boost/thread.hpp>
+#include <boost/math/optimization/differential_evolution.hpp>
 #include <climits>
 #include <mutex>
 
@@ -53,7 +54,8 @@ public:
       constructed from scratch
     */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
-                                         bool backward = false );
+                                         bool backward = false,
+                                         std::vector<double> coeffs = {} );
     void optimizeBoundsWithInvprop( const Map<unsigned, Layer *> &layers );
     void optimizeBoundsWithPreimageApproximation( const Map<unsigned, Layer *> &layers );
     void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
@@ -75,10 +77,12 @@ public:
     */
     void createLPRelaxation( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
-                             unsigned lastLayer = UINT_MAX );
+                             unsigned lastLayer = UINT_MAX,
+                             std::vector<double> coeffs = {} );
     void createLPRelaxationAfter( const Map<unsigned, Layer *> &layers,
                                   GurobiWrapper &gurobi,
-                                  unsigned firstLayer );
+                                  unsigned firstLayer,
+                                  std::vector<double> coeffs = {} );
     double solveLPRelaxation( GurobiWrapper &gurobi,
                               const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax,
@@ -126,7 +130,7 @@ private:
                                             const Layer *layer,
                                             bool createVariables );
 
-    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args, bool backward );
+    void optimizeBoundsOfNeuronsWithLpRelaxation( ThreadArgument &args, bool backward, std::vector<double> coeffs = {} );
     
     
     // Create LP relaxations depending on an external parameter. 
@@ -134,9 +138,6 @@ private:
                                  const Layer *layer,
                                  bool createVariables,
                                  double coeff );
-    
-    void
-    addInputLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, double coeff );
     
     void
     addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
@@ -147,29 +148,9 @@ private:
     void
     addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
     
-    void
-    addMaxLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
     
-    void
-    addRoundLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addAbsoluteValueLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addSigmoidLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addSoftmaxLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addWeightedSumLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
-                                           const Layer *layer,
-                                           bool createVariables,
-                                           double coeff );
+    // Estimate Volume of parameterised LP relaxations.
+    static double EstimateVolume( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs );
 
 
     /*

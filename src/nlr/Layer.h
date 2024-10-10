@@ -2,7 +2,7 @@
 /*! \file Layer.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Ido Shmuel
+ **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -137,6 +137,7 @@ public:
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
     void computeSymbolicBounds();
+    void computeParameterisedSymbolicBounds( double coeff );
     void computeIntervalArithmeticBounds();
     
     /*
@@ -291,6 +292,14 @@ private:
     void computeSymbolicBoundsForSoftmax();
     void computeSymbolicBoundsForBilinear();
     void computeSymbolicBoundsDefault();
+    
+    
+    /*
+      Helper functions for parameterised symbolic bound tightening
+    */
+    void computeParameterisedSymbolicBoundsForRelu( double coeff );
+    void computeParameterisedSymbolicBoundsForSign( double coeff );
+    void computeParameterisedSymbolicBoundsForLeakyRelu( double coeff );
 
     /*
       Helper functions for interval bound tightening

@@ -24,9 +24,9 @@
 #include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
+#include "PolygonalTightening.h"
 #include "Tightening.h"
 #include "Vector.h"
-#include "PolygonalTightening.h"
 
 #include <memory>
 
@@ -103,6 +103,12 @@ public:
           expressions and obtain tighter bounds (e.g., if the upper
           bound on the upper bound of a ReLU node is negative, that
           ReLU is inactive and its output can be set to 0.
+        
+        - Parametrised Symbolic: For certain activation functions, there
+          is a continuum of valid symbolic bounds. We receive a map of
+          coefficients in range [0, 1] for every layer index, then compute
+          the parameterised symbolic bounds (or default to regular
+          symbolic bounds if parameterised bounds not implemented).
 
         - LP Relaxation: invoking an LP solver on a series of LP
           relaxations of the problem we're trying to solve, and
@@ -131,6 +137,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
+    void parameterisedSymbolicBoundPropagation( Map<unsigned, double> coeffs );
     void deepPolyPropagation();
     void lpRelaxationPropagation();
     void LPTighteningForOneLayer( unsigned targetIndex );
