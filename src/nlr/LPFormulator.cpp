@@ -339,12 +339,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
 void LPFormulator::optimizeBoundsWithInvprop( const Map<unsigned, Layer *> &layers )
 {
-    Map<unsigned, double> coeffs;
-    for ( const auto &pair : layers )
-    {
-        //coeffs.insert( pair.first, GlobalConfiguration::INVPROP_INITIAL_ALPHA );
-        coeffs.insert( pair.first, 0.5 );
-    }
+    
 }
 
 void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, Layer *> &layers )
@@ -353,7 +348,7 @@ void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, 
     auto EstimateVolumeBind = std::bind( EstimateVolume, layers, std::placeholders::_1 );
     
     // Search over coeffs in [0, 1]^depth. Enforce single-threaded optimization.
-    auto opt_params = boost::math::optimization::differential_evolution_parameters<std::vector<double>>();
+    auto opt_params = differential_evolution_parameters<std::vector<double>>();
     unsigned depth = layers.size();
     opt_params.lower_bounds.resize( depth, 0 );
     opt_params.upper_bounds.resize( depth, 1 );
@@ -361,14 +356,66 @@ void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, 
     double value_to_reach = 0;
     std::mt19937_64 rng( GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED );
     
-    // Find optimal coeffs and run parameterised backward LP relaxation.
-    auto optimal_coeffs = boost::math::optimization::differential_evolution( EstimateVolumeBind, opt_params, rng, value_to_reach );
+    // Find optimal coeffs and run final parameterised symbolic bound tightening + backward LP relaxation.
+    auto optimal_coeffs = differential_evolution( EstimateVolumeBind, opt_params, rng, value_to_reach );
+    
+    for ( unsigned i = 0; i < layers.size(); ++i )
+        layers[i]->computeParameterisedSymbolicBounds( optimal_coeffs[i], true );
+    
     optimizeBoundsWithLpRelaxation( layers, true, optimal_coeffs );
 }
 
 double LPFormulator::EstimateVolume( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs )
 {
-    return 0;
+    // First, run parameterised symbolic bound propagation.
+    for ( unsigned i = 0; i < layers.size(); ++i )
+        layers[i]->computeParameterisedSymbolicBounds( coeffs[i] );
+    
+    std::mt19937_64 rng( GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED );
+    double average = 0;
+    for ( unsigned i = 0; i < GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS; ++i )
+    {
+        
+        // Sample point from known bounds.
+        Map<NeuronIndex, double> point;
+        for ( auto pair : layers )
+        {
+            unsigned layerIndex = pair.first;
+            const Layer *layer = pair.second;
+            for ( unsigned index = 0; index < layer->getSize(); ++index )
+            {
+                if ( layer->neuronEliminated( index ) )
+                    continue;
+                    
+                const NeuronIndex neuron( layerIndex, index );
+                double lb = layer->getLb( index );
+                double ub = layer->getUb( index );
+                std::uniform_real_distribution<> dis( lb, ub );
+                point.insert( neuron , dis( rng ) );
+            }
+        }
+        
+        // Compute the average sigmoid of log-sum-exp of points' difference from bounding hyperplanes.
+        double sum_exp = 0;
+        for ( auto pair : layers )
+        {
+            const Layer *layer = pair.second;
+            for ( unsigned index = 0; index < layer->getSize(); ++index )
+            {
+                if ( layer->neuronEliminated( index ) )
+                    continue;
+                
+                double margin = layer->calculateDifferenceFromSymbolic( point, index );
+                if ( FloatUtils::wellFormed( std::exp( margin ) ) )
+                    sum_exp += std::exp( margin );
+            }
+        }
+        
+        double slse = 1 / ( 1 + ( 1 / sum_exp ) );
+        average += slse / GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS;
+    }
+    
+    return average;
 }
 
 void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,

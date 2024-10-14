@@ -305,7 +305,7 @@ void Layer::computeSimulations()
             unsigned sourceSize = sourceLayerEntry.second;
             const double *weights = _layerToWeights[sourceLayerEntry.first];
 
-            for ( unsigned i = 0; i < _size; i++ )
+            for ( unsigned i = 0; i < _size; ++i )
             {
                 for ( unsigned j = 0; j < simulationSize; ++j )
                     _simulations[i][j] = _bias[i];
@@ -3362,7 +3362,23 @@ void Layer::computeSymbolicBoundsForWeightedSum()
     }
 }
 
-void Layer::computeParameterisedSymbolicBounds( double coeff )
+double Layer::calculateDifferenceFromSymbolic( Map<NeuronIndex, double> &point, unsigned i ) const
+{
+    double lower_sum = _symbolicLowerBias[i];
+    double upper_sum = _symbolicUpperBias[i];
+    
+    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+    {
+       const NeuronIndex neuron( 0, j );
+       lower_sum += _symbolicLb[j * _size + i] * point[neuron];
+       upper_sum += _symbolicUb[j * _size + i] * point[neuron];
+    }
+    
+    const NeuronIndex currentNeuron( _layerIndex, i );
+    return FloatUtils::max( point[currentNeuron] - upper_sum , 0 ) + FloatUtils::max( lower_sum - point[currentNeuron] , 0 );
+}
+
+void Layer::computeParameterisedSymbolicBounds( double coeff, bool receive )
 {
     switch ( _type )
     {
@@ -3381,6 +3397,27 @@ void Layer::computeParameterisedSymbolicBounds( double coeff )
     default:
         computeSymbolicBounds();
         break;
+    }
+    
+    if ( receive )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            Map <NeuronIndex, double> lower_polygonal_tightening;
+            Map <NeuronIndex, double> upper_polygonal_tightening;
+            
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                const NeuronIndex neuron( 0, j );
+                lower_polygonal_tightening.insert( neuron, _symbolicLb[j * _size + i] );
+                upper_polygonal_tightening.insert( neuron, _symbolicUb[j * _size + i] );
+            }
+            
+            _layerOwner->receivePolygonalTighterBound(
+                    PolygonalTightening( lower_polygonal_tightening, _symbolicLowerBias[i], PolygonalTightening::LB ) );
+            _layerOwner->receivePolygonalTighterBound(
+                    PolygonalTightening( upper_polygonal_tightening, _symbolicUpperBias[i], PolygonalTightening::UB ) );
+        }
     }
 }
 

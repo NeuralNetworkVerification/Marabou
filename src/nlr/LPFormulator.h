@@ -16,6 +16,7 @@
 #ifndef __LPFormulator_h__
 #define __LPFormulator_h__
 
+#include "DifferentialEvolution.h"
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "Map.h"
@@ -26,7 +27,6 @@
 #include <boost/chrono.hpp>
 #include <boost/lockfree/queue.hpp>
 #include <boost/thread.hpp>
-#include <boost/math/optimization/differential_evolution.hpp>
 #include <climits>
 #include <mutex>
 

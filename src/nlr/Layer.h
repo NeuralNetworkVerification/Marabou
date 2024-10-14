@@ -137,7 +137,8 @@ public:
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
     void computeSymbolicBounds();
-    void computeParameterisedSymbolicBounds( double coeff );
+    void computeParameterisedSymbolicBounds( double coeff, bool receive = false );
+    double calculateDifferenceFromSymbolic( Map<NeuronIndex, double> &point, unsigned i ) const;
     void computeIntervalArithmeticBounds();
     
     /*
