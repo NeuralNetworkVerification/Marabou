@@ -305,7 +305,7 @@ void Layer::computeSimulations()
             unsigned sourceSize = sourceLayerEntry.second;
             const double *weights = _layerToWeights[sourceLayerEntry.first];
 
-            for ( unsigned i = 0; i < _size; i++ )
+            for ( unsigned i = 0; i < _size; ++i )
             {
                 for ( unsigned j = 0; j < simulationSize; ++j )
                     _simulations[i][j] = _bias[i];
@@ -1685,8 +1685,6 @@ void Layer::computeSymbolicBoundsForSign()
         _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
         _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
         _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
-        
-        std::cout << "sign, p-ll, ul, lu, uu: " << _symbolicLbOfLb[i] << " " << _symbolicUbOfLb[i] << " " << _symbolicLbOfUb[i] << " " << _symbolicUbOfUb[i] << " " << std::endl;
 
         // Has the b variable been fixed?
         if ( !FloatUtils::isNegative( sourceLb ) )
@@ -1756,13 +1754,11 @@ void Layer::computeSymbolicBoundsForSign()
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
                     _symbolicLb[j * _size + i] *= factor;
-                    std::cout << "sign, p-lb: " << _symbolicLb[j * _size + i] << std::endl;
                 }
 
                 // Do the same for the bias, and then adjust
                 _symbolicLowerBias[i] *= factor;
                 _symbolicLowerBias[i] -= 1;
-                std::cout << "sign, p-lB: " << _symbolicLowerBias[i] << std::endl;
             }
             
             if (upperSignPhase == PHASE_NOT_FIXED)
