@@ -599,7 +599,7 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
     Get ReLU bias given a ReLU constraint
     Used for BaBSR Heuristic
 */
-double NetworkLevelReasoner::getReluBias( const ReluConstraint *relu ) const
+double NetworkLevelReasoner::getBiasForVariable( unsigned variable ) const
 {
     // Find the layer and neuron index for ReLU
     for ( const auto &layerPair : _layerIndexToLayer )
@@ -609,7 +609,7 @@ double NetworkLevelReasoner::getReluBias( const ReluConstraint *relu ) const
         {
             for ( unsigned i = 0; i < layer->getSize(); ++i )
             {
-                if ( layer->neuronToVariable( i ) == relu->getB() )
+                if ( layer->neuronToVariable( i ) == variable )
                 {
                     // Found ReLU, get source neuron
                     NeuronIndex sourceIndex = *layer->getActivationSources( i ).begin();
@@ -712,6 +712,7 @@ bool NetworkLevelReasoner::suitableForMerging(
     }
     return true;
 }
+
 
 void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex,
                                           Map<unsigned, LinearExpression> &eliminatedNeurons )

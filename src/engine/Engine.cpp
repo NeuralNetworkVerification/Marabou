@@ -2724,15 +2724,14 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
         if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
              !plConstraint->phaseFixed() )
         {
-            // get bias term
             ReluConstraint *reluConstraint = dynamic_cast<ReluConstraint *>( plConstraint );
-
             if ( reluConstraint )
             {
-                double bias = _networkLevelReasoner->getReluBias( reluConstraint );
+                // Set NLR if not already set
+                reluConstraint->setNetworkLevelReasoner( _networkLevelReasoner );
 
-                // calculate heuristic score
-                plConstraint->updateScoreBasedOnBaBsr( bias );
+                // calculate heuristic score - bias calculation now happens inside computeBaBsr
+                plConstraint->updateScoreBasedOnBaBsr();
                 scoreToConstraint[plConstraint->getScore()] = plConstraint;
             }
         }

@@ -335,9 +335,8 @@ public:
         return _score;
     }
 
-    virtual void updateScoreBasedOnBaBsr( double biasTerm )
+    virtual void updateScoreBasedOnBaBsr()
     {
-        (void)biasTerm;
     }
 
     virtual void updateScoreBasedOnPolarity()

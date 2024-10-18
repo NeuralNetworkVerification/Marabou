@@ -1034,8 +1034,10 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
-double ReluConstraint::computeBaBsr( double biasTerm ) const
+double ReluConstraint::computeBaBsr() const
 {
+    double biasTerm = calculateBias();
+
     // get upper and lower bounds
     double ub = getUpperBound( _b );
     double lb = getLowerBound( _b );
@@ -1051,6 +1053,14 @@ double ReluConstraint::computeBaBsr( double biasTerm ) const
     double term2 = ( scaler * lb ) * reluOutput;
 
     return term1 - term2;
+}
+
+double ReluConstraint::calculateBias() const
+{
+    if ( !_networkLevelReasoner )
+        throw NLRError( NLRError::RELU_NOT_FOUND );
+
+    return _networkLevelReasoner->getBiasForVariable( _b );
 }
 
 double ReluConstraint::computePolarity() const
@@ -1076,9 +1086,9 @@ PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
-void ReluConstraint::updateScoreBasedOnBaBsr( double biasTerm )
+void ReluConstraint::updateScoreBasedOnBaBsr()
 {
-    _score = std::abs( computeBaBsr( biasTerm ) );
+    _score = std::abs( computeBaBsr() );
 }
 
 void ReluConstraint::updateScoreBasedOnPolarity()

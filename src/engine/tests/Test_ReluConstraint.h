@@ -1223,7 +1223,7 @@ public:
                                              ( 3.0 / ( 3.0 - 1.0 ) - 1.0 ) * 2.0 * biasTerm ) -
                                    ( ( 3.0 / ( 3.0 - 1.0 ) ) * 1.0 ) * 2.0;
 
-            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expectedBaBsr, 1e-5 );
+            TS_ASSERT_DELTA( relu.computeBaBsr(), expectedBaBsr, 1e-5 );
         }
 
         {
@@ -1246,7 +1246,7 @@ public:
             double expectedBaBsr = std::min( ( 3.0 / ( 3.0 - ( -1.0 ) ) ) * 1.5 * biasTerm,
                                              ( 3.0 / ( 3.0 - ( -1.0 ) ) - 1.0 ) * 1.5 * biasTerm ) -
                                    ( ( 3.0 / ( 3.0 - ( -1.0 ) ) ) * ( -1.0 ) ) * 1.5;
-            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expectedBaBsr, 1e-5 );
+            TS_ASSERT_DELTA( relu.computeBaBsr(), expectedBaBsr, 1e-5 );
         }
 
         {
@@ -1270,7 +1270,7 @@ public:
                 std::min( ( -1.0 / ( -1.0 - ( -3.0 ) ) ) * ( -2.0 ) * biasTerm,
                           ( -1.0 / ( -1.0 - ( -3.0 ) ) - 1.0 ) * ( -2.0 ) * biasTerm ) -
                 ( ( -1.0 / ( -1.0 - ( -3.0 ) ) ) * ( -3.0 ) ) * 0.0;
-            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expectedBaBsr, 1e-5 );
+            TS_ASSERT_DELTA( relu.computeBaBsr(), expectedBaBsr, 1e-5 );
         }
 
         {
@@ -1295,7 +1295,7 @@ public:
                                     ( ( 1.0 / ( 1.0 - 0.0 ) ) * 0.0 ) * 0.0;
 
             // Compute BaBsr score
-            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expected_value, 1e-5 );
+            TS_ASSERT_DELTA( relu.computeBaBsr(), expected_value, 1e-5 );
         }
     }
 

@@ -172,9 +172,7 @@ public:
     */
     void generateQuery( Query &query );
 
-    /*
-     */
-    double getReluBias( const ReluConstraint *relu ) const;
+    double getBiasForVariable( unsigned variable ) const;
 
     /*
       Finds logically consecutive WS layers and merges them, in order

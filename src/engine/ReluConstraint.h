@@ -37,6 +37,15 @@
 
 #include <cmath>
 
+/*
+  Namespace for Network Level Reasoner Instance.
+*/
+namespace NLR {
+class NetworkLevelReasoner;
+class Layer;
+struct NeuronIndex;
+} // namespace NLR
+
 class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
@@ -56,6 +65,15 @@ public:
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const override;
+
+    /*
+      Setter for network level reasoner instance.
+    */
+
+    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
+    {
+        _networkLevelReasoner = nlr;
+    }
 
     /*
       Restore the state of this constraint from the given one.
@@ -217,7 +235,7 @@ public:
 
     bool supportBaBsr() const override;
 
-    double computeBaBsr( double biasTerm ) const;
+    double computeBaBsr() const;
 
     /*
       Return the polarity of this ReLU, which computes how symmetric
@@ -245,7 +263,7 @@ public:
     /*
       Update the score based on the BaBsr heuristic
     */
-    void updateScoreBasedOnBaBsr( double biasTerm ) override;
+    void updateScoreBasedOnBaBsr() override;
 
     void updateScoreBasedOnPolarity() override;
 
@@ -253,6 +271,7 @@ public:
 
 private:
     unsigned _b, _f;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
     bool _auxVarInUse;
     unsigned _aux;
 
@@ -286,6 +305,8 @@ private:
      Assign a variable as an aux variable by the tableau, related to some existing aux variable.
     */
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
+
+    double calculateBias() const;
 };
 
 #endif // __ReluConstraint_h__
