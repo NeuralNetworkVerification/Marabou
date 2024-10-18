@@ -2207,4 +2207,10 @@ public:
         for ( const auto &bound : expectedBounds )
             TS_ASSERT( bounds.exists( bound ) );
     }
+
+    void testGetReluBias()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+    }
 };

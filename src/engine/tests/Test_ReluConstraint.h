@@ -13,6 +13,7 @@
 
 **/
 
+#include "FloatUtils.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
@@ -1193,6 +1194,108 @@ public:
             TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
             TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
             TS_ASSERT_THROWS_NOTHING( delete bm );
+        }
+    }
+
+    void test_babsr()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        {
+            ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
+
+            // Set bounds for b
+            relu.notifyLowerBound( b, 1.0 );
+            relu.notifyUpperBound( b, 3.0 );
+
+            // Mock the values in the tableau
+            tableau.setValue( b, 2.0 );
+            tableau.setValue( f, 2.0 );
+
+            // Bias term
+            double biasTerm = 1.0;
+
+            // Compute BaBsr score
+            double expectedBaBsr = std::min( ( 3.0 / ( 3.0 - 1.0 ) ) * 2.0 * biasTerm,
+                                             ( 3.0 / ( 3.0 - 1.0 ) - 1.0 ) * 2.0 * biasTerm ) -
+                                   ( ( 3.0 / ( 3.0 - 1.0 ) ) * 1.0 ) * 2.0;
+
+            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expectedBaBsr, 1e-5 );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
+
+            // Set bounds for b
+            relu.notifyLowerBound( b, -1.0 );
+            relu.notifyUpperBound( b, 3.0 );
+
+            // Mock the values in the tableau
+            tableau.setValue( b, 1.5 );
+            tableau.setValue( f, 1.5 );
+
+            // Bias term
+            double biasTerm = 0.5;
+
+            // Compute BaBsr score
+            double expectedBaBsr = std::min( ( 3.0 / ( 3.0 - ( -1.0 ) ) ) * 1.5 * biasTerm,
+                                             ( 3.0 / ( 3.0 - ( -1.0 ) ) - 1.0 ) * 1.5 * biasTerm ) -
+                                   ( ( 3.0 / ( 3.0 - ( -1.0 ) ) ) * ( -1.0 ) ) * 1.5;
+            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expectedBaBsr, 1e-5 );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
+
+            // Set bounds for b
+            relu.notifyLowerBound( b, -3.0 );
+            relu.notifyUpperBound( b, -1.0 );
+
+            // Mock the values in the tableau
+            tableau.setValue( b, -2.0 );
+            tableau.setValue( f, 0.0 );
+
+            // Bias term
+            double biasTerm = 1.5;
+
+            // Compute BaBsr score
+            double expectedBaBsr =
+                std::min( ( -1.0 / ( -1.0 - ( -3.0 ) ) ) * ( -2.0 ) * biasTerm,
+                          ( -1.0 / ( -1.0 - ( -3.0 ) ) - 1.0 ) * ( -2.0 ) * biasTerm ) -
+                ( ( -1.0 / ( -1.0 - ( -3.0 ) ) ) * ( -3.0 ) ) * 0.0;
+            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expectedBaBsr, 1e-5 );
+        }
+
+        {
+            ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
+
+            // Set bounds for b
+            relu.notifyLowerBound( b, 0.0 );
+            relu.notifyUpperBound( b, 1.0 );
+
+            // Mock the values in the tableau
+            tableau.setValue( b, 0.0 );
+            tableau.setValue( f, 0.0 );
+
+            // Bias term
+            double biasTerm = 0.5;
+
+            // expected value
+            double expected_value = std::min( ( 1.0 / ( 1.0 - 0.0 ) ) * 0.0 * biasTerm,
+                                              ( 1.0 / ( 1.0 - 0.0 ) - 1.0 ) * 0.0 * biasTerm ) -
+                                    ( ( 1.0 / ( 1.0 - 0.0 ) ) * 0.0 ) * 0.0;
+
+            // Compute BaBsr score
+            TS_ASSERT_DELTA( relu.computeBaBsr( biasTerm ), expected_value, 1e-5 );
         }
     }
 
