@@ -601,31 +601,8 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
 */
 double NetworkLevelReasoner::getBiasForVariable( unsigned variable ) const
 {
-    // Find the layer and neuron index for ReLU
-    for ( const auto &layerPair : _layerIndexToLayer )
-    {
-        const Layer *layer = layerPair.second;
-        if ( layer->getLayerType() == Layer::RELU )
-        {
-            for ( unsigned i = 0; i < layer->getSize(); ++i )
-            {
-                if ( layer->neuronToVariable( i ) == variable )
-                {
-                    // Found ReLU, get source neuron
-                    NeuronIndex sourceIndex = *layer->getActivationSources( i ).begin();
-                    const Layer *sourceLayer = _layerIndexToLayer.at( sourceIndex._layer );
-
-                    // Get bias in source layer
-                    if ( sourceLayer->getLayerType() == Layer::WEIGHTED_SUM )
-                    {
-                        return sourceLayer->getBias( sourceIndex._neuron );
-                    }
-                }
-            }
-        }
-    }
-
-    // If we get here, we couldn't find the ReLU. This shouldn't happen.
+    // If we reach here, we didn't find the variable in any ReLU layer
+    NLR_LOG( "Could not find a corresponding ReLU layer for the given variable" );
     throw NLRError( NLRError::RELU_NOT_FOUND );
 }
 

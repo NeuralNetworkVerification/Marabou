@@ -13,6 +13,7 @@
 
 **/
 
+#include "../../nlr/NetworkLevelReasoner.h"
 #include "FloatUtils.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
@@ -64,6 +65,91 @@ public:
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
+    }
+
+    void populateNetwork( NLR::NetworkLevelReasoner &nlr )
+    {
+        /*
+                a
+        x           d    f
+                b
+        y           e    g
+                c
+        */
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );        // Layer 0 (Input)
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 3 ); // Layer 1 (Weighted Sum)
+        nlr.addLayer( 2, NLR::Layer::RELU, 3 );         // Layer 2 (ReLU)
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 ); // Layer 3 (Weighted Sum)
+        nlr.addLayer( 4, NLR::Layer::RELU, 2 );         // Layer 4 (ReLU)
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 ); // Layer 5 (Weighted Sum)
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 5; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        // Layer 0 to Layer 1 connections (weights)
+        nlr.setWeight( 0, 0, 1, 0, 1 );  // Input 'a' to Layer 1 Neuron 0
+        nlr.setWeight( 0, 0, 1, 1, 2 );  // Input 'a' to Layer 1 Neuron 1
+        nlr.setWeight( 0, 1, 1, 1, -3 ); // Input 'b' to Layer 1 Neuron 1
+        nlr.setWeight( 0, 1, 1, 2, 1 );  // Input 'b' to Layer 1 Neuron 2
+
+        // Layer 2 (RELU) to Layer 3 connections (weights)
+        nlr.setWeight( 2, 0, 3, 0, 1 );  // ReLU Layer 2 Neuron 0 to Layer 3 Neuron 0
+        nlr.setWeight( 2, 0, 3, 1, -1 ); // ReLU Layer 2 Neuron 0 to Layer 3 Neuron 1
+        nlr.setWeight( 2, 1, 3, 0, 1 );  // ReLU Layer 2 Neuron 1 to Layer 3 Neuron 0
+        nlr.setWeight( 2, 1, 3, 1, 1 );  // ReLU Layer 2 Neuron 1 to Layer 3 Neuron 1
+        nlr.setWeight( 2, 2, 3, 0, -1 ); // ReLU Layer 2 Neuron 2 to Layer 3 Neuron 0
+        nlr.setWeight( 2, 2, 3, 1, -1 ); // ReLU Layer 2 Neuron 2 to Layer 3 Neuron 1
+
+        // Layer 4 (RELU) to Layer 5 connections (weights)
+        nlr.setWeight( 4, 0, 5, 0, 1 ); // ReLU Layer 4 Neuron 0 to Layer 5 Neuron 0
+        nlr.setWeight( 4, 0, 5, 1, 1 ); // ReLU Layer 4 Neuron 0 to Layer 5 Neuron 1
+        nlr.setWeight( 4, 1, 5, 1, 3 ); // ReLU Layer 4 Neuron 1 to Layer 5 Neuron 1
+
+        // Set the biases for the weighted sum layers
+        nlr.setBias( 1, 0, 1 ); // Bias for Layer 1, Neuron 0
+        nlr.setBias( 3, 1, 2 ); // Bias for Layer 3, Neuron 1
+
+        // Mark the ReLU sources
+        // Layer 1 neurons are the sources for Layer 2 ReLU neurons
+        nlr.addActivationSource( 1, 0, 2, 0 ); // Layer 1 Neuron 0 -> ReLU Layer 2 Neuron 0
+        nlr.addActivationSource( 1, 1, 2, 1 ); // Layer 1 Neuron 1 -> ReLU Layer 2 Neuron 1
+        nlr.addActivationSource( 1, 2, 2, 2 ); // Layer 1 Neuron 2 -> ReLU Layer 2 Neuron 2
+
+        // Layer 3 neurons are the sources for Layer 4 ReLU neurons
+        nlr.addActivationSource( 3, 0, 4, 0 ); // Layer 3 Neuron 0 -> ReLU Layer 4 Neuron 0
+        nlr.addActivationSource( 3, 1, 4, 1 ); // Layer 3 Neuron 1 -> ReLU Layer 4 Neuron 1
+
+        // Variable indexing - mapping variables to neurons
+        // Layer 0 (Input)
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 ); // Input 'a' -> variable 0
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 ); // Input 'b' -> variable 1
+
+        // Layer 1 (Weighted Sum)
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 ); // Layer 1 Neuron 0 -> variable 2
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 4 ); // Layer 1 Neuron 1 -> variable 4
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 2 ), 6 ); // Layer 1 Neuron 2 -> variable 6
+
+        // Layer 2 (ReLU)
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 3 ); // ReLU Layer 2 Neuron 0 -> variable 3
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 ); // ReLU Layer 2 Neuron 1 -> variable 5
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 2 ), 7 ); // ReLU Layer 2 Neuron 2 -> variable 7
+
+        // Layer 3 (Weighted Sum)
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 8 );  // Layer 3 Neuron 0 -> variable 8
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 10 ); // Layer 3 Neuron 1 -> variable 10
+
+        // Layer 4 (ReLU)
+        nlr.setNeuronVariable( NLR::NeuronIndex( 4, 0 ), 9 ); // ReLU Layer 4 Neuron 0 -> variable 9
+        nlr.setNeuronVariable( NLR::NeuronIndex( 4, 1 ), 11 ); // ReLU Layer 4 Neuron 1 -> variable
+                                                               // 11
+
+        // Layer 5 (Weighted Sum)
+        nlr.setNeuronVariable( NLR::NeuronIndex( 5, 0 ), 12 ); // Layer 5 Neuron 0 -> variable 12
+        nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 13 ); // Layer 5 Neuron 1 -> variable 13
     }
 
     void test_relu_constraint()
@@ -1203,99 +1289,178 @@ public:
         unsigned f = 4;
 
         {
+            printf( "Starting test case 1\n" );
+
             ReluConstraint relu( b, f );
             MockTableau tableau;
+
+            NLR::NetworkLevelReasoner nlr;
+            populateNetwork( nlr ); // The network is populated, including bias values.
+
             relu.registerTableau( &tableau );
+            printf( "Registered tableau\n" );
+
+            // Register the network-level reasoner
+            relu.setNetworkLevelReasoner( &nlr );
+            printf( "Set network-level reasoner\n" );
 
             // Set bounds for b
             relu.notifyLowerBound( b, 1.0 );
             relu.notifyUpperBound( b, 3.0 );
+            printf( "Bounds set for variable b: lower=1.0, upper=3.0\n" );
 
             // Mock the values in the tableau
             tableau.setValue( b, 2.0 );
             tableau.setValue( f, 2.0 );
+            printf( "Tableau values set: b=2.0, f=2.0\n" );
 
-            // Bias term
-            double biasTerm = 1.0;
+            // Retrieve the bias from the populated network
+            double biasTerm = nlr.getBiasForVariable( b );
+            printf( "Retrieved bias term for variable b: %f\n", biasTerm );
 
-            // Compute BaBsr score
+            // Compute expected BaBsr score
             double expectedBaBsr = std::min( ( 3.0 / ( 3.0 - 1.0 ) ) * 2.0 * biasTerm,
                                              ( 3.0 / ( 3.0 - 1.0 ) - 1.0 ) * 2.0 * biasTerm ) -
                                    ( ( 3.0 / ( 3.0 - 1.0 ) ) * 1.0 ) * 2.0;
+            printf( "Expected BaBsr computed: %f\n", expectedBaBsr );
 
-            TS_ASSERT_DELTA( relu.computeBaBsr(), expectedBaBsr, 1e-5 );
+            // Compute the actual value and compare
+            double actualBaBsr = relu.computeBaBsr();
+            printf( "Actual BaBsr computed: %f\n", actualBaBsr );
+
+            // Assert the calculated value against the expected value
+            TS_ASSERT_DELTA( actualBaBsr, expectedBaBsr, 1e-5 );
+            printf( "Test case 1 passed\n\n" );
         }
 
         {
+            printf( "Starting test case 2\n" );
+
             ReluConstraint relu( b, f );
             MockTableau tableau;
             relu.registerTableau( &tableau );
+
+            NLR::NetworkLevelReasoner nlr;
+            populateNetwork( nlr );
+
+            // Register the network-level reasoner
+            relu.setNetworkLevelReasoner( &nlr );
+            printf( "Set network-level reasoner\n" );
 
             // Set bounds for b
             relu.notifyLowerBound( b, -1.0 );
             relu.notifyUpperBound( b, 3.0 );
+            printf( "Bounds set for variable b: lower=-1.0, upper=3.0\n" );
 
             // Mock the values in the tableau
             tableau.setValue( b, 1.5 );
             tableau.setValue( f, 1.5 );
+            printf( "Tableau values set: b=1.5, f=1.5\n" );
 
-            // Bias term
-            double biasTerm = 0.5;
+            // Retrieve the bias from the populated network
+            double biasTerm = nlr.getBiasForVariable( b );
+            printf( "Retrieved bias term for variable b: %f\n", biasTerm );
 
-            // Compute BaBsr score
+            // Compute expected BaBsr score
             double expectedBaBsr = std::min( ( 3.0 / ( 3.0 - ( -1.0 ) ) ) * 1.5 * biasTerm,
                                              ( 3.0 / ( 3.0 - ( -1.0 ) ) - 1.0 ) * 1.5 * biasTerm ) -
                                    ( ( 3.0 / ( 3.0 - ( -1.0 ) ) ) * ( -1.0 ) ) * 1.5;
-            TS_ASSERT_DELTA( relu.computeBaBsr(), expectedBaBsr, 1e-5 );
+            printf( "Expected BaBsr computed: %f\n", expectedBaBsr );
+
+            // Compute the actual value and compare
+            double actualBaBsr = relu.computeBaBsr();
+            printf( "Actual BaBsr computed: %f\n", actualBaBsr );
+
+            // Assert the calculated value against the expected value
+            TS_ASSERT_DELTA( actualBaBsr, expectedBaBsr, 1e-5 );
+            printf( "Test case 2 passed\n\n" );
         }
 
         {
+            printf( "Starting test case 3\n" );
+
             ReluConstraint relu( b, f );
             MockTableau tableau;
             relu.registerTableau( &tableau );
+
+            NLR::NetworkLevelReasoner nlr;
+            populateNetwork( nlr );
+
+            // Register the network-level reasoner
+            relu.setNetworkLevelReasoner( &nlr );
+            printf( "Set network-level reasoner\n" );
 
             // Set bounds for b
             relu.notifyLowerBound( b, -3.0 );
             relu.notifyUpperBound( b, -1.0 );
+            printf( "Bounds set for variable b: lower=-3.0, upper=-1.0\n" );
 
             // Mock the values in the tableau
             tableau.setValue( b, -2.0 );
             tableau.setValue( f, 0.0 );
+            printf( "Tableau values set: b=-2.0, f=0.0\n" );
 
-            // Bias term
-            double biasTerm = 1.5;
+            // Retrieve the bias from the populated network
+            double biasTerm = nlr.getBiasForVariable( b );
+            printf( "Retrieved bias term for variable b: %f\n", biasTerm );
 
-            // Compute BaBsr score
+            // Compute expected BaBsr score
             double expectedBaBsr =
                 std::min( ( -1.0 / ( -1.0 - ( -3.0 ) ) ) * ( -2.0 ) * biasTerm,
                           ( -1.0 / ( -1.0 - ( -3.0 ) ) - 1.0 ) * ( -2.0 ) * biasTerm ) -
                 ( ( -1.0 / ( -1.0 - ( -3.0 ) ) ) * ( -3.0 ) ) * 0.0;
-            TS_ASSERT_DELTA( relu.computeBaBsr(), expectedBaBsr, 1e-5 );
+            printf( "Expected BaBsr computed: %f\n", expectedBaBsr );
+
+            // Compute the actual value and compare
+            double actualBaBsr = relu.computeBaBsr();
+            printf( "Actual BaBsr computed: %f\n", actualBaBsr );
+
+            // Assert the calculated value against the expected value
+            TS_ASSERT_DELTA( actualBaBsr, expectedBaBsr, 1e-5 );
+            printf( "Test case 3 passed\n\n" );
         }
 
         {
+            printf( "Starting test case 4\n" );
+
             ReluConstraint relu( b, f );
             MockTableau tableau;
             relu.registerTableau( &tableau );
 
+            NLR::NetworkLevelReasoner nlr;
+            populateNetwork( nlr );
+
+            // Register the network-level reasoner
+            relu.setNetworkLevelReasoner( &nlr );
+            printf( "Set network-level reasoner\n" );
+
             // Set bounds for b
             relu.notifyLowerBound( b, 0.0 );
             relu.notifyUpperBound( b, 1.0 );
+            printf( "Bounds set for variable b: lower=0.0, upper=1.0\n" );
 
             // Mock the values in the tableau
             tableau.setValue( b, 0.0 );
             tableau.setValue( f, 0.0 );
+            printf( "Tableau values set: b=0.0, f=0.0\n" );
 
-            // Bias term
-            double biasTerm = 0.5;
+            // Retrieve the bias from the populated network
+            double biasTerm = nlr.getBiasForVariable( b );
+            printf( "Retrieved bias term for variable b: %f\n", biasTerm );
 
-            // expected value
+            // Expected value
             double expected_value = std::min( ( 1.0 / ( 1.0 - 0.0 ) ) * 0.0 * biasTerm,
                                               ( 1.0 / ( 1.0 - 0.0 ) - 1.0 ) * 0.0 * biasTerm ) -
                                     ( ( 1.0 / ( 1.0 - 0.0 ) ) * 0.0 ) * 0.0;
+            printf( "Expected BaBsr computed: %f\n", expected_value );
 
-            // Compute BaBsr score
-            TS_ASSERT_DELTA( relu.computeBaBsr(), expected_value, 1e-5 );
+            // Compute the actual value and compare
+            double actualBaBsr = relu.computeBaBsr();
+            printf( "Actual BaBsr computed: %f\n", actualBaBsr );
+
+            // Assert the calculated value against the expected value
+            TS_ASSERT_DELTA( actualBaBsr, expected_value, 1e-5 );
+            printf( "Test case 4 passed\n\n" );
         }
     }
 
