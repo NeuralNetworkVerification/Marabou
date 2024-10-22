@@ -172,7 +172,7 @@ public:
     */
     void generateQuery( Query &query );
 
-    double getBiasForVariable( unsigned variable ) const;
+    double getBiasForPreviousLayer( double preActivationOutput ) const;
 
     /*
       Finds logically consecutive WS layers and merges them, in order
