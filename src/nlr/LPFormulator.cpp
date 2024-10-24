@@ -348,16 +348,15 @@ void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, 
     auto EstimateVolumeBind = std::bind( EstimateVolume, layers, std::placeholders::_1 );
     
     // Search over coeffs in [0, 1]^depth. Enforce single-threaded optimization.
-    auto opt_params = differential_evolution_parameters<std::vector<double>>();
+    auto opt_params = coordinate_descent_parameters<std::vector<double>>();
     unsigned depth = layers.size();
     opt_params.lower_bounds.resize( depth, 0 );
     opt_params.upper_bounds.resize( depth, 1 );
-    opt_params.threads = 1;
     double value_to_reach = 0;
     std::mt19937_64 rng( GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED );
     
     // Find optimal coeffs and run final parameterised symbolic bound tightening + backward LP relaxation.
-    auto optimal_coeffs = differential_evolution( EstimateVolumeBind, opt_params, rng, value_to_reach );
+    auto optimal_coeffs = coordinate_descent( EstimateVolumeBind, opt_params, rng, value_to_reach );
     
     for ( unsigned i = 0; i < layers.size(); ++i )
         layers[i]->computeParameterisedSymbolicBounds( optimal_coeffs[i], true );

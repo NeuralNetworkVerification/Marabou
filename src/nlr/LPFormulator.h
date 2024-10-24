@@ -16,7 +16,7 @@
 #ifndef __LPFormulator_h__
 #define __LPFormulator_h__
 
-#include "DifferentialEvolution.h"
+#include "CoordinateDescent.h"
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "Map.h"
