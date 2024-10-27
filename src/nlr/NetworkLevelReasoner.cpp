@@ -601,23 +601,17 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
 */
 double NetworkLevelReasoner::getBiasForPreviousLayer( double preActivationOutput ) const
 {
-    printf( "Searching through layers for post-activation output %f\n", preActivationOutput );
-
     // Traverse through all layers to find the ReLU layer containing the post-activation output
     for ( const auto &layerPair : _layerIndexToLayer )
     {
         const Layer *layer = layerPair.second;
         if ( layer->getLayerType() == Layer::RELU )
         {
-            printf( "Searching through ReLU layer" );
             // Check if the post-activation output exists in this ReLU layer
             for ( unsigned neuronIndex = 0; neuronIndex < layer->getSize(); ++neuronIndex )
             {
                 double output = layer->getAssignment( neuronIndex );
-                printf( "Neuron %u in ReLU layer has output %f, post activation output is %g\n",
-                        neuronIndex,
-                        output,
-                        preActivationOutput );
+
                 if ( output == preActivationOutput )
                 {
                     // Found the ReLU neuron, now find the previous layer
@@ -626,18 +620,14 @@ double NetworkLevelReasoner::getBiasForPreviousLayer( double preActivationOutput
 
                     // Retrieve the bias of the corresponding neuron in the source layer
                     double bias = sourceLayer->getBias( neuronIndex );
-                    printf( "Found bias for pre-activation output %f in layer %u: %f\n",
-                            preActivationOutput,
-                            sourceLayerIndex,
-                            bias );
                     return bias;
                 }
             }
         }
     }
 
-    printf( "ERROR: Could not find post-activation output %f in any layer\n", preActivationOutput );
-    throw std::runtime_error( "RELU_NOT_FOUND" );
+    printf( "ERROR: Could not find pre-activation output %f in any layer\n", preActivationOutput );
+    throw NLRError( NLRError::RELU_NOT_FOUND, "Could not find ReLU layer for given output" );
 }
 
 unsigned
