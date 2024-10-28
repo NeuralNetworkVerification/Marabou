@@ -1052,6 +1052,11 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     if ( !_isReasonClauseInitialized )
     {
         _reasonClauseLiterals.clear();
+        if (_numOfClauses == _vsidsDecayThreshold)
+        {
+            _numOfClauses = 0;
+            _literalToClauses.clear();
+        }
         SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
 
         if ( !_fixedCadicalVars.exists( propagated_lit ) )
@@ -1159,6 +1164,11 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( !clause.exists( 0 ) )
+    if (_numOfClauses == _vsidsDecayThreshold)
+    {
+        _numOfClauses = 0;
+        _literalToClauses.clear();
+    }
     Vector<int> toAdd( 0 );
 
     // Remove fixed literals as they are redundant
@@ -1224,8 +1234,6 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
 
         int result = _cadicalWrapper.solve();
-
-        std::cout << "Number of Clauses learned: " << _numOfClauses << std::endl;
 
         if ( _statistics && _engine->getVerbosity() )
         {
@@ -1450,7 +1458,7 @@ double SmtCore::getVSIDSScore( int literal ) const
     double numOfClausesSatisfiedByLiteral = 0;
     if ( _literalToClauses.exists( literal ) )
         for ( unsigned clause : _literalToClauses[literal] )
-            if ( _numOfClauses - clause < _vsidsDecayThreshold && !isClauseSatisfied( clause ) )
+            if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
     return numOfClausesSatisfiedByLiteral;
 }
