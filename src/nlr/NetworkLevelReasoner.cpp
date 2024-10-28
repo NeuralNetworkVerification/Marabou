@@ -611,7 +611,6 @@ double NetworkLevelReasoner::getBiasForPreviousLayer( double preActivationOutput
             for ( unsigned neuronIndex = 0; neuronIndex < layer->getSize(); ++neuronIndex )
             {
                 double output = layer->getAssignment( neuronIndex );
-
                 if ( output == preActivationOutput )
                 {
                     // Found the ReLU neuron, now find the previous layer
@@ -626,7 +625,6 @@ double NetworkLevelReasoner::getBiasForPreviousLayer( double preActivationOutput
         }
     }
 
-    printf( "ERROR: Could not find pre-activation output %f in any layer\n", preActivationOutput );
     throw NLRError( NLRError::RELU_NOT_FOUND, "Could not find ReLU layer for given output" );
 }
 
