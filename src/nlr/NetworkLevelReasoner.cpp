@@ -625,7 +625,8 @@ double NetworkLevelReasoner::getBiasForPreviousLayer( double preActivationOutput
         }
     }
 
-    throw NLRError( NLRError::RELU_NOT_FOUND, "Could not find ReLU layer for given output" );
+    printf( "NLRError, could not find ReLU neuron for given output" );
+    throw NLRError( NLRError::RELU_NOT_FOUND, "Could not find ReLU neuron for given output" );
 }
 
 unsigned

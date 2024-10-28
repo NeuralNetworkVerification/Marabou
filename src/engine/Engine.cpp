@@ -2707,6 +2707,7 @@ void Engine::decideBranchingHeuristics()
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
 {
     ENGINE_LOG( Stringf( "Using BaBsr heuristic..." ).ascii() );
+    printf( " Using BaBSR heuristic for splitting strategy ... " );
 
     if ( !_networkLevelReasoner )
         return NULL;
