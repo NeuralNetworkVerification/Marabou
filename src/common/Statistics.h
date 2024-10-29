@@ -88,7 +88,10 @@ public:
 
         // Number of decisions performed by Cadical and Marabou
         NUM_SAT_SOLVER_DECISIONS,
-        NUM_MARABOU_DECISIONS
+        NUM_MARABOU_DECISIONS,
+
+        // Number of restarts of the SAT solver
+        NUM_RESTARTS
     };
 
     enum StatisticsLongAttribute {
