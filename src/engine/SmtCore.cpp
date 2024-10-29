@@ -59,8 +59,8 @@ SmtCore::SmtCore( IEngine *engine )
     , _numOfClauses( 0 )
     , _satisfiedClauses( &_engine->getContext() )
     , _literalToClauses()
-//    , _vsidsDecayThreshold( 0 )
-//    , _vsidsDecayCounter( 0 )
+    //    , _vsidsDecayThreshold( 0 )
+    //    , _vsidsDecayCounter( 0 )
     , _restarts( 1 )
     , _restartLimit( luby( 1 ) )
     , _shouldRestart( false )
@@ -1240,12 +1240,6 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
 
-        _cadicalWrapper.connectTheorySolver( this );
-        _cadicalWrapper.connectTerminator( this );
-        for ( unsigned var : _cadicalVarToPlc.keys() )
-            if ( var != 0 )
-                _cadicalWrapper.addObservedVar( var );
-
         int result;
 
         while ( true )
@@ -1253,15 +1247,20 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             if ( _statistics )
                 _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
 
+            _cadicalWrapper.connectTheorySolver( this );
+            _cadicalWrapper.connectTerminator( this );
+
+            for ( unsigned var : _cadicalVarToPlc.keys() )
+                if ( var != 0 )
+                    _cadicalWrapper.addObservedVar( var );
+
             //        printCurrentState();
             result = _cadicalWrapper.solve();
 
-            if ( result == 0 )
+            if ( result == 0 && _exitCode == NOT_DONE )
             {
                 _shouldRestart = false;
                 _cadicalWrapper.restart();
-                _cadicalWrapper.connectTheorySolver( this );
-                _cadicalWrapper.connectTerminator( this );
             }
             else
                 break;
@@ -1273,7 +1272,14 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _statistics->print();
         }
 
-        if ( result == 10 )
+        if ( result == 0 )
+        {
+            if ( _exitCode == SAT )
+                return true;
+            else
+                return false;
+        }
+        else if ( result == 10 )
         {
             _exitCode = SAT;
             return true;

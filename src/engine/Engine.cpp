@@ -3868,7 +3868,7 @@ bool Engine::propagateBoundManagerTightenings()
     try
     {
         _boundManager.propagateTightenings();
-        if ( !consistentBounds() )
+        if ( !consistentBounds() && _produceUNSATProofs )
             explainSimplexFailure();
 
         return consistentBounds();
