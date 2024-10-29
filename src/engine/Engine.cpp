@@ -3875,7 +3875,8 @@ bool Engine::propagateBoundManagerTightenings()
     }
     catch ( InfeasibleQueryException )
     {
-        explainSimplexFailure();
+        if ( _produceUNSATProofs )
+            explainSimplexFailure();
         return false;
     }
 }
