@@ -100,6 +100,11 @@ public:
      */
     void disconnectTerminator ();
 
+    /*
+     * Restart the sat solver, while keeping the clauses learned so far
+     */
+    void restart();
+
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;
 };

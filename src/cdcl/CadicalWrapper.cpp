@@ -100,3 +100,13 @@ void CadicalWrapper::disconnectTerminator()
 {
     d_solver->disconnect_terminator();
 }
+
+void CadicalWrapper::restart()
+{
+    CaDiCaL::Solver *newSolver = new CaDiCaL::Solver();
+    d_solver->copy(*newSolver);
+
+    disconnectTerminator();
+    disconnectTheorySolver();
+    d_solver.reset(newSolver);
+}

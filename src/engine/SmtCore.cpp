@@ -61,6 +61,9 @@ SmtCore::SmtCore( IEngine *engine )
     , _literalToClauses()
     , _vsidsDecayThreshold( 0 )
     , _vsidsDecayCounter( 0 )
+    , _restarts( 1 )
+    , _restartLimit( luby( 1 ) )
+    , _shouldRestart( false )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -1054,12 +1057,20 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     if ( !_isReasonClauseInitialized )
     {
         _reasonClauseLiterals.clear();
+
+        if ( _restartLimit == _numOfClauses )
+        {
+            _shouldRestart = true;
+            _restartLimit = 512 * luby( ++_restarts );
+        }
+
         if ( _numOfClauses == _vsidsDecayThreshold )
         {
             _numOfClauses = 0;
             _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
             _literalToClauses.clear();
         }
+
         SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
 
         if ( !_fixedCadicalVars.exists( propagated_lit ) )
@@ -1167,6 +1178,13 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( !clause.exists( 0 ) )
+
+    if ( _restartLimit == _numOfClauses )
+    {
+        _shouldRestart = true;
+        _restartLimit = 512 * luby( ++_restarts );
+    }
+
     if ( _numOfClauses == _vsidsDecayThreshold )
     {
         _numOfClauses = 0;
@@ -1211,14 +1229,8 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         if ( _exitCode == UNSAT )
             return false;
 
-        _cadicalWrapper.connectTheorySolver( this );
-        _cadicalWrapper.connectTerminator( this );
-        for ( unsigned var : _cadicalVarToPlc.keys() )
-            if ( var != 0 )
-                _cadicalWrapper.addObservedVar( var );
-
         _engine->preSolve();
-        //        printCurrentState();
+
         if ( _engine->solve() )
         {
             _exitCode = SAT;
@@ -1227,24 +1239,45 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
             _engine->propagateBoundManagerTightenings();
 
+        // Add the zero literal at the end
+        if ( !_literalsToPropagate.empty() )
+            _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+
         if ( !_externalClausesToAdd.empty() )
         {
             _exitCode = UNSAT;
             return false;
         }
 
-        // Add the zero literal at the end
-        if ( !_literalsToPropagate.empty() )
-            _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+        _cadicalWrapper.connectTheorySolver( this );
+        _cadicalWrapper.connectTerminator( this );
+        for ( unsigned var : _cadicalVarToPlc.keys() )
+            if ( var != 0 )
+                _cadicalWrapper.addObservedVar( var );
 
-        int result = _cadicalWrapper.solve();
+        int result;
+
+        while ( _exitCode == NOT_DONE )
+        {
+            if ( _statistics )
+                _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
+
+            //        printCurrentState();
+            result = _cadicalWrapper.solve();
+
+            if ( result == 0 )
+            {
+                _cadicalWrapper.restart();
+                _cadicalWrapper.connectTheorySolver( this );
+                _cadicalWrapper.connectTerminator( this );
+            }
+        }
 
         if ( _statistics && _engine->getVerbosity() )
         {
             printf( "\nSmtCore::Final statistics:\n" );
             _statistics->print();
         }
-
 
         if ( result == 0 )
         {
@@ -1392,7 +1425,7 @@ void SmtCore::resetExitCode()
 bool SmtCore::terminate()
 {
     SMT_LOG( Stringf( "Callback for terminate: %d", _exitCode != NOT_DONE ).ascii() );
-    return _exitCode != NOT_DONE;
+    return _exitCode != NOT_DONE || _shouldRestart;
 }
 
 unsigned SmtCore::getLiteralAssignmentIndex( int literal )
