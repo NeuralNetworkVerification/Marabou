@@ -414,6 +414,7 @@ void SmtCore::resetSplitConditions()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
+    _constraintForSplitting = NULL;
     _needToSplit = false;
 }
 
