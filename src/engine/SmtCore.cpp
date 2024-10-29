@@ -59,7 +59,8 @@ SmtCore::SmtCore( IEngine *engine )
     , _numOfClauses( 0 )
     , _satisfiedClauses( &_engine->getContext() )
     , _literalToClauses()
-    , _vsidsDecayThreshold( Options::get()->getInt( Options::VSIDS_DECAY_THRESHOLD ) )
+    , _vsidsDecayThreshold( 0 )
+    , _vsidsDecayCounter( 0 )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -1052,9 +1053,10 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     if ( !_isReasonClauseInitialized )
     {
         _reasonClauseLiterals.clear();
-        if (_numOfClauses == _vsidsDecayThreshold)
+        if ( _numOfClauses == _vsidsDecayThreshold )
         {
             _numOfClauses = 0;
+            _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
             _literalToClauses.clear();
         }
         SMT_LOG( Stringf( "Adding reason clause for literal %d", propagated_lit ).ascii() );
@@ -1164,9 +1166,10 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( !clause.exists( 0 ) )
-    if (_numOfClauses == _vsidsDecayThreshold)
+    if ( _numOfClauses == _vsidsDecayThreshold )
     {
         _numOfClauses = 0;
+        _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
         _literalToClauses.clear();
     }
     Vector<int> toAdd( 0 );
@@ -1461,4 +1464,16 @@ double SmtCore::getVSIDSScore( int literal ) const
             if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
     return numOfClausesSatisfiedByLiteral;
+}
+
+unsigned SmtCore::luby( unsigned int i )
+{
+    unsigned k;
+    for ( k = 1; k < 32; ++k )
+        if ( i == (unsigned)( ( 1 << k ) - 1 ) )
+            return 1 << ( k - 1 );
+
+    for ( k = 1;; ++k )
+        if ( (unsigned)( 1 << ( k - 1 ) ) <= i && i < (unsigned)( ( 1 << k ) - 1 ) )
+            return luby( i - ( 1 << ( k - 1 ) ) + 1 );
 }

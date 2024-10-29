@@ -25,8 +25,8 @@
 #include "Stack.h"
 #include "Statistics.h"
 #include "TimeoutException.h"
-#include "context/cdhashset.h"
 #include "context/cdhashmap.h"
+#include "context/cdhashset.h"
 #include "context/context.h"
 
 #include <cadical.hpp>
@@ -441,6 +441,7 @@ private:
     CVC4::context::CDHashSet<unsigned, std::hash<unsigned>> _satisfiedClauses;
     Map<int, Set<unsigned>> _literalToClauses;
     unsigned _vsidsDecayThreshold;
+    unsigned _vsidsDecayCounter;
 
     /*
       Access info in the internal data structures
@@ -450,6 +451,7 @@ private:
     bool isClauseSatisfied( unsigned clause ) const;
 
     double getVSIDSScore( int literal ) const;
+    unsigned luby( unsigned i );
 };
 
 #endif // __SmtCore_h__
