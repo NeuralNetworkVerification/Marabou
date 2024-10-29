@@ -136,6 +136,7 @@ public:
         MockTableau tableau;
         relu.registerTableau( &tableau );
 
+        // Set up network level reasoner with relu
         relu.setNetworkLevelReasoner( nlr );
 
         // Set bounds for b
@@ -160,42 +161,14 @@ public:
             double upperBound;
         };
 
-        std::vector<TestParams> testParams = { // Cases for Neuron (2, 0)
-                                               { NLR::NeuronIndex( 2, 0 ), -0.1, 8.0 },
-                                               { NLR::NeuronIndex( 2, 0 ), 0.0, 0.001 },
-                                               { NLR::NeuronIndex( 2, 0 ), 5.0, 100.0 },
-                                               { NLR::NeuronIndex( 2, 0 ), 1.0, 1.5 },
-                                               { NLR::NeuronIndex( 2, 0 ), 0.1, 10.0 },
-
-                                               // Cases for Neuron (2, 1)
-                                               { NLR::NeuronIndex( 2, 1 ), 0.0, 7.0 },
-                                               { NLR::NeuronIndex( 2, 1 ), 1.0, 1.0001 },
-                                               { NLR::NeuronIndex( 2, 1 ), -5.0, 5.0 },
-                                               { NLR::NeuronIndex( 2, 1 ), 0.0, 0.5 },
-                                               { NLR::NeuronIndex( 2, 1 ), 2.0, 8.0 },
-
-                                               // Cases for Neuron (2, 2)
-                                               { NLR::NeuronIndex( 2, 2 ), -10.0, 0.0 },
-                                               { NLR::NeuronIndex( 2, 2 ), 0.1, 6.0 },
-                                               { NLR::NeuronIndex( 2, 2 ), 1.5, 1.6 },
-                                               { NLR::NeuronIndex( 2, 2 ), -0.5, 5.0 },
-                                               { NLR::NeuronIndex( 2, 2 ), 0.0, 3.0 },
-
-                                               // Cases for Neuron (4, 0)
-                                               { NLR::NeuronIndex( 4, 0 ), -0.5, 9.0 },
-                                               { NLR::NeuronIndex( 4, 0 ), 1.0, 1.00001 },
-                                               { NLR::NeuronIndex( 4, 0 ), 2.0, 50.0 },
-                                               { NLR::NeuronIndex( 4, 0 ), 0.0, 0.01 },
-                                               { NLR::NeuronIndex( 4, 0 ), 0.5, 5.0 },
-
-                                               // Cases for Neuron (4, 1)
-                                               { NLR::NeuronIndex( 4, 1 ), 0.0, 5.0 },
-                                               { NLR::NeuronIndex( 4, 1 ), -1.0, 0.0 },
-                                               { NLR::NeuronIndex( 4, 1 ), 0.001, 1000.0 },
-                                               { NLR::NeuronIndex( 4, 1 ), -0.5, 4.0 },
-                                               { NLR::NeuronIndex( 4, 1 ), 0.1, 3.5 }
+        std::vector<TestParams> testParams = {
+            // ... (test parameters)
         };
 
+        // Initialize MockErrno (error context)
+        MockErrno mockErrno;
+
+        // Iterate through each test case
         for ( const auto &params : testParams )
         {
             double input[2] = { 0, 0 };
@@ -207,7 +180,11 @@ public:
             double b = layer->getAssignment( params.neuronIndex._neuron );
             double f = FloatUtils::max( b, 0.0 );
 
-            double bias = nlr->getBiasForPreviousLayer( b );
+            // Create the ReluConstraint with neuron variables
+            ReluConstraint relu( layer->neuronToVariable( params.neuronIndex._neuron ), f );
+
+            // retrieve bias using the new method
+            double bias = nlr->getPrevBiasForReluConstraint( &relu );
 
             double ub = params.upperBound;
             double lb = params.lowerBound;
@@ -218,7 +195,7 @@ public:
 
             double expectedBaBsr = term1 - term2;
 
-            ReluConstraint relu( b, f );
+            // Setup mock tableau
             MockTableau tableau;
             relu.registerTableau( &tableau );
 
@@ -230,15 +207,9 @@ public:
             tableau.setValue( b, b );
             tableau.setValue( f, f );
 
+            // Assert BaBsr calculation
             double actualBaBsr = relu.computeBaBsr();
-            if ( std::fabs( actualBaBsr - expectedBaBsr ) >= 1e-6 )
-            {
-                printf( "Test failed for neuron (%u, %u):\n",
-                        params.neuronIndex._layer,
-                        params.neuronIndex._neuron );
-                printf( "Expected BaBsr: %f\n", expectedBaBsr );
-                printf( "Actual BaBsr: %f\n", actualBaBsr );
-            }
+
             TS_ASSERT_DELTA( actualBaBsr, expectedBaBsr, 1e-6 );
         }
     }

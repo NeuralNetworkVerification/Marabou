@@ -1060,7 +1060,7 @@ double ReluConstraint::calculateBias() const
     if ( !_networkLevelReasoner )
         throw NLRError( NLRError::RELU_NOT_FOUND );
 
-    return _networkLevelReasoner->getBiasForPreviousLayer( _b );
+    return _networkLevelReasoner->getPrevBiasForReluConstraint( this );
 }
 
 double ReluConstraint::computePolarity() const
