@@ -59,8 +59,8 @@ SmtCore::SmtCore( IEngine *engine )
     , _numOfClauses( 0 )
     , _satisfiedClauses( &_engine->getContext() )
     , _literalToClauses()
-    , _vsidsDecayThreshold( 0 )
-    , _vsidsDecayCounter( 0 )
+//    , _vsidsDecayThreshold( 0 )
+//    , _vsidsDecayCounter( 0 )
     , _restarts( 1 )
     , _restartLimit( luby( 1 ) )
     , _shouldRestart( false )
@@ -1059,14 +1059,9 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
 
         if ( _restartLimit == _numOfClauses )
         {
+            _numOfClauses = 0;
             _shouldRestart = true;
             _restartLimit = 512 * luby( ++_restarts );
-        }
-
-        if ( _numOfClauses == _vsidsDecayThreshold )
-        {
-            _numOfClauses = 0;
-            _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
             _literalToClauses.clear();
         }
 
@@ -1180,16 +1175,12 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 
     if ( _restartLimit == _numOfClauses )
     {
+        _numOfClauses = 0;
         _shouldRestart = true;
         _restartLimit = 512 * luby( ++_restarts );
-    }
-
-    if ( _numOfClauses == _vsidsDecayThreshold )
-    {
-        _numOfClauses = 0;
-        _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
         _literalToClauses.clear();
     }
+
     Vector<int> toAdd( 0 );
 
     // Remove fixed literals as they are redundant
@@ -1256,7 +1247,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         int result;
 
-        while ( _exitCode == NOT_DONE )
+        while ( true )
         {
             if ( _statistics )
                 _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
@@ -1266,10 +1257,13 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
             if ( result == 0 )
             {
+                _shouldRestart = false;
                 _cadicalWrapper.restart();
                 _cadicalWrapper.connectTheorySolver( this );
                 _cadicalWrapper.connectTerminator( this );
             }
+            else
+                break;
         }
 
         if ( _statistics && _engine->getVerbosity() )
@@ -1278,15 +1272,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             _statistics->print();
         }
 
-        if ( result == 0 )
-        {
-            if ( _exitCode != NOT_DONE )
-                return true;
-
-            _exitCode = UNKNOWN;
-            return false;
-        }
-        else if ( result == 10 )
+        if ( result == 10 )
         {
             _exitCode = SAT;
             return true;
