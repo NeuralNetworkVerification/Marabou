@@ -61,6 +61,10 @@ SmtCore::SmtCore( IEngine *engine )
     , _literalToClauses()
     , _vsidsDecayThreshold( 0 )
     , _vsidsDecayCounter( 0 )
+    , _restarts( 1 )
+    , _restartLimit( 512 * luby( 1 ) )
+    , _numOfSolveCalls( 0 )
+    , _shouldRestart ( false )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
