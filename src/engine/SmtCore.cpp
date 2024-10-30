@@ -59,11 +59,8 @@ SmtCore::SmtCore( IEngine *engine )
     , _numOfClauses( 0 )
     , _satisfiedClauses( &_engine->getContext() )
     , _literalToClauses()
-    //    , _vsidsDecayThreshold( 0 )
-    //    , _vsidsDecayCounter( 0 )
-    , _restarts( 1 )
-    , _restartLimit( luby( 1 ) )
-    , _shouldRestart( false )
+    , _vsidsDecayThreshold( 0 )
+    , _vsidsDecayCounter( 0 )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -840,6 +837,8 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     for ( const auto &lit : model )
         notify_assignment( lit, false );
 
+    bool result;
+
     if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
     {
         // Quickly try to notify constraints for bounds, which raises exception in case of
@@ -851,16 +850,27 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         if ( cb_has_external_clause() )
             return false;
 
-        bool result = _engine->solve();
+        result = _engine->solve();
+
         // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
         if ( !result && !cb_has_external_clause() )
             addTrivialConflictClause();
 
         SMT_LOG( Stringf( "\tResult is %u", result ).ascii() );
-        return result && !cb_has_external_clause();
+        result = result && !cb_has_external_clause();
     }
     else
-        return _engine->solve();
+        result = _engine->solve();
+
+    ++_numOfSolveCalls;
+    if ( _numOfSolveCalls == _restartLimit )
+    {
+        _numOfSolveCalls = 0;
+        _restartLimit = 512 * luby( ++_restarts );
+        _shouldRestart = true;
+    }
+
+    return result;
 }
 
 int SmtCore::cb_decide()
@@ -993,6 +1003,14 @@ int SmtCore::cb_propagate()
         if ( _engine->solve() )
             _exitCode = SAT;
 
+        ++_numOfSolveCalls;
+        if ( _numOfSolveCalls == _restartLimit )
+        {
+            _numOfSolveCalls = 0;
+            _restartLimit = 512 * luby( ++_restarts );
+            _shouldRestart = true;
+        }
+
         return 0;
     }
 
@@ -1008,11 +1026,21 @@ int SmtCore::cb_propagate()
 
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClausesToAdd.empty() )
+        {
             if ( _engine->solve() )
             {
                 _exitCode = SAT;
                 return 0;
             }
+
+            ++_numOfSolveCalls;
+            if ( _numOfSolveCalls == _restartLimit )
+            {
+                _numOfSolveCalls = 0;
+                _restartLimit = 512 * luby( ++_restarts );
+                _shouldRestart = true;
+            }
+        }
 
         // Try learning a conflict clause if possible
         if ( _externalClausesToAdd.empty() )
@@ -1057,12 +1085,10 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     if ( !_isReasonClauseInitialized )
     {
         _reasonClauseLiterals.clear();
-
-        if ( _restartLimit == _numOfClauses )
+        if ( _numOfClauses == _vsidsDecayThreshold )
         {
             _numOfClauses = 0;
-            _shouldRestart = true;
-            _restartLimit = 512 * luby( ++_restarts );
+            _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
             _literalToClauses.clear();
         }
 
@@ -1173,12 +1199,10 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( !clause.exists( 0 ) )
-
-    if ( _restartLimit == _numOfClauses )
+    if ( _numOfClauses == _vsidsDecayThreshold )
     {
         _numOfClauses = 0;
-        _shouldRestart = true;
-        _restartLimit = 512 * luby( ++_restarts );
+        _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
         _literalToClauses.clear();
     }
 

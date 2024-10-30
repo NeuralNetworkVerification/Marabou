@@ -440,11 +440,12 @@ private:
     unsigned _numOfClauses;
     CVC4::context::CDHashSet<unsigned, std::hash<unsigned>> _satisfiedClauses;
     Map<int, Set<unsigned>> _literalToClauses;
-//    unsigned _vsidsDecayThreshold;
-//    unsigned _vsidsDecayCounter;
+    unsigned _vsidsDecayThreshold;
+    unsigned _vsidsDecayCounter;
 
     unsigned _restarts;
     unsigned _restartLimit;
+    unsigned _numOfSolveCalls;
     bool _shouldRestart;
 
     /*
