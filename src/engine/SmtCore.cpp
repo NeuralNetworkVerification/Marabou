@@ -864,11 +864,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
 
     ++_numOfSolveCalls;
     if ( _numOfSolveCalls == _restartLimit )
-    {
-        _numOfSolveCalls = 0;
-        _restartLimit = 512 * luby( ++_restarts );
         _shouldRestart = true;
-    }
 
     return result;
 }
@@ -1005,11 +1001,7 @@ int SmtCore::cb_propagate()
 
         ++_numOfSolveCalls;
         if ( _numOfSolveCalls == _restartLimit )
-        {
-            _numOfSolveCalls = 0;
-            _restartLimit = 512 * luby( ++_restarts );
             _shouldRestart = true;
-        }
 
         return 0;
     }
@@ -1035,11 +1027,7 @@ int SmtCore::cb_propagate()
 
             ++_numOfSolveCalls;
             if ( _numOfSolveCalls == _restartLimit )
-            {
-                _numOfSolveCalls = 0;
-                _restartLimit = 512 * luby( ++_restarts );
                 _shouldRestart = true;
-            }
         }
 
         // Try learning a conflict clause if possible
@@ -1284,6 +1272,8 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             if ( result == 0 && _exitCode == NOT_DONE )
             {
                 _shouldRestart = false;
+                _numOfSolveCalls = 0;
+                _restartLimit = 512 * luby( ++_restarts );
                 _cadicalWrapper.restart();
             }
             else
