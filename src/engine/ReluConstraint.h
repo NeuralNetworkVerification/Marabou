@@ -73,7 +73,13 @@ public:
     void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
     {
         _networkLevelReasoner = nlr;
+        initializeBiasCache( *_networkLevelReasoner );
     }
+
+    /*
+      Cache biases for the source layers for ReLU neurons.
+    */
+    static void initializeBiasCache( NLR::NetworkLevelReasoner &nlr );
 
     /*
       Restore the state of this constraint from the given one.
@@ -306,6 +312,10 @@ private:
     */
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 
+    /*
+      cached biases for the source layers for ReLU neurons.
+    */
+    static std::unordered_map<const ReluConstraint *, double> _biasCache;
     double calculateBias() const;
 };
 

@@ -1034,6 +1034,27 @@ unsigned ReluConstraint::getAux() const
     return _aux;
 }
 
+std::unordered_map<const ReluConstraint *, double> ReluConstraint::_biasCache;
+
+void ReluConstraint::initializeBiasCache( NLR::NetworkLevelReasoner &nlr )
+{
+    // Loop through all constraints in topological order
+    for ( const auto *constraint : nlr.getConstraintsInTopologicalOrder() )
+    {
+        // Only handle ReluConstraints and cache their biases
+        if ( const auto *reluConstraint = dynamic_cast<const ReluConstraint *>( constraint ) )
+        {
+            if ( _biasCache.find( reluConstraint ) == _biasCache.end() )
+            {
+                // Compute the bias and store it in the cache
+                double bias = nlr.getPrevBiasForReluConstraint( reluConstraint );
+                _biasCache[reluConstraint] = bias;
+            }
+        }
+    }
+}
+
+
 double ReluConstraint::computeBaBsr() const
 {
     double biasTerm = calculateBias();
@@ -1057,10 +1078,11 @@ double ReluConstraint::computeBaBsr() const
 
 double ReluConstraint::calculateBias() const
 {
-    if ( !_networkLevelReasoner )
-        throw NLRError( NLRError::RELU_NOT_FOUND );
+    auto it = _biasCache.find( this );
+    if ( it != _biasCache.end() )
+        return it->second;
 
-    return _networkLevelReasoner->getPrevBiasForReluConstraint( this );
+    throw NLRError( NLRError::RELU_NOT_FOUND, "Bias not found in cache." );
 }
 
 double ReluConstraint::computePolarity() const

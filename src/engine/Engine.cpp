@@ -2733,6 +2733,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
                 // calculate heuristic score - bias calculation now happens inside computeBaBsr
                 plConstraint->updateScoreBasedOnBaBsr();
                 scoreToConstraint[plConstraint->getScore()] = plConstraint;
+                if ( scoreToConstraint.size() >= GlobalConfiguration::BABSR_CANDIDATES_THRESHOLD )
+                    break;
             }
         }
     }
