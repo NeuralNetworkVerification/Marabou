@@ -1579,7 +1579,9 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound
         // Tightening.
-        if ( _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE &&
+        if ( ( _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::MILP_ENCODING || 
+               _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL || 
+               _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION ) &&
              _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
@@ -1590,6 +1592,8 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_INVPROP:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX:
             _networkLevelReasoner->lpRelaxationPropagation();
             break;
         case MILPSolverBoundTighteningType::MILP_ENCODING:
@@ -1681,6 +1685,8 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
             return;
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_INVPROP:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX:
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:
             return;
