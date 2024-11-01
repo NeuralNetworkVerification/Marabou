@@ -62,7 +62,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _vsidsDecayThreshold( 0 )
     , _vsidsDecayCounter( 0 )
     , _restarts( 1 )
-    , _restartLimit( 512 * luby( 1 ) )
+    , _restartLimit( 256 * luby( 1 ) )
     , _numOfSolveCalls( 0 )
     , _shouldRestart ( false )
 {
@@ -1277,7 +1277,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             {
                 _shouldRestart = false;
                 _numOfSolveCalls = 0;
-                _restartLimit = 512 * luby( ++_restarts );
+                _restartLimit = 256 * luby( ++_restarts );
                 _cadicalWrapper.restart();
             }
             else
