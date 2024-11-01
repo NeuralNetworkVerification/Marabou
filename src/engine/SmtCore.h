@@ -445,7 +445,7 @@ private:
 
     unsigned _restarts;
     unsigned _restartLimit;
-    unsigned _numOfConflictClauses;
+    unsigned _numOfSolveCalls;
     bool _shouldRestart;
 
     /*

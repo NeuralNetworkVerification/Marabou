@@ -63,8 +63,8 @@ SmtCore::SmtCore( IEngine *engine )
     , _vsidsDecayCounter( 0 )
     , _restarts( 1 )
     , _restartLimit( 512 * luby( 1 ) )
-    , _numOfConflictClauses( 0 )
-    , _shouldRestart( false )
+    , _numOfSolveCalls( 0 )
+    , _shouldRestart ( false )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -866,6 +866,10 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     else
         result = _engine->solve();
 
+    ++_numOfSolveCalls;
+    if ( _numOfSolveCalls == _restartLimit )
+        _shouldRestart = true;
+
     return result;
 }
 
@@ -999,6 +1003,10 @@ int SmtCore::cb_propagate()
         if ( _engine->solve() )
             _exitCode = SAT;
 
+        ++_numOfSolveCalls;
+        if ( _numOfSolveCalls == _restartLimit )
+            _shouldRestart = true;
+
         return 0;
     }
 
@@ -1020,6 +1028,10 @@ int SmtCore::cb_propagate()
                 _exitCode = SAT;
                 return 0;
             }
+
+            ++_numOfSolveCalls;
+            if ( _numOfSolveCalls == _restartLimit )
+                _shouldRestart = true;
         }
 
         // Try learning a conflict clause if possible
@@ -1179,10 +1191,6 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( !clause.exists( 0 ) )
-    ++_numOfConflictClauses;
-    if ( _numOfConflictClauses == _restartLimit )
-        _shouldRestart = true;
-
     if ( _numOfClauses == _vsidsDecayThreshold )
     {
         _numOfClauses = 0;
@@ -1268,7 +1276,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             if ( result == 0 && _exitCode == NOT_DONE )
             {
                 _shouldRestart = false;
-                _numOfConflictClauses = 0;
+                _numOfSolveCalls = 0;
                 _restartLimit = 512 * luby( ++_restarts );
                 _cadicalWrapper.restart();
             }
