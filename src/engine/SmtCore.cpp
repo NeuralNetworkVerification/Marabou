@@ -61,10 +61,10 @@ SmtCore::SmtCore( IEngine *engine )
     , _literalToClauses()
     , _vsidsDecayThreshold( 0 )
     , _vsidsDecayCounter( 0 )
-    , _restarts( 1 )
-    , _restartLimit( 256 * luby( 1 ) )
-    , _numOfSolveCalls( 0 )
-    , _shouldRestart ( false )
+//    , _restarts( 1 )
+//    , _restartLimit( 256 * luby( 1 ) )
+//    , _numOfSolveCalls( 0 )
+//    , _shouldRestart ( false )
 {
     _cadicalVarToPlc.insert( 0, NULL );
 }
@@ -866,9 +866,9 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     else
         result = _engine->solve();
 
-    ++_numOfSolveCalls;
-    if ( _numOfSolveCalls == _restartLimit )
-        _shouldRestart = true;
+//    ++_numOfSolveCalls;
+//    if ( _numOfSolveCalls == _restartLimit )
+//        _shouldRestart = true;
 
     return result;
 }
@@ -1003,9 +1003,9 @@ int SmtCore::cb_propagate()
         if ( _engine->solve() )
             _exitCode = SAT;
 
-        ++_numOfSolveCalls;
-        if ( _numOfSolveCalls == _restartLimit )
-            _shouldRestart = true;
+//        ++_numOfSolveCalls;
+//        if ( _numOfSolveCalls == _restartLimit )
+//            _shouldRestart = true;
 
         return 0;
     }
@@ -1029,9 +1029,9 @@ int SmtCore::cb_propagate()
                 return 0;
             }
 
-            ++_numOfSolveCalls;
-            if ( _numOfSolveCalls == _restartLimit )
-                _shouldRestart = true;
+//            ++_numOfSolveCalls;
+//            if ( _numOfSolveCalls == _restartLimit )
+//                _shouldRestart = true;
         }
 
         // Try learning a conflict clause if possible
@@ -1080,7 +1080,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
         if ( _numOfClauses == _vsidsDecayThreshold )
         {
             _numOfClauses = 0;
-            _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
+            _vsidsDecayThreshold = 256 * luby( ++_vsidsDecayCounter );
             _literalToClauses.clear();
         }
 
@@ -1194,7 +1194,7 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     if ( _numOfClauses == _vsidsDecayThreshold )
     {
         _numOfClauses = 0;
-        _vsidsDecayThreshold = 512 * luby( ++_vsidsDecayCounter );
+        _vsidsDecayThreshold = 256 * luby( ++_vsidsDecayCounter );
         _literalToClauses.clear();
     }
 
@@ -1275,10 +1275,10 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
             if ( result == 0 && _exitCode == NOT_DONE )
             {
-                _shouldRestart = false;
-                _numOfSolveCalls = 0;
-                _restartLimit = 256 * luby( ++_restarts );
-                _cadicalWrapper.restart();
+//                _shouldRestart = false;
+//                _numOfSolveCalls = 0;
+//                _restartLimit = 256 * luby( ++_restarts );
+//                _cadicalWrapper.restart();
             }
             else
                 break;
@@ -1435,7 +1435,8 @@ void SmtCore::resetExitCode()
 bool SmtCore::terminate()
 {
     SMT_LOG( Stringf( "Callback for terminate: %d", _exitCode != NOT_DONE ).ascii() );
-    return _exitCode != NOT_DONE || _shouldRestart;
+//    return _exitCode != NOT_DONE || _shouldRestart;
+    return _exitCode != NOT_DONE;
 }
 
 unsigned SmtCore::getLiteralAssignmentIndex( int literal )
