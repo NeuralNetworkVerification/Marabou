@@ -2,37 +2,39 @@
 #define __CustomDNN_h__
 
 #include "NetworkLevelReasoner.h"
+
 #include <vector>
 
 #undef Warning
 #include <torch/torch.h>
 
-class CustomMaxPoolFunction : public torch::autograd::Function<CustomMaxPoolFunction> {
+class CustomMaxPoolFunction : public torch::autograd::Function<CustomMaxPoolFunction>
+{
 public:
-    static torch::Tensor forward(torch::autograd::AutogradContext *ctx,
+    static torch::Tensor forward( torch::autograd::AutogradContext *ctx,
                                   torch::Tensor x,
                                   const NLR::NetworkLevelReasoner *nlr,
-                                  unsigned layerIndex);
+                                  unsigned layerIndex );
 
-    static std::vector<torch::Tensor> backward(torch::autograd::AutogradContext *ctx, std::vector<torch::Tensor>
-        grad_output);
+    static std::vector<torch::Tensor> backward( torch::autograd::AutogradContext *ctx,
+                                                std::vector<torch::Tensor> grad_output );
 };
 
-class CustomMaxPool : public torch::nn::Module {
+class CustomMaxPool : public torch::nn::Module
+{
 public:
-    CustomMaxPool(const NLR::NetworkLevelReasoner* nlr, unsigned layerIndex);
-    torch::Tensor forward(torch::Tensor x) const;
+    CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex );
+    torch::Tensor forward( torch::Tensor x ) const;
 
 private:
-    const NLR::NetworkLevelReasoner* networkLevelReasoner;
+    const NLR::NetworkLevelReasoner *networkLevelReasoner;
     unsigned maxLayerIndex;
 };
 
 class CustomDNNImpl : public torch::nn::Module
 {
 public:
-
-    const NLR::NetworkLevelReasoner* networkLevelReasoner;
+    const NLR::NetworkLevelReasoner *networkLevelReasoner;
     Vector<unsigned> layerSizes;
     Vector<torch::nn::ReLU> reluLayers;
     Vector<torch::nn::LeakyReLU> leakyReluLayers;
@@ -47,10 +49,10 @@ public:
     Vector<unsigned> maxLayerIndices;
 
     static void setWeightsAndBiases( torch::nn::Linear &linearLayer,
-                              const NLR::Layer *layer,
-                              unsigned sourceLayer,
-                              unsigned inputSize,
-                              unsigned outputSize );
+                                     const NLR::Layer *layer,
+                                     unsigned sourceLayer,
+                                     unsigned inputSize,
+                                     unsigned outputSize );
     void weightedSum( unsigned i, const NLR::Layer *layer );
     explicit CustomDNNImpl( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 

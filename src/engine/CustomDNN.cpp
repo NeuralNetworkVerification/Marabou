@@ -1,6 +1,7 @@
 #include "CustomDNN.h"
-#include "Vector.h"
+
 #include "TimeUtils.h"
+#include "Vector.h"
 
 
 CustomMaxPool::CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
