@@ -22,6 +22,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "SmtCore.h"
 #include "context/context.h"
+
 #include <cxxtest/TestSuite.h>
 
 class String;
@@ -94,7 +95,7 @@ public:
         }
     }
 
-    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &/*constraint*/) override
+    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint & /*constraint*/ ) override
     {
     }
 
@@ -308,7 +309,8 @@ public:
     }
 
     std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/, bool /*isPhaseFixing*/ ) override
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
+                             bool /*isPhaseFixing*/ ) override
     {
         return nullptr;
     }
@@ -339,7 +341,7 @@ public:
     {
     }
 
-    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &/*split*/ ) override
+    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit & /*split*/ ) override
     {
     }
 
@@ -374,6 +376,14 @@ public:
     NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override
     {
         return nullptr;
+    }
+
+    void storeTableauState( TableauState & /*state*/ )
+    {
+    }
+
+    virtual void restoreTableauState( TableauState & /*state*/ )
+    {
     }
 };
 
