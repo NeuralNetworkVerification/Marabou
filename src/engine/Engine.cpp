@@ -4362,3 +4362,12 @@ NLR::NetworkLevelReasoner *Engine::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
 }
+
+void Engine::storeTableauState( TableauState &state )
+{
+    _tableau->storeState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
+}
+void Engine::restoreTableauState( TableauState &state )
+{
+    _tableau->restoreState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
+}

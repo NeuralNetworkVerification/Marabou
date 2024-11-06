@@ -443,11 +443,6 @@ private:
     unsigned _vsidsDecayThreshold;
     unsigned _vsidsDecayCounter;
 
-//    unsigned _restarts;
-//    unsigned _restartLimit;
-//    unsigned _numOfSolveCalls;
-//    bool _shouldRestart;
-
     /*
       Access info in the internal data structures
     */
@@ -457,6 +452,8 @@ private:
 
     double getVSIDSScore( int literal ) const;
     unsigned luby( unsigned i );
+
+    CVC4::context::CDO<std::shared_ptr<TableauState> > *_cdTableauState;
 };
 
 #endif // __SmtCore_h__

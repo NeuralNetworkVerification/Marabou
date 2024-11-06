@@ -24,6 +24,7 @@
 #include "List.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
+#include "TableauState.h"
 #include "TableauStateStorageLevel.h"
 #include "Vector.h"
 #include "context/context.h"
@@ -246,6 +247,10 @@ public:
       Returns a pointer to the internal NLR object.
      */
     virtual NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const = 0;
+
+    virtual void storeTableauState( TableauState &state ) = 0;
+    virtual void restoreTableauState( TableauState &state) = 0;
+
 };
 
 #endif // __IEngine_h__

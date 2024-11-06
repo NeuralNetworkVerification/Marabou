@@ -1693,6 +1693,32 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
         // Store the merged variables
         state._mergedVariables = _mergedVariables;
     }
+    else if ( level == TableauStateStorageLevel::STORE_BASICS_ONLY )
+    {
+        // Set the dimensions
+        state.setDimensions( _m, _n, *this );
+
+        // Basic variables
+        state._basicVariables = _basicVariables;
+
+        // Store the assignments
+        memcpy( state._basicAssignment, _basicAssignment, sizeof( double ) * _m );
+        memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof( double ) * ( _n - _m ) );
+        state._basicAssignmentStatus = _basicAssignmentStatus;
+
+        // Store the indices
+        memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof( unsigned ) * _m );
+        memcpy( state._nonBasicIndexToVariable,
+                _nonBasicIndexToVariable,
+                sizeof( unsigned ) * ( _n - _m ) );
+        memcpy( state._variableToIndex, _variableToIndex, sizeof( unsigned ) * _n );
+
+        // Store the basis factorization
+        _basisFactorization->storeFactorization( state._basisFactorization );
+
+        // Store the merged variables
+        state._mergedVariables = _mergedVariables;
+    }
     else
     {
         ASSERT( level == TableauStateStorageLevel::STORE_NONE );
@@ -1769,6 +1795,30 @@ void Tableau::restoreState( const TableauState &state, TableauStateStorageLevel 
             _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
             _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
         }
+    }
+    else if ( level == TableauStateStorageLevel::STORE_BASICS_ONLY )
+    {
+        // Basic variables
+        _basicVariables = state._basicVariables;
+
+        // Restore the assignments
+        memcpy( _basicAssignment, state._basicAssignment, sizeof( double ) * _m );
+        memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof( double ) * ( _n - _m ) );
+        _basicAssignmentStatus = state._basicAssignmentStatus;
+
+        // Restore the indices
+        memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof( unsigned ) * _m );
+        memcpy( _nonBasicIndexToVariable,
+                state._nonBasicIndexToVariable,
+                sizeof( unsigned ) * ( _n - _m ) );
+        memcpy( _variableToIndex, state._variableToIndex, sizeof( unsigned ) * _n );
+
+        // Restore the basis factorization
+        _basisFactorization->restoreFactorization( state._basisFactorization );
+        // Restore the merged variables
+        _mergedVariables = state._mergedVariables;
+        computeAssignment();
+        computeCostFunction();
     }
     else
     {

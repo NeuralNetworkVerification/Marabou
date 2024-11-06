@@ -996,6 +996,9 @@ private:
     void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
 
     void dumpClauseToIpqFile( const List<int> &clause, String prefix );
+
+    void storeTableauState( TableauState &state );
+    void restoreTableauState( TableauState &state);
 };
 
 #endif // __Engine_h__
