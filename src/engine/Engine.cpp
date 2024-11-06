@@ -1579,7 +1579,9 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound
         // Tightening.
-        if ( _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE &&
+        if ( ( _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::MILP_ENCODING || 
+               _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL || 
+               _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION ) &&
              _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
