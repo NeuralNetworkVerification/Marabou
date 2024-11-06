@@ -1592,8 +1592,6 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
-        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_INVPROP:
-        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX:
             _networkLevelReasoner->lpRelaxationPropagation();
             break;
         case MILPSolverBoundTighteningType::MILP_ENCODING:
@@ -1685,8 +1683,6 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
             return;
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
-        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_INVPROP:
-        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX:
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:
             return;
