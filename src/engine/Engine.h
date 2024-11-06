@@ -997,8 +997,8 @@ private:
 
     void dumpClauseToIpqFile( const List<int> &clause, String prefix );
 
-    void storeTableauState( TableauState &state );
-    void restoreTableauState( TableauState &state);
+    void storeTableauState( TableauState &state ) override;
+    void restoreTableauState( TableauState &state) override;
 };
 
 #endif // __Engine_h__

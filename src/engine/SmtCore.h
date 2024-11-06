@@ -443,11 +443,6 @@ private:
     unsigned _vsidsDecayThreshold;
     unsigned _vsidsDecayCounter;
 
-    unsigned _restarts;
-    unsigned _restartLimit;
-    unsigned _numOfSolveCalls;
-    bool _shouldRestart;
-
     /*
       Access info in the internal data structures
     */

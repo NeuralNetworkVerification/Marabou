@@ -61,14 +61,11 @@ SmtCore::SmtCore( IEngine *engine )
     , _literalToClauses()
     , _vsidsDecayThreshold( 0 )
     , _vsidsDecayCounter( 0 )
-    , _restarts( 1 )
-    , _restartLimit( 512 * luby( 1 ) )
-    , _numOfSolveCalls( 0 )
-    , _shouldRestart ( false )
     , _cdTableauState( NULL )
 {
     _cadicalVarToPlc.insert( 0, NULL );
-    _cdTableauState = new ( true ) CVC4::context::CDO<std::shared_ptr<TableauState >>( &_context, std::make_shared<TableauState>() );
+    _cdTableauState = new ( true ) CVC4::context::CDO<std::shared_ptr<TableauState>>(
+        &_context, std::make_shared<TableauState>() );
 }
 
 SmtCore::~SmtCore()
@@ -755,8 +752,7 @@ void SmtCore::notify_new_decision_level()
         _constraintForSplitting = NULL;
     }
 
-    std::shared_ptr<TableauState> currentState = std::make_shared< TableauState>();
-    _engine->storeTableauState( *currentState );
+    std::shared_ptr<TableauState> currentState = std::make_shared<TableauState>();
     _cdTableauState->set( currentState );
     _engine->preContextPushHook();
     pushContext();
@@ -796,7 +792,8 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     popContextTo( new_level );
     _engine->postContextPopHook();
-    _engine->restoreTableauState( *_cdTableauState->get() );
+    if ( _cdTableauState->get()->_basicAssignment )
+        _engine->restoreTableauState( *_cdTableauState->get() );
 
     // Maintain literals to propagate learned before the decision level
     List<Pair<int, int>> currentPropagations = _literalsToPropagate;
@@ -873,9 +870,6 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     else
         result = _engine->solve();
 
-    ++_numOfSolveCalls;
-    if ( _numOfSolveCalls == _restartLimit )
-        _shouldRestart = true;
 
     return result;
 }
@@ -1010,10 +1004,6 @@ int SmtCore::cb_propagate()
         if ( _engine->solve() )
             _exitCode = SAT;
 
-        ++_numOfSolveCalls;
-        if ( _numOfSolveCalls == _restartLimit )
-            _shouldRestart = true;
-
         return 0;
     }
 
@@ -1035,10 +1025,6 @@ int SmtCore::cb_propagate()
                 _exitCode = SAT;
                 return 0;
             }
-
-            ++_numOfSolveCalls;
-            if ( _numOfSolveCalls == _restartLimit )
-                _shouldRestart = true;
         }
 
         // Try learning a conflict clause if possible
@@ -1217,6 +1203,7 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 
     ++_numOfClauses;
     _externalClausesToAdd.append( toAdd );
+    _engine->storeTableauState( *_cdTableauState->get() );
 
     if ( _statistics )
     {
@@ -1263,33 +1250,20 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
 
-        int result;
 
-        while ( true )
-        {
-            if ( _statistics )
-                _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
+        if ( _statistics )
+            _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
 
-            _cadicalWrapper.connectTheorySolver( this );
-            _cadicalWrapper.connectTerminator( this );
+        _cadicalWrapper.connectTheorySolver( this );
+        _cadicalWrapper.connectTerminator( this );
 
-            for ( unsigned var : _cadicalVarToPlc.keys() )
-                if ( var != 0 )
-                    _cadicalWrapper.addObservedVar( var );
+        for ( unsigned var : _cadicalVarToPlc.keys() )
+            if ( var != 0 )
+                _cadicalWrapper.addObservedVar( var );
 
-            //        printCurrentState();
-            result = _cadicalWrapper.solve();
+        //        printCurrentState();
+        int result = _cadicalWrapper.solve();
 
-            if ( result == 0 && _exitCode == NOT_DONE )
-            {
-                _shouldRestart = false;
-                _numOfSolveCalls = 0;
-                _restartLimit = 512 * luby( ++_restarts );
-                _cadicalWrapper.restart();
-            }
-            else
-                break;
-        }
 
         if ( _statistics && _engine->getVerbosity() )
         {
@@ -1442,7 +1416,7 @@ void SmtCore::resetExitCode()
 bool SmtCore::terminate()
 {
     SMT_LOG( Stringf( "Callback for terminate: %d", _exitCode != NOT_DONE ).ascii() );
-    return _exitCode != NOT_DONE || _shouldRestart;
+    return _exitCode != NOT_DONE;
 }
 
 unsigned SmtCore::getLiteralAssignmentIndex( int literal )

@@ -1696,7 +1696,7 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
     else if ( level == TableauStateStorageLevel::STORE_BASICS_ONLY )
     {
         // Set the dimensions
-        state.setDimensions( _m, _n, *this );
+        state.setDimensionsForBasics( _m, _n, *this );
 
         // Basic variables
         state._basicVariables = _basicVariables;
