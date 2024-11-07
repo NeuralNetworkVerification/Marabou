@@ -448,7 +448,6 @@ private:
     unsigned _numOfSolveCalls;
     bool _shouldRestart;
 
-//    CVC4::context::CDO<std::shared_ptr<TableauState> > *_cdTableauState;
     std::shared_ptr<TableauState> _tableauState;
     TableauState _initialTableauState;
 
