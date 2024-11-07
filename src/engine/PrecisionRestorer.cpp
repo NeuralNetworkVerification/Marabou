@@ -26,7 +26,7 @@
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
 {
-    engine.storeState( _initialEngineState, TableauStateStorageLevel::STORE_BASICS_ONLY );
+    engine.storeState( _initialEngineState, TableauStateStorageLevel::STORE_BASIC_FACTORIZATION_ONLY );
 }
 
 void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )

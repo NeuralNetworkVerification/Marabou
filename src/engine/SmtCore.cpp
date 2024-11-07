@@ -796,7 +796,7 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     popContextTo( new_level );
     _engine->postContextPopHook();
-    if ( _cdTableauState->get()->_basicAssignment )
+    if ( _cdTableauState->get()->_basisFactorization )
         _engine->restoreTableauState( *_cdTableauState->get() );
 
     // Maintain literals to propagate learned before the decision level

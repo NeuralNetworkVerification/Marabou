@@ -45,7 +45,7 @@ public:
     void
     setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle );
 
-    void setDimensionsForBasics( unsigned m,
+    void setDimensionsForBasicFactorization( unsigned m,
                                  unsigned n,
                                  const IBasisFactorization::BasisColumnOracle &oracle );
     /*

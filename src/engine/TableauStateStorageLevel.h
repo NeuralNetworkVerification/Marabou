@@ -20,7 +20,7 @@ enum class TableauStateStorageLevel {
     STORE_NONE = 0,
     STORE_BOUNDS_ONLY = 1,
     STORE_ENTIRE_TABLEAU_STATE = 2,
-    STORE_BASICS_ONLY = 3,
+    STORE_BASIC_FACTORIZATION_ONLY = 3,
 };
 
 #endif // __TableauStateStorageLevel_h__
