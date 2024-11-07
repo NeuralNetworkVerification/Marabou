@@ -65,11 +65,13 @@ SmtCore::SmtCore( IEngine *engine )
     , _restartLimit( 512 * luby( 1 ) )
     , _numOfSolveCalls( 0 )
     , _shouldRestart( false )
-    , _cdTableauState( NULL )
+//    , _cdTableauState( NULL )
+    , _tableauState(NULL)
 {
     _cadicalVarToPlc.insert( 0, NULL );
-    _cdTableauState = new ( true ) CVC4::context::CDO<std::shared_ptr<TableauState>>(
-        &_context, std::make_shared<TableauState>() );
+//    _cdTableauState = new ( true ) CVC4::context::CDO<std::shared_ptr<TableauState>>(
+//        &_engine->getContext(), std::make_shared<TableauState>() );
+    _tableauState = std::make_shared<TableauState>();
 }
 
 SmtCore::~SmtCore()
@@ -78,7 +80,7 @@ SmtCore::~SmtCore()
 
     _cadicalWrapper.disconnectTerminator();
     _cadicalWrapper.disconnectTheorySolver();
-    _cdTableauState->deleteSelf();
+//    _cdTableauState->deleteSelf();
 }
 
 void SmtCore::freeMemory()
@@ -757,7 +759,7 @@ void SmtCore::notify_new_decision_level()
     }
 
     std::shared_ptr<TableauState> currentState = std::make_shared<TableauState>();
-    _cdTableauState->set( currentState );
+//    _cdTableauState->set( currentState );
     _engine->preContextPushHook();
     pushContext();
 
@@ -796,8 +798,15 @@ void SmtCore::notify_backtrack( size_t new_level )
 
     popContextTo( new_level );
     _engine->postContextPopHook();
-    if ( _cdTableauState->get()->_basicAssignment )
-        _engine->restoreTableauState( *_cdTableauState->get() );
+//    if ( _cdTableauState->get()->_basicAssignment )
+//    {
+//        SMT_LOG( Stringf( "restoreTableState for %p", _cdTableauState->get().get() ).ascii() );
+//        _engine->restoreTableauState( *_cdTableauState->get() );
+//    }
+    if (_tableauState.get()->_basicAssignment)
+    {
+        _engine->restoreTableauState(*_tableauState);
+    }
 
     // Maintain literals to propagate learned before the decision level
     List<Pair<int, int>> currentPropagations = _literalsToPropagate;
@@ -1031,6 +1040,7 @@ int SmtCore::cb_propagate()
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClausesToAdd.empty() )
         {
+            SMT_LOG("Calling solve()");
             if ( _engine->solve() )
             {
                 _exitCode = SAT;
@@ -1196,6 +1206,7 @@ int SmtCore::cb_add_external_clause_lit()
 
 void SmtCore::addExternalClause( const Set<int> &clause )
 {
+    SMT_LOG("Add External Clause");
     struct timespec start = TimeUtils::sampleMicro();
 
     ASSERT( !clause.exists( 0 ) )
@@ -1218,7 +1229,11 @@ void SmtCore::addExternalClause( const Set<int> &clause )
 
     ++_numOfClauses;
     _externalClausesToAdd.append( toAdd );
-    _engine->storeTableauState( *_cdTableauState->get() );
+    SMT_LOG( Stringf( "storeTableState for %p in level %u", _tableauState.get(),
+                      _context.getLevel() )
+                 .ascii
+             () );
+    _engine->storeTableauState( *_tableauState );
 
     if ( _statistics )
     {
@@ -1290,7 +1305,12 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _numOfSolveCalls = 0;
                 _restartLimit = 512 * luby( ++_restarts );
                 _engine->restoreTableauState( _initialTableauState );
+                popContextTo(0);
+                _engine->postContextPopHook();
+                _literalsToPropagate.clear();
                 _cadicalWrapper.restart();
+                for ( const auto &lit : _fixedCadicalVars )
+                    notify_assignment( lit, true );
             }
             else
                 break;
