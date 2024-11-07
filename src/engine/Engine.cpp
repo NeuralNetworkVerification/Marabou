@@ -4367,7 +4367,6 @@ void Engine::storeTableauState( TableauState &state )
 {
     _tableau->storeState( state, TableauStateStorageLevel::STORE_BASIC_FACTORIZATION_ONLY );
 }
-
 void Engine::restoreTableauState( TableauState &state )
 {
     _tableau->restoreState( state, TableauStateStorageLevel::STORE_BASIC_FACTORIZATION_ONLY );

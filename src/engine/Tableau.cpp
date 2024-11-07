@@ -1790,7 +1790,6 @@ void Tableau::restoreState( const TableauState &state, TableauStateStorageLevel 
         // Restore the merged variables
         _mergedVariables = state._mergedVariables;
 
-        computeBasicStatus();
         computeCostFunction();
     }
     else
