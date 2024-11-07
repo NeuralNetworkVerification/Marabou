@@ -448,17 +448,19 @@ private:
     unsigned _numOfSolveCalls;
     bool _shouldRestart;
 
+    CVC4::context::CDO<std::shared_ptr<TableauState> > *_cdTableauState;
+    TableauState _initialTableauState;
+
     /*
       Access info in the internal data structures
     */
     bool isLiteralAssigned( int literal ) const;
     bool isLiteralToBePropagated( int literal ) const;
+
     bool isClauseSatisfied( unsigned clause ) const;
-
     double getVSIDSScore( int literal ) const;
-    unsigned luby( unsigned i );
 
-    CVC4::context::CDO<std::shared_ptr<TableauState> > *_cdTableauState;
+    unsigned luby( unsigned i );
 };
 
 #endif // __SmtCore_h__

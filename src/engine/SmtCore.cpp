@@ -1265,7 +1265,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
 
-        _engine->storeTableauState( *_cdTableauState->get() );
+        _engine->storeTableauState( _initialTableauState );
 
         int result;
 
@@ -1289,7 +1289,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _shouldRestart = false;
                 _numOfSolveCalls = 0;
                 _restartLimit = 512 * luby( ++_restarts );
-                _engine->restoreTableauState( *_cdTableauState->get());
+                _engine->restoreTableauState( _initialTableauState );
                 _cadicalWrapper.restart();
             }
             else
