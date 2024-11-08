@@ -449,7 +449,7 @@ private:
 //    bool _shouldRestart;
 
     std::shared_ptr<TableauState> _tableauState;
-    TableauState _initialTableauState;
+//    TableauState _initialTableauState;
 
     /*
       Access info in the internal data structures
