@@ -443,10 +443,10 @@ private:
     unsigned _vsidsDecayThreshold;
     unsigned _vsidsDecayCounter;
 
-    unsigned _restarts;
-    unsigned _restartLimit;
-    unsigned _numOfSolveCalls;
-    bool _shouldRestart;
+//    unsigned _restarts;
+//    unsigned _restartLimit;
+//    unsigned _numOfSolveCalls;
+//    bool _shouldRestart;
 
     std::shared_ptr<TableauState> _tableauState;
     TableauState _initialTableauState;
