@@ -1,43 +1,42 @@
 #include "PGD.h"
 #include "InputQuery.h"
-
 #include <iostream>
 
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
     : networkLevelReasoner( networkLevelReasoner )
-    , device( torch::kCPU )
-    , model( CustomDNNImpl( networkLevelReasoner ) )
-    , iters( DEFAULT_NUM_ITER )
-    , restarts( DEFAULT_NUM_RESTARTS )
+    , _device( torch::kCPU )
+    , _model( CustomDNN( networkLevelReasoner ) )
+    , _iters( GlobalConfiguration::PGD_DEFAULT_NUM_ITER )
+    , _restarts( GlobalConfiguration::PGD_NUM_RESTARTS )
     , _adversarialInput( nullptr )
     , _adversarialOutput( nullptr )
 {
-    inputSize = model.layerSizes.first();
-    _getBounds( inputBounds, INPUT );
-    _getBounds( outputBounds, OUTPUT );
-    std::pair<torch::Tensor, torch::Tensor> variables = _generateSampleAndEpsilon();
-    InputExample = variables.first;
-    epsilon = variables.second;
+    _inputSize = _model.getLayerSizes().first();
+    getBounds( _inputBounds, GlobalConfiguration::PdgBoundType::PGD_INPUT );
+    getBounds( _outputBounds, GlobalConfiguration::PdgBoundType::PGD_OUTPUT );
+    std::pair<torch::Tensor, torch::Tensor> variables = generateSampleAndEpsilon();
+    _inputExample = variables.first;
+    _epsilon = variables.second;
 }
 
-torch::Device PGDAttack::_getDevice()
+torch::Device PGDAttack::getDevice()
 {
     if ( torch::cuda::is_available() )
     {
-        std::cout << "CUDA is available. Using GPU." << std::endl;
+        PGD_LOG( "CUDA Device available. Using GPU" );
         return { torch::kCUDA };
     }
     else
     {
-        std::cout << "CUDA is not available. Using CPU." << std::endl;
+        PGD_LOG( "CUDA Device not available. Using CPU" );
         return { torch::kCPU };
     }
 }
 
-void PGDAttack::_getBounds( std::pair<Vector<double>, Vector<double>> &bounds,
-                            const signed type ) const
+void PGDAttack::getBounds( std::pair<Vector<double>, Vector<double>> &bounds,
+                           const signed type ) const
 {
-    unsigned layerIndex = type == INPUT ? 0 : networkLevelReasoner->getNumberOfLayers() - 1;
+    unsigned layerIndex = type == GlobalConfiguration::PdgBoundType::PGD_INPUT ? 0 : networkLevelReasoner->getNumberOfLayers() - 1;
     const NLR::Layer *layer = networkLevelReasoner->getLayer( layerIndex );
 
     for ( unsigned neuron = 0; neuron < layer->getSize(); ++neuron )
@@ -47,15 +46,15 @@ void PGDAttack::_getBounds( std::pair<Vector<double>, Vector<double>> &bounds,
     }
 }
 
-std::pair<torch::Tensor, torch::Tensor> PGDAttack::_generateSampleAndEpsilon()
+std::pair<torch::Tensor, torch::Tensor> PGDAttack::generateSampleAndEpsilon()
 {
-    Vector<double> sample( inputSize, 0.0f );
-    Vector<double> epsilons( inputSize, 0.0f );
+    Vector<double> sample( _inputSize, 0.0f );
+    Vector<double> epsilons( _inputSize, 0.0f );
 
-    for ( unsigned i = 0; i < inputSize; i++ )
+    for ( unsigned i = 0; i < _inputSize; i++ )
     {
-        double lower = inputBounds.first.get( i );
-        double upper = inputBounds.second.get( i );
+        double lower = _inputBounds.first.get( i );
+        double upper = _inputBounds.second.get( i );
 
         if ( std::isinf( lower ) && std::isinf( upper ) )
         {
@@ -64,13 +63,13 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::_generateSampleAndEpsilon()
         }
         else if ( std::isinf( lower ) )
         {
-            sample[i] = upper - RANGE;
-            epsilons[i] = RANGE;
+            sample[i] = upper - GlobalConfiguration::PGD_INPUT_RANGE;
+            epsilons[i] = GlobalConfiguration::PGD_INPUT_RANGE;
         }
         else if ( std::isinf( upper ) )
         {
-            sample[i] = lower + RANGE;
-            epsilons[i] = RANGE;
+            sample[i] = lower + GlobalConfiguration::PGD_INPUT_RANGE;
+            epsilons[i] = GlobalConfiguration::PGD_INPUT_RANGE;
         }
         else
         {
@@ -80,12 +79,12 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::_generateSampleAndEpsilon()
         }
     }
 
-    return { torch::tensor( sample.getContainer() ).unsqueeze( 0 ).to( device ),
-             torch::tensor( epsilons.getContainer() ).to( device ) };
+    return { torch::tensor( sample.getContainer() ).unsqueeze( 0 ).to( _device ),
+             torch::tensor( epsilons.getContainer() ).to( _device ) };
 }
 
-bool PGDAttack::_isWithinBounds( const torch::Tensor &sample,
-                                 const std::pair<Vector<double>, Vector<double>> &bounds )
+bool PGDAttack::isWithinBounds( const torch::Tensor &sample,
+                                const std::pair<Vector<double>, Vector<double>> &bounds )
 {
     torch::Tensor flatInput = sample.view( { -1 } );
     if ( flatInput.numel() != bounds.first.size() || flatInput.numel() != bounds.second.size() )
@@ -128,100 +127,119 @@ bool PGDAttack::_isWithinBounds( const torch::Tensor &sample,
 }
 
 
-torch::Tensor PGDAttack::_calculateLoss( const torch::Tensor &predictions )
+torch::Tensor PGDAttack::calculateLoss( const torch::Tensor &predictions )
 {
     torch::Tensor lowerBoundTensor =
-        torch::tensor( outputBounds.first.data(), torch::kFloat32 ).to( device );
+        torch::tensor( _outputBounds.first.data(), torch::kFloat32 ).to( _device );
     torch::Tensor upperBoundTensor =
-        torch::tensor( outputBounds.second.data(), torch::kFloat32 ).to( device );
+        torch::tensor( _outputBounds.second.data(), torch::kFloat32 ).to( _device );
 
-    // Compute the penalty: We want high loss if predictions are outside the bounds
-    torch::Tensor ubViolation = torch::sum(torch::square(
-                                torch::relu(predictions - upperBoundTensor ))).to(device);
-    torch::Tensor lbViolation = torch::sum(torch::square(
-                                torch::relu(lowerBoundTensor - predictions) )).to(device);
-    return torch::sum(ubViolation + lbViolation).to(device);
+    // Compute the penalty: High loss if predictions are outside the bounds
+    torch::Tensor ubViolation =
+        torch::sum( torch::square( torch::relu( predictions - upperBoundTensor ) ) ).to( _device );
+    torch::Tensor lbViolation =
+        torch::sum( torch::square( torch::relu( lowerBoundTensor - predictions ) ) ).to( _device );
+    return torch::sum( ubViolation + lbViolation ).to( _device );
 }
 
-std::pair<torch::Tensor, torch::Tensor> PGDAttack::_findAdvExample()
+std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
 {
-    torch::Tensor currentExample = InputExample;
+    torch::Tensor currentExample = _inputExample;
     torch::Tensor currentPrediction;
-    torch::Tensor lowerBoundTensor = torch::tensor(inputBounds.first.data(), torch::kFloat32).to(device);
-    torch::Tensor upperBoundTensor = torch::tensor(inputBounds.second.data(), torch::kFloat32).to(device);
-    torch::Tensor delta = torch::zeros(inputSize).to(device).requires_grad_(true);
-    for ( unsigned i = 0; i < restarts; ++i )
+    torch::Tensor lowerBoundTensor =
+        torch::tensor( _inputBounds.first.data(), torch::kFloat32 ).to( _device );
+    torch::Tensor upperBoundTensor =
+        torch::tensor( _inputBounds.second.data(), torch::kFloat32 ).to( _device );
+    torch::Tensor delta = torch::zeros( _inputSize ).to( _device ).requires_grad_( true );
+    for ( unsigned i = 0; i < _restarts; ++i )
     {
-        torch::optim::Adam optimizer({delta}, torch::optim::AdamOptions());
-        for ( unsigned j = 0; j < iters; ++j )
+        torch::optim::Adam optimizer( { delta }, torch::optim::AdamOptions() );
+        for ( unsigned j = 0; j < _iters; ++j )
         {
             currentExample = currentExample + delta;
-            currentPrediction = model.forward( currentExample );
-            if ( _isWithinBounds( currentPrediction, outputBounds ) )
+            currentPrediction = _model.forward( currentExample );
+            if ( isWithinBounds( currentPrediction, _outputBounds ) )
             {
                 return { currentExample, currentPrediction };
             }
             optimizer.zero_grad();
-            torch::Tensor loss = _calculateLoss( currentPrediction );
+            torch::Tensor loss = calculateLoss( currentPrediction );
             loss.backward();
             optimizer.step();
-            delta.data() = delta.data().clamp( -epsilon, epsilon );
+            delta.data() = delta.data().clamp( -_epsilon, _epsilon );
         }
-        delta = (torch::rand(inputSize) * 2 - 1).mul(epsilon).to(device).requires_grad_(true);
+        delta = ( torch::rand( _inputSize ) * 2 - 1 )
+                    .mul( _epsilon )
+                    .to( _device )
+                    .requires_grad_( true );
     }
     return { currentExample, currentPrediction };
 }
 
-double PGDAttack::getAssignment(  int index )
+double PGDAttack::getAssignment( int index )
 {
-    return assignments[index];
+    return _assignments[index];
 }
 
-bool PGDAttack::displayAdversarialExample()
+bool PGDAttack::hasAdversarialExample()
 {
-    std::cout << "-----Starting PGD attack-----" << std::endl;
-    auto adversarial = _findAdvExample();
-    torch::Tensor advInput = adversarial.first.to(torch::kDouble);
-    torch::Tensor advPred = adversarial.second.to(torch::kDouble);
+    PGD_LOG( "-----Starting PGD attack-----" );
+    auto adversarial = findAdvExample();
+    torch::Tensor advInput = adversarial.first.to( torch::kDouble );
+    torch::Tensor advPred = adversarial.second.to( torch::kDouble );
 
     bool isFooled =
-        _isWithinBounds( advInput, inputBounds ) && _isWithinBounds( advPred, outputBounds );
+        isWithinBounds( advInput, _inputBounds ) && isWithinBounds( advPred, _outputBounds );
 
     auto *example = advInput.data_ptr<double>();
     auto *prediction = advPred.data_ptr<double>();
     size_t outputSize = advPred.size( 1 );
-    ASSERT( advInput.size( 1 ) == inputSize && outputSize == model.layerSizes.last() );
+    ASSERT( advInput.size( 1 ) == _inputSize && outputSize == _model.getLayerSizes().last() );
 
     if ( isFooled )
     {
         _adversarialInput = new double[advInput.size( 1 )];
         _adversarialOutput = new double[advPred.size( 1 )];
 
-        std::copy( example, example + inputSize, _adversarialInput );
+        std::copy( example, example + _inputSize, _adversarialInput );
         std::copy( prediction, prediction + outputSize, _adversarialOutput );
     }
+    PGD_LOG( "Input Lower Bounds : \n" );
+    for ( auto &bound : _inputBounds.first.getContainer() )
+        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
+    PGD_LOG( "Input Upper Bounds : \n" );
+    for ( auto &bound : _inputBounds.second.getContainer() )
+        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
 
-    std::cout << "Input Lower Bounds : " << inputBounds.first.getContainer() << "\n";
-    std::cout << "Input Upper Bounds : " << inputBounds.second.getContainer() << "\n";
+    PGD_LOG( "Adversarial Input:\n" );
     std::cout << "Adversarial Input: \n";
     for ( int i = 0; i < advInput.numel(); ++i )
     {
-        std::cout << "x" << i << " = " << example[i] << "\n";
+        PGD_LOG( "x%u=%.3lf", i, example[i] );
     }
-    std::cout << "Output Lower Bounds : " << outputBounds.first.getContainer() << "\n";
-    std::cout << "Output Upper Bounds : " << outputBounds.second.getContainer() << "\n";
+    PGD_LOG( "Output Lower Bounds : \n" );
+    for ( auto &bound : _outputBounds.first.getContainer() )
+        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
+    PGD_LOG( "Output Upper Bounds : \n" );
+    for ( auto &bound : _outputBounds.second.getContainer() )
+        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
+
     std::cout << "Adversarial Prediction: \n";
     for ( int i = 0; i < advPred.numel(); ++i )
     {
-        std::cout << "y" << i << " = " << prediction[i] << "\n";
+        PGD_LOG( "y%u=%.3lf", i, prediction[i] );
     }
-    std::cout << "Model fooled: "
-              << ( isFooled ? "Yes \n ------ PGD Attack Succeed ------"
-                            : "No \n ------ PGD Attack Failed ------" )
-              << "\n\n";
+
+
+    if ( isFooled )
+    {
+        PGD_LOG( "Model fooled: Yes \n ------ PGD Attack Succeed ------\n" );
+    }else
+        PGD_LOG( "Model fooled: No \n ------ PGD Attack Failed ------\n" );
+
 
     if ( _adversarialInput )
-        networkLevelReasoner->concretizeInputAssignment( assignments, _adversarialInput );
+        networkLevelReasoner->concretizeInputAssignment( _assignments, _adversarialInput );
 
     return isFooled;
 }

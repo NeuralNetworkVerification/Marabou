@@ -5,17 +5,17 @@
 
 
 CustomMaxPool::CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
-    : networkLevelReasoner( nlr )
-    , maxLayerIndex( layerIndex )
+    : _networkLevelReasoner( nlr )
+    , _maxLayerIndex( layerIndex )
 {
 }
 
 torch::Tensor CustomMaxPool::forward( torch::Tensor x ) const
 {
-    return CustomMaxPoolFunction::apply( x, networkLevelReasoner, maxLayerIndex );
+    return CustomMaxPoolFunction::apply( x, _networkLevelReasoner, _maxLayerIndex );
 }
 
-void CustomDNNImpl::setWeightsAndBiases( torch::nn::Linear &linearLayer,
+void CustomDNN::setWeightsAndBiases( torch::nn::Linear &linearLayer,
                                          const NLR::Layer *layer,
                                          unsigned sourceLayer,
                                          unsigned inputSize,
@@ -54,17 +54,17 @@ void CustomDNNImpl::setWeightsAndBiases( torch::nn::Linear &linearLayer,
     linearLayer->bias.set_( biasTensor );
 }
 
-void CustomDNNImpl::weightedSum( unsigned i, const NLR::Layer *layer )
+void CustomDNN::weightedSum( unsigned i, const NLR::Layer *layer )
 {
     unsigned sourceLayer = i - 1;
-    const NLR::Layer *prevLayer = networkLevelReasoner->getLayer( sourceLayer );
+    const NLR::Layer *prevLayer = _networkLevelReasoner->getLayer( sourceLayer );
     unsigned inputSize = prevLayer->getSize();
     unsigned outputSize = layer->getSize();
 
     if ( outputSize > 0 )
     {
         auto linearLayer = torch::nn::Linear( torch::nn::LinearOptions( inputSize, outputSize ) );
-        linearLayers.append( linearLayer );
+        _linearLayers.append( linearLayer );
 
         setWeightsAndBiases( linearLayer, layer, sourceLayer, inputSize, outputSize );
 
@@ -73,17 +73,17 @@ void CustomDNNImpl::weightedSum( unsigned i, const NLR::Layer *layer )
 }
 
 
-CustomDNNImpl::CustomDNNImpl( const NLR::NetworkLevelReasoner *nlr )
+CustomDNN::CustomDNN( const NLR::NetworkLevelReasoner *nlr )
 {
-    std::cout << "----- Construct Custom Network -----" << std::endl;
-    networkLevelReasoner = nlr;
-    numberOfLayers = networkLevelReasoner->getNumberOfLayers();
-    for ( unsigned i = 0; i < numberOfLayers; i++ )
+    CUSTOM_DNN_LOG("----- Construct Custom Network -----" );
+    _networkLevelReasoner = nlr;
+    _numberOfLayers = _networkLevelReasoner->getNumberOfLayers();
+    for ( unsigned i = 0; i < _numberOfLayers; i++ )
     {
-        const NLR::Layer *layer = networkLevelReasoner->getLayer( i );
-        layerSizes.append( layer->getSize() );
+        const NLR::Layer *layer = _networkLevelReasoner->getLayer( i );
+        _layerSizes.append( layer->getSize() );
         NLR::Layer::Type layerType = layer->getLayerType();
-        layersOrder.append( layerType );
+        _layersOrder.append( layerType );
         switch ( layerType )
         {
         case NLR::Layer::INPUT:
@@ -94,74 +94,77 @@ CustomDNNImpl::CustomDNNImpl( const NLR::NetworkLevelReasoner *nlr )
         case NLR::Layer::RELU:
         {
             auto reluLayer = torch::nn::ReLU( torch::nn::ReLUOptions() );
-            reluLayers.append( reluLayer );
+            _reluLayers.append( reluLayer );
             register_module( "ReLU" + std::to_string( i ), reluLayer );
             break;
         }
         case NLR::Layer::LEAKY_RELU:
         {
             auto reluLayer = torch::nn::LeakyReLU( torch::nn::LeakyReLUOptions() );
-            leakyReluLayers.append( reluLayer );
+            _leakyReluLayers.append( reluLayer );
             register_module( "leakyReLU" + std::to_string( i ), reluLayer );
             break;
         }
         case NLR::Layer::MAX:
         {
-            auto customMaxPoolLayer = std::make_shared<CustomMaxPool>( networkLevelReasoner, i );
-            customMaxPoolLayers.append( customMaxPoolLayer );
+            auto customMaxPoolLayer = std::make_shared<CustomMaxPool>( _networkLevelReasoner, i );
+            _customMaxPoolLayers.append( customMaxPoolLayer );
             register_module( "maxPool" + std::to_string( i ), customMaxPoolLayer );
             break;
         }
         case NLR::Layer::SIGMOID:
         {
             auto sigmoidLayer = torch::nn::Sigmoid();
-            sigmoidLayers.append( sigmoidLayer );
+            _sigmoidLayers.append( sigmoidLayer );
             register_module( "sigmoid" + std::to_string( i ), sigmoidLayer );
             break;
         }
         default:
-            std::cerr << "Unsupported layer type: " << layerType << std::endl;
+            CUSTOM_DNN_LOG( "Unsupported layer type\n" );
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
             break;
         }
     }
 }
 
-torch::Tensor CustomDNNImpl::forward( torch::Tensor x )
+torch::Tensor CustomDNN::forward( torch::Tensor x )
 {
     unsigned linearIndex = 0;
     unsigned reluIndex = 0;
     unsigned maxPoolIndex = 0;
     unsigned leakyReluIndex = 0;
     unsigned sigmoidIndex = 0;
-    for ( unsigned i = 0; i < numberOfLayers; i++ )
+    for ( unsigned i = 0; i < _numberOfLayers; i++ )
     {
-        const NLR::Layer::Type layerType = layersOrder[i];
+        const NLR::Layer::Type layerType = _layersOrder[i];
         switch ( layerType )
         {
         case NLR::Layer::INPUT:
             break;
         case NLR::Layer::WEIGHTED_SUM:
-            x = linearLayers[linearIndex]->forward( x );
+            x = _linearLayers[linearIndex]->forward( x );
             linearIndex++;
             break;
         case NLR::Layer::RELU:
-            x = reluLayers[reluIndex]->forward( x );
+            x = _reluLayers[reluIndex]->forward( x );
             reluIndex++;
             break;
         case NLR::Layer::MAX:
-            x = customMaxPoolLayers[maxPoolIndex]->forward( x );
+            x = _customMaxPoolLayers[maxPoolIndex]->forward( x );
             maxPoolIndex++;
             break;
         case NLR::Layer::LEAKY_RELU:
-            x = leakyReluLayers[leakyReluIndex]->forward( x );
+            x = _leakyReluLayers[leakyReluIndex]->forward( x );
             leakyReluIndex++;
             break;
         case NLR::Layer::SIGMOID:
-            x = sigmoidLayers[sigmoidIndex]->forward( x );
+            x = _sigmoidLayers[sigmoidIndex]->forward( x );
             sigmoidIndex++;
             break;
         default:
-            std::cerr << "Unsupported activation type: " << layerType << std::endl;
+            CUSTOM_DNN_LOG( "Unsupported layer type\n" );
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            break;
         }
     }
     return x;
@@ -216,4 +219,9 @@ std::vector<torch::Tensor> CustomMaxPoolFunction::backward( torch::autograd::Aut
     grad_input[0].index_add_( 0, indices.flatten(), grad_output[0].flatten() );
 
     return { grad_input, torch::Tensor(), torch::Tensor() };
+}
+
+const Vector<unsigned>& CustomDNN::getLayerSizes() const
+{
+    return _layerSizes;
 }

@@ -1449,7 +1449,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             std::cout << "start time attack: " << TimeUtils::now().ascii() << std::endl;
             fflush( stdout );
             _pgdAttack = new PGDAttack(_networkLevelReasoner);
-            if ( _pgdAttack->displayAdversarialExample() )
+            if ( _pgdAttack->hasAdversarialExample() )
             {
                 std::cout << "end time attack: " << TimeUtils::now().ascii() << std::endl;
                 fflush( stdout );
@@ -2133,7 +2133,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         else
         {
             ENGINE_LOG(
-                Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
+                Stringf( c ).ascii() );
             if ( _produceUNSATProofs &&
                  FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {

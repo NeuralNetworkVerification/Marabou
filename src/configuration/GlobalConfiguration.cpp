@@ -117,6 +117,12 @@ const bool GlobalConfiguration::WRITE_JSON_PROOF = false;
 const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
+const GlobalConfiguration::PdgBoundType GlobalConfiguration::PGD_BOUND_TYPE =
+    GlobalConfiguration::PGD_INPUT;
+const unsigned GlobalConfiguration::PGD_DEFAULT_NUM_ITER = 100; // todo run argument
+const unsigned GlobalConfiguration::PGD_NUM_RESTARTS = 3; // todo run argument
+const double GlobalConfiguration::PGD_INPUT_RANGE = 1000;
+
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
 const bool GlobalConfiguration::GUROBI_LOGGING = false;
@@ -141,6 +147,8 @@ const bool GlobalConfiguration::ONNX_PARSER_LOGGING = false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
 const bool GlobalConfiguration::CEGAR_LOGGING = false;
+const bool GlobalConfiguration::CUSTOM_DNN_LOGGING = false;
+const bool GlobalConfiguration::PGD_LOG = false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
