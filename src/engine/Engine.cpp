@@ -2412,6 +2412,12 @@ void Engine::storeInitialEngineState()
     }
 }
 
+void Engine::restoreInitialEngineState()
+{
+    if ( _initialStateStored )
+        _precisionRestorer.restoreInitialEngineState( *this );
+}
+
 bool Engine::basisRestorationNeeded() const
 {
     return _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED ||
@@ -4369,7 +4375,7 @@ void Engine::storeTableauState( TableauState &state )
     _tableau->storeState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
 }
 
-void Engine::restoreTableauState( TableauState &state )
+void Engine::restoreTableauState( const TableauState &state )
 {
     _tableau->restoreState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
 }

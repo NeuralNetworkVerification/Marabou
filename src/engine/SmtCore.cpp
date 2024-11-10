@@ -801,12 +801,6 @@ void SmtCore::notify_backtrack( size_t new_level )
     popContextTo( new_level );
     _engine->postContextPopHook();
 
-//    if ( _tableauState.get()->_basicAssignment )
-//    {
-//        SMT_LOG( Stringf( "restoreTableState for %p", _tableauState.get() ).ascii() );
-//        _engine->restoreTableauState( *_tableauState );
-//    }
-
     // Maintain literals to propagate learned before the decision level
     List<Pair<int, int>> currentPropagations = _literalsToPropagate;
     _literalsToPropagate.clear();
@@ -1220,10 +1214,6 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     }
 
     ++_numOfClauses;
-//    SMT_LOG(
-//        Stringf( "storeTableState for %p in level %u", _tableauState.get(), _context.getLevel() )
-//            .ascii() );
-//    _engine->storeTableauState( *_tableauState );
 
     if ( _statistics )
     {
@@ -1270,8 +1260,6 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
 
-        _engine->storeTableauState( _initialTableauState );
-
         int result;
 
         while ( true )
@@ -1294,7 +1282,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _shouldRestart = false;
                 _numOfSolveCalls = 0;
                 _restartLimit = 512 * luby( ++_restarts );
-                _engine->restoreTableauState( _initialTableauState );
+                _engine->restoreInitialEngineState();
                 popContextTo( 0 );
                 _engine->postContextPopHook();
                 _literalsToPropagate.clear();

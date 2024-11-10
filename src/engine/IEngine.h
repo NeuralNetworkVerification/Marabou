@@ -249,8 +249,9 @@ public:
     virtual NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const = 0;
 
     virtual void storeTableauState( TableauState &state ) = 0;
-    virtual void restoreTableauState( TableauState &state) = 0;
+    virtual void restoreTableauState( const TableauState &state ) = 0;
 
+    virtual void restoreInitialEngineState() = 0;
 };
 
 #endif // __IEngine_h__

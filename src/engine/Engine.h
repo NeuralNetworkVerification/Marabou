@@ -713,6 +713,7 @@ private:
       Restore the tableau from the original version.
     */
     void storeInitialEngineState();
+    void restoreInitialEngineState() override;
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
 
@@ -998,7 +999,7 @@ private:
     void dumpClauseToIpqFile( const List<int> &clause, String prefix );
 
     void storeTableauState( TableauState &state ) override;
-    void restoreTableauState( TableauState &state) override;
+    void restoreTableauState( const TableauState &state ) override;
 };
 
 #endif // __Engine_h__
