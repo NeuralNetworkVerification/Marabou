@@ -382,7 +382,7 @@ public:
     {
     }
 
-    void restoreTableauState( TableauState & /*state*/ )
+    void restoreTableauState( const TableauState & /*state*/ )
     {
     }
 
