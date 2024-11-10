@@ -1283,8 +1283,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _numOfSolveCalls = 0;
                 _restartLimit = 512 * luby( ++_restarts );
                 _engine->restoreInitialEngineState();
-                popContextTo( 0 );
-                _engine->postContextPopHook();
+                popContextTo( 0 ); // No need for post hook, as state is restored
                 _literalsToPropagate.clear();
                 _cadicalWrapper.restart();
                 for ( const auto &lit : _fixedCadicalVars )
