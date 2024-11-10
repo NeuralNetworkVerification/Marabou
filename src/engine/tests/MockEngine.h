@@ -382,7 +382,11 @@ public:
     {
     }
 
-    virtual void restoreTableauState( TableauState & /*state*/ )
+    void restoreTableauState( TableauState & /*state*/ )
+    {
+    }
+
+    void restoreInitialEngineState()
     {
     }
 };
