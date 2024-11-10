@@ -678,12 +678,12 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
         return;
 
     checkIfShouldExitDueToTimeout();
-
-    if ( !_externalClausesToAdd.empty() )
-    {
-        SMT_LOG( "Skipping notification due to conflict clause" )
-        return;
-    }
+//
+//    if ( !_externalClausesToAdd.empty() )
+//    {
+//        SMT_LOG( "Skipping notification due to conflict clause" )
+//        return;
+//    }
 
     SMT_LOG( Stringf( "Notified assignment %d; is decision: %d; is fixed: %d",
                       lit,
@@ -1306,6 +1306,8 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 popContextTo( 0 );
                 _engine->postContextPopHook();
                 _literalsToPropagate.clear();
+                _numOfClauses = 0;
+                _literalToClauses.clear();
                 _cadicalWrapper.restart();
                 for ( const auto &lit : _fixedCadicalVars )
                     notify_assignment( lit, true );
