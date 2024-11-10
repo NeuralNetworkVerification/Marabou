@@ -61,10 +61,10 @@ SmtCore::SmtCore( IEngine *engine )
     , _literalToClauses()
     , _vsidsDecayThreshold( 0 )
     , _vsidsDecayCounter( 0 )
-//    , _restarts( 1 )
-//    , _restartLimit( 512 * luby( 1 ) )
-//    , _numOfSolveCalls( 0 )
-//    , _shouldRestart( false )
+    , _restarts( 1 )
+    , _restartLimit( 512 * luby( 1 ) )
+    , _numOfSolveCalls( 0 )
+    , _shouldRestart( false )
     , _tableauState( NULL )
 {
     _cadicalVarToPlc.insert( 0, NULL );
@@ -882,9 +882,9 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     else
         result = _engine->solve();
 
-//    ++_numOfSolveCalls;
-//    if ( _numOfSolveCalls == _restartLimit )
-//        _shouldRestart = true;
+    ++_numOfSolveCalls;
+    if ( _numOfSolveCalls == _restartLimit )
+        _shouldRestart = true;
 
     return result;
 }
@@ -1019,9 +1019,9 @@ int SmtCore::cb_propagate()
         if ( _engine->solve() )
             _exitCode = SAT;
 
-//        ++_numOfSolveCalls;
-//        if ( _numOfSolveCalls == _restartLimit )
-//            _shouldRestart = true;
+        ++_numOfSolveCalls;
+        if ( _numOfSolveCalls == _restartLimit )
+            _shouldRestart = true;
 
         return 0;
     }
@@ -1046,9 +1046,9 @@ int SmtCore::cb_propagate()
                 return 0;
             }
 
-//            ++_numOfSolveCalls;
-//            if ( _numOfSolveCalls == _restartLimit )
-//                _shouldRestart = true;
+            ++_numOfSolveCalls;
+            if ( _numOfSolveCalls == _restartLimit )
+                _shouldRestart = true;
         }
 
         // Try learning a conflict clause if possible
@@ -1280,49 +1280,40 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         _engine->storeTableauState( _initialTableauState );
 
-//        int result;
-//
-//        while ( true )
-//        {
-//            if ( _statistics )
-//                _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
-//
-//            _cadicalWrapper.connectTheorySolver( this );
-//            _cadicalWrapper.connectTerminator( this );
-//
-//            for ( unsigned var : _cadicalVarToPlc.keys() )
-//                if ( var != 0 )
-//                    _cadicalWrapper.addObservedVar( var );
-//
-//            //        printCurrentState();
-//            result = _cadicalWrapper.solve();
-//
-//            if ( result == 0 && _exitCode == NOT_DONE )
-//            {
-//                _shouldRestart = false;
-//                _numOfSolveCalls = 0;
-//                _restartLimit = 512 * luby( ++_restarts );
-//                _engine->restoreTableauState( _initialTableauState );
-//                popContextTo( 0 );
-//                _engine->postContextPopHook();
-//                _literalsToPropagate.clear();
-//                _cadicalWrapper.restart();
-//                for ( const auto &lit : _fixedCadicalVars )
-//                    notify_assignment( lit, true );
-//            }
-//            else
-//                break;
-//        }
+        int result;
 
-        _cadicalWrapper.connectTheorySolver( this );
-        _cadicalWrapper.connectTerminator( this );
+        while ( true )
+        {
+            if ( _statistics )
+                _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
 
-        for ( unsigned var : _cadicalVarToPlc.keys() )
-            if ( var != 0 )
-                _cadicalWrapper.addObservedVar( var );
+            _cadicalWrapper.connectTheorySolver( this );
+            _cadicalWrapper.connectTerminator( this );
 
-        //        printCurrentState();
-        int result = _cadicalWrapper.solve();
+            for ( unsigned var : _cadicalVarToPlc.keys() )
+                if ( var != 0 )
+                    _cadicalWrapper.addObservedVar( var );
+
+            //        printCurrentState();
+            result = _cadicalWrapper.solve();
+
+            if ( result == 0 && _exitCode == NOT_DONE )
+            {
+                _shouldRestart = false;
+                _numOfSolveCalls = 0;
+                _restartLimit = 512 * luby( ++_restarts );
+                _engine->restoreTableauState( _initialTableauState );
+                popContextTo( 0 );
+                _engine->postContextPopHook();
+                _literalsToPropagate.clear();
+                _cadicalWrapper.restart();
+                for ( const auto &lit : _fixedCadicalVars )
+                    notify_assignment( lit, true );
+            }
+            else
+                break;
+        }
+
 
         if ( _statistics && _engine->getVerbosity() )
         {
@@ -1475,8 +1466,7 @@ void SmtCore::resetExitCode()
 bool SmtCore::terminate()
 {
     SMT_LOG( Stringf( "Callback for terminate: %d", _exitCode != NOT_DONE ).ascii() );
-//    return _exitCode != NOT_DONE || _shouldRestart;
-    return _exitCode != NOT_DONE;
+    return _exitCode != NOT_DONE || _shouldRestart;
 }
 
 unsigned SmtCore::getLiteralAssignmentIndex( int literal )
