@@ -1278,8 +1278,8 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
 
-//        _engine->storeTableauState( _initialTableauState );
-//
+        _engine->storeTableauState( _initialTableauState );
+
 //        int result;
 //
 //        while ( true )
