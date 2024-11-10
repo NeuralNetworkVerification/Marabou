@@ -207,8 +207,6 @@ void Engine::preSolve() // TODO: change the name of this method
             _smtCore.phase( plConstraint->propagatePhaseAsLit() );
 
     updateDirections();
-    if ( _lpSolverType == LPSolverType::NATIVE )
-        storeInitialEngineState();
 
     if ( _lpSolverType == LPSolverType::GUROBI )
     {
@@ -2620,6 +2618,7 @@ void Engine::postContextPopHook()
     //    if ( _produceUNSATProofs )
     //        _groundBoundManager.restoreLocalBounds();
     _tableau->postContextPopHook();
+    _costFunctionManager->computeCoreCostFunction();
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TIME_CONTEXT_POP_HOOK,
@@ -3413,7 +3412,7 @@ bool Engine::shouldProduceProofs() const
 void Engine::explainSimplexFailure()
 {
     ASSERT( _produceUNSATProofs && _lpSolverType == LPSolverType::NATIVE );
-
+    ASSERT( !_smtCore.cb_has_external_clause() );
     DEBUG( checkGroundBounds() );
 
     unsigned infeasibleVar = _boundManager.getInconsistentVariable();

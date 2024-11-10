@@ -679,7 +679,7 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
     checkIfShouldExitDueToTimeout();
 
-    if ( !_externalClausesToAdd.empty() )
+    if ( !_externalClauseToAdd.empty() )
     {
         SMT_LOG( "Skipping notification due to conflict clause" )
         return;
@@ -801,11 +801,11 @@ void SmtCore::notify_backtrack( size_t new_level )
     popContextTo( new_level );
     _engine->postContextPopHook();
 
-    if ( _tableauState.get()->_basicAssignment )
-    {
-        SMT_LOG( Stringf( "restoreTableState for %p", _tableauState.get() ).ascii() );
-        _engine->restoreTableauState( *_tableauState );
-    }
+//    if ( _tableauState.get()->_basicAssignment )
+//    {
+//        SMT_LOG( Stringf( "restoreTableState for %p", _tableauState.get() ).ascii() );
+//        _engine->restoreTableauState( *_tableauState );
+//    }
 
     // Maintain literals to propagate learned before the decision level
     List<Pair<int, int>> currentPropagations = _literalsToPropagate;
@@ -853,7 +853,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         //        printCurrentState();
     }
     SMT_LOG( "Checking model found by SAT solver" );
-    ASSERT( _externalClausesToAdd.empty() );
+    ASSERT( _externalClauseToAdd.empty() );
     for ( const auto &lit : model )
         notify_assignment( lit, false );
 
@@ -1037,7 +1037,7 @@ int SmtCore::cb_propagate()
         }
 
         // If no literals left to propagate, and no clause already found, attempt solving
-        if ( _externalClausesToAdd.empty() )
+        if ( _externalClauseToAdd.empty() )
         {
             SMT_LOG( "Calling solve()" );
             if ( _engine->solve() )
@@ -1052,7 +1052,7 @@ int SmtCore::cb_propagate()
         }
 
         // Try learning a conflict clause if possible
-        if ( _externalClausesToAdd.empty() )
+        if ( _externalClauseToAdd.empty() )
             _engine->propagateBoundManagerTightenings();
 
         // Add the zero literal at the end
@@ -1163,9 +1163,9 @@ bool SmtCore::cb_has_external_clause()
 
     checkIfShouldExitDueToTimeout();
     SMT_LOG( Stringf( "Checking if there is a Conflict Clause to add: %d",
-                      !_externalClausesToAdd.empty() )
+                      !_externalClauseToAdd.empty() )
                  .ascii() );
-    return !_externalClausesToAdd.empty();
+    return !_externalClauseToAdd.empty();
 }
 
 int SmtCore::cb_add_external_clause_lit()
@@ -1176,19 +1176,12 @@ int SmtCore::cb_add_external_clause_lit()
     checkIfShouldExitDueToTimeout();
     struct timespec start = TimeUtils::sampleMicro();
 
-    ASSERT( !_externalClausesToAdd.empty() );
+    ASSERT( !_externalClauseToAdd.empty() );
 
     // Add literal from the last conflict clause learned
-    Vector<int> &currentClause = _externalClausesToAdd[_externalClausesToAdd.size() - 1];
-    int lit = 0;
-    if ( !currentClause.empty() )
-    {
-        lit = currentClause.pop();
-        ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
-        SMT_LOG( Stringf( "\tAdding Literal %d to Conflict Clause", lit ).ascii() )
-    }
-    else
-        _externalClausesToAdd.pop();
+    int lit = _externalClauseToAdd.pop();
+    ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
+    SMT_LOG( Stringf( "\tAdding Literal %d to Conflict Clause", lit ).ascii() )
 
     if ( _statistics )
     {
@@ -1216,22 +1209,21 @@ void SmtCore::addExternalClause( const Set<int> &clause )
         _literalToClauses.clear();
     }
 
-    Vector<int> toAdd( 0 );
+    _externalClauseToAdd.append( 0 );
 
     // Remove fixed literals as they are redundant
     for ( int lit : clause )
+    {
+        _externalClauseToAdd.append( -lit );
         if ( !_fixedCadicalVars.exists( -lit ) )
-        {
-            toAdd.append( -lit );
             _literalToClauses[-lit].insert( _numOfClauses );
-        }
+    }
 
     ++_numOfClauses;
-    _externalClausesToAdd.append( toAdd );
-    SMT_LOG(
-        Stringf( "storeTableState for %p in level %u", _tableauState.get(), _context.getLevel() )
-            .ascii() );
-    _engine->storeTableauState( *_tableauState );
+//    SMT_LOG(
+//        Stringf( "storeTableState for %p in level %u", _tableauState.get(), _context.getLevel() )
+//            .ascii() );
+//    _engine->storeTableauState( *_tableauState );
 
     if ( _statistics )
     {
@@ -1272,7 +1264,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         if ( !_literalsToPropagate.empty() )
             _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
 
-        if ( !_externalClausesToAdd.empty() )
+        if ( !_externalClauseToAdd.empty() )
         {
             _exitCode = UNSAT;
             return false;

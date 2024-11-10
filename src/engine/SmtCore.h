@@ -431,7 +431,7 @@ private:
     Vector<int> _reasonClauseLiterals;
     bool _isReasonClauseInitialized;
 
-    Vector<Vector<int>> _externalClausesToAdd;
+    Vector<int> _externalClauseToAdd;
 
     Set<int> _fixedCadicalVars;
 
