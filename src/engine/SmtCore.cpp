@@ -679,11 +679,11 @@ void SmtCore::notify_assignment( int lit, bool is_fixed )
 
     checkIfShouldExitDueToTimeout();
 
-    if ( !_externalClauseToAdd.empty() )
-    {
-        SMT_LOG( "Skipping notification due to conflict clause" )
-        return;
-    }
+//    if ( !_externalClauseToAdd.empty() )
+//    {
+//        SMT_LOG( "Skipping notification due to conflict clause" )
+//        return;
+//    }
 
     SMT_LOG( Stringf( "Notified assignment %d; is decision: %d; is fixed: %d",
                       lit,
