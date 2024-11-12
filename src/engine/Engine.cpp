@@ -1444,22 +1444,30 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
-        if ( _networkLevelReasoner  && Options::RUN_ATTACK)
+        if ( _networkLevelReasoner && Options::RUN_ATTACK )
         {
-            double timeoutForAttack = ( Options::ATTACK_TIMEOUT == 0 ? FloatUtils::infinity() : Options::ATTACK_TIMEOUT );
-            ENGINE_LOG( Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
-            ENGINE_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
+            double timeoutForAttack =
+                ( Options::ATTACK_TIMEOUT == 0 ? FloatUtils::infinity() : Options::ATTACK_TIMEOUT );
+            ENGINE_LOG(
+                Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
+            ENGINE_LOG(
+                Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
+            timespec _startTime = TimeUtils::sampleMicro();
 
-            _pgdAttack = new PGDAttack(_networkLevelReasoner);
-            if ( _pgdAttack->hasAdversarialExample() )
+            _pgdAttack = new PGDAttack( _networkLevelReasoner );
+            if ( _pgdAttack->hasAdversarialExample() ) // todo how to exit with timeout in hasAdversarialExample
             {
-                ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+                ENGINE_LOG(
+                    Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
                 _exitCode = Engine::SAT;
                 _isAttackSuccessful = true;
                 return false;
             }
             ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
-            if ( shouldExitDueToTimeout( timeoutForAttack ) ) // todo change to time from attack starting time
+            unsigned long timePassed =
+                TimeUtils::timePassed( _startTime, TimeUtils::sampleMicro() );
+            if ( static_cast<long double>( timePassed ) / MICROSECONDS_TO_SECONDS >
+                 timeoutForAttack )
             {
                 if ( _verbosity > 0 )
                 {
