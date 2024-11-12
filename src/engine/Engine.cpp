@@ -2706,19 +2706,20 @@ void Engine::decideBranchingHeuristics()
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
 {
-    ENGINE_LOG( Stringf( "Using BaBsr heuristic..." ).ascii() );
+    ENGINE_LOG( Stringf( "Using BaBsr heuristic with normalized scores..." ).ascii() );
 
     if ( !_networkLevelReasoner )
         return NULL;
 
-    // get constraints from NLR
+    // Get constraints from NLR
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
-    // initialize hashmap for scores
+    // Temporary vector to store raw scores for normalization
+    Vector<double> rawScores;
     Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
 
-    // filter for ReLU constraints
+    // Filter for ReLU constraints
     for ( auto &plConstraint : constraints )
     {
         if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
@@ -2730,19 +2731,43 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
                 // Set NLR if not already set
                 reluConstraint->setNetworkLevelReasoner( _networkLevelReasoner );
 
-                // calculate heuristic score - bias calculation now happens inside computeBaBsr
+                // Calculate heuristic score - bias calculation happens inside computeBaBsr
                 plConstraint->updateScoreBasedOnBaBsr();
-                scoreToConstraint[plConstraint->getScore()] = plConstraint;
+
+                // Collect raw scores
+                rawScores.append( plConstraint->getScore() );
+            }
+        }
+    }
+
+    // Normalize scores
+    if ( !rawScores.empty() )
+    {
+        double minScore = *std::min_element( rawScores.begin(), rawScores.end() );
+        double maxScore = *std::max_element( rawScores.begin(), rawScores.end() );
+        double range = maxScore - minScore;
+
+        for ( auto &plConstraint : constraints )
+        {
+            if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
+                 !plConstraint->phaseFixed() )
+            {
+                double rawScore = plConstraint->getScore();
+                double normalizedScore = range > 0 ? ( rawScore - minScore ) / range : 0;
+
+                // Store normalized score in the map
+                scoreToConstraint[normalizedScore] = plConstraint;
                 if ( scoreToConstraint.size() >= GlobalConfiguration::BABSR_CANDIDATES_THRESHOLD )
                     break;
             }
         }
     }
 
-    // split on neuron or constraint with highest
-    if ( scoreToConstraint.size() > 0 )
+    // Split on neuron or constraint with highest normalized score
+    if ( !scoreToConstraint.empty() )
     {
-        ENGINE_LOG( Stringf( "Score of the picked ReLU: %f", ( *scoreToConstraint.begin() ).first )
+        ENGINE_LOG( Stringf( "Normalized score of the picked ReLU: %f",
+                             ( *scoreToConstraint.begin() ).first )
                         .ascii() );
         return ( *scoreToConstraint.begin() ).second;
     }
