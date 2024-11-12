@@ -1444,13 +1444,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
-        if ( _networkLevelReasoner && Options::RUN_ATTACK )
+        if ( _networkLevelReasoner && Options::get()->getBool(( Options::PRODUCE_PROOFS )  ))
         {
             try
             {
                 ENGINE_LOG(
                     Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
-                timespec _startTime = TimeUtils::sampleMicro();
 
                 _pgdAttack = new PGDAttack( _networkLevelReasoner );
                 if ( _pgdAttack->runAttack() )

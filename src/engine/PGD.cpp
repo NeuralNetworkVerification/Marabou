@@ -148,8 +148,9 @@ torch::Tensor PGDAttack::calculateLoss( const torch::Tensor &predictions )
 
 std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
 {
-    double timeoutForAttack =
-        ( Options::ATTACK_TIMEOUT == 0 ? FloatUtils::infinity() : Options::ATTACK_TIMEOUT );
+    double timeoutForAttack = ( Options::get()->getInt( Options::ATTACK_TIMEOUT ) == 0
+                                    ? FloatUtils::infinity()
+                                    : Options::get()->getInt( Options::ATTACK_TIMEOUT ) );
     PGD_LOG( Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
     PGD_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
     timespec startTime = TimeUtils::sampleMicro();
