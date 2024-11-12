@@ -1265,8 +1265,8 @@ void Layer::computeIntervalArithmeticBoundsForBilinear()
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
             
-            sourceLbs.append( sourceLb - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-            sourceUbs.append( sourceUb + GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+            sourceLbs.append( sourceLb );
+            sourceUbs.append( sourceUb );
             
             if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
             {
@@ -3033,8 +3033,8 @@ void Layer::computeSymbolicBoundsForBilinear()
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
             
-            sourceLbs.append( sourceLb - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-            sourceUbs.append( sourceUb + GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+            sourceLbs.append( sourceLb );
+            sourceUbs.append( sourceUb );
             
             if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
             {

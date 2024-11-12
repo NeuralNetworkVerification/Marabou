@@ -878,8 +878,8 @@ void LPFormulator::addRoundLayerToLpRelaxation( GurobiWrapper &gurobi,
             if ( createVariables && !gurobi.containsVariable( sourceName ) )
                 gurobi.addVariable( sourceName, sourceLb, sourceUb );
 
-            double ub = std::max( FloatUtils::round( sourceUb ), layer->getUb( i ) );
-            double lb = std::min( FloatUtils::round( sourceLb ), layer->getLb( i ) );
+            double ub = std::min( FloatUtils::round( sourceUb ), layer->getUb( i ) );
+            double lb = std::max( FloatUtils::round( sourceLb ), layer->getLb( i ) );
             
             gurobi.addVariable( Stringf( "x%u", targetVariable ), lb, ub );
             
@@ -942,16 +942,16 @@ void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
             String sourceName = Stringf( "x%u", sourceVariable );
             if ( createVariables && !gurobi.containsVariable( sourceName ) )
                 gurobi.addVariable( sourceName, sourceLb, sourceUb );
-                
-            double ub = std::min( FloatUtils::max( -sourceLb, sourceUb ), layer->getUb( i ) );
-
-            gurobi.addVariable(Stringf( "x%u", targetVariable ), 0, ub );
 
             if ( !FloatUtils::isNegative( sourceLb ) )
-            {
+            {   
                 // The AbsoluteValue is active, y = x
                 if ( sourceLb < 0 )
                     sourceLb = 0;
+                
+                double ub = std::min( sourceUb, layer->getUb( i ) );
+                double lb = std::max( sourceLb, layer->getLb( i ) );
+                gurobi.addVariable(Stringf( "x%u", targetVariable ), lb, ub );
 
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -960,6 +960,10 @@ void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
             }
             else if ( !FloatUtils::isPositive( sourceUb ) )
             {
+                double ub = std::min( -sourceLb, layer->getUb( i ) );
+                double lb = std::max( -sourceUb, layer->getLb( i ) );
+                gurobi.addVariable(Stringf( "x%u", targetVariable ), lb, ub );
+                
                 // The AbsoluteValue is inactive, y = -x, i.e. y + x = 0
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -968,10 +972,13 @@ void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
             }
             else
             {
+                double ub = std::min( std::max( -sourceLb, sourceUb ), layer->getUb( i ) );
+                double lb = std::max( 0.0, layer->getLb( i ) );
+                gurobi.addVariable(Stringf( "x%u", targetVariable ), lb, ub );
+                
                 /*
                   The phase of this AbsoluteValue is not yet fixed, 0 <= y <= max(-lb, ub).
                 */
-
                 // y >= 0
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -1019,8 +1026,12 @@ void LPFormulator::addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
             if ( createVariables && !gurobi.containsVariable( sourceName ) )
                 gurobi.addVariable( sourceName, sourceLb, sourceUb );
             
-            double ub = std::min( SigmoidConstraint::sigmoid( sourceUb ), layer->getUb( i ) );
-            double lb = std::max( SigmoidConstraint::sigmoid( sourceLb ), layer->getLb( i ) );
+            
+            double sourceUbSigmoid = SigmoidConstraint::sigmoid( sourceUb );
+            double sourceLbSigmoid = SigmoidConstraint::sigmoid( sourceLb );
+            
+            double ub = std::min( sourceUbSigmoid, layer->getUb( i ) );
+            double lb = std::max( sourceLbSigmoid, layer->getLb( i ) );
             
             gurobi.addVariable( Stringf( "x%u", targetVariable ), lb, ub );
             
@@ -1038,43 +1049,43 @@ void LPFormulator::addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
                 List<GurobiWrapper::Term> terms;
                 double lambda = ( ub - lb ) / ( sourceUb - sourceLb );
                 double lambdaPrime = std::min( SigmoidConstraint::sigmoidDerivative( sourceLb ),
-                                           SigmoidConstraint::sigmoidDerivative( sourceUb ) );
+                                               SigmoidConstraint::sigmoidDerivative( sourceUb ) );
                                            
                 // update lower bound
                 if ( FloatUtils::isPositive( sourceLb ) )
                 {   
-                    // y >= lambda * (x - l), i.e. y - lambda * x >= lambda * l
+                    // y >= lambda * (x - l) + sigmoid(lb), i.e. y - lambda * x >= sigmoid(lb) - lambda * l
                     terms.clear();
                     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                     terms.append( GurobiWrapper::Term( -lambda, Stringf( "x%u", sourceVariable ) ) );
-                    gurobi.addGeqConstraint( terms, sourceLb * lambda );
+                    gurobi.addGeqConstraint( terms, sourceLbSigmoid - sourceLb * lambda );
                 }
                 
                 else
                 {
-                    // y >= lambda' * (x - l), i.e. y - lambda' * x >= lambda' * l
+                    // y >= lambda' * (x - l) + sigmoid(lb), i.e. y - lambda' * x >= sigmoid(lb) - lambda' * l
                     terms.clear();
                     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                     terms.append( GurobiWrapper::Term( -lambdaPrime, Stringf( "x%u", sourceVariable ) ) );
-                    gurobi.addGeqConstraint( terms, sourceLb * lambdaPrime );
+                    gurobi.addGeqConstraint( terms, sourceLbSigmoid - sourceLb * lambdaPrime );
                 }
     
                 // update upper bound
                 if ( !FloatUtils::isPositive( sourceUb ) )
                 {
-                    // y <= lambda * (x - u), i.e. y - lambda * x <= lambda * u
+                    // y <= lambda * (x - u) + sigmoid(ub), i.e. y - lambda * x <= sigmoid(ub) - lambda * u
                     terms.clear();
                     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                     terms.append( GurobiWrapper::Term( -lambda, Stringf( "x%u", sourceVariable ) ) );
-                    gurobi.addLeqConstraint( terms, sourceUb * lambda );
+                    gurobi.addLeqConstraint( terms, sourceUbSigmoid - sourceUb * lambda );
                 }
                 else
                 {
-                    // y <= lambda' * (x - u), i.e. y - lambda' * x <= lambda' * u
+                    // y <= lambda' * (x - u) + sigmoid(ub), i.e. y - lambda' * x <= sigmoid(ub) - lambda' * u
                     terms.clear();
                     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                     terms.append( GurobiWrapper::Term( -lambdaPrime, Stringf( "x%u", sourceVariable ) ) );
-                    gurobi.addLeqConstraint( terms, sourceUb * lambdaPrime );
+                    gurobi.addLeqConstraint( terms, sourceUbSigmoid - sourceUb * lambdaPrime );
                 }
             }
         }
@@ -1299,6 +1310,8 @@ void LPFormulator::addSoftmaxLayerToLpRelaxation( GurobiWrapper &gurobi,
 
         double ub = std::min( DeepPolySoftmaxElement::linearUpperBound( sourceLbs, sourceUbs, index ), layer->getUb( i ) );
         double lb = std::max( DeepPolySoftmaxElement::linearLowerBound( sourceLbs, sourceUbs, index ), layer->getLb( i ) );
+        targetLbs[index] = lb;
+        targetUbs[index] = ub;
         
         unsigned targetVariable = layer->neuronToVariable( i );
         gurobi.addVariable( Stringf( "x%u", targetVariable ), lb, ub );
@@ -1437,7 +1450,6 @@ void LPFormulator::addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi, const 
             Vector<double> sourceUbs;
             Vector<double> sourceValues;
             Vector<unsigned> sourceNeurons;
-            unsigned counter = 0;
             bool allConstant = true;
             for ( const auto &sourceIndex : sources )
             {
@@ -1447,12 +1459,11 @@ void LPFormulator::addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi, const 
                 String sourceName = Stringf( "x%u", sourceLayer->neuronToVariable( sourceNeuron ) );
             
                 sourceNeurons.append( sourceNeuron );
-                sourceLbs.append( sourceLb - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-                sourceUbs.append( sourceUb + GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+                sourceLbs.append( sourceLb );
+                sourceUbs.append( sourceUb );
                 
                 if ( createVariables && !gurobi.containsVariable( sourceName ) )
                     gurobi.addVariable( sourceName, sourceLb, sourceUb );
-                ++counter;
             
                 if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
                 {
@@ -1463,7 +1474,6 @@ void LPFormulator::addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi, const 
                     double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
                     sourceValues.append( sourceValue );
                 }
-                ++counter;
             }
             
             if ( allConstant )
