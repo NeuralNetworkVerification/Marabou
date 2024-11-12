@@ -1444,21 +1444,34 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
-        if ( _networkLevelReasoner )
+        if ( _networkLevelReasoner  && Options::RUN_ATTACK)
         {
-            std::cout << "start time attack: " << TimeUtils::now().ascii() << std::endl;
-            fflush( stdout );
+            double timeoutForAttack = ( Options::ATTACK_TIMEOUT == 0 ? FloatUtils::infinity() : Options::ATTACK_TIMEOUT );
+            ENGINE_LOG( Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
+            ENGINE_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
+
             _pgdAttack = new PGDAttack(_networkLevelReasoner);
             if ( _pgdAttack->hasAdversarialExample() )
             {
-                std::cout << "end time attack: " << TimeUtils::now().ascii() << std::endl;
-                fflush( stdout );
+                ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
                 _exitCode = Engine::SAT;
                 _isAttackSuccessful = true;
                 return false;
             }
-            std::cout << "end time attack: " << TimeUtils::now().ascii() << std::endl;
-            fflush( stdout );
+            ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+            if ( shouldExitDueToTimeout( timeoutForAttack ) ) // todo change to time from attack starting time
+            {
+                if ( _verbosity > 0 )
+                {
+                    printf( "\n\nEngine: quitting due to timeout...\n\n" );
+                    printf( "Final statistics:\n" );
+                    _statistics.print();
+                }
+
+                _exitCode = Engine::TIMEOUT;
+                _statistics.timeout();
+                return false;
+            }
         }
 
         if ( preprocess )
@@ -2133,7 +2146,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         else
         {
             ENGINE_LOG(
-                Stringf( c ).ascii() );
+                Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             if ( _produceUNSATProofs &&
                  FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {

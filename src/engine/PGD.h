@@ -25,6 +25,7 @@ public:
     Search for an adversarial example. Returns true if successful.
   */
     bool hasAdversarialExample();
+    double getAssignment( int index );
 
 
 private:
@@ -45,7 +46,7 @@ private:
     Map<unsigned, double> _assignments;
     double *_adversarialInput;
     double *_adversarialOutput;
-    double getAssignment( int index );
+
     /*
      Iteratively generates and refines adversarial examples, aiming to discover inputs that lead to
      predictions outside the defined bounds, using gradient-based optimization.

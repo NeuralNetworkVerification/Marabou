@@ -296,6 +296,7 @@ struct MarabouOptions
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
+        , _attackTimeout( Options::get()->getInt( Options::ATTACK_TIMEOUT ) )
         , _performLpTighteningAfterSplit(
               Options::get()->getBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
@@ -311,7 +312,8 @@ struct MarabouOptions
         , _milpTighteningString(
               Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
-        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) ){};
+        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
+        , _runAttack( Options::get()->getBool( Options::RUN_ATTACK ) ){};
 
     void setOptions()
     {
@@ -356,6 +358,7 @@ struct MarabouOptions
     bool _dumpBounds;
     bool _performLpTighteningAfterSplit;
     bool _produceProofs;
+    bool _runAttack;
     unsigned _numWorkers;
     unsigned _numBlasThreads;
     unsigned _initialTimeout;
@@ -365,6 +368,7 @@ struct MarabouOptions
     unsigned _timeoutInSeconds;
     unsigned _splitThreshold;
     unsigned _numSimulations;
+    unsigned _attackTimeout;
     float _timeoutFactor;
     float _preprocessorBoundTolerance;
     float _milpSolverTimeout;
