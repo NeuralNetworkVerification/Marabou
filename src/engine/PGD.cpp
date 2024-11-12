@@ -1,5 +1,7 @@
 #include "PGD.h"
+
 #include "InputQuery.h"
+
 #include <iostream>
 
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
@@ -36,7 +38,9 @@ torch::Device PGDAttack::getDevice()
 void PGDAttack::getBounds( std::pair<Vector<double>, Vector<double>> &bounds,
                            const signed type ) const
 {
-    unsigned layerIndex = type == GlobalConfiguration::PdgBoundType::PGD_INPUT ? 0 : networkLevelReasoner->getNumberOfLayers() - 1;
+    unsigned layerIndex = type == GlobalConfiguration::PdgBoundType::PGD_INPUT
+                            ? 0
+                            : networkLevelReasoner->getNumberOfLayers() - 1;
     const NLR::Layer *layer = networkLevelReasoner->getLayer( layerIndex );
 
     for ( unsigned neuron = 0; neuron < layer->getSize(); ++neuron )
@@ -144,6 +148,12 @@ torch::Tensor PGDAttack::calculateLoss( const torch::Tensor &predictions )
 
 std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
 {
+    double timeoutForAttack =
+        ( Options::ATTACK_TIMEOUT == 0 ? FloatUtils::infinity() : Options::ATTACK_TIMEOUT );
+    PGD_LOG( Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
+    PGD_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
+    timespec startTime = TimeUtils::sampleMicro();
+
     torch::Tensor currentExample = _inputExample;
     torch::Tensor currentPrediction;
     torch::Tensor lowerBoundTensor =
@@ -151,8 +161,14 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
     torch::Tensor upperBoundTensor =
         torch::tensor( _inputBounds.second.data(), torch::kFloat32 ).to( _device );
     torch::Tensor delta = torch::zeros( _inputSize ).to( _device ).requires_grad_( true );
+
     for ( unsigned i = 0; i < _restarts; ++i )
     {
+        unsigned long timePassed = TimeUtils::timePassed( startTime, TimeUtils::sampleMicro() );
+        if ( static_cast<long double>( timePassed ) / MICROSECONDS_TO_SECONDS > timeoutForAttack )
+        {
+            throw MarabouError( MarabouError::TIMEOUT, "Attack failed due to timeout" );
+        }
         torch::optim::Adam optimizer( { delta }, torch::optim::AdamOptions() );
         for ( unsigned j = 0; j < _iters; ++j )
         {
@@ -181,7 +197,7 @@ double PGDAttack::getAssignment( int index )
     return _assignments[index];
 }
 
-bool PGDAttack::hasAdversarialExample()
+bool PGDAttack::runAttack()
 {
     PGD_LOG( "-----Starting PGD attack-----" );
     auto adversarial = findAdvExample();
@@ -234,7 +250,8 @@ bool PGDAttack::hasAdversarialExample()
     if ( isFooled )
     {
         PGD_LOG( "Model fooled: Yes \n ------ PGD Attack Succeed ------\n" );
-    }else
+    }
+    else
         PGD_LOG( "Model fooled: No \n ------ PGD Attack Failed ------\n" );
 
 

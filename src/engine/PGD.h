@@ -2,13 +2,13 @@
 #define __PGD_h__
 
 #include "CustomDNN.h"
+#include "Options.h"
+#include <TimeUtils.h>
 #include "GlobalConfiguration.h"
 
 #undef Warning
 #include <torch/torch.h>
 
-constexpr unsigned DEFAULT_NUM_ITER = 100;
-constexpr unsigned DEFAULT_NUM_RESTARTS = 3;
 #define PGD_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "PGD: %s\n", x )
 
 /*
@@ -20,11 +20,14 @@ constexpr unsigned DEFAULT_NUM_RESTARTS = 3;
 class PGDAttack
 {
 public:
+  enum {
+    MICROSECONDS_TO_SECONDS = 1000000,
+};
     PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner );
     /*
     Search for an adversarial example. Returns true if successful.
   */
-    bool hasAdversarialExample();
+    bool runAttack();
     double getAssignment( int index );
 
 

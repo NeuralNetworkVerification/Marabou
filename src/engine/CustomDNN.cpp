@@ -122,7 +122,6 @@ CustomDNN::CustomDNN( const NLR::NetworkLevelReasoner *nlr )
         default:
             CUSTOM_DNN_LOG( "Unsupported layer type\n" );
             throw MarabouError( MarabouError::DEBUGGING_ERROR );
-            break;
         }
     }
 }

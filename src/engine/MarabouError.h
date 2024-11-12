@@ -53,6 +53,7 @@ public:
         BOUNDS_NOT_UP_TO_DATE_IN_LP_SOLVER = 28,
         INVALID_LEAKY_RELU_SLOPE = 29,
         UNABLE_TO_RECONSTRUCT_SOLUTION_FOR_ELIMINATED_NEURONS = 30,
+        TIMEOUT = 31,
 
         // Error codes for Query Loader
         FILE_DOES_NOT_EXIST = 100,
