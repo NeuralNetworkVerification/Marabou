@@ -1405,7 +1405,7 @@ void SmtCore::resetExitCode()
 bool SmtCore::terminate()
 {
     SMT_LOG( Stringf( "Callback for terminate: %d", _exitCode != NOT_DONE ).ascii() );
-    return _exitCode != NOT_DONE || _shouldRestart;
+    return _exitCode != NOT_DONE;
 }
 
 unsigned SmtCore::getLiteralAssignmentIndex( int literal )
