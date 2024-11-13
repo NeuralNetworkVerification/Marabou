@@ -3420,7 +3420,7 @@ bool Engine::shouldProduceProofs() const
 void Engine::explainSimplexFailure()
 {
     ASSERT( _produceUNSATProofs && _lpSolverType == LPSolverType::NATIVE );
-    ASSERT( !_smtCore.cb_has_external_clause() );
+    ASSERT( !_smtCore.hasConflictClause() );
     DEBUG( checkGroundBounds() );
 
     unsigned infeasibleVar = _boundManager.getInconsistentVariable();

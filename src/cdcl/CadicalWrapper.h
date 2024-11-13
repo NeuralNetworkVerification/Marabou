@@ -98,12 +98,22 @@ public:
     /*
       Disconnects the terminator, stops the CaDiCaL solver.
      */
-    void disconnectTerminator ();
+    void disconnectTerminator();
 
     /*
-     * Restart the sat solver, while keeping the clauses learned so far
+     * Add call-back which notifying on a fixed assignment.
      */
-    void restart();
+    void connectFixedListener( CaDiCaL::FixedAssignmentListener *fixedListener );
+
+    /*
+     * Disconnects the fixed assignment listener.
+     */
+    void disconnectFixedListener();
+
+    /*
+     * Forces backtracking to the given level
+     */
+    void forceBacktrack( size_t newLevel );
 
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;

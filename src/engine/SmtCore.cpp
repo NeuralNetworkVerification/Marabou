@@ -75,6 +75,7 @@ SmtCore::~SmtCore()
 {
     freeMemory();
 
+    _cadicalWrapper.disconnectFixedListener();
     _cadicalWrapper.disconnectTerminator();
     _cadicalWrapper.disconnectTheorySolver();
 }
@@ -672,65 +673,33 @@ bool SmtCore::isLiteralAssigned( int literal ) const
     return false;
 }
 
-void SmtCore::notify_assignment( int lit, bool is_fixed )
+void SmtCore::notify_assignment( const std::vector<int> &lits )
 {
     if ( _exitCode != NOT_DONE )
         return;
 
     checkIfShouldExitDueToTimeout();
 
-//    if ( !_externalClauseToAdd.empty() )
-//    {
-//        SMT_LOG( "Skipping notification due to conflict clause" )
-//        return;
-//    }
-
-    SMT_LOG( Stringf( "Notified assignment %d; is decision: %d; is fixed: %d",
-                      lit,
-                      _cadicalWrapper.isDecision( lit ),
-                      is_fixed )
-                 .ascii() );
+    //    if ( !_externalClauseToAdd.empty() )
+    //    {
+    //        SMT_LOG( "Skipping notification due to conflict clause" )
+    //        return;
+    //    }
 
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( isLiteralToBePropagated( -lit ) || isLiteralAssigned( -lit ) )
+    SMT_LOG( "Notifying assignments:" )
+
+    for ( int lit : lits )
     {
-        if ( _statistics )
-        {
-            struct timespec end = TimeUtils::sampleMicro();
-            _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
-                                           TimeUtils::timePassed( start, end ) );
-            _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO,
-                                           TimeUtils::timePassed( start, end ) );
-        }
-        return;
+        SMT_LOG( Stringf( "\tNotified assignment %d; is decision: %d",
+                          lit,
+                          _cadicalWrapper.isDecision( lit ) )
+                     .ascii() );
+
+        if ( !isLiteralAssigned( lit ) )
+            notifySingleAssignment( lit, false );
     }
-
-    // Allow notifying a negation of assigned literal only when a conflict is already discovered
-    ASSERT( !isLiteralAssigned( -lit ) || cb_has_external_clause() );
-
-    if ( is_fixed )
-        _fixedCadicalVars.insert( lit );
-
-    // TODO: notify_assignment may be called on already assigned literals (to notify they are
-    //  fixed), maybe the following code should not be executed in this case
-
-    // Pick the split to perform
-    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-    PhaseStatus originalPlcPhase = plc->getPhaseStatus();
-    plc->propagateLitAsSplit( lit );
-
-    _engine->applyPlcPhaseFixingTightenings( *plc );
-    plc->setActiveConstraint( false );
-    if ( !isLiteralAssigned( lit ) )
-    {
-        _assignedLiterals.insert( lit, _assignedLiterals.size() );
-        for ( unsigned clause : _literalToClauses[lit] )
-            if ( !isClauseSatisfied( clause ) )
-                _satisfiedClauses.insert( clause );
-    }
-
-    ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
 
     if ( _statistics )
     {
@@ -798,6 +767,17 @@ void SmtCore::notify_backtrack( size_t new_level )
     //    struct timespec start = TimeUtils::sampleMicro();
     unsigned oldLevel = _context.getLevel();
 
+    if ( _shouldRestart )
+    {
+        if ( _statistics )
+            _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
+
+        _shouldRestart = false;
+        _numOfSolveCalls = 0;
+        _restartLimit = 512 * luby( ++_restarts );
+        _engine->restoreInitialEngineState();
+    }
+
     popContextTo( new_level );
     _engine->postContextPopHook();
 
@@ -809,10 +789,11 @@ void SmtCore::notify_backtrack( size_t new_level )
         if ( propagation.second() <= (int)new_level )
             _literalsToPropagate.append( propagation );
 
-    struct timespec end = TimeUtils::sampleMicro();
+    for ( int lit : _fixedCadicalVars )
+        if ( !isLiteralAssigned( lit ) )
+            notifySingleAssignment( lit, true );
 
-    for ( const auto &lit : _fixedCadicalVars )
-        notify_assignment( lit, true );
+    struct timespec end = TimeUtils::sampleMicro();
 
     if ( _statistics )
     {
@@ -848,8 +829,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     }
     SMT_LOG( "Checking model found by SAT solver" );
     ASSERT( _externalClauseToAdd.empty() );
-    for ( const auto &lit : model )
-        notify_assignment( lit, false );
+    notify_assignment( model );
 
     bool result;
 
@@ -861,17 +841,17 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
             return false;
 
         // If external clause learned, no need to call solve
-        if ( cb_has_external_clause() )
+        if ( !_externalClauseToAdd.empty() )
             return false;
 
         result = _engine->solve();
 
         // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
-        if ( !result && !cb_has_external_clause() )
+        if ( !result && _externalClauseToAdd.empty() )
             addTrivialConflictClause();
 
         SMT_LOG( Stringf( "\tResult is %u", result ).ascii() );
-        result = result && !cb_has_external_clause();
+        result = result && _externalClauseToAdd.empty();
     }
     else
         result = _engine->solve();
@@ -891,6 +871,12 @@ int SmtCore::cb_decide()
     checkIfShouldExitDueToTimeout();
     struct timespec start = TimeUtils::sampleMicro();
     SMT_LOG( "Callback for decision:" );
+
+    if ( _shouldRestart )
+    {
+        _cadicalWrapper.forceBacktrack( 0 );
+        return 0;
+    }
 
     int literalToDecide = 0;
 
@@ -1033,7 +1019,6 @@ int SmtCore::cb_propagate()
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClauseToAdd.empty() )
         {
-            SMT_LOG( "Calling solve()" );
             if ( _engine->solve() )
             {
                 _exitCode = SAT;
@@ -1058,16 +1043,14 @@ int SmtCore::cb_propagate()
     // In case of assigned boolean variable with opposite assignment, find a conflict clause and
     // terminate propagating
     if ( lit )
-    {
         if ( isLiteralAssigned( -lit ) ) // TODO: currently not counted for smt core time, maybe add
         {
-            if ( !cb_has_external_clause() )
+            if ( _externalClauseToAdd.empty() )
                 _engine->explainSimplexFailure();
-            ASSERT( cb_has_external_clause() );
+            ASSERT( !_externalClauseToAdd.empty() );
             _literalsToPropagate.clear();
             _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
         }
-    }
 
     SMT_LOG( Stringf( "Propagating literal %d", lit ).ascii() );
     ASSERT( FloatUtils::abs( lit ) <= _cadicalWrapper.vars() )
@@ -1150,7 +1133,7 @@ int SmtCore::cb_add_reason_clause_lit( int propagated_lit )
     return lit;
 }
 
-bool SmtCore::cb_has_external_clause()
+bool SmtCore::cb_has_external_clause( bool & /*is_forgettable*/ )
 {
     if ( _exitCode != NOT_DONE )
         return false;
@@ -1260,39 +1243,16 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             return false;
         }
 
-        int result;
+        _cadicalWrapper.connectTheorySolver( this );
+        _cadicalWrapper.connectTerminator( this );
+        _cadicalWrapper.connectFixedListener( this );
 
-        while ( true )
-        {
-            if ( _statistics )
-                _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
+        for ( unsigned var : _cadicalVarToPlc.keys() )
+            if ( var != 0 )
+                _cadicalWrapper.addObservedVar( var );
 
-            _cadicalWrapper.connectTheorySolver( this );
-            _cadicalWrapper.connectTerminator( this );
-
-            for ( unsigned var : _cadicalVarToPlc.keys() )
-                if ( var != 0 )
-                    _cadicalWrapper.addObservedVar( var );
-
-            //        printCurrentState();
-            result = _cadicalWrapper.solve();
-
-            if ( result == 0 && _exitCode == NOT_DONE )
-            {
-                _shouldRestart = false;
-                _numOfSolveCalls = 0;
-                _restartLimit = 512 * luby( ++_restarts );
-                _engine->restoreInitialEngineState();
-                popContextTo( 0 ); // No need for post hook, as state is restored
-                _literalsToPropagate.clear();
-                _cadicalWrapper.restart();
-                for ( const auto &lit : _fixedCadicalVars )
-                    notify_assignment( lit, true );
-            }
-            else
-                break;
-        }
-
+        //        printCurrentState();
+        int result = _cadicalWrapper.solve();
 
         if ( _statistics && _engine->getVerbosity() )
         {
@@ -1530,4 +1490,63 @@ unsigned SmtCore::luby( unsigned int i )
     for ( k = 1;; ++k )
         if ( (unsigned)( 1 << ( k - 1 ) ) <= i && i < (unsigned)( ( 1 << k ) - 1 ) )
             return luby( i - ( 1 << ( k - 1 ) ) + 1 );
+}
+
+void SmtCore::notify_fixed_assignment( int lit )
+{
+    if ( _exitCode != NOT_DONE )
+        return;
+
+    checkIfShouldExitDueToTimeout();
+    struct timespec start = TimeUtils::sampleMicro();
+
+    SMT_LOG( Stringf( "Notified fixed assignment: %d", lit ).ascii() );
+    if ( !isLiteralAssigned( lit ) )
+        notifySingleAssignment( lit, true );
+    else
+        _fixedCadicalVars.insert( lit );
+
+    if ( _statistics )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute(
+            Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO,
+            TimeUtils::timePassed( start, end ) );
+    }
+}
+
+bool SmtCore::hasConflictClause() const
+{
+    return !_externalClauseToAdd.empty();
+}
+
+void SmtCore::notifySingleAssignment( int lit, bool isFixed )
+{
+    if ( isLiteralToBePropagated( -lit ) || isLiteralAssigned( -lit ) )
+        return;
+
+    // Allow notifying a negation of assigned literal only when a conflict is already discovered
+    ASSERT( !isLiteralAssigned( -lit ) || !_externalClauseToAdd.empty() );
+
+    if ( isFixed )
+        _fixedCadicalVars.insert( lit );
+
+    // Pick the split to perform
+    PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
+    PhaseStatus originalPlcPhase = plc->getPhaseStatus();
+
+    plc->propagateLitAsSplit( lit );
+    _engine->applyPlcPhaseFixingTightenings( *plc );
+    plc->setActiveConstraint( false );
+
+    ASSERT( !isLiteralAssigned( lit ) );
+
+    _assignedLiterals.insert( lit, _assignedLiterals.size() );
+    for ( unsigned clause : _literalToClauses[lit] )
+        if ( !isClauseSatisfied( clause ) )
+            _satisfiedClauses.insert( clause );
+
+    ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase );
 }

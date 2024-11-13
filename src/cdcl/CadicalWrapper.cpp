@@ -93,7 +93,7 @@ int CadicalWrapper::vars()
 
 void CadicalWrapper::connectTerminator( CaDiCaL::Terminator *terminator )
 {
-    d_solver->connect_terminator(terminator);
+    d_solver->connect_terminator( terminator );
 }
 
 void CadicalWrapper::disconnectTerminator()
@@ -101,12 +101,17 @@ void CadicalWrapper::disconnectTerminator()
     d_solver->disconnect_terminator();
 }
 
-void CadicalWrapper::restart()
+void CadicalWrapper::connectFixedListener( CaDiCaL::FixedAssignmentListener *fixedListener )
 {
-    CaDiCaL::Solver *newSolver = new CaDiCaL::Solver();
-    d_solver->copy(*newSolver);
+    d_solver->connect_fixed_listener( fixedListener );
+}
 
-    disconnectTerminator();
-    disconnectTheorySolver();
-    d_solver.reset(newSolver);
+void CadicalWrapper::disconnectFixedListener()
+{
+    d_solver->disconnect_fixed_listener();
+}
+
+void CadicalWrapper::forceBacktrack( size_t newLevel )
+{
+    d_solver->force_backtrack( newLevel );
 }

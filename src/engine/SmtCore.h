@@ -45,6 +45,7 @@ typedef Set<int> Clause;
 class SmtCore
     : CaDiCaL::ExternalPropagator
     , CaDiCaL::Terminator
+    , CaDiCaL::FixedAssignmentListener
 {
 public:
     SmtCore( IEngine *engine );
@@ -225,7 +226,7 @@ public:
     /*
       Notify Marabou about an assignment of a boolean (abstract) variable
     */
-    void notify_assignment( int lit, bool is_fixed ) override;
+    void notify_assignment( const std::vector<int> &lits ) override;
 
     /*
       Notify Marabou about a new decision level
@@ -265,7 +266,7 @@ public:
     /*
       Check if Marabou has a conflict clause to inform the SAT solver
     */
-    bool cb_has_external_clause() override;
+    bool cb_has_external_clause( bool &is_forgettable ) override;
     /*
       Add conflict clause from Marabou to the SAT solver, one literal at a time. Ends with 0.
     */
@@ -329,6 +330,20 @@ public:
 
     void setNeedToSplit( bool needToSplit );
 
+    /*
+     * Notifying on a fixed literal assignment.
+     */
+    void notify_fixed_assignment( int lit ) override;
+
+    /*
+     * Notify about a single assignment
+     */
+    void notifySingleAssignment( int lit, bool isFixed );
+
+    /*
+     * Returns true if a conflict clause exists
+     */
+    bool hasConflictClause() const;
 
 private:
     /*

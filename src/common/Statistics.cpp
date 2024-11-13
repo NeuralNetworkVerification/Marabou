@@ -92,6 +92,7 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_BACKTRACK_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_CB_DECIDE_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO] = 0;
@@ -286,6 +287,11 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] notify_backtrack: %llu milli\n",
             printPercents( timeNotifyBacktrackMicro, timeSmtCoreMicro ),
             timeNotifyBacktrackMicro / 1000 );
+    unsigned long long timeNotifyFixedAssignmentMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO );
+    printf( "\t\t[%.2lf%%] notify_fixed_assignment: %llu milli\n",
+            printPercents( timeNotifyFixedAssignmentMicro, timeSmtCoreMicro ),
+            timeNotifyFixedAssignmentMicro / 1000 );
     unsigned long long timeCbDecideMicro =
         getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_CB_DECIDE_MICRO );
     printf( "\t\t[%.2lf%%] cb_decide: %llu milli\n",
@@ -304,7 +310,8 @@ void Statistics::print()
 
     unsigned long long totalSmtCoreCallbacks =
         timeNotifyAssignmentMicro + timeNotifyNewDecisionLevelMicro + timeNotifyBacktrackMicro +
-        timeCbDecideMicro + timeCbAddReasonClauseLitMicro + timeCbAddExternalClauseLitMicro;
+        timeNotifyFixedAssignmentMicro + timeCbDecideMicro + timeCbAddReasonClauseLitMicro +
+        timeCbAddExternalClauseLitMicro;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
             printPercents( timeSmtCoreMicro - totalSmtCoreCallbacks, timeSmtCoreMicro ),
@@ -515,8 +522,8 @@ void Statistics::print()
             getUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS ) );
     printf( "\tNumber of decisions performed by Marabou: %u\n",
             getUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS ) );
-//    printf( "\tNumber of restarts of the SAT solver: %u\n",
-//            getUnsignedAttribute( Statistics::NUM_RESTARTS ) );
+    printf( "\tNumber of restarts of the SAT solver: %u\n",
+            getUnsignedAttribute( Statistics::NUM_RESTARTS ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
