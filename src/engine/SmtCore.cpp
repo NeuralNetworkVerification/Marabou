@@ -63,7 +63,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _vsidsDecayCounter( 0 )
     , _restarts( 1 )
     , _restartLimit( 512 * luby( 1 ) )
-    , _numOfSolveCalls( 0 )
+    , _numOfConflictClauses( 0 )
     , _shouldRestart( false )
     , _tableauState( NULL )
 {
@@ -773,7 +773,7 @@ void SmtCore::notify_backtrack( size_t new_level )
             _statistics->incUnsignedAttribute( Statistics::NUM_RESTARTS );
 
         _shouldRestart = false;
-        _numOfSolveCalls = 0;
+        _numOfConflictClauses = 0;
         _restartLimit = 512 * luby( ++_restarts );
         _engine->restoreInitialEngineState();
     }
@@ -855,10 +855,6 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
     }
     else
         result = _engine->solve();
-
-    ++_numOfSolveCalls;
-    if ( _numOfSolveCalls == _restartLimit )
-        _shouldRestart = true;
 
     return result;
 }
@@ -999,10 +995,6 @@ int SmtCore::cb_propagate()
         if ( _engine->solve() )
             _exitCode = SAT;
 
-        ++_numOfSolveCalls;
-        if ( _numOfSolveCalls == _restartLimit )
-            _shouldRestart = true;
-
         return 0;
     }
 
@@ -1024,10 +1016,6 @@ int SmtCore::cb_propagate()
                 _exitCode = SAT;
                 return 0;
             }
-
-            ++_numOfSolveCalls;
-            if ( _numOfSolveCalls == _restartLimit )
-                _shouldRestart = true;
         }
 
         // Try learning a conflict clause if possible
@@ -1197,6 +1185,10 @@ void SmtCore::addExternalClause( const Set<int> &clause )
     }
 
     ++_numOfClauses;
+
+    ++_numOfConflictClauses;
+    if ( _numOfConflictClauses == _restartLimit )
+        _shouldRestart = true;
 
     if ( _statistics )
     {
