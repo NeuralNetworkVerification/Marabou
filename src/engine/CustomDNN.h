@@ -4,10 +4,9 @@
 #include "NetworkLevelReasoner.h"
 
 #include <vector>
-
+#define CUSTOM_DNN_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "customDNN: %s\n", x )
 #undef Warning
 #include <torch/torch.h>
-#define CUSTOM_DNN_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "customDNN: %s\n", x )
 
 /*
   Custom differentiation function for max pooling, implementing the forward and backward propagation for

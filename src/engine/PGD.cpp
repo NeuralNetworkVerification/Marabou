@@ -1,7 +1,5 @@
 #include "PGD.h"
-
 #include "InputQuery.h"
-
 #include <iostream>
 
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )

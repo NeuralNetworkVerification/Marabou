@@ -2,14 +2,14 @@
 #define __PGD_h__
 
 #include "CustomDNN.h"
-#include "Options.h"
-#include <TimeUtils.h>
 #include "GlobalConfiguration.h"
+#include "Options.h"
 
+#include <TimeUtils.h>
+#define PGD_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "PGD: %s\n", x )
 #undef Warning
 #include <torch/torch.h>
 
-#define PGD_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "PGD: %s\n", x )
 
 /*
   PGDAttack class implements the Projected Gradient Descent method for generating
