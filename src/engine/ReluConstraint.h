@@ -269,6 +269,11 @@ public:
      */
     int getLiteralForDecision() const override;
 
+    /*
+      Returns a cadical variable of this constraint, for decision
+     */
+    unsigned getVariableForDecision() const override;
+
 private:
     unsigned _b, _f;
     bool _auxVarInUse;

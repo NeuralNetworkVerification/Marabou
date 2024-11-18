@@ -17,6 +17,7 @@
 #define __SmtCore_h__
 
 #include "DivideStrategy.h"
+#include "HashMap.h"
 #include "PLConstraintScoreTracker.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
@@ -466,6 +467,8 @@ private:
     std::shared_ptr<TableauState> _tableauState;
     TableauState _initialTableauState;
 
+    HashMap<unsigned, bool> _largestAssignmentSoFar;
+
     /*
       Access info in the internal data structures
     */
@@ -473,7 +476,8 @@ private:
     bool isLiteralToBePropagated( int literal ) const;
 
     bool isClauseSatisfied( unsigned clause ) const;
-    double getVSIDSScore( int literal ) const;
+    unsigned int getLiteralVSIDSScore( int literal ) const;
+    unsigned int getVariableVSIDSScore( unsigned var ) const;
 
     unsigned luby( unsigned i );
 };

@@ -1175,6 +1175,11 @@ int ReluConstraint::getLiteralForDecision() const
         return -(int)_cadicalVars.front();
 }
 
+unsigned ReluConstraint::getVariableForDecision() const
+{
+    return _cadicalVars.front();
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

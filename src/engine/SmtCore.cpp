@@ -776,6 +776,7 @@ void SmtCore::notify_backtrack( size_t new_level )
         _numOfConflictClauses = 0;
         _restartLimit = 512 * luby( ++_restarts );
         _engine->restoreInitialEngineState();
+        _largestAssignmentSoFar.clear();
     }
 
     popContextTo( new_level );
@@ -874,45 +875,34 @@ int SmtCore::cb_decide()
         return 0;
     }
 
-    int literalToDecide = 0;
+    unsigned variableToDecide = 0;
 
     if ( _branchingHeuristic == DivideStrategy::ReLUViolation )
     {
-        Map<int, double> scores;
-        for ( int literal : _literalToClauses.keys() )
+        Map<unsigned, unsigned> scores;
+        for ( const auto &p : _cadicalVarToPlc )
         {
-            ASSERT( literal != 0 );
-            if ( isLiteralAssigned( literal ) || isLiteralAssigned( -literal ) )
+            unsigned var = p.first;
+            PiecewiseLinearConstraint *plc = p.second;
+
+            if ( isLiteralAssigned( (int)var ) || isLiteralAssigned( -(int)var ) )
                 continue;
 
-            // For stability
-            if ( _cadicalVarToPlc[abs( literal )]->getLiteralForDecision() != literal )
-                continue;
+            ASSERT( plc->getPhaseStatus() == PHASE_NOT_FIXED );
 
-            double numOfClausesSatisfiedByLiteral = getVSIDSScore( literal );
-
-            scores[literal] = numOfClausesSatisfiedByLiteral;
+            scores[var] = getVariableVSIDSScore( var ) + _constraintToViolationCount[plc];
         }
 
-        for ( PiecewiseLinearConstraint *plc : _constraintToViolationCount.keys() )
-        {
-            if ( plc->getPhaseStatus() != PHASE_NOT_FIXED )
-                continue;
-
-            int literal = plc->getLiteralForDecision();
-            scores[literal] += _constraintToViolationCount[plc];
-        }
-
-        double maxScore = 0;
+        unsigned maxScore = 0;
 
         for ( const auto &pair : scores )
         {
-            int literal = pair.first;
-            double score = pair.second;
+            unsigned var = pair.first;
+            unsigned score = pair.second;
 
             if ( score > maxScore )
             {
-                literalToDecide = literal;
+                variableToDecide = var;
                 maxScore = score;
             }
         }
@@ -944,14 +934,28 @@ int SmtCore::cb_decide()
             double maxScore = 0;
             for ( double polarityScore : polarityScoreToConstraint.keys() )
             {
-                int literal = polarityScoreToConstraint[polarityScore]->getLiteralForDecision();
-                double score = ( getVSIDSScore( literal ) + 1 ) * polarityScore;
+                unsigned var = polarityScoreToConstraint[polarityScore]->getVariableForDecision();
+                double score = ( getVariableVSIDSScore( var ) + 1 ) * polarityScore;
                 if ( score > maxScore )
                 {
-                    literalToDecide = literal;
+                    variableToDecide = var;
                     maxScore = score;
                 }
             }
+        }
+    }
+
+    int literalToDecide = 0;
+
+    if ( variableToDecide )
+    {
+        literalToDecide = _cadicalVarToPlc[variableToDecide]->getLiteralForDecision();
+        if ( _largestAssignmentSoFar.exists( variableToDecide ) )
+        {
+            if ( _largestAssignmentSoFar[variableToDecide] )
+                literalToDecide = (int)variableToDecide;
+            else
+                literalToDecide = -(int)variableToDecide;
         }
     }
 
@@ -1020,7 +1024,33 @@ int SmtCore::cb_propagate()
 
         // Try learning a conflict clause if possible
         if ( _externalClauseToAdd.empty() )
+        {
             _engine->propagateBoundManagerTightenings();
+
+            if ( _assignedLiterals.size() + _literalsToPropagate.size() >
+                 _largestAssignmentSoFar.size() )
+            {
+                _largestAssignmentSoFar.clear();
+
+                for ( const auto &p : _assignedLiterals )
+                {
+                    int lit = p.first;
+                    if ( lit > 0 )
+                        _largestAssignmentSoFar[lit] = true;
+                    else
+                        _largestAssignmentSoFar[-lit] = false;
+                }
+
+                for ( const auto &p : _literalsToPropagate )
+                {
+                    int lit = p.first();
+                    if ( lit > 0 )
+                        _largestAssignmentSoFar[lit] = true;
+                    else
+                        _largestAssignmentSoFar[-lit] = false;
+                }
+            }
+        }
 
         // Add the zero literal at the end
         _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
@@ -1462,14 +1492,19 @@ bool SmtCore::isClauseSatisfied( unsigned int clause ) const
     return _satisfiedClauses.contains( clause );
 }
 
-double SmtCore::getVSIDSScore( int literal ) const
+unsigned int SmtCore::getLiteralVSIDSScore( int literal ) const
 {
-    double numOfClausesSatisfiedByLiteral = 0;
+    unsigned numOfClausesSatisfiedByLiteral = 0;
     if ( _literalToClauses.exists( literal ) )
         for ( unsigned clause : _literalToClauses[literal] )
             if ( !isClauseSatisfied( clause ) )
                 ++numOfClausesSatisfiedByLiteral;
     return numOfClausesSatisfiedByLiteral;
+}
+
+unsigned int SmtCore::getVariableVSIDSScore( unsigned int var ) const
+{
+    return getLiteralVSIDSScore( (int)var ) + getLiteralVSIDSScore( -(int)var );
 }
 
 unsigned SmtCore::luby( unsigned int i )
