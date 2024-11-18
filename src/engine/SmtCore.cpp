@@ -880,10 +880,10 @@ int SmtCore::cb_decide()
     if ( _branchingHeuristic == DivideStrategy::ReLUViolation )
     {
         Map<unsigned, unsigned> scores;
-        for ( const auto &p : _cadicalVarToPlc )
+        for ( const auto &p : _largestAssignmentSoFar )
         {
             unsigned var = p.first;
-            PiecewiseLinearConstraint *plc = p.second;
+            PiecewiseLinearConstraint *plc = _cadicalVarToPlc[var];
 
             if ( isLiteralAssigned( (int)var ) || isLiteralAssigned( -(int)var ) )
                 continue;
@@ -891,6 +891,25 @@ int SmtCore::cb_decide()
             ASSERT( plc->getPhaseStatus() == PHASE_NOT_FIXED );
 
             scores[var] = getVariableVSIDSScore( var ) + _constraintToViolationCount[plc];
+        }
+
+        if ( scores.empty() )
+        {
+            for ( const auto &p : _cadicalVarToPlc )
+            {
+                unsigned var = p.first;
+                PiecewiseLinearConstraint *plc = p.second;
+
+                if ( _largestAssignmentSoFar.exists( var ) )
+                    continue;
+
+                if ( isLiteralAssigned( (int)var ) || isLiteralAssigned( -(int)var ) )
+                    continue;
+
+                ASSERT( plc->getPhaseStatus() == PHASE_NOT_FIXED );
+
+                scores[var] = getVariableVSIDSScore( var ) + _constraintToViolationCount[plc];
+            }
         }
 
         unsigned maxScore = 0;
@@ -918,14 +937,31 @@ int SmtCore::cb_decide()
         Map<double, PiecewiseLinearConstraint *> polarityScoreToConstraint;
         for ( auto &plConstraint : constraints )
         {
-            if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
-                 !plConstraint->phaseFixed() )
+            if ( _largestAssignmentSoFar.exists( plConstraint->getVariableForDecision() ) )
+                if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
+                     !plConstraint->phaseFixed() )
+                {
+                    plConstraint->updateScoreBasedOnPolarity();
+                    polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
+                    if ( polarityScoreToConstraint.size() >=
+                         GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                        break;
+                }
+        }
+
+        if ( polarityScoreToConstraint.empty() )
+        {
+            for ( auto &plConstraint : constraints )
             {
-                plConstraint->updateScoreBasedOnPolarity();
-                polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
-                if ( polarityScoreToConstraint.size() >=
-                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
-                    break;
+                if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
+                     !plConstraint->phaseFixed() )
+                {
+                    plConstraint->updateScoreBasedOnPolarity();
+                    polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
+                    if ( polarityScoreToConstraint.size() >=
+                         GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                        break;
+                }
             }
         }
 
