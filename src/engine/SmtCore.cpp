@@ -923,9 +923,9 @@ int SmtCore::cb_decide()
             {
                 plConstraint->updateScoreBasedOnPolarity();
                 polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
-//                if ( polarityScoreToConstraint.size() >=
-//                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
-//                    break;
+                if ( polarityScoreToConstraint.size() >=
+                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                    break;
             }
         }
 
