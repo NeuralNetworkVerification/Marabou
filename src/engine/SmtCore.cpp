@@ -949,18 +949,18 @@ int SmtCore::cb_decide()
                 }
         }
 
-            for ( auto &plConstraint : constraints )
+        for ( auto &plConstraint : constraints )
+        {
+            if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
+                 !plConstraint->phaseFixed() )
             {
-                if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
-                     !plConstraint->phaseFixed() )
-                {
-                    plConstraint->updateScoreBasedOnPolarity();
-                    polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
-                    if ( polarityScoreToConstraint.size() >=
-                         GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
-                        break;
-                }
+                plConstraint->updateScoreBasedOnPolarity();
+                polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
+                if ( polarityScoreToConstraint.size() >=
+                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                    break;
             }
+        }
 
         if ( !polarityScoreToConstraint.empty() )
         {
