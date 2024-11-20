@@ -378,15 +378,15 @@ public:
         return nullptr;
     }
 
-    void storeTableauState( TableauState & /*state*/ )
+    void storeTableauState( TableauState & /*state*/ ) override
     {
     }
 
-    void restoreTableauState( const TableauState & /*state*/ )
+    void restoreTableauState( const TableauState & /*state*/ ) override
     {
     }
 
-    void restoreInitialEngineState()
+    void restoreInitialEngineState() override
     {
     }
 };

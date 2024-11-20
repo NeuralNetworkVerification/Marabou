@@ -949,8 +949,6 @@ int SmtCore::cb_decide()
                 }
         }
 
-        if ( polarityScoreToConstraint.empty() )
-        {
             for ( auto &plConstraint : constraints )
             {
                 if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
@@ -963,7 +961,6 @@ int SmtCore::cb_decide()
                         break;
                 }
             }
-        }
 
         if ( !polarityScoreToConstraint.empty() )
         {
@@ -984,16 +981,7 @@ int SmtCore::cb_decide()
     int literalToDecide = 0;
 
     if ( variableToDecide )
-    {
         literalToDecide = _cadicalVarToPlc[variableToDecide]->getLiteralForDecision();
-        if ( _largestAssignmentSoFar.exists( variableToDecide ) )
-        {
-            if ( _largestAssignmentSoFar[variableToDecide] )
-                literalToDecide = (int)variableToDecide;
-            else
-                literalToDecide = -(int)variableToDecide;
-        }
-    }
 
     if ( literalToDecide )
     {
@@ -1062,28 +1050,30 @@ int SmtCore::cb_propagate()
         if ( _externalClauseToAdd.empty() )
         {
             _engine->propagateBoundManagerTightenings();
-
-            if ( _assignedLiterals.size() + _literalsToPropagate.size() >
-                 _largestAssignmentSoFar.size() )
+            if ( _externalClauseToAdd.empty() )
             {
-                _largestAssignmentSoFar.clear();
-
-                for ( const auto &p : _assignedLiterals )
+                if ( _assignedLiterals.size() + _literalsToPropagate.size() >
+                     _largestAssignmentSoFar.size() )
                 {
-                    int lit = p.first;
-                    if ( lit > 0 )
-                        _largestAssignmentSoFar[lit] = true;
-                    else
-                        _largestAssignmentSoFar[-lit] = false;
-                }
+                    _largestAssignmentSoFar.clear();
 
-                for ( const auto &p : _literalsToPropagate )
-                {
-                    int lit = p.first();
-                    if ( lit > 0 )
-                        _largestAssignmentSoFar[lit] = true;
-                    else
-                        _largestAssignmentSoFar[-lit] = false;
+                    for ( const auto &p : _assignedLiterals )
+                    {
+                        int lit = p.first;
+                        if ( lit > 0 )
+                            _largestAssignmentSoFar[lit] = true;
+                        else
+                            _largestAssignmentSoFar[-lit] = false;
+                    }
+
+                    for ( const auto &p : _literalsToPropagate )
+                    {
+                        int lit = p.first();
+                        if ( lit > 0 )
+                            _largestAssignmentSoFar[lit] = true;
+                        else
+                            _largestAssignmentSoFar[-lit] = false;
+                    }
                 }
             }
         }
