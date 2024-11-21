@@ -4040,8 +4040,6 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 {
     ASSERT( litConstraint );
     ASSERT( litConstraint->phaseFixed() || !litConstraint->isActive() );
-    //    unsigned int var = litConstraint->getCadicalVars().back();
-    Set<int> clause;
 
     // Get corresponding constraints, and its participating variables
     std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
@@ -4051,10 +4049,10 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
-    clause = clauseFromContradictionVector( tempExpl,
-                                            phaseFixingEntry->id,
-                                            phaseFixingEntry->lemma->getCausingVars().back(),
-                                            phaseFixingEntry->lemma->getCausingVarBound() );
+    Set clause = clauseFromContradictionVector( tempExpl,
+                                                phaseFixingEntry->id,
+                                                phaseFixingEntry->lemma->getCausingVars().back(),
+                                                phaseFixingEntry->lemma->getCausingVarBound() );
 
     if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
         clause = reduceClauseSizeWithProof(
