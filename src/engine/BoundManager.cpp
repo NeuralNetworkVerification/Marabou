@@ -470,7 +470,9 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         affectedVarBound,
                                                                         allExplanations,
                                                                         constraint.getType() );
-        _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
+
+        // TODO: Uncomment when constructing proof tree:
+        //  _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
 
         // Add ground bound entry to the GroundBoundManager
         std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
