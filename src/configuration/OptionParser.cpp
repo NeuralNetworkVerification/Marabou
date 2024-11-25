@@ -137,6 +137,14 @@ void OptionParser::initialize()
         boost::program_options::bool_switch( &( ( *_boolOptions )[Options::PRODUCE_PROOFS] ) )
             ->default_value( ( *_boolOptions )[Options::PRODUCE_PROOFS] ),
         "Produce proofs of UNSAT and check them" )
+#ifdef BUILD_TORCH
+    (
+            "run-attack",
+            boost::program_options::bool_switch( &( ( *_boolOptions )[Options::RUN_ATTACK] ) )
+                ->default_value( ( *_boolOptions )[Options::RUN_ATTACK] ),
+            "Enable PGD adversarial attack run" )
+#endif
+
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
         ;

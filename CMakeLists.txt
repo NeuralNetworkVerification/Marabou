@@ -23,7 +23,7 @@ option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" OFF) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
-
+option(BUILD_TORCH "Build libtorch" OFF)
 ###################
 ## Git variables ##
 ###################
@@ -151,7 +151,7 @@ include_directories(SYSTEM ${ONNX_DIR})
 #############
 ## Pytorch ##
 #############
-
+if (${BUILD_TORCH})
 set(PYTORCH_VERSION 2.2.1)
 message(STATUS "Hi 4")
 find_package(Torch ${PYTORCH_VERSION} QUIET)
@@ -169,7 +169,7 @@ if (NOT Torch_FOUND)
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 list(APPEND LIBS ${TORCH_LIBRARIES})
-
+endif ()
 ############
 ## Gurobi ##
 ############

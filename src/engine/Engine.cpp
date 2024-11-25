@@ -35,9 +35,10 @@
 #include "Vector.h"
 
 #include <random>
-
+#ifdef BUILD_TORCH
 #undef Warning
 #include <torch/torch.h>
+#endif
 
 
 Engine::Engine()
@@ -1444,30 +1445,35 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
-        if ( _networkLevelReasoner && Options::get()->getBool(( Options::PRODUCE_PROOFS )  ))
-        {
-            try
+        if ( _networkLevelReasoner )
+            if ( Options::get()->getBool( ( Options::PRODUCE_PROOFS ) ) )
             {
-                ENGINE_LOG(
-                    Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
+#ifdef BUILD_TORCH
+                try
+                {
+                    ENGINE_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() )
+                                    .ascii() );
 
-                _pgdAttack = new PGDAttack( _networkLevelReasoner );
-                if ( _pgdAttack->runAttack() )
+                    _pgdAttack = new PGDAttack( _networkLevelReasoner );
+                    if ( _pgdAttack->runAttack() )
+                    {
+                        ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() )
+                                        .ascii() );
+                        _exitCode = Engine::SAT;
+                        _isAttackSuccessful = true;
+                        return false;
+                    }
+                    ENGINE_LOG(
+                        Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+                }
+                catch ( MarabouError &e )
                 {
                     ENGINE_LOG(
                         Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
-                    _exitCode = Engine::SAT;
-                    _isAttackSuccessful = true;
-                    return false;
                 }
-                ENGINE_LOG(
-                    Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+#endif
             }
-            catch ( MarabouError &e )
-            {
-                ENGINE_LOG(
-                    Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
-            }
+        {
         }
 
         if ( preprocess )
@@ -1785,17 +1791,22 @@ void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor
             variable = preprocessorInUse->getNewIndex( variable );
 
             // Finally, set the assigned value
+#ifdef BUILD_TORCH
+
             if ( _isAttackSuccessful )
                 inputQuery.setSolutionValue( i, _pgdAttack->getAssignment( variable ) );
             else
                 inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
+#endif
         }
         else
         {
+#ifdef BUILD_TORCH
             if ( _isAttackSuccessful )
                 inputQuery.setSolutionValue( i, _pgdAttack->getAssignment( i ) );
             else
                 inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
+#endif
         }
     }
 

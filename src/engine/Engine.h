@@ -538,8 +538,10 @@ private:
 
     LinearExpression _heuristicCost;
 
-    PGDAttack *_pgdAttack;
-    bool _isAttackSuccessful = false;
+#ifdef BUILD_TORCH
+  PGDAttack *_pgdAttack;
+  bool _isAttackSuccessful = false;
+#endif
 
     /*
       Perform a simplex step: compute the cost function, pick the

@@ -1,8 +1,8 @@
+#ifdef BUILD_TORCH
 #ifndef __CustomDNN_h__
 #define __CustomDNN_h__
 
 #include "NetworkLevelReasoner.h"
-
 #include <vector>
 #define CUSTOM_DNN_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "customDNN: %s\n", x )
 #undef Warning
@@ -65,3 +65,4 @@ private:
 
 
 #endif // __CustomDNN_h__
+#endif

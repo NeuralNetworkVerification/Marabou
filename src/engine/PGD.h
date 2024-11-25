@@ -1,6 +1,6 @@
+#ifdef BUILD_TORCH
 #ifndef __PGD_h__
 #define __PGD_h__
-
 #include "CustomDNN.h"
 #include "GlobalConfiguration.h"
 #include "Options.h"
@@ -79,4 +79,5 @@ private:
 };
 
 
-#endif // __PGD_h__
+#endif
+#endif
