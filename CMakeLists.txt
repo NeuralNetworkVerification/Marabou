@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.16)
 project(Marabou)
 
 set(MARABOU_VERSION 2.0.0)
@@ -83,7 +83,7 @@ include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
 # Avoid using deprecated operations
 add_definitions(-DBOOST_NO_CXX98_FUNCTION_BASE)
-set(BOOST_VERSION 1.67.0)
+set(BOOST_VERSION 1.84.0)
 set(BOOST_DIR "${TOOLS_DIR}/boost-${BOOST_VERSION}")
 if (MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/win_installed")
@@ -182,7 +182,7 @@ if (${ENABLE_GUROBI})
     add_compile_definitions(ENABLE_GUROBI)
 
     set(GUROBI_LIB1 "gurobi_c++")
-    set(GUROBI_LIB2 "gurobi95")
+    set(GUROBI_LIB2 "gurobi110")
 
     add_library(${GUROBI_LIB1} SHARED IMPORTED)
     set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
@@ -193,9 +193,9 @@ if (${ENABLE_GUROBI})
 
     # MACOSx uses .dylib instead of .so for its Gurobi downloads.
     if (APPLE)
-        set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.dylib)
+        set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi110.dylib)
     else()
-        set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.so)
+        set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi110.so)
     endif ()
 
     list(APPEND LIBS ${GUROBI_LIB2})
