@@ -1,6 +1,6 @@
 #include "CustomDNN.h"
 #include "Vector.h"
-
+#ifdef BUILD_TORCH
 
 CustomMaxPool::CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
     : _networkLevelReasoner( nlr )
@@ -222,3 +222,4 @@ const Vector<unsigned>& CustomDNN::getLayerSizes() const
 {
     return _layerSizes;
 }
+#endif

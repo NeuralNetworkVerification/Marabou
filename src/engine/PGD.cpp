@@ -1,7 +1,7 @@
 #include "PGD.h"
 #include "InputQuery.h"
 #include <iostream>
-
+#ifdef BUILD_TORCH
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
     : networkLevelReasoner( networkLevelReasoner )
     , _device( torch::kCPU )
@@ -259,3 +259,4 @@ bool PGDAttack::runAttack()
 
     return isFooled;
 }
+#endif
