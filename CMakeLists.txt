@@ -7,7 +7,6 @@ add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 ##################
 ## User options ##
 ##################
@@ -350,8 +349,6 @@ target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 # Build marabou executable
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
-
-
 
 ######################
 ## Build Python API ##
