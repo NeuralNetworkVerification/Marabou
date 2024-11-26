@@ -22,7 +22,7 @@ option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
-option(BUILD_TORCH "Build libtorch" OFF)
+option(BUILD_TORCH "Build libtorch" ON)
 ###################
 ## Git variables ##
 ###################
@@ -102,7 +102,6 @@ if (NOT ${Boost_FOUND})
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 list(APPEND LIBS ${Boost_LIBRARIES})
-
 
 ##############
 ## Protobuf ##
