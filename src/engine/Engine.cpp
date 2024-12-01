@@ -3658,6 +3658,7 @@ bool Engine::certifyUNSATCertificate()
     if ( certificationSucceeded )
     {
         printf( "Certified\n" );
+        _statistics.incUnsignedAttribute( Statistics::CERTIFIED_UNSAT );
         if ( _statistics.getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) )
             printf( "Some leaves were delegated and need to be certified separately by an SMT "
                     "solver\n" );

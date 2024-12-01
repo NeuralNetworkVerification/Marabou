@@ -70,6 +70,9 @@ public:
         // Total number of delegated and certified leaves in the search tree
         NUM_CERTIFIED_LEAVES,
         NUM_DELEGATED_LEAVES,
+
+        // 1 if returned UNSAT and proof was certified by proof checker, 0 otherwise.
+        CERTIFIED_UNSAT,
     };
 
     enum StatisticsLongAttribute {
