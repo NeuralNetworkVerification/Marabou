@@ -3793,3 +3793,13 @@ void Engine::extractBounds( IQuery &inputQuery )
         }
     }
 }
+
+void Engine::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
+{
+    if ( !_produceUNSATProofs )
+        return;
+
+    ASSERT( explanation && _UNSATCertificate && _UNSATCertificateCurrentPointer )
+    _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
+    _UNSATCertificateCurrentPointer->get()->addPLCLemma( explanation );
+}

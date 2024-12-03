@@ -300,6 +300,11 @@ public:
     */
     void propagateBoundManagerTightenings();
 
+    /*
+      Add lemma to the UNSAT Certificate
+    */
+    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation );
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
