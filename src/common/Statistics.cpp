@@ -427,8 +427,7 @@ void Statistics::print()
             getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) );
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
-    printf( "\tNumber of lemmas: %u\n",
-            getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
+    printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
