@@ -286,6 +286,10 @@ public:
     {
         return true;
     }
+
+    void addPLCLemma( std::shared_ptr<PLCLemma> & /*explanation*/ )
+    {
+    }
 };
 
 #endif // __MockEngine_h__
