@@ -157,7 +157,9 @@ public:
         SOI_INITIALIZATION_STRATEGY,
 
         // The procedure/solver for solving the LP
-        LP_SOLVER
+        LP_SOLVER,
+
+        NAP_EXTERNAL_CLAUSE // TODO: delete or keep for artifact
     };
 
     /*

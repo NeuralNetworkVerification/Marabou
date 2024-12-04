@@ -1,6 +1,7 @@
 #ifndef MARABOU_CADICALWRAPPER_H
 #define MARABOU_CADICALWRAPPER_H
 
+#include "File.h"
 #include "SatSolverWrapper.h"
 
 #include <cadical.hpp>
@@ -114,6 +115,8 @@ public:
      * Forces backtracking to the given level
      */
     void forceBacktrack( size_t newLevel );
+
+    void addExternalNAPClause(const String&externalNAPClauseFilename );
 
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;

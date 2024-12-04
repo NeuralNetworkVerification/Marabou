@@ -212,15 +212,15 @@ void OptionParser::initialize()
         "Max number of tries to repair a relu before splitting when the Reluplex procedure is "
         "used." )(
         "vsids-decay-threshold",
-        boost::program_options::value<int>(
-            &( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ) )
+        boost::program_options::value<int>( &( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ) )
             ->default_value( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ),
         "The number of clauses on which the literal to decide will be chosen according to the "
-        "VSIDS branching huristic." )( "preprocessor-bound-tolerance",
-                   boost::program_options::value<float>(
-                       &( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ) )
-                       ->default_value( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
-                   "epsilon for preprocessor bound tightening comparisons." )(
+        "VSIDS branching huristic." )(
+        "preprocessor-bound-tolerance",
+        boost::program_options::value<float>(
+            &( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ) )
+            ->default_value( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
+        "epsilon for preprocessor bound tightening comparisons." )(
         "softmax-bound-type",
         boost::program_options::value<std::string>(
             &( *_stringOptions )[Options::SOFTMAX_BOUND_TYPE] )
@@ -247,7 +247,12 @@ void OptionParser::initialize()
             &( *_boolOptions )[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] )
             ->default_value(
                 ( *_boolOptions )[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] ),
-        "Do no merge consecutive weighted-sum layers." )
+        "Do no merge consecutive weighted-sum layers." )(
+        "nap-external-clause",
+        boost::program_options::value<std::string>(
+            &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE] )
+            ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE] ),
+        "Filename of external NAP clause" )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
           boost::program_options::value<std::string>( &( ( *_stringOptions )[Options::LP_SOLVER] ) )

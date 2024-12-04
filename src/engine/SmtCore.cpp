@@ -1299,6 +1299,9 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             if ( var != 0 )
                 _cadicalWrapper.addObservedVar( var );
 
+        _cadicalWrapper.addExternalNAPClause(
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE ) );
+
         //        printCurrentState();
         int result = _cadicalWrapper.solve();
 
