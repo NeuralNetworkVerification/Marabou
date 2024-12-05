@@ -3660,6 +3660,7 @@ bool Engine::certifyUNSATCertificate()
     if ( certificationSucceeded )
     {
         printf( "Certified\n" );
+        _statistics.incUnsignedAttribute( Statistics::CERTIFIED_UNSAT );
         if ( _statistics.getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) )
             printf( "Some leaves were delegated and need to be certified separately by an SMT "
                     "solver\n" );
@@ -3793,4 +3794,14 @@ void Engine::extractBounds( IQuery &inputQuery )
             inputQuery.tightenUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
         }
     }
+}
+
+void Engine::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
+{
+    if ( !_produceUNSATProofs )
+        return;
+
+    ASSERT( explanation && _UNSATCertificate && _UNSATCertificateCurrentPointer )
+    _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
+    _UNSATCertificateCurrentPointer->get()->addPLCLemma( explanation );
 }

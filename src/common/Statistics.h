@@ -67,9 +67,13 @@ public:
         // branches of the search tree, that have since been popped)
         TOTAL_NUMBER_OF_VALID_CASE_SPLITS,
 
-        // Total number of delegated and certified leaves in the search tree
+        // Total number of delegated leaves, certified leaves and lemmas in the search tree
         NUM_CERTIFIED_LEAVES,
         NUM_DELEGATED_LEAVES,
+        NUM_LEMMAS,
+
+        // 1 if returned UNSAT and proof was certified by proof checker, 0 otherwise.
+        CERTIFIED_UNSAT,
     };
 
     enum StatisticsLongAttribute {

@@ -42,6 +42,8 @@ Statistics::Statistics()
     _unsignedAttributes[TOTAL_NUMBER_OF_VALID_CASE_SPLITS] = 0;
     _unsignedAttributes[NUM_CERTIFIED_LEAVES] = 0;
     _unsignedAttributes[NUM_DELEGATED_LEAVES] = 0;
+    _unsignedAttributes[NUM_LEMMAS] = 0;
+    _unsignedAttributes[CERTIFIED_UNSAT] = 0;
 
     _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
     _longAttributes[NUM_SIMPLEX_STEPS] = 0;
@@ -425,6 +427,7 @@ void Statistics::print()
             getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) );
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
+    printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
