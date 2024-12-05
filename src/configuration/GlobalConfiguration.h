@@ -195,8 +195,9 @@ public:
       Symbolic bound tightening options
     */
 
-    // Symbolic tightening rounding constant
+    // Symbolic tightening, LP rounding constants
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+    static const double LP_TIGHTENING_ROUNDING_CONSTANT;
 
     static const double SIGMOID_CUTOFF_CONSTANT;
 
