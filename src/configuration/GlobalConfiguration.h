@@ -297,7 +297,7 @@ public:
     static const bool SCORE_TRACKER_LOGGING;
     static const bool CEGAR_LOGGING;
     static const bool CUSTOM_DNN_LOGGING;
-    static const bool PGD_LOG;
+    static const bool PGD_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

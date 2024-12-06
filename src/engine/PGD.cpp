@@ -1,6 +1,6 @@
 #include "PGD.h"
 #include "InputQuery.h"
-#include <iostream>
+#include <cmath>
 #ifdef BUILD_TORCH
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
     : networkLevelReasoner( networkLevelReasoner )
@@ -196,6 +196,20 @@ double PGDAttack::getAssignment( int index )
     return _assignments[index];
 }
 
+void PGDAttack::printValue(double value) {
+    if (std::isinf(value)) {
+        if (value < 0) {
+            PGD_LOG("-inf");
+        } else {
+            PGD_LOG("inf");
+        }
+    } else if (std::isnan(value)) {
+        PGD_LOG("nan");
+    } else {
+        PGD_LOG(Stringf("%.3lf", value).ascii());
+    }
+}
+
 bool PGDAttack::runAttack()
 {
     PGD_LOG( "-----Starting PGD attack-----" );
@@ -219,30 +233,29 @@ bool PGDAttack::runAttack()
         std::copy( example, example + _inputSize, _adversarialInput );
         std::copy( prediction, prediction + outputSize, _adversarialOutput );
     }
-    PGD_LOG( "Input Lower Bounds : \n" );
+    PGD_LOG( "Input Lower Bounds : " );
     for ( auto &bound : _inputBounds.first.getContainer() )
-        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
-    PGD_LOG( "Input Upper Bounds : \n" );
+        printValue(bound);
+    PGD_LOG( "Input Upper Bounds : " );
     for ( auto &bound : _inputBounds.second.getContainer() )
-        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
+        printValue(bound);
 
-    PGD_LOG( "Adversarial Input:\n" );
-    PGD_LOG( "Adversarial Input: \n");
+    PGD_LOG( "Adversarial Input:" );
     for ( int i = 0; i < advInput.numel(); ++i )
     {
-        PGD_LOG( "x%u=%.3lf", i, example[i] );
+        PGD_LOG( Stringf("x%u=%.3lf", i, example[i] ).ascii());
     }
-    PGD_LOG( "Output Lower Bounds : \n" );
+    PGD_LOG( "Output Lower Bounds : " );
     for ( auto &bound : _outputBounds.first.getContainer() )
-        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
-    PGD_LOG( "Output Upper Bounds : \n" );
+        printValue(bound);
+    PGD_LOG( "Output Upper Bounds : " );
     for ( auto &bound : _outputBounds.second.getContainer() )
-        PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
+        printValue(bound);
 
-    PGD_LOG( "Adversarial Prediction: \n");
+    PGD_LOG( "Adversarial Prediction: ");
     for ( int i = 0; i < advPred.numel(); ++i )
     {
-        PGD_LOG( "y%u=%.3lf", i, prediction[i] );
+        PGD_LOG( Stringf("y%u=%.3lf", i, prediction[i] ).ascii());
     }
 
 
