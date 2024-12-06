@@ -20,7 +20,7 @@ option(RUN_SYSTEM_TEST "Run system tests on build" OFF)
 option(RUN_MEMORY_TEST "Run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
-option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
+option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" OFF) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
 option(BUILD_TORCH "Build libtorch" ON)
 ###################
@@ -149,24 +149,27 @@ include_directories(SYSTEM ${ONNX_DIR})
 #############
 ## Pytorch ##
 #############
+
 if (${BUILD_TORCH})
-set(PYTORCH_VERSION 2.2.1)
-message(STATUS "Hi 4")
-find_package(Torch ${PYTORCH_VERSION} QUIET)
-message(STATUS "Hi 1")
-if (NOT Torch_FOUND)
-    message(STATUS "Hi 2")
-    set(PYTORCH_DIR "${TOOLS_DIR}/libtorch-${PYTORCH_VERSION}")
-    list(APPEND CMAKE_PREFIX_PATH ${PYTORCH_DIR})
-    if(NOT EXISTS "${PYTORCH_DIR}")
-        message(STATUS "Hi 5")
-        execute_process(COMMAND ${TOOLS_DIR}/download_libtorch.sh ${PYTORCH_VERSION})
+    message(STATUS "Using pytorch")
+    if (NOT DEFINED BUILD_TORCH)
+        set(BUILD_TORCH $ENV{TORCH_HOME})
     endif()
-    set(Torch_DIR ${PYTORCH_DIR}/share/cmake/Torch)
-    find_package(Torch ${PYTORCH_VERSION} REQUIRED)
-endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
-list(APPEND LIBS ${TORCH_LIBRARIES})
+    add_compile_definitions(BUILD_TORCH)
+    set(PYTORCH_VERSION 2.2.1)
+    find_package(Torch ${PYTORCH_VERSION} QUIET)
+    if (NOT Torch_FOUND)
+        set(PYTORCH_DIR "${TOOLS_DIR}/libtorch-${PYTORCH_VERSION}")
+        list(APPEND CMAKE_PREFIX_PATH ${PYTORCH_DIR})
+        if(NOT EXISTS "${PYTORCH_DIR}")
+            execute_process(COMMAND ${TOOLS_DIR}/download_libtorch.sh ${PYTORCH_VERSION})
+        endif()
+        set(Torch_DIR ${PYTORCH_DIR}/share/cmake/Torch)
+        find_package(Torch ${PYTORCH_VERSION} REQUIRED)
+    endif()
+    set(TORCH_CXX_FLAGS "-Wno-error=array-bounds")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+    list(APPEND LIBS ${TORCH_LIBRARIES})
 endif ()
 ############
 ## Gurobi ##

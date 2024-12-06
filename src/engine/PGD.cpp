@@ -227,7 +227,7 @@ bool PGDAttack::runAttack()
         PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
 
     PGD_LOG( "Adversarial Input:\n" );
-    std::cout << "Adversarial Input: \n";
+    PGD_LOG( "Adversarial Input: \n");
     for ( int i = 0; i < advInput.numel(); ++i )
     {
         PGD_LOG( "x%u=%.3lf", i, example[i] );
@@ -239,7 +239,7 @@ bool PGDAttack::runAttack()
     for ( auto &bound : _outputBounds.second.getContainer() )
         PGD_LOG( Stringf( "%.3lf", bound ).ascii() );
 
-    std::cout << "Adversarial Prediction: \n";
+    PGD_LOG( "Adversarial Prediction: \n");
     for ( int i = 0; i < advPred.numel(); ++i )
     {
         PGD_LOG( "y%u=%.3lf", i, prediction[i] );

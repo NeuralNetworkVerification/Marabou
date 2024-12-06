@@ -222,12 +222,13 @@ void Marabou::solveQuery()
 
     struct timespec start = TimeUtils::sampleMicro();
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-    if (_engine->getExitCode() == Engine::ATTACK_SAT)
-    {
-        return;
-    }
+
     if ( _engine->processInputQuery( _inputQuery ) )
     {
+        if (_engine->getExitCode() == Engine::ATTACK_SAT)
+        {
+            return;
+        }
         _engine->solve( timeoutInSeconds );
         if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
             _engine->certifyUNSATCertificate();

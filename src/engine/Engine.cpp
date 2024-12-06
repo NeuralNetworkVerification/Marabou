@@ -1446,7 +1446,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
         if ( _networkLevelReasoner )
-            if ( Options::get()->getBool( ( Options::PRODUCE_PROOFS ) ) )
+            if ( Options::get()->getBool( ( Options::RUN_ATTACK ) ) )
             {
 #ifdef BUILD_TORCH
                 try
