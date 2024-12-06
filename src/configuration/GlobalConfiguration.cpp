@@ -130,7 +130,7 @@ const bool GlobalConfiguration::GUROBI_LOGGING = false;
 
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
-const bool GlobalConfiguration::ENGINE_LOGGING = false;
+const bool GlobalConfiguration::ENGINE_LOGGING = true;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
@@ -147,8 +147,8 @@ const bool GlobalConfiguration::ONNX_PARSER_LOGGING = false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
 const bool GlobalConfiguration::CEGAR_LOGGING = false;
-const bool GlobalConfiguration::CUSTOM_DNN_LOGGING = false;
-const bool GlobalConfiguration::PGD_LOG = false;
+const bool GlobalConfiguration::CUSTOM_DNN_LOGGING = true;
+const bool GlobalConfiguration::PGD_LOGGING = true;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
