@@ -159,8 +159,8 @@ public:
         // The procedure/solver for solving the LP
         LP_SOLVER,
 
-        NAP_EXTERNAL_CLAUSE_FILENAME, // TODO: delete or keep for artifact
-        NAP_EXTERNAL_CLAUSE_FILENAME2 // TODO: delete or keep for artifact
+        NAP_EXTERNAL_CLAUSE_FILE_PATH, // TODO: delete or keep for artifact
+        NAP_EXTERNAL_CLAUSE_FILE_PATH2 // TODO: delete or keep for artifact
     };
 
     /*

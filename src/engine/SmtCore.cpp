@@ -1300,9 +1300,9 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _cadicalWrapper.addObservedVar( var );
 
         _cadicalWrapper.addExternalNAPClause(
-            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILENAME ) );
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) );
         _cadicalWrapper.addExternalNAPClause(
-            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILENAME2 ) );
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) );
 
         //        printCurrentState();
         int result = _cadicalWrapper.solve();
