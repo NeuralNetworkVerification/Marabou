@@ -101,7 +101,8 @@ void Options::initializeDefaultValues()
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
     _stringOptions[SOFTMAX_BOUND_TYPE] = "lse";
-    _stringOptions[NAP_EXTERNAL_CLAUSE] = "";
+    _stringOptions[NAP_EXTERNAL_CLAUSE_FILENAME] = "";
+    _stringOptions[NAP_EXTERNAL_CLAUSE_FILENAME2] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )

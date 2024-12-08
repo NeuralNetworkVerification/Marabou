@@ -1300,7 +1300,9 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
                 _cadicalWrapper.addObservedVar( var );
 
         _cadicalWrapper.addExternalNAPClause(
-            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE ) );
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILENAME ) );
+        _cadicalWrapper.addExternalNAPClause(
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILENAME2 ) );
 
         //        printCurrentState();
         int result = _cadicalWrapper.solve();
@@ -1361,18 +1363,19 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         //                                      );
         return false;
     }
-    catch ( ... )
-    {
-        _exitCode = ERROR;
-        _engine->exportInputQueryWithError( "Unknown error" );
-
-        // TODO: uncomment after handling statistics
-        //        mainLoopEnd = TimeUtils::sampleMicro();
-        //        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
-        //                                      TimeUtils::timePassed( mainLoopStart, mainLoopEnd )
-        //                                      );
-        return false;
-    }
+    //    catch ( ... )
+    //    {
+    //        _exitCode = ERROR;
+    //        _engine->exportInputQueryWithError( "Unknown error" );
+    //
+    //        // TODO: uncomment after handling statistics
+    //        //        mainLoopEnd = TimeUtils::sampleMicro();
+    //        //        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+    //        //                                      TimeUtils::timePassed( mainLoopStart,
+    //        mainLoopEnd )
+    //        //                                      );
+    //        return false;
+    //    }
 }
 
 void SmtCore::addLiteralToPropagate( int literal )
