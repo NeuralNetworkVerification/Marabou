@@ -118,7 +118,7 @@ void CadicalWrapper::forceBacktrack( size_t newLevel )
 
 void CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFilename )
 {
-    if ( File::exists( externalNAPClauseFilename ) )
+    if ( externalNAPClauseFilename != "" && File::exists( externalNAPClauseFilename ) )
     {
         File externalNAPClauseFile( externalNAPClauseFilename );
         externalNAPClauseFile.open( IFile::MODE_READ );
