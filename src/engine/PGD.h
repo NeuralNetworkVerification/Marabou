@@ -40,7 +40,7 @@ private:
      */
     torch::Tensor _epsilon;
     torch::Tensor _inputExample;
-    CustomDNN _model;
+    std::unique_ptr<CustomDNN> _model;
     unsigned _iters;
     unsigned _restarts;
     unsigned _inputSize;

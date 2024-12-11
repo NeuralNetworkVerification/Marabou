@@ -14,10 +14,10 @@ torch::Tensor CustomMaxPool::forward( torch::Tensor x ) const
 }
 
 void CustomDNN::setWeightsAndBiases( torch::nn::Linear &linearLayer,
-                                         const NLR::Layer *layer,
-                                         unsigned sourceLayer,
-                                         unsigned inputSize,
-                                         unsigned outputSize )
+                                     const NLR::Layer *layer,
+                                     unsigned sourceLayer,
+                                     unsigned inputSize,
+                                     unsigned outputSize )
 {
     Vector<Vector<float>> layerWeights( outputSize, Vector<float>( inputSize ) );
     Vector<float> layerBiases( outputSize );
@@ -73,7 +73,7 @@ void CustomDNN::weightedSum( unsigned i, const NLR::Layer *layer )
 
 CustomDNN::CustomDNN( const NLR::NetworkLevelReasoner *nlr )
 {
-    CUSTOM_DNN_LOG("----- Construct Custom Network -----" );
+    CUSTOM_DNN_LOG( "----- Construct Custom Network -----" );
     _networkLevelReasoner = nlr;
     _numberOfLayers = _networkLevelReasoner->getNumberOfLayers();
     for ( unsigned i = 0; i < _numberOfLayers; i++ )
@@ -218,7 +218,7 @@ std::vector<torch::Tensor> CustomMaxPoolFunction::backward( torch::autograd::Aut
     return { grad_input, torch::Tensor(), torch::Tensor() };
 }
 
-const Vector<unsigned>& CustomDNN::getLayerSizes() const
+const Vector<unsigned> &CustomDNN::getLayerSizes() const
 {
     return _layerSizes;
 }

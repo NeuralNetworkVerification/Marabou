@@ -5,13 +5,13 @@
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
     : networkLevelReasoner( networkLevelReasoner )
     , _device( torch::kCPU )
-    , _model( CustomDNN( networkLevelReasoner ) )
+    , _model( std::make_unique<CustomDNN>( networkLevelReasoner ) )
     , _iters( GlobalConfiguration::PGD_DEFAULT_NUM_ITER )
     , _restarts( GlobalConfiguration::PGD_NUM_RESTARTS )
     , _adversarialInput( nullptr )
     , _adversarialOutput( nullptr )
 {
-    _inputSize = _model.getLayerSizes().first();
+    _inputSize = _model->getLayerSizes().first();
     getBounds( _inputBounds, GlobalConfiguration::PdgBoundType::PGD_INPUT );
     getBounds( _outputBounds, GlobalConfiguration::PdgBoundType::PGD_OUTPUT );
     std::pair<torch::Tensor, torch::Tensor> variables = generateSampleAndEpsilon();
@@ -172,7 +172,7 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
         for ( unsigned j = 0; j < _iters; ++j )
         {
             currentExample = currentExample + delta;
-            currentPrediction = _model.forward( currentExample );
+            currentPrediction = _model->forward( currentExample );
             if ( isWithinBounds( currentPrediction, _outputBounds ) )
             {
                 return { currentExample, currentPrediction };
@@ -223,7 +223,7 @@ bool PGDAttack::runAttack()
     auto *example = advInput.data_ptr<double>();
     auto *prediction = advPred.data_ptr<double>();
     size_t outputSize = advPred.size( 1 );
-    ASSERT( advInput.size( 1 ) == _inputSize && outputSize == _model.getLayerSizes().last() );
+    ASSERT( advInput.size( 1 ) == _inputSize && outputSize == _model->getLayerSizes().last() );
 
     if ( isFooled )
     {

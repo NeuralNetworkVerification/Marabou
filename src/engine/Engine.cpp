@@ -75,6 +75,7 @@ Engine::Engine()
     , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
     , _sncMode( false )
     , _queryId( "" )
+    , _pgdAttack( nullptr )
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
@@ -1454,7 +1455,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                     ENGINE_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() )
                                     .ascii() );
 
-                    _pgdAttack = new PGDAttack( _networkLevelReasoner );
+                    _pgdAttack = std::make_unique<PGDAttack>( _networkLevelReasoner );
                     if ( _pgdAttack->runAttack() )
                     {
                         ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() )
@@ -1469,7 +1470,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 catch ( MarabouError &e )
                 {
                     ENGINE_LOG(
-                        Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+                        Stringf( "Error, Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
                 }
 #endif
             }

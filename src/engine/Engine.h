@@ -539,7 +539,7 @@ private:
     LinearExpression _heuristicCost;
 
 #ifdef BUILD_TORCH
-  PGDAttack *_pgdAttack;
+  std::unique_ptr<PGDAttack>_pgdAttack;
   bool _isAttackSuccessful = false;
 #endif
 
