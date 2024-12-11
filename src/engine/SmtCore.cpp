@@ -1326,10 +1326,17 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
             if ( var != 0 )
                 _cadicalWrapper.addObservedVar( var );
 
-        _cadicalWrapper.addExternalNAPClause(
+        Set<int> externalClause;
+
+        externalClause = _cadicalWrapper.addExternalNAPClause(
             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) );
-        _cadicalWrapper.addExternalNAPClause(
+        if ( !externalClause.empty() )
+            _initialClauses.append( externalClause );
+
+        externalClause = _cadicalWrapper.addExternalNAPClause(
             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) );
+        if ( !externalClause.empty() )
+            _initialClauses.append( externalClause );
 
         //        printCurrentState();
         int result = _cadicalWrapper.solve();
