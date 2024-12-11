@@ -469,6 +469,8 @@ private:
 
     HashMap<unsigned, bool> _largestAssignmentSoFar;
 
+    Vector<Set<int>> _initialClauses;
+
     /*
       Access info in the internal data structures
     */

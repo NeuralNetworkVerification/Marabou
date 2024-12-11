@@ -75,7 +75,7 @@ const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.0000
 const double GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT = 20;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
-const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
+const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = false;
 const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
 const bool GlobalConfiguration::NL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.0000000001;

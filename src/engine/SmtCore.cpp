@@ -66,6 +66,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _numOfConflictClauses( 0 )
     , _shouldRestart( false )
     , _tableauState( NULL )
+    , _initialClauses()
 {
     _cadicalVarToPlc.insert( 0, NULL );
     _tableauState = std::make_shared<TableauState>();
@@ -1021,7 +1022,30 @@ int SmtCore::cb_propagate()
     if ( _engine->getLpSolverType() == LPSolverType::GUROBI )
     {
         if ( _engine->solve() )
-            _exitCode = SAT;
+        {
+            bool allInitialClausesSatisfied = true;
+            for ( const Set<int> &clause : _initialClauses )
+            {
+                bool clauseSatisfied = false;
+                for ( int lit : clause )
+                {
+                    if ( isLiteralAssigned( lit ) )
+                    {
+                        clauseSatisfied = true;
+                        break;
+                    }
+                }
+
+                if ( not clauseSatisfied )
+                {
+                    allInitialClausesSatisfied = false;
+                    break;
+                }
+            }
+
+            if ( allInitialClausesSatisfied )
+                _exitCode = SAT;
+        }
 
         return 0;
     }
@@ -1273,11 +1297,14 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
 
         _engine->preSolve();
 
-        if ( _engine->solve() )
-        {
-            _exitCode = SAT;
-            return true;
-        }
+        if ( Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) == "" &&
+             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) == "" )
+            if ( _engine->solve() )
+            {
+                _exitCode = SAT;
+                return true;
+            }
+
         if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
             _engine->propagateBoundManagerTightenings();
 
