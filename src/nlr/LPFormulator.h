@@ -16,7 +16,7 @@
 #ifndef __LPFormulator_h__
 #define __LPFormulator_h__
 
-#include "CoordinateDescent.h"
+#include "AdamOptimizer.h"
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "Map.h"
@@ -110,47 +110,60 @@ private:
 
     void
     addMaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-    
+
     void
     addRoundLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-    
-    void
-    addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-    
-    void
-    addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-    
-    void
-    addSoftmaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-    
-    void
-    addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-    
+
+    void addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                              const Layer *layer,
+                                              bool createVariables );
+
+    void addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                        const Layer *layer,
+                                        bool createVariables );
+
+    void addSoftmaxLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                        const Layer *layer,
+                                        bool createVariables );
+
+    void addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                         const Layer *layer,
+                                         bool createVariables );
+
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer,
                                             bool createVariables );
 
-    void optimizeBoundsOfNeuronsWithLpRelaxation( ThreadArgument &args, bool backward, std::vector<double> coeffs = {} );
-    
-    
-    // Create LP relaxations depending on an external parameter. 
+    void optimizeBoundsOfNeuronsWithLpRelaxation( ThreadArgument &args,
+                                                  bool backward,
+                                                  std::vector<double> coeffs = {} );
+
+
+    // Create LP relaxations depending on an external parameter.
     void addLayerToParameterisedModel( GurobiWrapper &gurobi,
-                                 const Layer *layer,
-                                 bool createVariables,
-                                 double coeff );
-    
-    void
-    addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    void
-    addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables, double coeff );
-    
-    
+                                       const Layer *layer,
+                                       bool createVariables,
+                                       double coeff );
+
+    void addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                  const Layer *layer,
+                                                  bool createVariables,
+                                                  double coeff );
+
+    void addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                       const Layer *layer,
+                                                       bool createVariables,
+                                                       double coeff );
+
+    void addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                  const Layer *layer,
+                                                  bool createVariables,
+                                                  double coeff );
+
+
     // Estimate Volume of parameterised LP relaxations.
-    static double EstimateVolume( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs );
+    static double EstimateVolume( const Map<unsigned, Layer *> &layers,
+                                  std::vector<double> coeffs );
 
 
     /*

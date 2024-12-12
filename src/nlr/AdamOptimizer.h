@@ -4,8 +4,8 @@
  * Boost Software License, Version 1.0. (See accompanying file
  * LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  */
-#ifndef COORDINATE_DESCENT
-#define COORDINATE_DESCENT
+#ifndef ADAM_OPTIMIZER
+#define ADAM_OPTIMIZER
 
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -188,26 +188,31 @@ void validate_initial_guess( ArgumentContainer const &initial_guess,
     }
 }
 
-// Single-Threaded Coordinate Descent
+// Single-Threaded Adam Optimizer
 
 // We provide the parameters in a struct-there are too many of them and they are too unwieldy to
 // pass individually:
-template <typename ArgumentContainer> struct coordinate_descent_parameters
+template <typename ArgumentContainer> struct adam_optimizer_parameters
 {
     using Real = typename ArgumentContainer::value_type;
     ArgumentContainer lower_bounds;
     ArgumentContainer upper_bounds;
 
     Real step_size = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
-    // size_t max_iterations =
-    // GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
-    size_t max_iterations = 2;
+    Real lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+    Real lr = 0.05;
+    Real epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    Real beta1 = 0.9;
+    Real beta2 = 0.999;
+    Real weight_decay = 0.2;
+    bool maximize = false;
+    size_t max_iterations = 100;
     ArgumentContainer const *initial_guess = nullptr;
 };
 
 template <typename ArgumentContainer>
-void validate_coordinate_descent_parameters(
-    coordinate_descent_parameters<ArgumentContainer> const &cd_params )
+void validate_adam_optimizer_parameters(
+    adam_optimizer_parameters<ArgumentContainer> const &cd_params )
 {
     std::ostringstream oss;
     validate_bounds( cd_params.lower_bounds, cd_params.upper_bounds );
@@ -216,6 +221,42 @@ void validate_coordinate_descent_parameters(
     {
         oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
         oss << ": step_size > 0 is required, but got step_size=" << cd_params.step_size << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.epsilon ) || cd_params.epsilon <= 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": epsilon > 0 is required, but got epsilon=" << cd_params.epsilon << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.beta1 ) || cd_params.beta1 <= 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": beta1 > 0 is required, but got beta1=" << cd_params.beta1 << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.beta2 ) || cd_params.beta2 <= 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": beta2 > 0 is required, but got beta2=" << cd_params.beta2 << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.lr ) || cd_params.lr <= 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": lr > 0 is required, but got lr=" << cd_params.lr << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.weight_decay ) || cd_params.weight_decay < 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": weight_decay >= 0 is required, but got weight_decay=" << cd_params.weight_decay
+            << ".";
         throw std::domain_error( oss.str() );
     }
 
@@ -234,9 +275,9 @@ void validate_coordinate_descent_parameters(
 }
 
 template <typename ArgumentContainer, class Func, class URBG>
-ArgumentContainer coordinate_descent(
+ArgumentContainer adam_optimizer(
     const Func cost_function,
-    coordinate_descent_parameters<ArgumentContainer> const &cd_params,
+    adam_optimizer_parameters<ArgumentContainer> const &cd_params,
     URBG &gen,
     std::invoke_result_t<Func, ArgumentContainer> target_value,
     bool *cancellation = nullptr,
@@ -246,11 +287,16 @@ ArgumentContainer coordinate_descent(
 {
     using ResultType = std::invoke_result_t<Func, ArgumentContainer>;
 
-    validate_coordinate_descent_parameters( cd_params );
+    validate_adam_optimizer_parameters( cd_params );
     const size_t dimension = cd_params.lower_bounds.size();
-    const size_t candidates_number = 2 * dimension;
     auto step_size = cd_params.step_size;
     auto max_iterations = cd_params.max_iterations;
+    auto maximize = cd_params.maximize;
+    auto epsilon = cd_params.epsilon;
+    auto beta1 = cd_params.beta1;
+    auto beta2 = cd_params.beta2;
+    auto lr = cd_params.lr;
+    auto weight_decay = cd_params.weight_decay;
     auto guess =
         random_initial_population( cd_params.lower_bounds, cd_params.upper_bounds, 1, gen );
 
@@ -259,34 +305,46 @@ ArgumentContainer coordinate_descent(
         guess[0] = *cd_params.initial_guess;
     }
 
-    std::vector<ArgumentContainer> candidates( candidates_number );
-    std::vector<ResultType> costs( candidates_number );
+    std::vector<ArgumentContainer> candidates( dimension );
+    std::vector<ResultType> gradient( dimension );
+    std::vector<ResultType> first_moment( dimension );
+    std::vector<ResultType> second_moment( dimension );
     ArgumentContainer current_minimum = guess[0];
+
+    for ( size_t j = 0; j < dimension; ++j )
+    {
+        first_moment[j] = 0;
+        second_moment[j] = 0;
+    }
 
     for ( size_t i = 0; i < max_iterations; ++i )
     {
-        for ( size_t j = 0; j < candidates_number; ++j )
+        for ( size_t j = 0; j < dimension; ++j )
         {
             candidates[j] = guess[0];
-            size_t index = j / 2;
-            size_t sign = ( j % 2 == 0 ? 1 : -1 );
-            candidates[j][index] += sign * step_size;
+            candidates[j][j] += step_size;
 
-            costs[j] = cost_function( candidates[j] );
+            size_t sign = ( maximize == false ? 1 : -1 );
+            double cost = cost_function( candidates[j] );
+            gradient[j] = sign * cost / step_size + weight_decay * guess[0][j];
 
-            if ( current_minimum_cost && costs[j] < *current_minimum_cost )
+            if ( !FloatUtils::isNan( target_value ) && cost <= target_value )
             {
-                *current_minimum_cost = costs[j];
-                current_minimum = candidates[j];
-            }
-
-            if ( !FloatUtils::isNan( target_value ) && costs[j] <= target_value )
-            {
+                guess[0] = candidates[j];
                 break;
             }
         }
 
-        guess[0] = current_minimum;
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            first_moment[j] = beta1 * first_moment[j] + ( 1 - beta1 ) * gradient[j];
+            first_moment[j] /= ( 1 - std::pow( beta1, step_size ) );
+
+            second_moment[j] = beta2 * first_moment[j] + ( 1 - beta2 ) * std::pow( gradient[j], 2 );
+            second_moment[j] /= ( 1 - std::pow( beta2, step_size ) );
+
+            guess[0][j] -= lr * first_moment[j] / ( std::sqrt( second_moment[j] ) + epsilon );
+        }
     }
 
     return guess[0];

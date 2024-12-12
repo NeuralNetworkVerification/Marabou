@@ -103,7 +103,7 @@ public:
           expressions and obtain tighter bounds (e.g., if the upper
           bound on the upper bound of a ReLU node is negative, that
           ReLU is inactive and its output can be set to 0.
-        
+
         - Parametrised Symbolic: For certain activation functions, there
           is a continuum of valid symbolic bounds. We receive a map of
           coefficients in range [0, 1] for every layer index, then compute
@@ -121,10 +121,10 @@ public:
         - getConstraintTightenings: this is the function that an
           external user calls in order to collect the tighter bounds
           discovered by the NLR.
-          
+
         - receiveTighterPolygonalBound: this is a callback from the layer
           objects, through which they report tighter polygonal bounds.
-        
+
         - getConstraintPolygonalTightenings: this is the function that an
           external user calls in order to collect the tighter polygonal bounds
           discovered by the NLR.
@@ -148,7 +148,7 @@ public:
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
     void clearConstraintTightenings();
-    
+
     void receivePolygonalTighterBound( PolygonalTightening polygonal_tightening );
     void getConstraintPolygonalTightenings( List<PolygonalTightening> &polygonal_tightenings );
     void clearConstraintPolygonalTightenings();

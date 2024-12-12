@@ -4,8 +4,8 @@
  * Boost Software License, Version 1.0. (See accompanying file
  * LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  */
-#ifndef COORDINATE_DESCENT
-#define COORDINATE_DESCENT
+#ifndef GRADIENT_DESCENT
+#define GRADIENT_DESCENT
 
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -188,11 +188,11 @@ void validate_initial_guess( ArgumentContainer const &initial_guess,
     }
 }
 
-// Single-Threaded Coordinate Descent
+// Single-Threaded Gradient Descent
 
 // We provide the parameters in a struct-there are too many of them and they are too unwieldy to
 // pass individually:
-template <typename ArgumentContainer> struct coordinate_descent_parameters
+template <typename ArgumentContainer> struct gradient_descent_parameters
 {
     using Real = typename ArgumentContainer::value_type;
     ArgumentContainer lower_bounds;
@@ -202,12 +202,16 @@ template <typename ArgumentContainer> struct coordinate_descent_parameters
     // size_t max_iterations =
     // GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
     size_t max_iterations = 2;
+    bool maximize = false;
+    Real weight_decay = 0;
+    // Real lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+    Real lr = 0.001;
     ArgumentContainer const *initial_guess = nullptr;
 };
 
 template <typename ArgumentContainer>
-void validate_coordinate_descent_parameters(
-    coordinate_descent_parameters<ArgumentContainer> const &cd_params )
+void validate_gradient_descent_parameters(
+    gradient_descent_parameters<ArgumentContainer> const &cd_params )
 {
     std::ostringstream oss;
     validate_bounds( cd_params.lower_bounds, cd_params.upper_bounds );
@@ -226,6 +230,21 @@ void validate_coordinate_descent_parameters(
         throw std::invalid_argument( oss.str() );
     }
 
+    if ( FloatUtils::isNan( cd_params.lr ) || cd_params.lr <= 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": lr > 0 is required, but got lr=" << cd_params.lr << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.weight_decay ) || cd_params.weight_decay < 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": weight_decay >= 0 is required, but got weight_decay=" << cd_params.weight_decay
+            << ".";
+        throw std::domain_error( oss.str() );
+    }
+
     if ( cd_params.initial_guess )
     {
         validate_initial_guess(
@@ -234,9 +253,9 @@ void validate_coordinate_descent_parameters(
 }
 
 template <typename ArgumentContainer, class Func, class URBG>
-ArgumentContainer coordinate_descent(
+ArgumentContainer gradient_descent(
     const Func cost_function,
-    coordinate_descent_parameters<ArgumentContainer> const &cd_params,
+    gradient_descent_parameters<ArgumentContainer> const &cd_params,
     URBG &gen,
     std::invoke_result_t<Func, ArgumentContainer> target_value,
     bool *cancellation = nullptr,
@@ -246,11 +265,13 @@ ArgumentContainer coordinate_descent(
 {
     using ResultType = std::invoke_result_t<Func, ArgumentContainer>;
 
-    validate_coordinate_descent_parameters( cd_params );
+    validate_gradient_descent_parameters( cd_params );
     const size_t dimension = cd_params.lower_bounds.size();
-    const size_t candidates_number = 2 * dimension;
     auto step_size = cd_params.step_size;
     auto max_iterations = cd_params.max_iterations;
+    auto maximize = cd_params.maximize;
+    auto lr = cd_params.lr;
+    auto weight_decay = cd_params.weight_decay;
     auto guess =
         random_initial_population( cd_params.lower_bounds, cd_params.upper_bounds, 1, gen );
 
@@ -259,34 +280,32 @@ ArgumentContainer coordinate_descent(
         guess[0] = *cd_params.initial_guess;
     }
 
-    std::vector<ArgumentContainer> candidates( candidates_number );
-    std::vector<ResultType> costs( candidates_number );
+    std::vector<ArgumentContainer> candidates( dimension );
+    std::vector<ResultType> gradient( dimension );
     ArgumentContainer current_minimum = guess[0];
 
     for ( size_t i = 0; i < max_iterations; ++i )
     {
-        for ( size_t j = 0; j < candidates_number; ++j )
+        for ( size_t j = 0; j < dimension; ++j )
         {
             candidates[j] = guess[0];
-            size_t index = j / 2;
-            size_t sign = ( j % 2 == 0 ? 1 : -1 );
-            candidates[j][index] += sign * step_size;
+            candidates[j][j] += step_size;
 
-            costs[j] = cost_function( candidates[j] );
+            size_t sign = ( maximize == false ? 1 : -1 );
+            double cost = cost_function( candidates[j] );
+            gradient[j] = sign * cost / step_size + weight_decay * guess[0][j];
 
-            if ( current_minimum_cost && costs[j] < *current_minimum_cost )
+            if ( !FloatUtils::isNan( target_value ) && cost <= target_value )
             {
-                *current_minimum_cost = costs[j];
-                current_minimum = candidates[j];
-            }
-
-            if ( !FloatUtils::isNan( target_value ) && costs[j] <= target_value )
-            {
+                guess[0] = candidates[j];
                 break;
             }
         }
 
-        guess[0] = current_minimum;
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            guess[0][j] -= lr * gradient[j];
+        }
     }
 
     return guess[0];

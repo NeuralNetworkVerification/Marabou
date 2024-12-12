@@ -203,7 +203,8 @@ void NetworkLevelReasoner::receivePolygonalTighterBound( PolygonalTightening pol
     _polygonalBoundTightenings.append( polygonal_tightening );
 }
 
-void NetworkLevelReasoner::getConstraintPolygonalTightenings( List<PolygonalTightening> &polygonal_tightenings )
+void NetworkLevelReasoner::getConstraintPolygonalTightenings(
+    List<PolygonalTightening> &polygonal_tightenings )
 {
     polygonal_tightenings = _polygonalBoundTightenings;
     _polygonalBoundTightenings.clear();

@@ -17,8 +17,8 @@
 #define __LayerOwner_h__
 
 #include "ITableau.h"
-#include "Tightening.h"
 #include "PolygonalTightening.h"
+#include "Tightening.h"
 
 namespace NLR {
 
