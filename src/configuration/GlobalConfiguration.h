@@ -150,19 +150,19 @@ public:
 
     // Random seed for generating simulation values.
     static const unsigned SIMULATION_RANDOM_SEED;
-    
+
     // Random seed for EstimateVolume procedure (PreimageApproximation).
     static const unsigned VOLUME_ESTIMATION_RANDOM_SEED;
-    
+
     // Number of iterations for EstimateVolume procedure (PreimageApproximation).
     static const unsigned VOLUME_ESTIMATION_ITERATIONS;
-    
+
     // Random seed for PreimageApproximation optimization.
     static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED;
-    
+
     // Maximum iterations for PreimageApproximation optimization.
     static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
-    
+
     // Step size for PreimageApproximation optimization.
     static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
 

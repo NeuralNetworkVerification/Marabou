@@ -70,8 +70,9 @@ const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 const unsigned GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED = 1;
 const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED = 1;
 const unsigned GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS = 1000;
-const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS = 1000;
+const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS = 100;
 const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE = 0.1;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE = 0.05;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
