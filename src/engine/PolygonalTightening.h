@@ -16,9 +16,10 @@
 #ifndef __PolygonalTightening_h__
 #define __PolygonalTightening_h__
 
-#include <cstdio>
-#include "NeuronIndex.h"
 #include "Map.h"
+#include "NeuronIndex.h"
+
+#include <cstdio>
 
 class PolygonalTightening
 {
@@ -26,9 +27,11 @@ public:
     enum PolygonalBoundType {
         LB = 0,
         UB = 1,
-    }; 
+    };
 
-    PolygonalTightening( Map<NLR::NeuronIndex, double> neuronToCoefficient, double value, PolygonalBoundType type )
+    PolygonalTightening( Map<NLR::NeuronIndex, double> neuronToCoefficient,
+                         double value,
+                         PolygonalBoundType type )
         : _neuronToCoefficient( neuronToCoefficient )
         , _value( value )
         , _type( type )
@@ -62,20 +65,20 @@ public:
             bool currentFound = false;
             for ( const auto &otherPair : other._neuronToCoefficient )
             {
-                currentFound |= ( pair.first._layer == otherPair.first._layer
-                                  && pair.first._neuron == otherPair.first._neuron
-                                  && pair.second == otherPair.second );
+                currentFound |= ( pair.first._layer == otherPair.first._layer &&
+                                  pair.first._neuron == otherPair.first._neuron &&
+                                  pair.second == otherPair.second );
             }
             allFound &= currentFound;
         }
         bool result = allFound && _value == other._value && _type == other._type;
-        return result;       
+        return result;
     }
 
     void dump() const
     {
         printf( "PolygonalTightening: x %s %.2lf\n", _type == LB ? ">=" : "<=", _value );
-        
+
         for ( const auto &pair : _neuronToCoefficient )
         {
             printf( "NeuronIndex: (layer %u, neuron %u), Coefficient: %.2lf )\n",
@@ -94,4 +97,4 @@ public:
 // tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
-//s
+// s
