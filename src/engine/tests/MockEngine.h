@@ -389,6 +389,11 @@ public:
     void restoreInitialEngineState() override
     {
     }
+
+    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override
+    {
+        return true;
+    }
 };
 
 #endif // __MockEngine_h__

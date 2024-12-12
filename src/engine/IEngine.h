@@ -252,6 +252,8 @@ public:
     virtual void restoreTableauState( const TableauState &state ) = 0;
 
     virtual void restoreInitialEngineState() = 0;
+
+    virtual bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const = 0;
 };
 
 #endif // __IEngine_h__

@@ -359,6 +359,8 @@ public:
      */
     NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override;
 
+    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override;
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -738,7 +740,7 @@ private:
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
     */
-    unsigned performSymbolicBoundTightening( InputQuery *inputQuery = nullptr );
+    unsigned int performSymbolicBoundTightening( InputQuery *inputQuery, bool brutePerform = false );
 
     /*
       Perform a simulation which calculates concrete values of each layer with

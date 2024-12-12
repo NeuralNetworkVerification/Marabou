@@ -481,7 +481,7 @@ void Engine::performBoundTighteningAfterCaseSplit()
     performMILPSolverBoundedTighteningForSingleLayer( 1 );
     do
     {
-        performSymbolicBoundTightening();
+        performSymbolicBoundTightening( nullptr );
     }
     while ( applyAllValidConstraintCaseSplits() );
 
@@ -529,7 +529,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         checkBoundCompliancyWithDebugSolution();
 
         while ( applyAllValidConstraintCaseSplits() )
-            performSymbolicBoundTightening();
+            performSymbolicBoundTightening( nullptr );
         return false;
     }
     else
@@ -935,7 +935,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
 
         initializeNetworkLevelReasoning();
 
-        performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+        performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
         performSimulation();
         performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
         performAdditionalBackwardAnalysisIfNeeded();
@@ -1438,7 +1438,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         initializeNetworkLevelReasoning();
         if ( preprocess )
         {
-            performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+            performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
             performSimulation();
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
             performAdditionalBackwardAnalysisIfNeeded();
@@ -1675,7 +1675,7 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
          _milpSolverBoundTighteningType ==
              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
     {
-        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
         if ( _verbosity > 0 )
             printf( "Backward analysis tightened %u bounds\n", tightened );
         while ( tightened &&
@@ -1684,7 +1684,7 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
                 GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS )
         {
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
-            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
             if ( _verbosity > 0 )
                 printf( "Backward analysis tightened %u bounds\n", tightened );
         }
@@ -2486,8 +2486,7 @@ List<unsigned> Engine::getInputVariables() const
 void Engine::performSimulation()
 {
     if ( _simulationSize == 0 || !_networkLevelReasoner ||
-         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE ||
-         _produceUNSATProofs )
+         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE )
     {
         ENGINE_LOG( Stringf( "Skip simulation..." ).ascii() );
         return;
@@ -2513,11 +2512,12 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-unsigned Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
+unsigned int Engine::performSymbolicBoundTightening( InputQuery *inputQuery, bool brutePerform )
 {
-    if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
-         ( !_networkLevelReasoner ) || _produceUNSATProofs )
-        return 0;
+    if ( !brutePerform )
+        if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
+             ( !_networkLevelReasoner ) || _produceUNSATProofs )
+            return 0;
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -2963,7 +2963,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
         do
-            performSymbolicBoundTightening();
+            performSymbolicBoundTightening( nullptr );
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
@@ -2977,7 +2977,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
             // For debugging purposes
             checkBoundCompliancyWithDebugSolution();
             do
-                performSymbolicBoundTightening();
+                performSymbolicBoundTightening( nullptr );
             while ( applyAllValidConstraintCaseSplits() );
         }
         _boundManager.propagateTightenings();
@@ -3030,7 +3030,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
 
         while ( applyAllValidConstraintCaseSplits() )
         {
-            performSymbolicBoundTightening();
+            performSymbolicBoundTightening( nullptr );
         }
     }
     catch ( const InfeasibleQueryException & )
@@ -4376,4 +4376,38 @@ void Engine::storeTableauState( TableauState &state )
 void Engine::restoreTableauState( const TableauState &state )
 {
     _tableau->restoreState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
+}
+
+bool Engine::checkAssignmentComplianceWithClause( const Set<int> &clause ) const
+{
+    bool compliant = false;
+    for ( const auto &lit : clause )
+    {
+        const PiecewiseLinearConstraint *plc = _smtCore.getConstraintFromLit( lit );
+        PiecewiseLinearCaseSplit litSplit = lit > 0 ? plc->getCaseSplit( RELU_PHASE_ACTIVE )
+                                                    : plc->getCaseSplit( RELU_PHASE_INACTIVE );
+        bool compliantWithSplit = true;
+        for ( const auto &tightening : litSplit.getBoundTightenings() )
+        {
+            if ( tightening._type == Tightening::UB )
+            {
+                if ( FloatUtils::gt( _tableau->getValue( tightening._variable ),
+                                     tightening._value ) )
+                    compliantWithSplit = false;
+            }
+            else
+            {
+                if ( FloatUtils::lt( _tableau->getValue( tightening._variable ),
+                                     tightening._value ) )
+                    compliantWithSplit = false;
+            }
+        }
+
+        if ( compliantWithSplit )
+        {
+            compliant = true;
+            break;
+        }
+    }
+    return compliant;
 }
