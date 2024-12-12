@@ -1054,7 +1054,10 @@ int SmtCore::cb_propagate()
                 bool allInitialClausesSatisfied = true;
                 for ( const Set<int> &clause : _initialClauses )
                     if ( !_engine->checkAssignmentComplianceWithClause( clause ) )
+                    {
                         allInitialClausesSatisfied = false;
+                        break;
+                    }
 
                 if ( allInitialClausesSatisfied )
                 {
