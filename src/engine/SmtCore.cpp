@@ -1023,12 +1023,16 @@ int SmtCore::cb_propagate()
     {
         if ( _engine->solve() )
         {
+            bool allInitialClausesSatisfied = true;
             for ( const Set<int> &clause : _initialClauses )
-                if ( _engine->checkAssignmentComplianceWithClause( clause ) )
-                {
-                    _exitCode = SAT;
-                    return 0;
-                }
+                if ( !_engine->checkAssignmentComplianceWithClause( clause ) )
+                    allInitialClausesSatisfied = false;
+
+            if ( allInitialClausesSatisfied )
+            {
+                _exitCode = SAT;
+                return 0;
+            }
         }
     }
 
@@ -1046,12 +1050,18 @@ int SmtCore::cb_propagate()
         if ( _externalClauseToAdd.empty() )
         {
             if ( _engine->solve() )
+            {
+                bool allInitialClausesSatisfied = true;
                 for ( const Set<int> &clause : _initialClauses )
-                    if ( _engine->checkAssignmentComplianceWithClause( clause ) )
-                    {
-                        _exitCode = SAT;
-                        return 0;
-                    }
+                    if ( !_engine->checkAssignmentComplianceWithClause( clause ) )
+                        allInitialClausesSatisfied = false;
+
+                if ( allInitialClausesSatisfied )
+                {
+                    _exitCode = SAT;
+                    return 0;
+                }
+            }
         }
 
         // Try learning a conflict clause if possible
