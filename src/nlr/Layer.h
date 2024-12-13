@@ -138,7 +138,7 @@ public:
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
-    
+
     /*
       Preprocessing functionality: variable elimination and reindexing
     */
@@ -207,7 +207,7 @@ private:
 
     void allocateMemory();
     void freeMemoryIfNeeded();
-    
+
     /*
        The following methods compute concrete softmax output bounds
        using different linear approximation, as well as the coefficients
@@ -223,12 +223,12 @@ private:
                                   const Vector<double> &inputUbs,
                                   unsigned i,
                                   unsigned di );
-                                                   
+
     double softmaxLSELowerBound2( const Vector<double> &inputMids,
                                   const Vector<double> &inputLbs,
                                   const Vector<double> &inputUbs,
                                   unsigned i );
-                                                   
+
     double softmaxdLSELowerBound2( const Vector<double> &inputMids,
                                    const Vector<double> &inputLbs,
                                    const Vector<double> &inputUbs,
@@ -256,26 +256,26 @@ private:
                                  const Vector<double> &inputUbs,
                                  unsigned i,
                                  unsigned di );
-                                                  
+
     double softmaxERUpperBound( const Vector<double> &inputs,
                                 const Vector<double> &outputLb,
                                 const Vector<double> &outputUb,
                                 unsigned i );
-                                                 
+
     double softmaxdERUpperBound( const Vector<double> &inputMids,
                                  const Vector<double> &outputLb,
                                  const Vector<double> &outputUb,
                                  unsigned i,
                                  unsigned di );
-                                              
+
     double softmaxLinearLowerBound( const Vector<double> &inputLbs,
                                     const Vector<double> &inputUbs,
                                     unsigned i );
-                                                 
+
     double softmaxLinearUpperBound( const Vector<double> &inputLbs,
                                     const Vector<double> &inputUbs,
                                     unsigned i );
-                                    
+
     /*
       Helper functions for symbolic bound tightening
     */
