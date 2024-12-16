@@ -39,6 +39,9 @@
 * Added support for creating constraints using the overloaded syntax `<=`, `==` etc. in
   the Python backend. See `maraboupy/examples/7_PythonicAPI.py` for details.
 
+* Added support for adversarial attacks to quickly produce a counterexample, in the case
+* of satisfiable queries.
+
 ## Version 1.0.0
 
 * Initial versioned release
