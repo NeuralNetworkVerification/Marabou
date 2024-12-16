@@ -1447,9 +1447,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             printInputBounds( inputQuery );
         initializeNetworkLevelReasoning();
         if ( _networkLevelReasoner )
+#ifdef BUILD_TORCH
             if ( Options::get()->getBool( ( Options::RUN_ATTACK ) ) )
             {
-#ifdef BUILD_TORCH
                 try
                 {
                     ENGINE_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() )
@@ -1472,8 +1472,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                     ENGINE_LOG(
                         Stringf( "Error, Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
                 }
-#endif
             }
+#endif
         {
         }
 

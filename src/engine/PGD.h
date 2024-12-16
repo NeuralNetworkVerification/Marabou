@@ -24,6 +24,8 @@ public:
         MICROSECONDS_TO_SECONDS = 1000000,
     };
     PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner );
+    ~PGDAttack();
+
     /*
     Search for an adversarial example. Returns true if successful.
   */

@@ -1,5 +1,7 @@
 #include "PGD.h"
+
 #include "InputQuery.h"
+
 #include <cmath>
 #ifdef BUILD_TORCH
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
@@ -17,6 +19,14 @@ PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
     std::pair<torch::Tensor, torch::Tensor> variables = generateSampleAndEpsilon();
     _inputExample = variables.first;
     _epsilon = variables.second;
+}
+
+PGDAttack::~PGDAttack()
+{
+    if ( _adversarialInput )
+        delete[] _adversarialInput;
+    if ( _adversarialOutput )
+        delete[] _adversarialOutput;
 }
 
 torch::Device PGDAttack::getDevice()
@@ -196,17 +206,26 @@ double PGDAttack::getAssignment( int index )
     return _assignments[index];
 }
 
-void PGDAttack::printValue(double value) {
-    if (std::isinf(value)) {
-        if (value < 0) {
-            PGD_LOG("-inf");
-        } else {
-            PGD_LOG("inf");
+void PGDAttack::printValue( double value )
+{
+    if ( std::isinf( value ) )
+    {
+        if ( value < 0 )
+        {
+            PGD_LOG( "-inf" );
         }
-    } else if (std::isnan(value)) {
-        PGD_LOG("nan");
-    } else {
-        PGD_LOG(Stringf("%.3lf", value).ascii());
+        else
+        {
+            PGD_LOG( "inf" );
+        }
+    }
+    else if ( std::isnan( value ) )
+    {
+        PGD_LOG( "nan" );
+    }
+    else
+    {
+        PGD_LOG( Stringf( "%.3lf", value ).ascii() );
     }
 }
 
@@ -235,27 +254,27 @@ bool PGDAttack::runAttack()
     }
     PGD_LOG( "Input Lower Bounds : " );
     for ( auto &bound : _inputBounds.first.getContainer() )
-        printValue(bound);
+        printValue( bound );
     PGD_LOG( "Input Upper Bounds : " );
     for ( auto &bound : _inputBounds.second.getContainer() )
-        printValue(bound);
+        printValue( bound );
 
     PGD_LOG( "Adversarial Input:" );
     for ( int i = 0; i < advInput.numel(); ++i )
     {
-        PGD_LOG( Stringf("x%u=%.3lf", i, example[i] ).ascii());
+        PGD_LOG( Stringf( "x%u=%.3lf", i, example[i] ).ascii() );
     }
     PGD_LOG( "Output Lower Bounds : " );
     for ( auto &bound : _outputBounds.first.getContainer() )
-        printValue(bound);
+        printValue( bound );
     PGD_LOG( "Output Upper Bounds : " );
     for ( auto &bound : _outputBounds.second.getContainer() )
-        printValue(bound);
+        printValue( bound );
 
-    PGD_LOG( "Adversarial Prediction: ");
+    PGD_LOG( "Adversarial Prediction: " );
     for ( int i = 0; i < advPred.numel(); ++i )
     {
-        PGD_LOG( Stringf("y%u=%.3lf", i, prediction[i] ).ascii());
+        PGD_LOG( Stringf( "y%u=%.3lf", i, prediction[i] ).ascii() );
     }
 
 
