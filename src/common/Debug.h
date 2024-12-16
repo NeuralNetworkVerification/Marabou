@@ -26,8 +26,10 @@
 #define DEBUG( x )
 #endif
 
+#undef LOG
+
 #ifndef NDEBUG
-#define MARABOU_LOG( x, f, y, ... )                                                                        \
+#define LOG( x, f, y, ... )                                                                        \
     {                                                                                              \
         if ( ( x ) )                                                                               \
         {                                                                                          \
@@ -35,7 +37,7 @@
         }                                                                                          \
     }
 #else
-#define MARABOU_LOG( x, f, y, ... )                                                                        \
+#define LOG( x, f, y, ... )                                                                        \
     {                                                                                              \
     }
 #endif

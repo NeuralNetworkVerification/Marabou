@@ -25,7 +25,7 @@
 #include "Vector.h"
 #include "onnx.proto3.pb.h"
 
-#define ONNX_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x )
+#define ONNX_LOG( x, ... ) LOG( GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x )
 
 
 class OnnxParser

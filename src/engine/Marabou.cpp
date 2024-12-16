@@ -57,7 +57,6 @@ Marabou::~Marabou()
 
 void Marabou::run()
 {
-    std::cout << "start run time: " << TimeUtils::now().ascii() << std::endl;
     struct timespec start = TimeUtils::sampleMicro();
 
     prepareInputQuery();
@@ -70,8 +69,6 @@ void Marabou::run()
 
     if ( Options::get()->getBool( Options::EXPORT_ASSIGNMENT ) )
         exportAssignment();
-
-    std::cout << "end run time: " << TimeUtils::now().ascii() << std::endl;
 }
 
 void Marabou::prepareInputQuery()
@@ -225,7 +222,7 @@ void Marabou::solveQuery()
 
     if ( _engine->processInputQuery( _inputQuery ) )
     {
-        if (_engine->getExitCode() == Engine::ATTACK_SAT)
+        if ( _engine->getExitCode() == Engine::SAT )
         {
             return;
         }
@@ -307,11 +304,6 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
                         _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
             printf( "\n" );
         }
-    }
-    else if (result == Engine::ATTACK_SAT)
-    {
-        resultString = "sat";
-        printf( "sat\n" );
     }
     else if ( result == Engine::TIMEOUT )
     {

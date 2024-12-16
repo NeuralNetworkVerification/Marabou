@@ -78,7 +78,7 @@ const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
 const bool GlobalConfiguration::NL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
-const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.000000001;
+const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 
 const unsigned GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND = 1000;
 

@@ -22,7 +22,7 @@ option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" OFF) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
-option(BUILD_TORCH "Build libtorch" ON)
+option(BUILD_TORCH "Build libtorch" OFF)
 ###################
 ## Git variables ##
 ###################

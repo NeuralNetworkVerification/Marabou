@@ -34,7 +34,7 @@
 
 #include <cstring>
 
-#define NLR_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
+#define NLR_LOG( x, ... ) LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
 
 namespace NLR {
 

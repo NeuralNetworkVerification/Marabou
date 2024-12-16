@@ -187,8 +187,8 @@ torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *
         for ( int i = sources.size() - 1; i >= 0; --i )
         {
             const NLR::NeuronIndex &activationNeuron = sources.back();
-            sources.popBack();
             int index = static_cast<int>( activationNeuron._neuron );
+            sources.popBack();
             sourceValues[i] = x.index( { 0, index } );
             sourceIndices[i] = index;
         }

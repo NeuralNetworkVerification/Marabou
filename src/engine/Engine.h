@@ -48,7 +48,6 @@
 #include "SymbolicBoundTighteningType.h"
 #include "UnsatCertificateNode.h"
 
-
 #include <atomic>
 #include <context/context.h>
 
@@ -58,7 +57,7 @@ class PGDAttack;
 #undef ERROR
 #endif
 
-#define ENGINE_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x )
+#define ENGINE_LOG( x, ... ) LOG( GlobalConfiguration::ENGINE_LOGGING, "Engine: %s\n", x )
 
 class EngineState;
 class InputQuery;
@@ -539,8 +538,8 @@ private:
     LinearExpression _heuristicCost;
 
 #ifdef BUILD_TORCH
-  std::unique_ptr<PGDAttack>_pgdAttack;
-  bool _isAttackSuccessful = false;
+    std::unique_ptr<PGDAttack> _pgdAttack;
+    bool _isAttackSuccessful = false;
 #endif
 
     /*

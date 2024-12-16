@@ -2,15 +2,18 @@
 #ifndef __CustomDNN_h__
 #define __CustomDNN_h__
 
-#include "NetworkLevelReasoner.h"
-#include <vector>
-#define CUSTOM_DNN_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "customDNN: %s\n", x )
 #undef Warning
+#include "NetworkLevelReasoner.h"
+
 #include <torch/torch.h>
+#include <vector>
+
+#define CUSTOM_DNN_LOG( x, ... )                                                                   \
+    LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "customDNN: %s\n", x )
 
 /*
-  Custom differentiation function for max pooling, implementing the forward and backward propagation for
-  the max pooling operation according to each variable's source layer as defined in the nlr.
+  Custom differentiation function for max pooling, implementing the forward and backward propagation
+  for the max pooling operation according to each variable's source layer as defined in the nlr.
 */
 class CustomMaxPoolFunction : public torch::autograd::Function<CustomMaxPoolFunction>
 {
@@ -42,15 +45,16 @@ class CustomDNN : public torch::nn::Module
 {
 public:
     static void setWeightsAndBiases( torch::nn::Linear &linearLayer,
-                                 const NLR::Layer *layer,
-                                 unsigned sourceLayer,
-                                 unsigned inputSize,
-                                 unsigned outputSize );
+                                     const NLR::Layer *layer,
+                                     unsigned sourceLayer,
+                                     unsigned inputSize,
+                                     unsigned outputSize );
     void weightedSum( unsigned i, const NLR::Layer *layer );
     explicit CustomDNN( const NLR::NetworkLevelReasoner *networkLevelReasoner );
 
     torch::Tensor forward( torch::Tensor x );
     const Vector<unsigned> &getLayerSizes() const;
+
 private:
     const NLR::NetworkLevelReasoner *_networkLevelReasoner;
     Vector<unsigned> _layerSizes;

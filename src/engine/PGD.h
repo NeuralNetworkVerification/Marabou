@@ -1,14 +1,14 @@
 #ifdef BUILD_TORCH
 #ifndef __PGD_h__
 #define __PGD_h__
+#undef Warning
+#include <torch/torch.h>
 #include "CustomDNN.h"
-#include "GlobalConfiguration.h"
 #include "Options.h"
 
 #include <TimeUtils.h>
-#define PGD_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "PGD: %s\n", x )
-#undef Warning
-#include <torch/torch.h>
+#define PGD_LOG( x, ... ) LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "PGD: %s\n", x )
+
 
 
 /*

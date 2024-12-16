@@ -14,11 +14,15 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "Engine.h"
+#ifdef BUILD_TORCH
+#undef Warning
+#include <torch/torch.h>
+#endif
 
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
 #include "DisjunctionConstraint.h"
+#include "Engine.h"
 #include "EngineState.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
@@ -35,11 +39,6 @@
 #include "Vector.h"
 
 #include <random>
-#ifdef BUILD_TORCH
-#undef Warning
-#include <torch/torch.h>
-#endif
-
 
 Engine::Engine()
     : _context()
@@ -1470,7 +1469,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 catch ( MarabouError &e )
                 {
                     ENGINE_LOG(
-                        Stringf( "Error, Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+                        Stringf( "Error, Adversarial attack end time: %f\n", TimeUtils::now() )
+                            .ascii() );
                 }
             }
 #endif
