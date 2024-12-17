@@ -160,7 +160,6 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
                                     ? FloatUtils::infinity()
                                     : Options::get()->getInt( Options::ATTACK_TIMEOUT ) );
     PGD_LOG( Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
-    PGD_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() ).ascii() );
     timespec startTime = TimeUtils::sampleMicro();
 
     torch::Tensor currentExample = _inputExample;
