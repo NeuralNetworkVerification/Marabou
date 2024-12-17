@@ -119,8 +119,8 @@ const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
 const GlobalConfiguration::PdgBoundType GlobalConfiguration::PGD_BOUND_TYPE =
     GlobalConfiguration::PGD_INPUT;
-const unsigned GlobalConfiguration::PGD_DEFAULT_NUM_ITER = 100; // todo run argument
-const unsigned GlobalConfiguration::PGD_NUM_RESTARTS = 3; // todo run argument
+const unsigned GlobalConfiguration::PGD_DEFAULT_NUM_ITER = 100;
+const unsigned GlobalConfiguration::PGD_NUM_RESTARTS = 4;
 const double GlobalConfiguration::PGD_INPUT_RANGE = 1000;
 
 #ifdef ENABLE_GUROBI
@@ -130,7 +130,7 @@ const bool GlobalConfiguration::GUROBI_LOGGING = false;
 
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
-const bool GlobalConfiguration::ENGINE_LOGGING = true;
+const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
@@ -147,8 +147,8 @@ const bool GlobalConfiguration::ONNX_PARSER_LOGGING = false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
 const bool GlobalConfiguration::CEGAR_LOGGING = false;
-const bool GlobalConfiguration::CUSTOM_DNN_LOGGING = true;
-const bool GlobalConfiguration::PGD_LOGGING = true;
+const bool GlobalConfiguration::CUSTOM_DNN_LOGGING = false;
+const bool GlobalConfiguration::PGD_LOGGING = false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
