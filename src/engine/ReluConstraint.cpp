@@ -1019,6 +1019,11 @@ bool ReluConstraint::supportPolarity() const
     return true;
 }
 
+bool ReluConstraint::supportBaBsr() const
+{
+    return true;
+}
+
 bool ReluConstraint::auxVariableInUse() const
 {
     return _auxVarInUse;
@@ -1027,6 +1032,57 @@ bool ReluConstraint::auxVariableInUse() const
 unsigned ReluConstraint::getAux() const
 {
     return _aux;
+}
+
+std::unordered_map<const ReluConstraint *, double> ReluConstraint::_biasCache;
+
+void ReluConstraint::initializeBiasCache( NLR::NetworkLevelReasoner &nlr )
+{
+    // Loop through all constraints in topological order
+    for ( const auto *constraint : nlr.getConstraintsInTopologicalOrder() )
+    {
+        // Only handle ReluConstraints and cache their biases
+        if ( const auto *reluConstraint = dynamic_cast<const ReluConstraint *>( constraint ) )
+        {
+            if ( _biasCache.find( reluConstraint ) == _biasCache.end() )
+            {
+                // Compute the bias and store it in the cache
+                double bias = nlr.getPrevBiasForReluConstraint( reluConstraint );
+                _biasCache[reluConstraint] = bias;
+            }
+        }
+    }
+}
+
+
+double ReluConstraint::computeBaBsr() const
+{
+    double biasTerm = calculateBias();
+
+    // get upper and lower bounds
+    double ub = getUpperBound( _b );
+    double lb = getLowerBound( _b );
+
+    // cast _b and _f to doubles
+    double reluInput = _tableau->getValue( _b );  // ReLU input before activation
+    double reluOutput = _tableau->getValue( _f ); // ReLU output after activation
+
+    // compute ReLU score
+    double scaler = ub / ( ub - lb );
+    double term1 =
+        std::min( scaler * reluInput * biasTerm, ( scaler - 1.0 ) * reluInput * biasTerm );
+    double term2 = ( scaler * lb ) * reluOutput;
+
+    return term1 - term2;
+}
+
+double ReluConstraint::calculateBias() const
+{
+    auto it = _biasCache.find( this );
+    if ( it != _biasCache.end() )
+        return it->second;
+
+    throw NLRError( NLRError::RELU_NOT_FOUND, "Bias not found in cache." );
 }
 
 double ReluConstraint::computePolarity() const
@@ -1050,6 +1106,11 @@ void ReluConstraint::updateDirection()
 PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScoreBasedOnBaBsr()
+{
+    _score = std::abs( computeBaBsr() );
 }
 
 void ReluConstraint::updateScoreBasedOnPolarity()

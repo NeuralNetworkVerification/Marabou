@@ -26,6 +26,8 @@ public:
         LAYER_TYPE_NOT_SUPPORTED = 1,
         INPUT_LAYER_NOT_THE_FIRST_LAYER = 2,
         LEAKY_RELU_SLOPES_NOT_UNIFORM = 3,
+        RELU_NOT_FOUND = 4,
+        LAYER_NOT_FOUND = 5
     };
 
     NLRError( NLRError::Code code )

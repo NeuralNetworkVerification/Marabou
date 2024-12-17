@@ -595,6 +595,71 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
     }
 }
 
+/*
+    Get ReLU bias given a ReLU constraint
+    Used for BaBSR Heuristic
+*/
+double
+NetworkLevelReasoner::getPrevBiasForReluConstraint( const ReluConstraint *reluConstraint ) const
+{
+    // Find the index of the reluConstraint in the _constraintsInTopologicalOrder list
+    unsigned constraintIndex = 0;
+    bool foundConstraint = false;
+
+    for ( const auto &constraint : _constraintsInTopologicalOrder )
+    {
+        if ( constraint == reluConstraint )
+        {
+            foundConstraint = true;
+            break;
+        }
+        ++constraintIndex;
+    }
+
+    // If the constraint was not found, throw an error
+    if ( !foundConstraint )
+        throw NLRError( NLRError::RELU_NOT_FOUND,
+                        "ReluConstraint not found in topological order." );
+
+    // Traverse through layers and find the corresponding ReLU layer
+    const NLR::Layer *reluLayer = nullptr;
+    unsigned accumulatedNeurons = 0;
+
+    for ( const auto &layerPair : _layerIndexToLayer )
+    {
+        const NLR::Layer *layer = layerPair.second;
+
+        // Only process ReLU layers
+        if ( layer->getLayerType() == Layer::RELU )
+        {
+            unsigned layerSize = layer->getSize(); // Cache size of the current layer
+
+            // Check if the constraint belongs to this layer (based on neuron counts)
+            if ( constraintIndex < accumulatedNeurons + layerSize )
+            {
+                // This is the ReLU layer corresponding to the constraint
+                reluLayer = layer;
+                break;
+            }
+            accumulatedNeurons += layerSize; // Update only if it's a ReLU layer
+        }
+    }
+
+    // If we couldn't find the ReLU layer, throw an error
+    if ( !reluLayer )
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "Expected a ReLU layer." );
+
+    // Find the source layer feeding into this ReLU layer
+    const auto &sourceLayers = reluLayer->getSourceLayers();
+    unsigned sourceLayerIndex = sourceLayers.begin()->first; // Cache source layer index
+
+    const NLR::Layer *sourceLayer = getLayer( sourceLayerIndex );
+
+    // Retrieve the bias for the corresponding neuron in the source layer
+    unsigned reluNeuron = constraintIndex - accumulatedNeurons;
+    return sourceLayer->getBias( reluNeuron );
+}
+
 unsigned
 NetworkLevelReasoner::mergeConsecutiveWSLayers( const Map<unsigned, double> &lowerBounds,
                                                 const Map<unsigned, double> &upperBounds,
@@ -678,6 +743,7 @@ bool NetworkLevelReasoner::suitableForMerging(
     }
     return true;
 }
+
 
 void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex,
                                           Map<unsigned, LinearExpression> &eliminatedNeurons )

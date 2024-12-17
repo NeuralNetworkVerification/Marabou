@@ -165,6 +165,8 @@ DivideStrategy Options::getDivideStrategy() const
         return DivideStrategy::LargestInterval;
     else if ( strategyString == "pseudo-impact" )
         return DivideStrategy::PseudoImpact;
+    else if ( strategyString == "babsr-heuristic" )
+        return DivideStrategy::BaBsrHeuristic;
     else
         return DivideStrategy::Auto;
 }
