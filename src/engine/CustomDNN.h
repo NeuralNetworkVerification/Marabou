@@ -3,9 +3,9 @@
 #define __CustomDNN_h__
 
 #undef Warning
-#include "NetworkLevelReasoner.h"
-
 #include <torch/torch.h>
+
+#include "NetworkLevelReasoner.h"
 #include <vector>
 
 #define CUSTOM_DNN_LOG( x, ... )                                                                   \

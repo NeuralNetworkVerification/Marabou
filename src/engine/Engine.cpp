@@ -74,7 +74,9 @@ Engine::Engine()
     , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
     , _sncMode( false )
     , _queryId( "" )
+#ifdef BUILD_TORCH
     , _pgdAttack( nullptr )
+#endif
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
