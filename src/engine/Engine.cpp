@@ -1453,25 +1453,30 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             {
                 try
                 {
-                    ENGINE_LOG( Stringf( "Adversarial attack start time: %f\n", TimeUtils::now() )
+                    std::string timeString = TimeUtils::now().ascii();
+                    ENGINE_LOG( Stringf( "Adversarial attack start time: %s\n", timeString.c_str() )
                                     .ascii() );
 
                     _pgdAttack = std::make_unique<PGDAttack>( _networkLevelReasoner );
                     if ( _pgdAttack->runAttack() )
                     {
-                        ENGINE_LOG( Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() )
-                                        .ascii() );
+                        timeString = TimeUtils::now().ascii();
+                        ENGINE_LOG(
+                            Stringf( "Adversarial attack end time: %s\n", timeString.c_str() )
+                                .ascii() );
                         _exitCode = Engine::SAT;
                         _isAttackSuccessful = true;
                         return false;
                     }
-                    ENGINE_LOG(
-                        Stringf( "Adversarial attack end time: %f\n", TimeUtils::now() ).ascii() );
+                    timeString = TimeUtils::now().ascii();
+                    ENGINE_LOG( Stringf( "Adversarial attack end time: %s\n", timeString.c_str() )
+                                    .ascii() );
                 }
                 catch ( MarabouError &e )
                 {
+                    std::string timeString = TimeUtils::now().ascii();
                     ENGINE_LOG(
-                        Stringf( "Error, Adversarial attack end time: %f\n", TimeUtils::now() )
+                        Stringf( "Error, Adversarial attack end time: %s\n", timeString.c_str() )
                             .ascii() );
                 }
             }
