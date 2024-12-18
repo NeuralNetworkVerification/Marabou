@@ -1472,12 +1472,16 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                     ENGINE_LOG( Stringf( "Adversarial attack end time: %s\n", timeString.c_str() )
                                     .ascii() );
                 }
+
                 catch ( MarabouError &e )
                 {
                     std::string timeString = TimeUtils::now().ascii();
-                    ENGINE_LOG(
-                        Stringf( "Error, Adversarial attack end time: %s\n", timeString.c_str() )
-                            .ascii() );
+                    ENGINE_LOG( Stringf( "Caught a MarabouError. Code: %u. Message: %s Adversarial "
+                                         "attack end time: %s\n",
+                                         e.getCode(),
+                                         e.getUserMessage(),
+                                         timeString.c_str() )
+                                    .ascii() );
                 }
             }
 #endif
