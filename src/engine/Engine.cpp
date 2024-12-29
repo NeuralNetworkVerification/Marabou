@@ -1567,12 +1567,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::CDCL )
         {
-            for ( auto plConstraint = _plConstraints.rbegin();
-                  plConstraint != _plConstraints.rend();
-                  ++plConstraint )
+            for ( PiecewiseLinearConstraint *plConstraint : _plConstraints )
             {
-                _smtCore.initBooleanAbstraction( *plConstraint );
-                ( *plConstraint )->initializeCDOs( &_context );
+                _smtCore.initBooleanAbstraction( plConstraint );
+                plConstraint->initializeCDOs( &_context );
             }
         }
     }
@@ -2514,10 +2512,12 @@ void Engine::performSimulation()
 
 unsigned int Engine::performSymbolicBoundTightening( InputQuery *inputQuery, bool brutePerform )
 {
-    if ( !brutePerform )
-        if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
-             ( !_networkLevelReasoner ) || _produceUNSATProofs )
-            return 0;
+    if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
+         ( !_networkLevelReasoner ) )
+        return 0;
+
+    if ( _produceUNSATProofs && !brutePerform )
+        return 0;
 
     struct timespec start = TimeUtils::sampleMicro();
 
