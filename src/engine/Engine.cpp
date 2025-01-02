@@ -481,7 +481,7 @@ void Engine::performBoundTighteningAfterCaseSplit()
     performMILPSolverBoundedTighteningForSingleLayer( 1 );
     do
     {
-        performSymbolicBoundTightening( nullptr );
+        performSymbolicBoundTightening();
     }
     while ( applyAllValidConstraintCaseSplits() );
 
@@ -529,7 +529,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         checkBoundCompliancyWithDebugSolution();
 
         while ( applyAllValidConstraintCaseSplits() )
-            performSymbolicBoundTightening( nullptr );
+            performSymbolicBoundTightening();
         return false;
     }
     else
@@ -935,7 +935,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
 
         initializeNetworkLevelReasoning();
 
-        performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+        performSymbolicBoundTightening( &( *_preprocessedQuery ) );
         performSimulation();
         performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
         performAdditionalBackwardAnalysisIfNeeded();
@@ -1438,7 +1438,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         initializeNetworkLevelReasoning();
         if ( preprocess )
         {
-            performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+            performSymbolicBoundTightening( &( *_preprocessedQuery ) );
             performSimulation();
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
             performAdditionalBackwardAnalysisIfNeeded();
@@ -1567,10 +1567,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::CDCL )
         {
-            for ( PiecewiseLinearConstraint *plConstraint : _plConstraints )
+            for ( auto plConstraint = _plConstraints.rbegin();
+                  plConstraint != _plConstraints.rend();
+                  ++plConstraint )
             {
-                _smtCore.initBooleanAbstraction( plConstraint );
-                plConstraint->initializeCDOs( &_context );
+                _smtCore.initBooleanAbstraction( *plConstraint );
+                ( *plConstraint )->initializeCDOs( &_context );
             }
         }
     }
@@ -1673,7 +1675,7 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
          _milpSolverBoundTighteningType ==
              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
     {
-        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
         if ( _verbosity > 0 )
             printf( "Backward analysis tightened %u bounds\n", tightened );
         while ( tightened &&
@@ -1682,7 +1684,7 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
                 GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS )
         {
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
-            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
             if ( _verbosity > 0 )
                 printf( "Backward analysis tightened %u bounds\n", tightened );
         }
@@ -2484,7 +2486,8 @@ List<unsigned> Engine::getInputVariables() const
 void Engine::performSimulation()
 {
     if ( _simulationSize == 0 || !_networkLevelReasoner ||
-         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE )
+         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE ||
+         _produceUNSATProofs )
     {
         ENGINE_LOG( Stringf( "Skip simulation..." ).ascii() );
         return;
@@ -2510,13 +2513,10 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-unsigned int Engine::performSymbolicBoundTightening( InputQuery *inputQuery, bool brutePerform )
+unsigned Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
-         ( !_networkLevelReasoner ) )
-        return 0;
-
-    if ( _produceUNSATProofs && !brutePerform )
+         ( !_networkLevelReasoner ) || _produceUNSATProofs )
         return 0;
 
     struct timespec start = TimeUtils::sampleMicro();
@@ -2963,7 +2963,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
         do
-            performSymbolicBoundTightening( nullptr );
+            performSymbolicBoundTightening();
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
@@ -2977,7 +2977,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
             // For debugging purposes
             checkBoundCompliancyWithDebugSolution();
             do
-                performSymbolicBoundTightening( nullptr );
+                performSymbolicBoundTightening();
             while ( applyAllValidConstraintCaseSplits() );
         }
         _boundManager.propagateTightenings();
@@ -3030,7 +3030,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
 
         while ( applyAllValidConstraintCaseSplits() )
         {
-            performSymbolicBoundTightening( nullptr );
+            performSymbolicBoundTightening();
         }
     }
     catch ( const InfeasibleQueryException & )
@@ -3470,9 +3470,9 @@ void Engine::explainSimplexFailure()
         sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
     // If possible, attempt to reduce the clause size
-    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-        clause = reduceClauseSizeWithProof(
-            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+//    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+//        clause = reduceClauseSizeWithProof(
+//            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
 
     _smtCore.addExternalClause( clause );
 }
@@ -4054,9 +4054,9 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
 
-    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
-        clause = reduceClauseSizeWithProof(
-            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
+//    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
+//        clause = reduceClauseSizeWithProof(
+//            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
     return Vector<int>( clause.begin(), clause.end() );
 }

@@ -740,7 +740,7 @@ private:
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
     */
-    unsigned int performSymbolicBoundTightening( InputQuery *inputQuery, bool brutePerform = false );
+    unsigned performSymbolicBoundTightening( InputQuery *inputQuery = nullptr );
 
     /*
       Perform a simulation which calculates concrete values of each layer with
