@@ -166,6 +166,9 @@ public:
     // Step size for PreimageApproximation optimization.
     static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
 
+    // Learning rate for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
