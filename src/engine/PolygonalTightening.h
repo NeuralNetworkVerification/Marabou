@@ -71,7 +71,8 @@ public:
             }
             allFound &= currentFound;
         }
-        bool result = allFound && _value == other._value && _type == other._type;
+        bool result = allFound && _value == other._value && _type == other._type &&
+                      _neuronToCoefficient.size() == other._neuronToCoefficient.size();
         return result;
     }
 
