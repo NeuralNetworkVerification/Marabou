@@ -19,6 +19,7 @@
 #include "Layer.h"
 #include "NetworkLevelReasoner.h"
 #include "Options.h"
+#include "PolygonalTightening.h"
 #include "Query.h"
 #include "Tightening.h"
 #include "Vector.h"
@@ -1936,7 +1937,7 @@ public:
     {
         /*
 
-              1      R      -1      R      -1  2
+              1      R      -1      R      -1
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -1945,7 +1946,7 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   R    /    \    R     /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
-              1             -1              2
+              1             -1              2   2
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -2217,7 +2218,7 @@ public:
     {
         /*
 
-              1      S      -1      S      -1  2
+              1      S      -1      S      -1
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -2226,7 +2227,7 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   S    /    \    S     /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
-              1             -1              2
+              1             -1              2   2
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -2495,7 +2496,7 @@ public:
     {
         /*
 
-              1     Sign    -1     Sign    -1  2
+              1     Sign    -1     Sign    -1
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -2504,7 +2505,7 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \  Sign  /    \   Sign   /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
-              1             -1              2
+              1             -1              2   2
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -2773,7 +2774,7 @@ public:
     {
         /*
 
-              1     Rnd     -1     Rnd     -1  2
+              1     Rnd     -1     Rnd     -1
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -2782,7 +2783,7 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \  Rnd   /    \   Rnd    /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
-              1             -1              2
+              1             -1              2  2
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -3051,7 +3052,7 @@ public:
     {
         /*
 
-              1      A      -1      A      -1  2
+              1      A      -1      A      -1
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -3060,7 +3061,7 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   A    /    \    A     /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
-              1             -1              2
+              1             -1              2   2
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -3329,7 +3330,7 @@ public:
     {
         /*
 
-              1      LR     -1      LR     -1  2
+              1      LR     -1      LR     -1
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -3338,7 +3339,7 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   LR   /    \    LR    /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
-              1             -1              2
+              1             -1              2   2
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -12164,6 +12165,383 @@ public:
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
+    void test_preimage_approximation_relu()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardReLU( nlr, tableau );
+
+        tableau.setLowerBound( 0, 0 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, 0 );
+        tableau.setUpperBound( 1, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 2, -1, Tightening::LB ),   Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),    Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, 0, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),    Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.5, Tightening::LB ), Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),   Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, -0.5, Tightening::LB ), Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),    Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2, Tightening::LB ),  Tightening( 10, 0.5, Tightening::UB ),
+            Tightening( 11, 1.5, Tightening::LB ), Tightening( 11, 4.4, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            // From parameterised SBT:
+            Tightening( 2, -1, Tightening::LB ),
+            Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),
+            Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),
+            Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.5, Tightening::LB ),
+            Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),
+            Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, 0.38, Tightening::UB ),
+
+            // From parameterised LP:
+            Tightening( 8, 0, Tightening::LB ),
+            Tightening( 10, -2, Tightening::LB ),
+            Tightening( 10, 0, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 2, -5, Tightening::LB ),       Tightening( 2, 2, Tightening::UB ),
+            Tightening( 3, -4, Tightening::LB ),       Tightening( 3, 3, Tightening::UB ),
+
+            Tightening( 4, 0, Tightening::LB ),        Tightening( 4, 2, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),        Tightening( 5, 3, Tightening::UB ),
+
+            Tightening( 6, -2, Tightening::LB ),       Tightening( 6, 3, Tightening::UB ),
+            Tightening( 7, -3, Tightening::LB ),       Tightening( 7, 4, Tightening::UB ),
+
+            Tightening( 8, -2, Tightening::LB ),       Tightening( 8, 3, Tightening::UB ),
+            Tightening( 9, -3, Tightening::LB ),       Tightening( 9, 4, Tightening::UB ),
+
+            Tightening( 10, -4.0489, Tightening::LB ), Tightening( 10, 0, Tightening::UB ),
+            Tightening( 11, -1, Tightening::LB ),      Tightening( 11, 10, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            // From parameterised SBT:
+            Tightening( 2, -5, Tightening::LB ),
+            Tightening( 2, 2, Tightening::UB ),
+            Tightening( 3, -4, Tightening::LB ),
+            Tightening( 3, 3, Tightening::UB ),
+
+            Tightening( 4, 2, Tightening::UB ),
+            Tightening( 5, 3, Tightening::UB ),
+
+            Tightening( 7, 4, Tightening::UB ),
+            Tightening( 8, 2, Tightening::UB ),
+
+            Tightening( 9, 4, Tightening::UB ),
+            Tightening( 10, 0.38, Tightening::UB ),
+
+            // From parameterised LP:
+            Tightening( 8, 0, Tightening::LB ),
+            Tightening( 9, 0, Tightening::LB ),
+
+            Tightening( 11, -0.93, Tightening::LB ),
+            Tightening( 10, 2, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
+    void test_preimage_approximation_relu2()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardReLU2( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 1 );
+        tableau.setLowerBound( 2, -1 );
+        tableau.setUpperBound( 2, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 3, -2, Tightening::LB ),     Tightening( 3, 2, Tightening::UB ),
+            Tightening( 4, -3, Tightening::LB ),     Tightening( 4, 3, Tightening::UB ),
+            Tightening( 5, -3, Tightening::LB ),     Tightening( 5, 3, Tightening::UB ),
+            Tightening( 6, -6, Tightening::LB ),     Tightening( 6, 6, Tightening::UB ),
+
+            Tightening( 7, 0, Tightening::LB ),      Tightening( 7, 2, Tightening::UB ),
+            Tightening( 8, 0, Tightening::LB ),      Tightening( 8, 3, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),      Tightening( 9, 3, Tightening::UB ),
+            Tightening( 10, 0, Tightening::LB ),     Tightening( 10, 6, Tightening::UB ),
+
+            Tightening( 11, -4, Tightening::LB ),    Tightening( 11, 8, Tightening::UB ),
+            Tightening( 12, -2, Tightening::LB ),    Tightening( 12, 10, Tightening::UB ),
+            Tightening( 13, -5, Tightening::LB ),    Tightening( 13, 5, Tightening::UB ),
+
+            Tightening( 14, -4, Tightening::LB ),    Tightening( 14, 8, Tightening::UB ),
+            Tightening( 15, -2, Tightening::LB ),    Tightening( 15, 10, Tightening::UB ),
+            Tightening( 16, -5, Tightening::LB ),    Tightening( 16, 5, Tightening::UB ),
+
+            Tightening( 17, -14.5, Tightening::LB ), Tightening( 17, 17, Tightening::UB ),
+            Tightening( 18, 0, Tightening::LB ),     Tightening( 18, 17.1667, Tightening::UB ),
+
+            Tightening( 19, -14.5, Tightening::LB ), Tightening( 19, 17, Tightening::UB ),
+            Tightening( 20, 0, Tightening::LB ),     Tightening( 20, 17.1667, Tightening::UB ),
+
+            Tightening( 21, -26, Tightening::LB ),   Tightening( 21, 13.9206, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+        tableau.setLowerBound( 2, -2 );
+        tableau.setUpperBound( 2, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large );
+        tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large );
+        tableau.setUpperBound( 13, large );
+        tableau.setLowerBound( 14, -large );
+        tableau.setUpperBound( 14, large );
+        tableau.setLowerBound( 15, -large );
+        tableau.setUpperBound( 15, large );
+        tableau.setLowerBound( 16, -large );
+        tableau.setUpperBound( 16, large );
+        tableau.setLowerBound( 17, -large );
+        tableau.setUpperBound( 17, large );
+        tableau.setLowerBound( 18, -large );
+        tableau.setUpperBound( 18, large );
+        tableau.setLowerBound( 19, -large );
+        tableau.setUpperBound( 19, large );
+        tableau.setLowerBound( 20, -large );
+        tableau.setUpperBound( 20, large );
+        tableau.setLowerBound( 21, -large );
+        tableau.setUpperBound( 21, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 3, -2, Tightening::LB ),        Tightening( 3, 5, Tightening::UB ),
+            Tightening( 4, -5, Tightening::LB ),        Tightening( 4, 5, Tightening::UB ),
+            Tightening( 5, -6, Tightening::LB ),        Tightening( 5, 5, Tightening::UB ),
+            Tightening( 6, -15, Tightening::LB ),       Tightening( 6, 7, Tightening::UB ),
+
+            Tightening( 7, -2, Tightening::LB ),        Tightening( 7, 5, Tightening::UB ),
+            Tightening( 8, 0, Tightening::LB ),         Tightening( 8, 5, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),         Tightening( 9, 5, Tightening::UB ),
+            Tightening( 10, 0, Tightening::LB ),        Tightening( 10, 7, Tightening::UB ),
+
+            Tightening( 11, -9, Tightening::LB ),       Tightening( 11, 15.1818, Tightening::UB ),
+            Tightening( 12, -5, Tightening::LB ),       Tightening( 12, 14.0909, Tightening::UB ),
+            Tightening( 13, -6, Tightening::LB ),       Tightening( 13, 10.1429, Tightening::UB ),
+
+            Tightening( 14, -9, Tightening::LB ),       Tightening( 14, 15.1818, Tightening::UB ),
+            Tightening( 15, -5, Tightening::LB ),       Tightening( 15, 14.0909, Tightening::UB ),
+            Tightening( 16, -6, Tightening::LB ),       Tightening( 16, 10.1429, Tightening::UB ),
+
+            Tightening( 17, -29.8351, Tightening::LB ), Tightening( 17, 28.2857, Tightening::UB ),
+            Tightening( 18, -4, Tightening::LB ),       Tightening( 18, 29.6479, Tightening::UB ),
+
+            Tightening( 19, 0, Tightening::LB ),        Tightening( 19, 28.2857, Tightening::UB ),
+            Tightening( 20, -4, Tightening::LB ),       Tightening( 20, 29.6479, Tightening::UB ),
+
+            Tightening( 21, -30.6479, Tightening::LB ), Tightening( 21, 29.1467, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
     void test_preimage_approximation_leaky_relu()
     {
         Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
@@ -12212,29 +12590,29 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
-        /*List<Tightening> expectedBounds2(
-            { Tightening( 2, -1, Tightening::LB ),        Tightening( 2, 1, Tightening::UB ),
-              Tightening( 3, 0, Tightening::LB ),         Tightening( 3, 2, Tightening::UB ),
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
 
-              Tightening( 4, 0, Tightening::LB ),         Tightening( 4, 1, Tightening::UB ),
-              Tightening( 5, 0, Tightening::LB ),         Tightening( 5, 2, Tightening::UB ),
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
 
-              Tightening( 6, -0.45, Tightening::LB ),     Tightening( 6, 2, Tightening::UB ),
-              Tightening( 7, -2.1, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
 
-              Tightening( 8, 0, Tightening::LB ),         Tightening( 8, 2, Tightening::UB ),
-              Tightening( 9, 0, Tightening::LB ),         Tightening( 9, 1, Tightening::UB ),
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
 
-              Tightening( 10, -2.025, Tightening::LB ),   Tightening( 10, 0.35, Tightening::UB ),
-              Tightening( 11, 1.35, Tightening::LB ),     Tightening( 11, 4.3306, Tightening::UB ),
-            } );
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         for ( auto &bound : bounds )
         {
             bound.dump();
         }
-        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );*/
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
         // Change the current bounds
@@ -12291,21 +12669,887 @@ public:
         TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
 
 
-        // Invoke backward LP propagation
+        // Invoke PreimageApproximation
         TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
-        /*List<Tightening> expectedBounds4(
-            { Tightening( 4, -0.5, Tightening::LB ),
-              Tightening( 5, -0.4, Tightening::LB ),
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
 
-              Tightening( 8, -0.4571, Tightening::LB ),
-              Tightening( 9, -1.1057, Tightening::LB ),
-            } );
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );*/
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
+    void test_preimage_approximation_leaky_relu2()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardLeakyRelu2( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 1 );
+        tableau.setLowerBound( 2, -1 );
+        tableau.setUpperBound( 2, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -1, Tightening::LB ),      Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -3, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, -0.45, Tightening::LB ),   Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, -3, Tightening::LB ),      Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 1, Tightening::UB ),
+            Tightening( 11, -2, Tightening::LB ),     Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+        tableau.setLowerBound( 2, -2 );
+        tableau.setUpperBound( 2, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 2, -5, Tightening::LB ),        Tightening( 2, 2, Tightening::UB ),
+            Tightening( 3, -4, Tightening::LB ),        Tightening( 3, 3, Tightening::UB ),
+
+            Tightening( 4, -5, Tightening::LB ),        Tightening( 4, 2, Tightening::UB ),
+            Tightening( 5, -4, Tightening::LB ),        Tightening( 5, 3, Tightening::UB ),
+
+            Tightening( 6, -4.5714, Tightening::LB ),   Tightening( 6, 6.0571, Tightening::UB ),
+            Tightening( 7, -11.0571, Tightening::LB ),  Tightening( 7, 5.1429, Tightening::UB ),
+
+            Tightening( 8, -4.5714, Tightening::LB ),   Tightening( 8, 6.0571, Tightening::UB ),
+            Tightening( 9, -11.0571, Tightening::LB ),  Tightening( 9, 5.1429, Tightening::UB ),
+
+            Tightening( 10, -6.3327, Tightening::LB ),  Tightening( 10, 5, Tightening::UB ),
+            Tightening( 11, -14.0571, Tightening::LB ), Tightening( 11, 12.523, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
+    void test_preimage_approximation_sign()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardSign( nlr, tableau );
+
+        tableau.setLowerBound( 0, 0 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, 0 );
+        tableau.setUpperBound( 1, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 2, -1, Tightening::LB ),  Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),   Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -1, Tightening::LB ),  Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 1, Tightening::LB ),   Tightening( 5, 1, Tightening::UB ),
+
+            Tightening( 6, 0, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -3, Tightening::LB ),  Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 1, Tightening::LB ),   Tightening( 8, 1, Tightening::UB ),
+            Tightening( 9, -1, Tightening::LB ),  Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2, Tightening::LB ), Tightening( 10, 0, Tightening::UB ),
+            Tightening( 11, 1, Tightening::LB ),  Tightening( 11, 5, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 2, -5, Tightening::LB ),  Tightening( 2, 2, Tightening::UB ),
+            Tightening( 3, -4, Tightening::LB ),  Tightening( 3, 3, Tightening::UB ),
+
+            Tightening( 4, -1, Tightening::LB ),  Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, -1, Tightening::LB ),  Tightening( 5, 1, Tightening::UB ),
+
+            Tightening( 6, -2, Tightening::LB ),  Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -3, Tightening::LB ),  Tightening( 7, 3, Tightening::UB ),
+
+            Tightening( 8, -1, Tightening::LB ),  Tightening( 8, 1, Tightening::UB ),
+            Tightening( 9, -1, Tightening::LB ),  Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2, Tightening::LB ), Tightening( 10, 2, Tightening::UB ),
+            Tightening( 11, -1, Tightening::LB ), Tightening( 11, 5, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
+    void test_preimage_approximation_sign2()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardSign2( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 1 );
+        tableau.setLowerBound( 2, -1 );
+        tableau.setUpperBound( 2, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 3, -2, Tightening::LB ),  Tightening( 3, 2, Tightening::UB ),
+            Tightening( 4, -3, Tightening::LB ),  Tightening( 4, 3, Tightening::UB ),
+            Tightening( 5, -3, Tightening::LB ),  Tightening( 5, 3, Tightening::UB ),
+            Tightening( 6, -6, Tightening::LB ),  Tightening( 6, 6, Tightening::UB ),
+
+            Tightening( 7, -1, Tightening::LB ),  Tightening( 7, 1, Tightening::UB ),
+            Tightening( 8, -1, Tightening::LB ),  Tightening( 8, 1, Tightening::UB ),
+            Tightening( 9, -1, Tightening::LB ),  Tightening( 9, 1, Tightening::UB ),
+            Tightening( 10, -1, Tightening::LB ), Tightening( 10, 1, Tightening::UB ),
+
+            Tightening( 11, -2, Tightening::LB ), Tightening( 11, 6, Tightening::UB ),
+            Tightening( 12, -4, Tightening::LB ), Tightening( 12, 4, Tightening::UB ),
+            Tightening( 13, -6, Tightening::LB ), Tightening( 13, 2, Tightening::UB ),
+
+            Tightening( 14, -1, Tightening::LB ), Tightening( 14, 1, Tightening::UB ),
+            Tightening( 15, -1, Tightening::LB ), Tightening( 15, 1, Tightening::UB ),
+            Tightening( 16, -1, Tightening::LB ), Tightening( 16, 1, Tightening::UB ),
+
+            Tightening( 17, -3, Tightening::LB ), Tightening( 17, 3, Tightening::UB ),
+            Tightening( 18, -3, Tightening::LB ), Tightening( 18, 3, Tightening::UB ),
+
+            Tightening( 19, -1, Tightening::LB ), Tightening( 19, 1, Tightening::UB ),
+            Tightening( 20, -1, Tightening::LB ), Tightening( 20, 1, Tightening::UB ),
+
+            Tightening( 21, -3, Tightening::LB ), Tightening( 21, 1, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+        tableau.setLowerBound( 2, -2 );
+        tableau.setUpperBound( 2, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large );
+        tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large );
+        tableau.setUpperBound( 13, large );
+        tableau.setLowerBound( 14, -large );
+        tableau.setUpperBound( 14, large );
+        tableau.setLowerBound( 15, -large );
+        tableau.setUpperBound( 15, large );
+        tableau.setLowerBound( 16, -large );
+        tableau.setUpperBound( 16, large );
+        tableau.setLowerBound( 17, -large );
+        tableau.setUpperBound( 17, large );
+        tableau.setLowerBound( 18, -large );
+        tableau.setUpperBound( 18, large );
+        tableau.setLowerBound( 19, -large );
+        tableau.setUpperBound( 19, large );
+        tableau.setLowerBound( 20, -large );
+        tableau.setUpperBound( 20, large );
+        tableau.setLowerBound( 21, -large );
+        tableau.setUpperBound( 21, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 3, -2, Tightening::LB ),  Tightening( 3, 5, Tightening::UB ),
+            Tightening( 4, -5, Tightening::LB ),  Tightening( 4, 5, Tightening::UB ),
+            Tightening( 5, -6, Tightening::LB ),  Tightening( 5, 5, Tightening::UB ),
+            Tightening( 6, -15, Tightening::LB ), Tightening( 6, 7, Tightening::UB ),
+
+            Tightening( 7, -1, Tightening::LB ),  Tightening( 7, 1, Tightening::UB ),
+            Tightening( 8, -1, Tightening::LB ),  Tightening( 8, 1, Tightening::UB ),
+            Tightening( 9, -1, Tightening::LB ),  Tightening( 9, 1, Tightening::UB ),
+            Tightening( 10, -1, Tightening::LB ), Tightening( 10, 1, Tightening::UB ),
+
+            Tightening( 11, -2, Tightening::LB ), Tightening( 11, 6, Tightening::UB ),
+            Tightening( 12, -4, Tightening::LB ), Tightening( 12, 4, Tightening::UB ),
+            Tightening( 13, -6, Tightening::LB ), Tightening( 13, 2, Tightening::UB ),
+
+            Tightening( 14, -1, Tightening::LB ), Tightening( 14, 1, Tightening::UB ),
+            Tightening( 15, -1, Tightening::LB ), Tightening( 15, 1, Tightening::UB ),
+            Tightening( 16, -1, Tightening::LB ), Tightening( 16, 1, Tightening::UB ),
+
+            Tightening( 17, -3, Tightening::LB ), Tightening( 17, 3, Tightening::UB ),
+            Tightening( 18, -3, Tightening::LB ), Tightening( 18, 3, Tightening::UB ),
+
+            Tightening( 19, -1, Tightening::LB ), Tightening( 19, 1, Tightening::UB ),
+            Tightening( 20, -1, Tightening::LB ), Tightening( 20, 1, Tightening::UB ),
+
+            Tightening( 21, -3, Tightening::LB ), Tightening( 21, 1, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
+    void test_preimage_approximation_relu_and_bilinear()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardReluAndBilinear( nlr, tableau );
+
+        tableau.setLowerBound( 0, 0 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, 0 );
+        tableau.setUpperBound( 1, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 2, 1, Tightening::LB ),     Tightening( 2, 2, Tightening::UB ),
+            Tightening( 4, -3, Tightening::LB ),    Tightening( 4, 2, Tightening::UB ),
+            Tightening( 6, 0, Tightening::LB ),     Tightening( 6, 1, Tightening::UB ),
+
+            Tightening( 3, 1, Tightening::LB ),     Tightening( 3, 2, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),     Tightening( 5, 2, Tightening::UB ),
+            Tightening( 7, 0, Tightening::LB ),     Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),     Tightening( 8, 4, Tightening::UB ),
+            Tightening( 9, -1, Tightening::LB ),    Tightening( 9, 2.2, Tightening::UB ),
+
+            Tightening( 10, -4, Tightening::LB ),   Tightening( 10, 8.8, Tightening::UB ),
+
+            Tightening( 11, -8.8, Tightening::LB ), Tightening( 11, 4, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -2, Tightening::LB ),   Tightening( 2, 2, Tightening::UB ),
+            Tightening( 4, -12, Tightening::LB ),  Tightening( 4, 5, Tightening::UB ),
+            Tightening( 6, -1, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+
+            Tightening( 3, 0, Tightening::LB ),    Tightening( 3, 2, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),    Tightening( 5, 5, Tightening::UB ),
+            Tightening( 7, -1, Tightening::LB ),   Tightening( 7, 2, Tightening::UB ),
+
+            Tightening( 8, -2, Tightening::LB ),   Tightening( 8, 8, Tightening::UB ),
+            Tightening( 9, -2, Tightening::LB ),   Tightening( 9, 8, Tightening::UB ),
+
+            Tightening( 10, -16, Tightening::LB ), Tightening( 10, 64, Tightening::UB ),
+
+            Tightening( 11, -64, Tightening::LB ), Tightening( 11, 16, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 2, -5, Tightening::LB ),        Tightening( 2, 2, Tightening::UB ),
+            Tightening( 3, -4, Tightening::LB ),        Tightening( 3, 3, Tightening::UB ),
+
+            Tightening( 4, -5, Tightening::LB ),        Tightening( 4, 2, Tightening::UB ),
+            Tightening( 5, -4, Tightening::LB ),        Tightening( 5, 3, Tightening::UB ),
+
+            Tightening( 6, -4.5714, Tightening::LB ),   Tightening( 6, 6.0571, Tightening::UB ),
+            Tightening( 7, -11.0571, Tightening::LB ),  Tightening( 7, 5.1429, Tightening::UB ),
+
+            Tightening( 8, -4.5714, Tightening::LB ),   Tightening( 8, 6.0571, Tightening::UB ),
+            Tightening( 9, -11.0571, Tightening::LB ),  Tightening( 9, 5.1429, Tightening::UB ),
+
+            Tightening( 10, -6.3327, Tightening::LB ),  Tightening( 10, 5, Tightening::UB ),
+            Tightening( 11, -14.0571, Tightening::LB ), Tightening( 11, 12.523, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
+    }
+
+    void test_preimage_approximation_relu_and_bilinear2()
+    {
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
+        Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE,
+                                   "backward-preimage-approx" );
+
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkBackwardReluAndBilinear2( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 1 );
+        tableau.setLowerBound( 2, -1 );
+        tableau.setUpperBound( 2, 1 );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds( {
+            Tightening( 3, -2, Tightening::LB ),   Tightening( 3, 2, Tightening::UB ),
+            Tightening( 4, -3, Tightening::LB ),   Tightening( 4, 3, Tightening::UB ),
+            Tightening( 5, -3, Tightening::LB ),   Tightening( 5, 3, Tightening::UB ),
+            Tightening( 6, -6, Tightening::LB ),   Tightening( 6, 6, Tightening::UB ),
+
+            Tightening( 7, 0, Tightening::LB ),    Tightening( 7, 2, Tightening::UB ),
+            Tightening( 8, 0, Tightening::LB ),    Tightening( 8, 3, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),    Tightening( 9, 3, Tightening::UB ),
+            Tightening( 10, 0, Tightening::LB ),   Tightening( 10, 6, Tightening::UB ),
+
+            Tightening( 11, -4, Tightening::LB ),  Tightening( 11, 8, Tightening::UB ),
+            Tightening( 12, -2, Tightening::LB ),  Tightening( 12, 10, Tightening::UB ),
+
+            Tightening( 13, -4, Tightening::LB ),  Tightening( 13, 8, Tightening::UB ),
+            Tightening( 14, -2, Tightening::LB ),  Tightening( 14, 10, Tightening::UB ),
+
+            Tightening( 15, -40, Tightening::LB ), Tightening( 15, 80, Tightening::UB ),
+        } );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds2( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
+
+
+        // Change the current bounds
+        tableau.setLowerBound( 0, -3 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 2 );
+        tableau.setLowerBound( 2, -2 );
+        tableau.setUpperBound( 2, 2 );
+
+        double large = 1000000;
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large );
+        tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large );
+        tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large );
+        tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large );
+        tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large );
+        tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large );
+        tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large );
+        tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large );
+        tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large );
+        tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large );
+        tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large );
+        tableau.setUpperBound( 13, large );
+        tableau.setLowerBound( 14, -large );
+        tableau.setUpperBound( 14, large );
+        tableau.setLowerBound( 15, -large );
+        tableau.setUpperBound( 15, large );
+
+
+        // Invoke DeepPoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> expectedBounds3( {
+            Tightening( 3, -2, Tightening::LB ),         Tightening( 3, 5, Tightening::UB ),
+            Tightening( 4, -5, Tightening::LB ),         Tightening( 4, 5, Tightening::UB ),
+            Tightening( 5, -6, Tightening::LB ),         Tightening( 5, 5, Tightening::UB ),
+            Tightening( 6, -15, Tightening::LB ),        Tightening( 6, 7, Tightening::UB ),
+
+            Tightening( 7, -2, Tightening::LB ),         Tightening( 7, 5, Tightening::UB ),
+            Tightening( 8, 0, Tightening::LB ),          Tightening( 8, 5, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),          Tightening( 9, 5, Tightening::UB ),
+            Tightening( 10, 0, Tightening::LB ),         Tightening( 10, 7, Tightening::UB ),
+
+            Tightening( 11, -9, Tightening::LB ),        Tightening( 11, 15.1818, Tightening::UB ),
+            Tightening( 12, -5, Tightening::LB ),        Tightening( 12, 14.0909, Tightening::UB ),
+
+            Tightening( 13, -9, Tightening::LB ),        Tightening( 13, 15.1818, Tightening::UB ),
+            Tightening( 14, -5, Tightening::LB ),        Tightening( 14, 14.0909, Tightening::UB ),
+
+            Tightening( 15, -126.8182, Tightening::LB ), Tightening( 15, 213.9256, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        TS_ASSERT( boundsEqual( bounds, expectedBounds3 ) );
+
+
+        // Invoke PreimageApproximation
+        TS_ASSERT_THROWS_NOTHING( updateTableau( tableau, bounds ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
+
+        List<Tightening> expectedBounds4( {
+            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+
+            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+
+            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+
+            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
+            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+
+            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
+            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+        } );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+        for ( auto &bound : bounds )
+        {
+            bound.dump();
+        }
+        TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
     bool boundsEqual( const List<Tightening> &bounds, const List<Tightening> &expectedBounds )
