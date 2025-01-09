@@ -16,7 +16,7 @@
 #ifndef __LPFormulator_h__
 #define __LPFormulator_h__
 
-#include "AdamOptimizer.h"
+#include "GradientDescent.h"
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "Map.h"
@@ -159,6 +159,16 @@ private:
                                                   const Layer *layer,
                                                   bool createVariables,
                                                   double coeff );
+
+    void addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                      const Layer *layer,
+                                                      bool createVariables,
+                                                      double coeff );
+
+    void addSigmoidLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                     const Layer *layer,
+                                                     bool createVariables,
+                                                     double coeff );
 
 
     // Estimate Volume of parameterised LP relaxations.

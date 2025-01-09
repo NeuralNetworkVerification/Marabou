@@ -12,6 +12,7 @@
 
 #include <algorithm> // for std::sort
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <mutex>
 #include <random>
@@ -199,13 +200,11 @@ template <typename ArgumentContainer> struct gradient_descent_parameters
     ArgumentContainer upper_bounds;
 
     Real step_size = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
-    // size_t max_iterations =
-    // GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
-    size_t max_iterations = 2;
+    size_t max_iterations = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
+    Real epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
     bool maximize = false;
     Real weight_decay = 0;
-    // Real lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
-    Real lr = 0.001;
+    Real lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
     ArgumentContainer const *initial_guess = nullptr;
 };
 
@@ -220,6 +219,13 @@ void validate_gradient_descent_parameters(
     {
         oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
         oss << ": step_size > 0 is required, but got step_size=" << cd_params.step_size << ".";
+        throw std::domain_error( oss.str() );
+    }
+
+    if ( FloatUtils::isNan( cd_params.epsilon ) || cd_params.epsilon <= 0 )
+    {
+        oss << __FILE__ << ":" << __LINE__ << ":" << __func__;
+        oss << ": epsilon > 0 is required, but got epsilon=" << cd_params.epsilon << ".";
         throw std::domain_error( oss.str() );
     }
 
@@ -270,8 +276,11 @@ ArgumentContainer gradient_descent(
     auto step_size = cd_params.step_size;
     auto max_iterations = cd_params.max_iterations;
     auto maximize = cd_params.maximize;
+    auto epsilon = cd_params.epsilon;
     auto lr = cd_params.lr;
     auto weight_decay = cd_params.weight_decay;
+    auto lower_bounds = cd_params.lower_bounds;
+    auto upper_bounds = cd_params.upper_bounds;
     auto guess =
         random_initial_population( cd_params.lower_bounds, cd_params.upper_bounds, 1, gen );
 
@@ -286,15 +295,21 @@ ArgumentContainer gradient_descent(
 
     for ( size_t i = 0; i < max_iterations; ++i )
     {
+        double current_cost = cost_function( guess[0] );
         for ( size_t j = 0; j < dimension; ++j )
         {
             candidates[j] = guess[0];
             candidates[j][j] += step_size;
 
+            if ( candidates[j][j] > upper_bounds[j] || candidates[j][j] < lower_bounds[j] )
+            {
+                gradient[j] = 0;
+                continue;
+            }
+
             size_t sign = ( maximize == false ? 1 : -1 );
             double cost = cost_function( candidates[j] );
-            gradient[j] = sign * cost / step_size + weight_decay * guess[0][j];
-
+            gradient[j] = sign * ( cost - current_cost ) / step_size + weight_decay * guess[0][j];
             if ( !FloatUtils::isNan( target_value ) && cost <= target_value )
             {
                 guess[0] = candidates[j];
@@ -302,9 +317,32 @@ ArgumentContainer gradient_descent(
             }
         }
 
+        bool gradient_is_zero = true;
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            if ( FloatUtils::abs( gradient[j] ) > epsilon )
+            {
+                gradient_is_zero = false;
+            }
+        }
+        if ( gradient_is_zero )
+        {
+            break;
+        }
+
         for ( size_t j = 0; j < dimension; ++j )
         {
             guess[0][j] -= lr * gradient[j];
+
+            if ( guess[0][j] > upper_bounds[j] )
+            {
+                guess[0][j] = upper_bounds[j];
+            }
+
+            if ( guess[0][j] < lower_bounds[j] )
+            {
+                guess[0][j] = lower_bounds[j];
+            }
         }
     }
 

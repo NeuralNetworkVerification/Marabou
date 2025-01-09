@@ -12,6 +12,7 @@
 
 #include <algorithm> // for std::sort
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <mutex>
 #include <random>
@@ -200,11 +201,10 @@ template <typename ArgumentContainer> struct adam_optimizer_parameters
 
     Real step_size = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
     Real lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
-    Real lr = 0.05;
     Real epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
     Real beta1 = 0.9;
     Real beta2 = 0.999;
-    Real weight_decay = 0.2;
+    Real weight_decay = 0;
     bool maximize = false;
     size_t max_iterations = 100;
     ArgumentContainer const *initial_guess = nullptr;
@@ -295,6 +295,8 @@ ArgumentContainer adam_optimizer(
     auto epsilon = cd_params.epsilon;
     auto beta1 = cd_params.beta1;
     auto beta2 = cd_params.beta2;
+    auto lower_bounds = cd_params.lower_bounds;
+    auto upper_bounds = cd_params.upper_bounds;
     auto lr = cd_params.lr;
     auto weight_decay = cd_params.weight_decay;
     auto guess =
@@ -319,20 +321,52 @@ ArgumentContainer adam_optimizer(
 
     for ( size_t i = 0; i < max_iterations; ++i )
     {
+        double current_cost = cost_function( guess[0] );
+        std::cout << " current_cost = " << current_cost << std::endl;
         for ( size_t j = 0; j < dimension; ++j )
         {
             candidates[j] = guess[0];
             candidates[j][j] += step_size;
 
+            if ( candidates[j][j] > upper_bounds[j] || candidates[j][j] < lower_bounds[j] )
+            {
+                gradient[j] = 0;
+                continue;
+            }
+
             size_t sign = ( maximize == false ? 1 : -1 );
             double cost = cost_function( candidates[j] );
-            gradient[j] = sign * cost / step_size + weight_decay * guess[0][j];
+
+            for ( size_t k = 0; k < dimension; ++k )
+            {
+                std::cout << "candidates[" << j << "][" << k << "] = " << candidates[j][k]
+                          << std::endl;
+                std::cout << "guess[0][" << k << "] = " << guess[0][k] << std::endl;
+            }
+
+            std::cout << " cost = " << cost << std::endl;
+            gradient[j] = sign * ( cost - current_cost ) / step_size + weight_decay * guess[0][j];
 
             if ( !FloatUtils::isNan( target_value ) && cost <= target_value )
             {
                 guess[0] = candidates[j];
                 break;
             }
+        }
+
+        bool gradient_is_zero = true;
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            std::cout << "gradient[" << j << "] = " << gradient[j] << std::endl;
+            if ( FloatUtils::abs( gradient[j] ) > epsilon )
+            {
+                gradient_is_zero = false;
+            }
+        }
+
+        if ( gradient_is_zero )
+        {
+            break;
         }
 
         for ( size_t j = 0; j < dimension; ++j )
@@ -344,6 +378,17 @@ ArgumentContainer adam_optimizer(
             second_moment[j] /= ( 1 - std::pow( beta2, step_size ) );
 
             guess[0][j] -= lr * first_moment[j] / ( std::sqrt( second_moment[j] ) + epsilon );
+
+
+            if ( guess[0][j] > upper_bounds[j] )
+            {
+                guess[0][j] = upper_bounds[j];
+            }
+
+            if ( guess[0][j] < lower_bounds[j] )
+            {
+                guess[0][j] = lower_bounds[j];
+            }
         }
     }
 

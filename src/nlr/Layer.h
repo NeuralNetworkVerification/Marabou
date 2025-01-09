@@ -301,6 +301,8 @@ private:
     void computeParameterisedSymbolicBoundsForRelu( double coeff );
     void computeParameterisedSymbolicBoundsForSign( double coeff );
     void computeParameterisedSymbolicBoundsForLeakyRelu( double coeff );
+    void computeParameterisedSymbolicBoundsForBilinear( double coeff );
+    void computeParameterisedSymbolicBoundsForSigmoid( double coeff );
 
     /*
       Helper functions for interval bound tightening

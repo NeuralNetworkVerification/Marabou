@@ -347,7 +347,7 @@ void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, 
     auto EstimateVolumeBind = std::bind( EstimateVolume, layers, std::placeholders::_1 );
 
     // Search over coeffs in [0, 1]^depth. Enforce single-threaded optimization.
-    auto opt_params = adam_optimizer_parameters<std::vector<double>>();
+    auto opt_params = gradient_descent_parameters<std::vector<double>>();
     unsigned depth = layers.size();
     opt_params.lower_bounds.resize( depth, 0 );
     opt_params.upper_bounds.resize( depth, 1 );
@@ -356,10 +356,16 @@ void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, 
 
     // Find optimal coeffs and run final parameterised symbolic bound tightening + backward LP
     // relaxation.
-    auto optimal_coeffs = adam_optimizer( EstimateVolumeBind, opt_params, rng, value_to_reach );
+    auto optimal_coeffs = gradient_descent( EstimateVolumeBind, opt_params, rng, value_to_reach );
 
     for ( unsigned i = 0; i < layers.size(); ++i )
-        layers[i]->computeParameterisedSymbolicBounds( optimal_coeffs[i], true );
+    {
+        std::cout << "optimal_coeffs[" << i << "] = " << optimal_coeffs[i] << std::endl;
+        if ( i == layers.size() - 1 )
+            layers[i]->computeParameterisedSymbolicBounds( optimal_coeffs[i], true );
+        else
+            layers[i]->computeParameterisedSymbolicBounds( optimal_coeffs[i] );
+    }
 
     optimizeBoundsWithLpRelaxation( layers, true, optimal_coeffs );
 }
@@ -372,50 +378,57 @@ double LPFormulator::EstimateVolume( const Map<unsigned, Layer *> &layers,
         layers[i]->computeParameterisedSymbolicBounds( coeffs[i] );
 
     std::mt19937_64 rng( GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED );
-    double average = 0;
-    for ( unsigned i = 0; i < GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS; ++i )
+    double log_box_volume = 0;
+    double sigmoid_sum = 0;
+
+    unsigned inputLayerIndex = 0;
+    unsigned outputLayerIndex = layers.size() - 1;
+    const Layer *inputLayer = layers[inputLayerIndex];
+    const Layer *outputLayer = layers[outputLayerIndex];
+
+    // Calculate volume of input variables' bounding box.
+    for ( unsigned index = 0; index < inputLayer->getSize(); ++index )
     {
-        // Sample point from known bounds.
-        Map<NeuronIndex, double> point;
-        for ( auto pair : layers )
-        {
-            unsigned layerIndex = pair.first;
-            const Layer *layer = pair.second;
-            for ( unsigned index = 0; index < layer->getSize(); ++index )
-            {
-                if ( layer->neuronEliminated( index ) )
-                    continue;
+        if ( inputLayer->neuronEliminated( index ) )
+            continue;
 
-                const NeuronIndex neuron( layerIndex, index );
-                double lb = layer->getLb( index );
-                double ub = layer->getUb( index );
-                std::uniform_real_distribution<> dis( lb, ub );
-                point.insert( neuron, dis( rng ) );
-            }
-        }
+        double lb = inputLayer->getLb( index );
+        double ub = inputLayer->getUb( index );
 
-        // Compute the average sigmoid of log-sum-exp of points' difference from bounding
-        // hyperplanes.
-        double sum_exp = 0;
-        for ( auto pair : layers )
-        {
-            const Layer *layer = pair.second;
-            for ( unsigned index = 0; index < layer->getSize(); ++index )
-            {
-                if ( layer->neuronEliminated( index ) )
-                    continue;
-
-                double margin = layer->calculateDifferenceFromSymbolic( point, index );
-                if ( FloatUtils::wellFormed( std::exp( margin ) ) )
-                    sum_exp += std::exp( margin );
-            }
-        }
-
-        double slse = 1 / ( 1 + ( 1 / sum_exp ) );
-        average += slse / GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS;
+        log_box_volume += std::log( ub - lb );
     }
 
-    return average;
+    for ( unsigned i = 0; i < GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS; ++i )
+    {
+        // Sample input point from known bounds.
+        Map<NeuronIndex, double> point;
+        for ( unsigned index = 0; index < inputLayer->getSize(); ++index )
+        {
+            if ( inputLayer->neuronEliminated( index ) )
+                continue;
+
+            NeuronIndex neuron( inputLayerIndex, index );
+            double lb = inputLayer->getLb( index );
+            double ub = inputLayer->getUb( index );
+            std::uniform_real_distribution<> dis( lb, ub );
+            point.insert( neuron, dis( rng ) );
+        }
+
+        // Calculate sigmoid of maximum margin from output symbolic bounds.
+        double max_margin = 0;
+        for ( unsigned index = 0; index < outputLayer->getSize(); ++index )
+        {
+            if ( outputLayer->neuronEliminated( index ) )
+                continue;
+
+            double margin = outputLayer->calculateDifferenceFromSymbolic( point, index );
+            max_margin = std::max( max_margin, margin );
+        }
+        sigmoid_sum += SigmoidConstraint::sigmoid( max_margin );
+    }
+
+    return std::exp( log_box_volume + std::log( sigmoid_sum ) ) /
+           GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS;
 }
 
 void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
@@ -1808,6 +1821,10 @@ void LPFormulator::addLayerToParameterisedModel( GurobiWrapper &gurobi,
         addSignLayerToParameterisedLpRelaxation( gurobi, layer, createVariables, coeff );
         break;
 
+    case Layer::BILINEAR:
+        addBilinearLayerToParameterisedLpRelaxation( gurobi, layer, createVariables, coeff );
+        break;
+
     default:
         addLayerToModel( gurobi, layer, createVariables );
         break;
@@ -1872,9 +1889,10 @@ void LPFormulator::addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurob
                 /*
                   The phase of this ReLU is not yet fixed.
 
-                  For y = ReLU(x), we add the following triangular relaxation:
+                  For y = ReLU(x), we add the following relaxation:
 
                   1. y >= 0
+                  2. y >= x
                   2. y >= coeff * x
                   3. y is below the line the crosses (x.lb,0) and (x.ub,x.ub)
                 */
@@ -1884,7 +1902,13 @@ void LPFormulator::addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurob
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                 gurobi.addGeqConstraint( terms, 0 );
 
-                // y >= coeff * x, i.e. y - coeff * x >= 0  (varies continuously between y >= 0 and
+                // y >= x, i.e. y - x >= 0.
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+                gurobi.addGeqConstraint( terms, 0 );
+
+                // y >= coeff * x, i.e. y - coeff * x >= 0 (varies continuously between y >= 0 and
                 // y >= alpha * x).
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -1969,9 +1993,9 @@ void LPFormulator::addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurob
 
             /*
                      2
-              y <= ----- * (1 - coeff) x + 1  (varies continuously between y <= 1 and y <= -2 / l *
-              x + 1).
+              y <= ----- * (1 - coeff) x + 1
                     - l
+              Varies continuously between y <= 1 and y <= -2/l * x + 1.
             */
             List<GurobiWrapper::Term> terms;
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -1981,9 +2005,9 @@ void LPFormulator::addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurob
 
             /*
                      2
-              y >= ----- * (1 - coeff) x - 1  (varies continuously between y >= -1 and y >= 2 / u *
-              x - 1).
+              y >= ----- * (1 - coeff) x - 1
                      u
+              Varies continuously between y >= -1 and y >= 2/u * x - 1.
             */
             terms.clear();
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -2057,11 +2081,12 @@ void LPFormulator::addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &
 
                 /*
                   The phase of this LeakyReLU is not yet fixed.
-                  For y = LeakyReLU(x), we add the following triangular relaxation:
+                  For y = LeakyReLU(x), we add the following relaxation:
                   1. y >= ((1 - alpha) * coeff + alpha) * x   (varies continuously between y >=
                   alpha * x and y >= x).
                   2. y >= x
-                  3. y is below the line the crosses (x.lb,0) and (x.ub,x.ub)
+                  3. y >= alpha * x
+                  4. y is below the line the crosses (x.lb,0) and (x.ub,x.ub)
                 */
 
                 // y >= ((1 - alpha) * coeff + alpha) * x
@@ -2077,6 +2102,12 @@ void LPFormulator::addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &
                 terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
                 gurobi.addGeqConstraint( terms, 0 );
 
+                // y >= alpha * x, i.e. y - alpha * x >= 0
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                terms.append( GurobiWrapper::Term( -slope, Stringf( "x%u", sourceVariable ) ) );
+                gurobi.addGeqConstraint( terms, 0 );
+
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                 terms.append( GurobiWrapper::Term( -weight, Stringf( "x%u", sourceVariable ) ) );
@@ -2084,6 +2115,122 @@ void LPFormulator::addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &
             }
         }
     }
+}
+
+void LPFormulator::addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                                const Layer *layer,
+                                                                bool createVariables,
+                                                                double coeff )
+{
+    for ( unsigned i = 0; i < layer->getSize(); ++i )
+    {
+        if ( !layer->neuronEliminated( i ) )
+        {
+            unsigned targetVariable = layer->neuronToVariable( i );
+
+            List<NeuronIndex> sources = layer->getActivationSources( i );
+
+            const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+
+            Vector<double> sourceLbs;
+            Vector<double> sourceUbs;
+            Vector<double> sourceValues;
+            Vector<unsigned> sourceNeurons;
+            bool allConstant = true;
+            for ( const auto &sourceIndex : sources )
+            {
+                unsigned sourceNeuron = sourceIndex._neuron;
+                double sourceLb = sourceLayer->getLb( sourceNeuron );
+                double sourceUb = sourceLayer->getUb( sourceNeuron );
+                String sourceName = Stringf( "x%u", sourceLayer->neuronToVariable( sourceNeuron ) );
+
+                sourceNeurons.append( sourceNeuron );
+                sourceLbs.append( sourceLb );
+                sourceUbs.append( sourceUb );
+
+                if ( createVariables && !gurobi.containsVariable( sourceName ) )
+                    gurobi.addVariable( sourceName, sourceLb, sourceUb );
+
+                if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
+                {
+                    allConstant = false;
+                }
+                else
+                {
+                    double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
+                    sourceValues.append( sourceValue );
+                }
+            }
+
+            if ( allConstant )
+            {
+                // If the both source neurons have been eliminated, this neuron is constant
+                double targetValue = sourceValues[0] * sourceValues[1];
+                gurobi.addVariable( Stringf( "x%u", targetVariable ), targetValue, targetValue );
+                continue;
+            }
+
+            double lb = FloatUtils::infinity();
+            double ub = FloatUtils::negativeInfinity();
+            List<double> values = { sourceLbs[0] * sourceLbs[1],
+                                    sourceLbs[0] * sourceUbs[1],
+                                    sourceUbs[0] * sourceLbs[1],
+                                    sourceUbs[0] * sourceUbs[1] };
+            for ( const auto &v : values )
+            {
+                if ( v < lb )
+                    lb = v;
+                if ( v > ub )
+                    ub = v;
+            }
+
+            gurobi.addVariable( Stringf( "x%u", targetVariable ), lb, ub );
+
+            // Billinear linear relaxation (arXiv:2405.21063v2 [cs.LG])
+            // Lower bound: out >= a_l * x + b_l * y + c_l, where
+            // a_l = alpha1 * l_y + ( 1 - alpha1 ) * u_y
+            // b_l = alpha1 * l_x + ( 1 - alpha1 ) * u_x
+            // c_l = -alpha1 * l_x * l_y - ( 1 - alpha1 ) * u_x * u_y
+
+            // Upper bound: out <= a_u * x + b_u * y + c_u, where
+            // a_u = alpha2 * u_y + ( 1 - alpha2 ) * l_y
+            // b_u = alpha2 * l_x + ( 1 - alpha2 ) * u_x
+            // c_u = -alpha2 * -l_x * u_y - ( 1 - alpha2 ) * u_x * l_y
+
+            // Here assume alpha1 = alpha2 = coeff (and b_l = b_u).
+            List<GurobiWrapper::Term> terms;
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            terms.append( GurobiWrapper::Term(
+                -coeff * sourceLbs[1] - ( 1 - coeff ) * sourceUbs[1],
+                Stringf( "x%u", sourceLayer->neuronToVariable( sourceNeurons[0] ) ) ) );
+            terms.append( GurobiWrapper::Term(
+                -coeff * sourceLbs[0] - ( 1 - coeff ) * sourceUbs[0],
+                Stringf( "x%u", sourceLayer->neuronToVariable( sourceNeurons[1] ) ) ) );
+            gurobi.addGeqConstraint( terms,
+                                     -coeff * sourceLbs[0] * sourceLbs[1] -
+                                         ( 1 - coeff ) * sourceUbs[0] * sourceUbs[1] );
+
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            terms.append( GurobiWrapper::Term(
+                -coeff * sourceUbs[1] - ( 1 - coeff ) * sourceLbs[1],
+                Stringf( "x%u", sourceLayer->neuronToVariable( sourceNeurons[0] ) ) ) );
+            terms.append( GurobiWrapper::Term(
+                -coeff * sourceLbs[0] - ( 1 - coeff ) * sourceUbs[0],
+                Stringf( "x%u", sourceLayer->neuronToVariable( sourceNeurons[1] ) ) ) );
+            gurobi.addLeqConstraint( terms,
+                                     -coeff * sourceLbs[0] * sourceUbs[1] -
+                                         ( 1 - coeff ) * sourceUbs[0] * sourceLbs[1] );
+        }
+    }
+}
+
+void LPFormulator::addSigmoidLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                               const Layer *layer,
+                                                               bool createVariables,
+                                                               double coeff )
+{
 }
 
 void LPFormulator::setCutoff( double cutoff )

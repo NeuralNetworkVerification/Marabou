@@ -251,6 +251,8 @@ ArgumentContainer coordinate_descent(
     const size_t candidates_number = 2 * dimension;
     auto step_size = cd_params.step_size;
     auto max_iterations = cd_params.max_iterations;
+    auto lower_bounds = cd_params.lower_bounds;
+    auto upper_bounds = cd_params.upper_bounds;
     auto guess =
         random_initial_population( cd_params.lower_bounds, cd_params.upper_bounds, 1, gen );
 
@@ -271,6 +273,16 @@ ArgumentContainer coordinate_descent(
             size_t index = j / 2;
             size_t sign = ( j % 2 == 0 ? 1 : -1 );
             candidates[j][index] += sign * step_size;
+
+            if ( candidates[j][index] > upper_bounds[j] )
+            {
+                candidates[j][index] = upper_bounds[j];
+            }
+
+            if ( candidates[j][index] < lower_bounds[j] )
+            {
+                candidates[j][index] = lower_bounds[j];
+            }
 
             costs[j] = cost_function( candidates[j] );
 
