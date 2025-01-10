@@ -13,7 +13,6 @@
 
 **/
 
-#include "FloatUtils.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
@@ -24,7 +23,6 @@
 #include "context/context.h"
 
 #include <cxxtest/TestSuite.h>
-#include <iostream>
 #include <string.h>
 
 using namespace CVC4::context;

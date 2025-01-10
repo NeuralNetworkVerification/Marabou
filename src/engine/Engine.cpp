@@ -2729,7 +2729,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
             if ( reluConstraint )
             {
                 // Set NLR if not already set
-                reluConstraint->setNetworkLevelReasoner( _networkLevelReasoner );
+                reluConstraint->initializeNLRForBaBSR( _networkLevelReasoner );
 
                 // Calculate heuristic score - bias calculation happens inside computeBaBsr
                 plConstraint->updateScoreBasedOnBaBsr();

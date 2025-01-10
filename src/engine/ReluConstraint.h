@@ -67,19 +67,13 @@ public:
     PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
-      Setter for network level reasoner instance.
+      Initialize the network level reasoner needed for BaBSR branching heuristics.
     */
 
-    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
+    void initializeNLRForBaBSR( NLR::NetworkLevelReasoner *nlr )
     {
         _networkLevelReasoner = nlr;
-        initializeBiasCache( *_networkLevelReasoner );
     }
-
-    /*
-      Cache biases for the source layers for ReLU neurons.
-    */
-    static void initializeBiasCache( NLR::NetworkLevelReasoner &nlr );
 
     /*
       Restore the state of this constraint from the given one.
@@ -315,8 +309,7 @@ private:
     /*
       cached biases for the source layers for ReLU neurons.
     */
-    static std::unordered_map<const ReluConstraint *, double> _biasCache;
-    double calculateBias() const;
+    double _bias;
 };
 
 #endif // __ReluConstraint_h__

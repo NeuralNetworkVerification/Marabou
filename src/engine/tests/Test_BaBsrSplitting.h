@@ -12,6 +12,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "../nlr/NetworkLevelReasoner.h"
 #include "FloatUtils.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
@@ -28,7 +29,7 @@
 
 using namespace CVC4::context;
 
-class MockNetworkLevelReasoner : public MockErrno
+class MockForNetworkLevelReasoner : public MockErrno
 {
 public:
 };
@@ -36,9 +37,21 @@ public:
 class Test_BaBsrSplitting : public CxxTest::TestSuite
 {
 public:
-    NLR::NetworkLevelReasoner *nlr;
+    MockForNetworkLevelReasoner *mock;
+    MockTableau *tableau;
 
-    // Moved the population method outside test functions for reuse
+    void setUp()
+    {
+        TS_ASSERT( mock = new MockForNetworkLevelReasoner );
+        TS_ASSERT( tableau = new MockTableau() );
+    }
+
+    void tearDown()
+    {
+        delete tableau;
+        delete mock;
+    }
+
     void populateNetwork( NLR::NetworkLevelReasoner &nlr )
     {
         /*
@@ -111,106 +124,234 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 13 );
     }
 
-    void setUp()
+    void test_relu_0()
     {
-        TS_ASSERT( nlr = new NLR::NetworkLevelReasoner );
-        populateNetwork( *nlr ); // Populate network globally in setUp
-    }
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
 
-    void tearDown()
-    {
-        TS_ASSERT_THROWS_NOTHING( delete nlr );
-    }
+        // Generate Constraints
+        Query query;
+        nlr.generateQuery( query );
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
 
-    // Test case for ReLU without network
-    void test_babsr_without_relu_in_network()
-    {
-        // Initialize the error context
-        MockErrno mockErrno;
-
-        // Test error throwing when ReLU is not in network
-        unsigned b = 2;
-        unsigned f = 3;
-
-        ReluConstraint relu( b, f );
-        MockTableau tableau;
-        relu.registerTableau( &tableau );
-
-        // Set up network level reasoner with relu
-        relu.setNetworkLevelReasoner( nlr );
-
-        // Set bounds for b
-        relu.notifyLowerBound( b, 1.0 );
-        relu.notifyUpperBound( b, 3.0 );
-
-        // Mock the values in the tableau
-        tableau.setValue( b, 2.0 );
-        tableau.setValue( f, 2.0 );
-
-        // Assert that an NLRError is thrown when calling computeBaBsr
-        TS_ASSERT_THROWS_ANYTHING( relu.computeBaBsr() );
-    }
-
-    // Test case for evaluating neurons
-    void test_relu_neurons()
-    {
-        struct TestParams
+        for ( const auto &constraint : constraints )
         {
-            NLR::NeuronIndex neuronIndex;
-            double lowerBound;
-            double upperBound;
-        };
-
-        std::vector<TestParams> testParams = {
-            // ... (test parameters)
-        };
-
-        // Initialize MockErrno (error context)
-        MockErrno mockErrno;
-
-        // Iterate through each test case
-        for ( const auto &params : testParams )
-        {
-            double input[2] = { 0, 0 };
-            double output[2];
-
-            TS_ASSERT_THROWS_NOTHING( nlr->evaluate( input, output ) );
-
-            const NLR::Layer *layer = nlr->getLayer( params.neuronIndex._layer );
-            double b = layer->getAssignment( params.neuronIndex._neuron );
-            double f = FloatUtils::max( b, 0.0 );
-
-            // Create the ReluConstraint with neuron variables
-            ReluConstraint relu( layer->neuronToVariable( params.neuronIndex._neuron ), f );
-
-            // retrieve bias using the new method
-            double bias = nlr->getPrevBiasForReluConstraint( &relu );
-
-            double ub = params.upperBound;
-            double lb = params.lowerBound;
-
-            double scaler = ( ub ) / ( ub - lb );
-            double term1 = std::min( scaler * b * bias, ( scaler - 1.0 ) * b * bias );
-            double term2 = ( scaler * lb ) * f;
-
-            double expectedBaBsr = term1 - term2;
-
-            // Setup mock tableau
-            MockTableau tableau;
-            relu.registerTableau( &tableau );
-
-            relu.setNetworkLevelReasoner( nlr );
-
-            relu.notifyLowerBound( b, lb );
-            relu.notifyUpperBound( f, ub );
-
-            tableau.setValue( b, b );
-            tableau.setValue( f, f );
-
-            // Assert BaBsr calculation
-            double actualBaBsr = relu.computeBaBsr();
-
-            TS_ASSERT_DELTA( actualBaBsr, expectedBaBsr, 1e-6 );
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            nlr.addConstraintInTopologicalOrder( relu );
         }
+
+        // Get Constraints in topological order
+        List<PiecewiseLinearConstraint *> orderedConstraints =
+            nlr.getConstraintsInTopologicalOrder();
+        MockTableau tableau;
+
+        // Test ReLU 0
+        ReluConstraint *relu = dynamic_cast<ReluConstraint *>( orderedConstraints.front() );
+
+        // Register Bounds
+        relu->registerTableau( &tableau );
+        relu->initializeNLRForBaBSR( &nlr );
+
+        unsigned b = relu->getB();
+        unsigned f = relu->getF();
+
+        relu->notifyLowerBound( b, -1 );
+        relu->notifyUpperBound( b, 1 );
+        relu->notifyLowerBound( f, 0 );
+        relu->notifyUpperBound( f, 1 );
+
+        tableau.setValue( b, 0.5 );
+        tableau.setValue( f, 0.5 );
+
+        // Compute BaBSR and compare
+        double score = relu->computeBaBsr();
+
+        TS_ASSERT_EQUALS( score, 0 );
+    }
+
+    void test_relu_1()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate Constraints
+        Query query;
+        nlr.generateQuery( query );
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
+
+        for ( const auto &constraint : constraints )
+        {
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            nlr.addConstraintInTopologicalOrder( relu );
+        }
+
+        // Get Constraints in topological order
+        List<PiecewiseLinearConstraint *> orderedConstraints =
+            nlr.getConstraintsInTopologicalOrder();
+        MockTableau tableau;
+
+        // Test ReLU 1
+        auto it = orderedConstraints.begin();
+        std::advance( it, 1 );
+        ReluConstraint *relu = dynamic_cast<ReluConstraint *>( *it );
+
+        // Register Bounds
+        relu->registerTableau( &tableau );
+        relu->initializeNLRForBaBSR( &nlr );
+
+        unsigned b = relu->getB();
+        unsigned f = relu->getF();
+
+        relu->notifyLowerBound( b, -1 );
+        relu->notifyUpperBound( b, 1 );
+        relu->notifyLowerBound( f, 0 );
+        relu->notifyUpperBound( f, 1 );
+
+        tableau.setValue( b, 0.5 );
+        tableau.setValue( f, 0.5 );
+
+        // Compute BaBSR and compare
+        double score = relu->computeBaBsr();
+
+        TS_ASSERT_EQUALS( score, 0.25 );
+    }
+
+    void test_relu_2()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate Constraints
+        Query query;
+        nlr.generateQuery( query );
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
+
+        for ( const auto &constraint : constraints )
+        {
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            nlr.addConstraintInTopologicalOrder( relu );
+        }
+
+        // Get Constraints in topological order
+        List<PiecewiseLinearConstraint *> orderedConstraints =
+            nlr.getConstraintsInTopologicalOrder();
+        MockTableau tableau;
+
+        // Test ReLU 2
+        auto it = orderedConstraints.begin();
+        std::advance( it, 2 );
+        ReluConstraint *relu = dynamic_cast<ReluConstraint *>( *it );
+
+        // Register Bounds
+        relu->registerTableau( &tableau );
+        relu->initializeNLRForBaBSR( &nlr );
+
+        unsigned b = relu->getB();
+        unsigned f = relu->getF();
+
+        relu->notifyLowerBound( b, -1 );
+        relu->notifyUpperBound( b, 1 );
+        relu->notifyLowerBound( f, 0 );
+        relu->notifyUpperBound( f, 1 );
+
+        tableau.setValue( b, 0.5 );
+        tableau.setValue( f, 0.5 );
+
+        // Compute BaBSR and compare
+        double score = relu->computeBaBsr();
+
+        TS_ASSERT_EQUALS( score, 0.25 );
+    }
+
+    void test_relu_3()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate Constraints
+        Query query;
+        nlr.generateQuery( query );
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
+
+        for ( const auto &constraint : constraints )
+        {
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            nlr.addConstraintInTopologicalOrder( relu );
+        }
+
+        // Get Constraints in topological order
+        List<PiecewiseLinearConstraint *> orderedConstraints =
+            nlr.getConstraintsInTopologicalOrder();
+        MockTableau tableau;
+
+        // Test ReLU 3
+        auto it = orderedConstraints.begin();
+        std::advance( it, 3 );
+        ReluConstraint *relu = dynamic_cast<ReluConstraint *>( *it );
+
+        // Register Bounds
+        relu->registerTableau( &tableau );
+        relu->initializeNLRForBaBSR( &nlr );
+
+        unsigned b = relu->getB();
+        unsigned f = relu->getF();
+        relu->notifyLowerBound( b, -1 );
+        relu->notifyUpperBound( b, 1 );
+        relu->notifyLowerBound( f, 0 );
+        relu->notifyUpperBound( f, 1 );
+
+        tableau.setValue( b, 0.5 );
+        tableau.setValue( f, 0.5 );
+
+        // Compute BaBSR and compare
+        double score = relu->computeBaBsr();
+
+        TS_ASSERT_EQUALS( score, 0.25 );
+    }
+
+    void test_relu_4()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate Constraints
+        Query query;
+        nlr.generateQuery( query );
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
+
+        for ( const auto &constraint : constraints )
+        {
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            nlr.addConstraintInTopologicalOrder( relu );
+        }
+
+        // Get Constraints in topological order
+        List<PiecewiseLinearConstraint *> orderedConstraints =
+            nlr.getConstraintsInTopologicalOrder();
+        MockTableau tableau;
+
+        // Test ReLU 4
+        auto it = orderedConstraints.begin();
+        std::advance( it, 4 );
+        ReluConstraint *relu = dynamic_cast<ReluConstraint *>( *it );
+
+        // Register Bounds
+        relu->registerTableau( &tableau );
+        relu->initializeNLRForBaBSR( &nlr );
+
+        unsigned b = relu->getB();
+        unsigned f = relu->getF();
+        relu->notifyLowerBound( b, -1 );
+        relu->notifyUpperBound( b, 1 );
+        relu->notifyLowerBound( f, 0 );
+        relu->notifyUpperBound( f, 1 );
+
+        tableau.setValue( b, 0.5 );
+        tableau.setValue( f, 0.5 );
+
+        // Compute BaBSR and compare
+        double score = relu->computeBaBsr();
+
+        TS_ASSERT_EQUALS( score, -0.25 );
     }
 };

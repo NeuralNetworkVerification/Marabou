@@ -599,8 +599,7 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
     Get ReLU bias given a ReLU constraint
     Used for BaBSR Heuristic
 */
-double
-NetworkLevelReasoner::getPrevBiasForReluConstraint( const ReluConstraint *reluConstraint ) const
+double NetworkLevelReasoner::getPreviousBias( const ReluConstraint *reluConstraint ) const
 {
     // Find the index of the reluConstraint in the _constraintsInTopologicalOrder list
     unsigned constraintIndex = 0;
@@ -618,8 +617,10 @@ NetworkLevelReasoner::getPrevBiasForReluConstraint( const ReluConstraint *reluCo
 
     // If the constraint was not found, throw an error
     if ( !foundConstraint )
+    {
         throw NLRError( NLRError::RELU_NOT_FOUND,
                         "ReluConstraint not found in topological order." );
+    }
 
     // Traverse through layers and find the corresponding ReLU layer
     const NLR::Layer *reluLayer = nullptr;
