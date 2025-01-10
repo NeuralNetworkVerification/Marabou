@@ -309,7 +309,8 @@ private:
     /*
       cached biases for the source layers for ReLU neurons.
     */
-    double _bias;
+    mutable double _previousBias;
+    mutable bool _hasPreviousBias;
 };
 
 #endif // __ReluConstraint_h__

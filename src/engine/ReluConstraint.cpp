@@ -40,6 +40,8 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
     , _tighteningRow( NULL )
+    , _previousBias( 0.0 )
+    , _hasPreviousBias( false )
 {
 }
 
@@ -1040,7 +1042,18 @@ double ReluConstraint::computeBaBsr() const
     if ( !_networkLevelReasoner )
         throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
 
-    double biasTerm = _networkLevelReasoner->getPreviousBias( this );
+    double biasTerm;
+
+    if ( _hasPreviousBias )
+    {
+        biasTerm = _previousBias;
+    }
+    else
+    {
+        biasTerm = _networkLevelReasoner->getPreviousBias( this );
+        _hasPreviousBias = true;
+        _previousBias = biasTerm;
+    }
 
     // get upper and lower bounds
     double ub = getUpperBound( _b );
