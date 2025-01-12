@@ -13,12 +13,8 @@
  **/
 
 #include "../nlr/NetworkLevelReasoner.h"
-#include "FloatUtils.h"
-#include "LinearExpression.h"
-#include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
 #include "ReluConstraint.h"
 #include "context/context.h"
