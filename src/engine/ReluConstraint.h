@@ -305,12 +305,6 @@ private:
      Assign a variable as an aux variable by the tableau, related to some existing aux variable.
     */
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
-
-    /*
-      cached biases for the source layers for ReLU neurons.
-    */
-    mutable double _previousBias;
-    mutable bool _hasPreviousBias;
 };
 
 #endif // __ReluConstraint_h__
