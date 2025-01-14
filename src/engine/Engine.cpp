@@ -935,7 +935,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
 
         initializeNetworkLevelReasoning();
 
-        performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+        performSymbolicBoundTightening( &( *_preprocessedQuery ) );
         performSimulation();
         performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
         performAdditionalBackwardAnalysisIfNeeded();
@@ -1438,7 +1438,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         initializeNetworkLevelReasoning();
         if ( preprocess )
         {
-            performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+            performSymbolicBoundTightening( &( *_preprocessedQuery ) );
             performSimulation();
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
             performAdditionalBackwardAnalysisIfNeeded();
@@ -1673,7 +1673,7 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
          _milpSolverBoundTighteningType ==
              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
     {
-        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
         if ( _verbosity > 0 )
             printf( "Backward analysis tightened %u bounds\n", tightened );
         while ( tightened &&
@@ -1682,7 +1682,7 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
                 GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS )
         {
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
-            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ), true );
+            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
             if ( _verbosity > 0 )
                 printf( "Backward analysis tightened %u bounds\n", tightened );
         }
@@ -2484,7 +2484,7 @@ List<unsigned> Engine::getInputVariables() const
 void Engine::performSimulation()
 {
     if ( _simulationSize == 0 || !_networkLevelReasoner ||
-         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE )
+         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE || _produceUNSATProofs )
     {
         ENGINE_LOG( Stringf( "Skip simulation..." ).ascii() );
         return;
@@ -2510,14 +2510,12 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-unsigned int Engine::performSymbolicBoundTightening( InputQuery *inputQuery, bool brutePerform )
+unsigned int Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
-         ( !_networkLevelReasoner ) )
+         ( !_networkLevelReasoner ) || _produceUNSATProofs )
         return 0;
 
-    if ( _produceUNSATProofs && !brutePerform )
-        return 0;
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -3441,6 +3439,7 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
+        _smtCore.addTrivialConflictClause();
         return;
     }
 
@@ -3470,9 +3469,9 @@ void Engine::explainSimplexFailure()
         sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
     // If possible, attempt to reduce the clause size
-    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-        clause = reduceClauseSizeWithProof(
-            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+//    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+//        clause = reduceClauseSizeWithProof(
+//            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
 
     _smtCore.addExternalClause( clause );
 }
@@ -4054,9 +4053,9 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
 
-    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
-        clause = reduceClauseSizeWithProof(
-            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
+//    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
+//        clause = reduceClauseSizeWithProof(
+//            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
     return Vector<int>( clause.begin(), clause.end() );
 }
@@ -4134,11 +4133,6 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
              linearCombination, groundUpperBounds, groundLowerBounds, support + l, lemma ) )
         return reduceClauseSizeWithLinearCombination(
             linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
-
-    if ( checkLinearCombinationForClause(
-             linearCombination, groundUpperBounds, groundLowerBounds, support + r, lemma ) )
-        return reduceClauseSizeWithLinearCombination(
-            linearCombination, groundUpperBounds, groundLowerBounds, support, r, lemma );
 
     // Try eliminating elements from the right half of the clause
     Vector<int> can1 = support + l;
