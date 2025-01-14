@@ -481,7 +481,7 @@ void Engine::performBoundTighteningAfterCaseSplit()
     performMILPSolverBoundedTighteningForSingleLayer( 1 );
     do
     {
-        performSymbolicBoundTightening( nullptr );
+        performSymbolicBoundTightening();
     }
     while ( applyAllValidConstraintCaseSplits() );
 
@@ -529,7 +529,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         checkBoundCompliancyWithDebugSolution();
 
         while ( applyAllValidConstraintCaseSplits() )
-            performSymbolicBoundTightening( nullptr );
+            performSymbolicBoundTightening();
         return false;
     }
     else
@@ -1567,10 +1567,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::CDCL )
         {
-            for ( PiecewiseLinearConstraint *plConstraint : _plConstraints )
+            for ( auto plConstraint = _plConstraints.rbegin();
+                  plConstraint != _plConstraints.rend();
+                  ++plConstraint )
             {
-                _smtCore.initBooleanAbstraction( plConstraint );
-                plConstraint->initializeCDOs( &_context );
+                _smtCore.initBooleanAbstraction( *plConstraint );
+                ( *plConstraint )->initializeCDOs( &_context );
             }
         }
     }
@@ -2484,7 +2486,8 @@ List<unsigned> Engine::getInputVariables() const
 void Engine::performSimulation()
 {
     if ( _simulationSize == 0 || !_networkLevelReasoner ||
-         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE || _produceUNSATProofs )
+         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE ||
+         _produceUNSATProofs )
     {
         ENGINE_LOG( Stringf( "Skip simulation..." ).ascii() );
         return;
@@ -2510,12 +2513,11 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-unsigned int Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
+unsigned Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) || _produceUNSATProofs )
         return 0;
-
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -2961,7 +2963,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
         do
-            performSymbolicBoundTightening( nullptr );
+            performSymbolicBoundTightening();
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
@@ -2975,7 +2977,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
             // For debugging purposes
             checkBoundCompliancyWithDebugSolution();
             do
-                performSymbolicBoundTightening( nullptr );
+                performSymbolicBoundTightening();
             while ( applyAllValidConstraintCaseSplits() );
         }
         _boundManager.propagateTightenings();
@@ -3028,7 +3030,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
 
         while ( applyAllValidConstraintCaseSplits() )
         {
-            performSymbolicBoundTightening( nullptr );
+            performSymbolicBoundTightening();
         }
     }
     catch ( const InfeasibleQueryException & )
