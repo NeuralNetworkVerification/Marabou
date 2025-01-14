@@ -1567,12 +1567,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::CDCL )
         {
-            for ( auto plConstraint = _plConstraints.rbegin();
-                  plConstraint != _plConstraints.rend();
-                  ++plConstraint )
+            for (auto & _plConstraint : _plConstraints)
             {
-                _smtCore.initBooleanAbstraction( *plConstraint );
-                ( *plConstraint )->initializeCDOs( &_context );
+                _smtCore.initBooleanAbstraction( _plConstraint );
+                _plConstraint->initializeCDOs( &_context );
             }
         }
     }
