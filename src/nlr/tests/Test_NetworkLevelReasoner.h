@@ -12203,7 +12203,7 @@ public:
             Tightening( 11, 1.5, Tightening::LB ), Tightening( 11, 4.4, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -12214,37 +12214,12 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            // From parameterised SBT:
-            Tightening( 2, -1, Tightening::LB ),
-            Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),
-            Tightening( 3, 2, Tightening::UB ),
-
-            Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),
-            Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.5, Tightening::LB ),
-            Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),
-            Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, 0.38, Tightening::UB ),
-
-            // From parameterised LP:
-            Tightening( 8, 0, Tightening::LB ),
-            Tightening( 10, -2, Tightening::LB ),
             Tightening( 10, 0, Tightening::UB ),
+            Tightening( 11, 1.625, Tightening::LB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -12308,34 +12283,11 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            // From parameterised SBT:
-            Tightening( 2, -5, Tightening::LB ),
-            Tightening( 2, 2, Tightening::UB ),
-            Tightening( 3, -4, Tightening::LB ),
-            Tightening( 3, 3, Tightening::UB ),
-
-            Tightening( 4, 2, Tightening::UB ),
-            Tightening( 5, 3, Tightening::UB ),
-
-            Tightening( 7, 4, Tightening::UB ),
-            Tightening( 8, 2, Tightening::UB ),
-
-            Tightening( 9, 4, Tightening::UB ),
-            Tightening( 10, 0.38, Tightening::UB ),
-
-            // From parameterised LP:
-            Tightening( 8, 0, Tightening::LB ),
-            Tightening( 9, 0, Tightening::LB ),
-
-            Tightening( 11, -0.93, Tightening::LB ),
-            Tightening( 10, 2, Tightening::UB ),
+            Tightening( 11, 0.8472, Tightening::LB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -12390,7 +12342,7 @@ public:
             Tightening( 21, -26, Tightening::LB ),   Tightening( 21, 13.9206, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -12401,27 +12353,19 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 12, -1.75, Tightening::LB ),
+            Tightening( 13, -4.25, Tightening::LB ),
+            Tightening( 13, 3.25, Tightening::UB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 17, -11.1417, Tightening::LB ),
+            Tightening( 17, 10, Tightening::UB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 21, -17.3084, Tightening::LB ),
+            Tightening( 21, 3.2160, Tightening::UB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -12434,8 +12378,6 @@ public:
         tableau.setUpperBound( 2, 2 );
 
         double large = 1000000;
-        tableau.setLowerBound( 2, -large );
-        tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large );
         tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large );
@@ -12518,27 +12460,21 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 11, -5, Tightening::LB ),
+            Tightening( 12, -4.6429, Tightening::LB ),
+            Tightening( 13, 8.5519, Tightening::UB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 17, -23.6231, Tightening::LB ),
+            Tightening( 17, 14.0909, Tightening::UB ),
+            Tightening( 18, 2, Tightening::LB ),
+            Tightening( 18, 28.2015, Tightening::UB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 21, -29.2015, Tightening::LB ),
+            Tightening( 21, 6.5734, Tightening::UB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -12580,7 +12516,7 @@ public:
             Tightening( 11, -2, Tightening::LB ),     Tightening( 11, 4.3306, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -12591,27 +12527,17 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 10, -1.8, Tightening::LB ),
+            Tightening( 10, 0, Tightening::UB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 11, 1.4542, Tightening::LB ),
+            Tightening( 11, 1.4542, Tightening::LB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -12675,27 +12601,22 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 6, -2, Tightening::LB ),
+            Tightening( 6, 3.1, Tightening::UB ),
+            Tightening( 7, -3.2, Tightening::LB ),
+            Tightening( 7, 4, Tightening::UB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 8, 3.1, Tightening::UB ),
+            Tightening( 9, -0.32, Tightening::LB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 10, -3.8726, Tightening::LB ),
+            Tightening( 10, 0.03, Tightening::UB ),
+            Tightening( 11, 0.4074, Tightening::LB ),
+            Tightening( 11, 11.3243, Tightening::UB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -12723,23 +12644,34 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
 
         List<Tightening> expectedBounds( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 3, -2, Tightening::LB ),        Tightening( 3, 2, Tightening::UB ),
+            Tightening( 4, -3, Tightening::LB ),        Tightening( 4, 3, Tightening::UB ),
+            Tightening( 5, -3, Tightening::LB ),        Tightening( 5, 3, Tightening::UB ),
+            Tightening( 6, -6, Tightening::LB ),        Tightening( 6, 6, Tightening::UB ),
 
-            Tightening( 4, -1, Tightening::LB ),      Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),        Tightening( 7, 2, Tightening::UB ),
+            Tightening( 8, -3, Tightening::LB ),        Tightening( 8, 3, Tightening::UB ),
+            Tightening( 9, -3, Tightening::LB ),        Tightening( 9, 3, Tightening::UB ),
+            Tightening( 10, -6, Tightening::LB ),       Tightening( 10, 6, Tightening::UB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -3, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+            Tightening( 11, -9, Tightening::LB ),       Tightening( 11, 13.9, Tightening::UB ),
+            Tightening( 12, -8.9, Tightening::LB ),     Tightening( 12, 9.8, Tightening::UB ),
+            Tightening( 13, -7.7, Tightening::LB ),     Tightening( 13, 3.5, Tightening::UB ),
 
-            Tightening( 8, -0.45, Tightening::LB ),   Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, -3, Tightening::LB ),      Tightening( 9, 1, Tightening::UB ),
+            Tightening( 14, -9, Tightening::LB ),       Tightening( 14, 13.9, Tightening::UB ),
+            Tightening( 15, -8.9, Tightening::LB ),     Tightening( 15, 9.8, Tightening::UB ),
+            Tightening( 16, -7.7, Tightening::LB ),     Tightening( 16, 3.5, Tightening::UB ),
 
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 1, Tightening::UB ),
-            Tightening( 11, -2, Tightening::LB ),     Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 17, -23.1331, Tightening::LB ), Tightening( 17, 25.4857, Tightening::UB ),
+            Tightening( 18, -12, Tightening::LB ),      Tightening( 18, 19.3146, Tightening::UB ),
+
+            Tightening( 19, -23.1331, Tightening::LB ), Tightening( 19, 25.4857, Tightening::UB ),
+            Tightening( 20, -12, Tightening::LB ),      Tightening( 20, 19.3146, Tightening::UB ),
+
+            Tightening( 21, -38.0879, Tightening::LB ), Tightening( 21, 30.6367, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -12750,27 +12682,32 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 11, -4.5, Tightening::LB ),
+            Tightening( 11, 8.5, Tightening::UB ),
+            Tightening( 12, -2.225, Tightening::LB ),
+            Tightening( 13, 2.975, Tightening::UB ),
+            Tightening( 13, -4.175, Tightening::LB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 15, -0.2225, Tightening::LB ),
+            Tightening( 16, 2.975, Tightening::UB ),
+            Tightening( 16, -0.4175, Tightening::LB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+            Tightening( 17, -11.452, Tightening::LB ),
+            Tightening( 17, 10.18, Tightening::UB ),
+            Tightening( 18, 0.87, Tightening::LB ),
+            Tightening( 18, 16.0688, Tightening::UB ),
 
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+            Tightening( 19, -1.1452, Tightening::LB ),
+            Tightening( 19, 10.18, Tightening::UB ),
+            Tightening( 20, 0.87, Tightening::LB ),
+            Tightening( 20, 16.0688, Tightening::UB ),
 
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 21, -17.0684, Tightening::LB ),
+            Tightening( 21, 3.6767, Tightening::UB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -12783,8 +12720,6 @@ public:
         tableau.setUpperBound( 2, 2 );
 
         double large = 1000000;
-        tableau.setLowerBound( 2, -large );
-        tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large );
         tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large );
@@ -12803,6 +12738,26 @@ public:
         tableau.setUpperBound( 10, large );
         tableau.setLowerBound( 11, -large );
         tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large );
+        tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large );
+        tableau.setUpperBound( 13, large );
+        tableau.setLowerBound( 14, -large );
+        tableau.setUpperBound( 14, large );
+        tableau.setLowerBound( 15, -large );
+        tableau.setUpperBound( 15, large );
+        tableau.setLowerBound( 16, -large );
+        tableau.setUpperBound( 16, large );
+        tableau.setLowerBound( 17, -large );
+        tableau.setUpperBound( 17, large );
+        tableau.setLowerBound( 18, -large );
+        tableau.setUpperBound( 18, large );
+        tableau.setLowerBound( 19, -large );
+        tableau.setUpperBound( 19, large );
+        tableau.setLowerBound( 20, -large );
+        tableau.setUpperBound( 20, large );
+        tableau.setLowerBound( 21, -large );
+        tableau.setUpperBound( 21, large );
 
 
         // Invoke DeepPoly
@@ -12810,20 +12765,31 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
 
         List<Tightening> expectedBounds3( {
-            Tightening( 2, -5, Tightening::LB ),        Tightening( 2, 2, Tightening::UB ),
-            Tightening( 3, -4, Tightening::LB ),        Tightening( 3, 3, Tightening::UB ),
+            Tightening( 3, -2, Tightening::LB ),        Tightening( 3, 5, Tightening::UB ),
+            Tightening( 4, -5, Tightening::LB ),        Tightening( 4, 5, Tightening::UB ),
+            Tightening( 5, -6, Tightening::LB ),        Tightening( 5, 5, Tightening::UB ),
+            Tightening( 6, -15, Tightening::LB ),       Tightening( 6, 7, Tightening::UB ),
 
-            Tightening( 4, -5, Tightening::LB ),        Tightening( 4, 2, Tightening::UB ),
-            Tightening( 5, -4, Tightening::LB ),        Tightening( 5, 3, Tightening::UB ),
+            Tightening( 7, -2, Tightening::LB ),        Tightening( 7, 5, Tightening::UB ),
+            Tightening( 8, -5, Tightening::LB ),        Tightening( 8, 5, Tightening::UB ),
+            Tightening( 9, -6, Tightening::LB ),        Tightening( 9, 5, Tightening::UB ),
+            Tightening( 10, -15, Tightening::LB ),      Tightening( 10, 7, Tightening::UB ),
 
-            Tightening( 6, -4.5714, Tightening::LB ),   Tightening( 6, 6.0571, Tightening::UB ),
-            Tightening( 7, -11.0571, Tightening::LB ),  Tightening( 7, 5.1429, Tightening::UB ),
+            Tightening( 11, -11, Tightening::LB ),      Tightening( 11, 29.9636, Tightening::UB ),
+            Tightening( 12, -21.7714, Tightening::LB ), Tightening( 12, 13.6818, Tightening::UB ),
+            Tightening( 13, -11.5, Tightening::LB ),    Tightening( 13, 8.6442, Tightening::UB ),
 
-            Tightening( 8, -4.5714, Tightening::LB ),   Tightening( 8, 6.0571, Tightening::UB ),
-            Tightening( 9, -11.0571, Tightening::LB ),  Tightening( 9, 5.1429, Tightening::UB ),
+            Tightening( 14, -11, Tightening::LB ),      Tightening( 14, 29.9636, Tightening::UB ),
+            Tightening( 15, -21.7714, Tightening::LB ), Tightening( 15, 13.6818, Tightening::UB ),
+            Tightening( 16, -11.5, Tightening::LB ),    Tightening( 16, 8.6442, Tightening::UB ),
 
-            Tightening( 10, -6.3327, Tightening::LB ),  Tightening( 10, 5, Tightening::UB ),
-            Tightening( 11, -14.0571, Tightening::LB ), Tightening( 11, 12.523, Tightening::UB ),
+            Tightening( 17, -56.2592, Tightening::LB ), Tightening( 17, 33.8084, Tightening::UB ),
+            Tightening( 18, -19, Tightening::LB ),      Tightening( 18, 38.5043, Tightening::UB ),
+
+            Tightening( 19, -56.2592, Tightening::LB ), Tightening( 19, 33.8084, Tightening::UB ),
+            Tightening( 20, -19, Tightening::LB ),      Tightening( 20, 38.5043, Tightening::UB ),
+
+            Tightening( 21, -82.9440, Tightening::LB ), Tightening( 21, 40.7983, Tightening::UB ),
         } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
@@ -12836,27 +12802,32 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 11, -5.6, Tightening::LB ),
+            Tightening( 11, 16.4636, Tightening::UB ),
+            Tightening( 12, -6.0286, Tightening::LB ),
+            Tightening( 13, -5.9, Tightening::LB ),
+            Tightening( 13, 8.0468, Tightening::UB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 15, -0.6029, Tightening::LB ),
+            Tightening( 16, -0.59, Tightening::LB ),
+            Tightening( 16, 8.0468, Tightening::UB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
+            Tightening( 17, -24.8864, Tightening::LB ),
+            Tightening( 17, 14.3076, Tightening::UB ),
+            Tightening( 18, 0.75, Tightening::LB ),
+            Tightening( 18, 28.0272, Tightening::UB ),
 
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
+            Tightening( 19, -2.4886, Tightening::LB ),
+            Tightening( 19, 14.3076, Tightening::UB ),
+            Tightening( 20, 0.75, Tightening::LB ),
+            Tightening( 20, 28.0272, Tightening::UB ),
 
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 21, -29.9648, Tightening::LB ),
+            Tightening( 21, 6.9619, Tightening::UB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -12898,7 +12869,7 @@ public:
             Tightening( 11, 1, Tightening::LB ),  Tightening( 11, 5, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -12908,28 +12879,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
-        List<Tightening> expectedBounds2( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+        List<Tightening> expectedBounds2( {} );
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
-        } );
-
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -12992,28 +12945,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
-        List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+        List<Tightening> expectedBounds4( {} );
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
-        } );
-
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -13068,7 +13003,7 @@ public:
             Tightening( 21, -3, Tightening::LB ), Tightening( 21, 1, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -13078,28 +13013,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
-        List<Tightening> expectedBounds2( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+        List<Tightening> expectedBounds2( {} );
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
-        } );
-
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -13112,8 +13029,6 @@ public:
         tableau.setUpperBound( 2, 2 );
 
         double large = 1000000;
-        tableau.setLowerBound( 2, -large );
-        tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large );
         tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large );
@@ -13195,28 +13110,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
-        List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+        List<Tightening> expectedBounds4( {} );
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
-        } );
-
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -13258,7 +13155,7 @@ public:
             Tightening( 11, -8.8, Tightening::LB ), Tightening( 11, 4, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -13269,27 +13166,11 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            Tightening( 2, -2, Tightening::LB ),   Tightening( 2, 2, Tightening::UB ),
-            Tightening( 4, -12, Tightening::LB ),  Tightening( 4, 5, Tightening::UB ),
-            Tightening( 6, -1, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-
-            Tightening( 3, 0, Tightening::LB ),    Tightening( 3, 2, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),    Tightening( 5, 5, Tightening::UB ),
-            Tightening( 7, -1, Tightening::LB ),   Tightening( 7, 2, Tightening::UB ),
-
-            Tightening( 8, -2, Tightening::LB ),   Tightening( 8, 8, Tightening::UB ),
-            Tightening( 9, -2, Tightening::LB ),   Tightening( 9, 8, Tightening::UB ),
-
-            Tightening( 10, -16, Tightening::LB ), Tightening( 10, 64, Tightening::UB ),
-
-            Tightening( 11, -64, Tightening::LB ), Tightening( 11, 16, Tightening::UB ),
+            Tightening( 11, -2.4149, Tightening::LB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -13327,20 +13208,20 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
 
         List<Tightening> expectedBounds3( {
-            Tightening( 2, -5, Tightening::LB ),        Tightening( 2, 2, Tightening::UB ),
-            Tightening( 3, -4, Tightening::LB ),        Tightening( 3, 3, Tightening::UB ),
+            Tightening( 2, -2, Tightening::LB ),   Tightening( 2, 2, Tightening::UB ),
+            Tightening( 4, -12, Tightening::LB ),  Tightening( 4, 5, Tightening::UB ),
+            Tightening( 6, -1, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
 
-            Tightening( 4, -5, Tightening::LB ),        Tightening( 4, 2, Tightening::UB ),
-            Tightening( 5, -4, Tightening::LB ),        Tightening( 5, 3, Tightening::UB ),
+            Tightening( 3, 0, Tightening::LB ),    Tightening( 3, 2, Tightening::UB ),
+            Tightening( 5, 0, Tightening::LB ),    Tightening( 5, 5, Tightening::UB ),
+            Tightening( 7, -1, Tightening::LB ),   Tightening( 7, 2, Tightening::UB ),
 
-            Tightening( 6, -4.5714, Tightening::LB ),   Tightening( 6, 6.0571, Tightening::UB ),
-            Tightening( 7, -11.0571, Tightening::LB ),  Tightening( 7, 5.1429, Tightening::UB ),
+            Tightening( 8, -2, Tightening::LB ),   Tightening( 8, 8, Tightening::UB ),
+            Tightening( 9, -2, Tightening::LB ),   Tightening( 9, 8, Tightening::UB ),
 
-            Tightening( 8, -4.5714, Tightening::LB ),   Tightening( 8, 6.0571, Tightening::UB ),
-            Tightening( 9, -11.0571, Tightening::LB ),  Tightening( 9, 5.1429, Tightening::UB ),
+            Tightening( 10, -16, Tightening::LB ), Tightening( 10, 64, Tightening::UB ),
 
-            Tightening( 10, -6.3327, Tightening::LB ),  Tightening( 10, 5, Tightening::UB ),
-            Tightening( 11, -14.0571, Tightening::LB ), Tightening( 11, 12.523, Tightening::UB ),
+            Tightening( 11, -64, Tightening::LB ), Tightening( 11, 16, Tightening::UB ),
         } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
@@ -13353,27 +13234,17 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 8, 7, Tightening::UB ),
+            Tightening( 9, 5.8235, Tightening::UB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
+            Tightening( 10, -14, Tightening::LB ),
 
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 11, -24.8805, Tightening::LB ),
+            Tightening( 11, 14, Tightening::UB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
@@ -13420,7 +13291,7 @@ public:
             Tightening( 15, -40, Tightening::LB ), Tightening( 15, 80, Tightening::UB ),
         } );
 
-        List<Tightening> bounds;
+        List<Tightening> bounds, newBounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
 
@@ -13431,27 +13302,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 12, -1.75, Tightening::LB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 15, 0, Tightening::LB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds2 ) );
 
 
@@ -13464,8 +13321,6 @@ public:
         tableau.setUpperBound( 2, 2 );
 
         double large = 1000000;
-        tableau.setLowerBound( 2, -large );
-        tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large );
         tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large );
@@ -13528,33 +13383,20 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            Tightening( 2, -1, Tightening::LB ),      Tightening( 2, 1, Tightening::UB ),
-            Tightening( 3, 0, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+            Tightening( 11, -5, Tightening::LB ),
+            Tightening( 12, -4.6429, Tightening::LB ),
 
-            Tightening( 4, -0.1, Tightening::LB ),    Tightening( 4, 1, Tightening::UB ),
-            Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 2, Tightening::UB ),
-
-            Tightening( 6, -0.45, Tightening::LB ),   Tightening( 6, 2, Tightening::UB ),
-            Tightening( 7, -2, Tightening::LB ),      Tightening( 7, 1, Tightening::UB ),
-
-            Tightening( 8, 0, Tightening::LB ),       Tightening( 8, 2, Tightening::UB ),
-            Tightening( 9, 0, Tightening::LB ),       Tightening( 9, 1, Tightening::UB ),
-
-            Tightening( 10, -2.025, Tightening::LB ), Tightening( 10, 0.25, Tightening::UB ),
-            Tightening( 11, 0.78, Tightening::LB ),   Tightening( 11, 4.3306, Tightening::UB ),
+            Tightening( 15, 0, Tightening::LB ),
         } );
 
-        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
-        for ( auto &bound : bounds )
-        {
-            bound.dump();
-        }
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
+        bounds = removeRedundancies( bounds, newBounds );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
     bool boundsEqual( const List<Tightening> &bounds, const List<Tightening> &expectedBounds )
     {
-        if ( bounds.size() != expectedBounds.size() )
+        if ( bounds.size() < expectedBounds.size() )
             return false;
 
         bool allFound = true;
@@ -13571,6 +13413,43 @@ public:
             allFound &= currentFound;
         }
         return allFound;
+    }
+
+
+    // Create list of all tightenings in newBounds for which there is no bound in newBounds or in
+    // bounds which is at least as tight.
+    List<Tightening> removeRedundancies( const List<Tightening> &bounds,
+                                         const List<Tightening> &newBounds )
+    {
+        List<Tightening> minimalBounds;
+
+        for ( const auto &newBound : newBounds )
+        {
+            bool foundTighter = false;
+            for ( const auto &bound : bounds )
+            {
+                foundTighter |=
+                    ( newBound._type == bound._type && newBound._variable == bound._variable &&
+                      ( ( newBound._type == Tightening::LB &&
+                          FloatUtils::lte( newBound._value, bound._value, 0.0001 ) ) ||
+                        ( newBound._type == Tightening::UB &&
+                          FloatUtils::gte( newBound._value, bound._value, 0.0001 ) ) ) );
+            }
+
+            for ( const auto &bound : newBounds )
+            {
+                foundTighter |=
+                    ( newBound._type == bound._type && newBound._variable == bound._variable &&
+                      ( ( newBound._type == Tightening::LB &&
+                          FloatUtils::lt( newBound._value, bound._value, 0.0001 ) ) ||
+                        ( newBound._type == Tightening::UB &&
+                          FloatUtils::gt( newBound._value, bound._value, 0.0001 ) ) ) );
+            }
+
+            if ( !foundTighter )
+                minimalBounds.append( newBound );
+        }
+        return minimalBounds;
     }
 
     void updateTableau( MockTableau &tableau, List<Tightening> &tightenings )
