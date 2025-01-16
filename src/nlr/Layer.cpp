@@ -3122,7 +3122,7 @@ void Layer::computeSymbolicBoundsForBilinear()
             }
             else
             {
-                _symbolicLb[j * _size + i] +=
+                _symbolicUb[j * _size + i] +=
                     sourceUbs[1] * sourceSymbolicLb[j * sourceLayerSize + indexA];
             }
 
@@ -3407,24 +3407,26 @@ double Layer::calculateDifferenceFromSymbolic( Map<NeuronIndex, double> &point, 
     return std::max( _ub[i] - upperSum, lowerSum - _lb[i] );
 }
 
-void Layer::computeParameterisedSymbolicBounds( double coeff, bool receive )
+void Layer::computeParameterisedSymbolicBounds( std::vector<double> coeffs,
+                                                bool receivePolygonal,
+                                                bool receive )
 {
     switch ( _type )
     {
     case RELU:
-        computeParameterisedSymbolicBoundsForRelu( coeff );
+        computeParameterisedSymbolicBoundsForRelu( coeffs, receive );
         break;
 
     case SIGN:
-        computeParameterisedSymbolicBoundsForSign( coeff );
+        computeParameterisedSymbolicBoundsForSign( coeffs, receive );
         break;
 
     case LEAKY_RELU:
-        computeParameterisedSymbolicBoundsForLeakyRelu( coeff );
+        computeParameterisedSymbolicBoundsForLeakyRelu( coeffs, receive );
         break;
 
     case BILINEAR:
-        computeParameterisedSymbolicBoundsForBilinear( coeff );
+        computeParameterisedSymbolicBoundsForBilinear( coeffs, receive );
         break;
 
     default:
@@ -3432,7 +3434,7 @@ void Layer::computeParameterisedSymbolicBounds( double coeff, bool receive )
         break;
     }
 
-    if ( receive )
+    if ( receivePolygonal )
     {
         for ( unsigned i = 0; i < _size; ++i )
         {
@@ -3454,9 +3456,13 @@ void Layer::computeParameterisedSymbolicBounds( double coeff, bool receive )
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForRelu( double coeff )
+void Layer::computeParameterisedSymbolicBoundsForRelu( std::vector<double> coeffs, bool receive )
 {
+    ASSERT( coeffs.size() == 1 );
+
+    double coeff = coeffs[0];
     ASSERT( coeff >= 0 && coeff <= 1 );
+
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
     std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
 
@@ -3613,22 +3619,29 @@ void Layer::computeParameterisedSymbolicBoundsForRelu( double coeff )
         if ( _lb[i] < _symbolicLbOfLb[i] )
         {
             _lb[i] = _symbolicLbOfLb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
         }
 
         if ( _ub[i] > _symbolicUbOfUb[i] )
         {
             _ub[i] = _symbolicUbOfUb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForSign( double coeff )
+void Layer::computeParameterisedSymbolicBoundsForSign( std::vector<double> coeffs, bool receive )
 {
-    ASSERT( coeff >= 0 && coeff <= 1 );
+    ASSERT( coeffs.size() == 2 );
+    ASSERT( coeffs[0] >= 0 && coeffs[0] <= 1 );
+    ASSERT( coeffs[1] >= 0 && coeffs[1] <= 1 );
+
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
     std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
 
@@ -3726,9 +3739,9 @@ void Layer::computeParameterisedSymbolicBoundsForSign( double coeff )
             else
             {
                 // The upper bound's phase is not fixed, use parameterised
-                // parallelogram approximation: y >= 2 / l * ( 1 - coeff ) x + 1
+                // parallelogram approximation: y <= - 2 / l * coeffs[0] * x + 1
                 // (varies continuously between y <= 1 and y <= -2 / l * x + 1).
-                double factor = -2.0 / _symbolicLbOfLb[i] * ( 1 - coeff );
+                double factor = -2.0 / _symbolicLbOfLb[i] * coeffs[0];
 
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                     _symbolicUb[j * _size + i] *= factor;
@@ -3754,9 +3767,9 @@ void Layer::computeParameterisedSymbolicBoundsForSign( double coeff )
             else
             {
                 // The lower bound's phase is not fixed, use parameterised
-                // parallelogram approximation: y >= 2 / u * ( 1 - coeff ) x - 1
+                // parallelogram approximation: y >= 2 / u * coeffs[1] * x - 1
                 // (varies continuously between y >= -1 and y >= 2 / u * x - 1).
-                double factor = 2.0 / _symbolicUbOfUb[i] * ( 1 - coeff );
+                double factor = 2.0 / _symbolicUbOfUb[i] * coeffs[1];
 
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
@@ -3823,22 +3836,29 @@ void Layer::computeParameterisedSymbolicBoundsForSign( double coeff )
         if ( _lb[i] < _symbolicLbOfLb[i] )
         {
             _lb[i] = _symbolicLbOfLb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
         }
 
         if ( _ub[i] > _symbolicUbOfUb[i] )
         {
             _ub[i] = _symbolicUbOfUb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( double coeff )
+void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( std::vector<double> coeffs,
+                                                            bool receive )
 {
     ASSERT( _alpha > 0 && _alpha < 1 );
+    ASSERT( coeffs.size() == 1 );
+    double coeff = coeffs[0];
     ASSERT( coeff >= 0 && coeff <= 1 );
 
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
@@ -4060,21 +4080,30 @@ void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( double coeff )
         if ( _lb[i] < _symbolicLbOfLb[i] )
         {
             _lb[i] = _symbolicLbOfLb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
         }
 
         if ( _ub[i] > _symbolicUbOfUb[i] )
         {
             _ub[i] = _symbolicUbOfUb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForBilinear( double coeff )
+void Layer::computeParameterisedSymbolicBoundsForBilinear( std::vector<double> coeffs,
+                                                           bool receive )
 {
+    ASSERT( coeffs.size() == 2 );
+    ASSERT( coeffs[0] >= 0 && coeffs[0] <= 1 );
+    ASSERT( coeffs[1] >= 0 && coeffs[1] <= 1 );
+
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
     std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
 
@@ -4175,11 +4204,10 @@ void Layer::computeParameterisedSymbolicBoundsForBilinear( double coeff )
         // b_u = alpha2 * l_x + ( 1 - alpha2 ) * u_x
         // c_u = -alpha2 * -l_x * u_y - ( 1 - alpha2 ) * u_x * l_y
 
-        // Here assume alpha1 = alpha2 = coeff (and b_l = b_u).
-
-        double a_l = coeff * sourceLbs[1] + ( 1 - coeff ) * sourceUbs[1];
-        double a_u = coeff * sourceUbs[1] + ( 1 - coeff ) * sourceLbs[1];
-        double b = coeff * sourceLbs[0] + ( 1 - coeff ) * sourceUbs[0];
+        double a_l = coeffs[0] * sourceLbs[1] + ( 1 - coeffs[0] ) * sourceUbs[1];
+        double a_u = coeffs[1] * sourceUbs[1] + ( 1 - coeffs[1] ) * sourceLbs[1];
+        double b_l = coeffs[0] * sourceLbs[0] + ( 1 - coeffs[0] ) * sourceUbs[0];
+        double b_u = coeffs[1] * sourceLbs[0] + ( 1 - coeffs[1] ) * sourceUbs[0];
 
         for ( unsigned j = 0; j < _inputLayerSize; ++j )
         {
@@ -4198,25 +4226,32 @@ void Layer::computeParameterisedSymbolicBoundsForBilinear( double coeff )
             }
             else
             {
-                _symbolicLb[j * _size + i] += a_u * sourceSymbolicLb[j * sourceLayerSize + indexA];
+                _symbolicUb[j * _size + i] += a_u * sourceSymbolicLb[j * sourceLayerSize + indexA];
             }
 
-            if ( b >= 0 )
+            if ( b_l >= 0 )
             {
-                _symbolicLb[j * _size + i] += b * sourceSymbolicLb[j * sourceLayerSize + indexB];
-                _symbolicUb[j * _size + i] += b * sourceSymbolicUb[j * sourceLayerSize + indexB];
+                _symbolicLb[j * _size + i] += b_l * sourceSymbolicLb[j * sourceLayerSize + indexB];
             }
             else
             {
-                _symbolicLb[j * _size + i] += b * sourceSymbolicUb[j * sourceLayerSize + indexB];
-                _symbolicUb[j * _size + i] += b * sourceSymbolicLb[j * sourceLayerSize + indexB];
+                _symbolicLb[j * _size + i] += b_l * sourceSymbolicUb[j * sourceLayerSize + indexB];
+            }
+
+            if ( b_l >= 0 )
+            {
+                _symbolicUb[j * _size + i] += b_u * sourceSymbolicUb[j * sourceLayerSize + indexB];
+            }
+            else
+            {
+                _symbolicUb[j * _size + i] += b_u * sourceSymbolicLb[j * sourceLayerSize + indexB];
             }
         }
 
-        _symbolicLowerBias[i] =
-            -coeff * sourceLbs[0] * sourceLbs[1] - ( 1 - coeff ) * sourceUbs[0] * sourceUbs[1];
-        _symbolicUpperBias[i] =
-            -coeff * sourceLbs[0] * sourceUbs[1] - ( 1 - coeff ) * sourceUbs[0] * sourceLbs[1];
+        _symbolicLowerBias[i] = -coeffs[0] * sourceLbs[0] * sourceLbs[1] -
+                                ( 1 - coeffs[0] ) * sourceUbs[0] * sourceUbs[1];
+        _symbolicUpperBias[i] = -coeffs[1] * sourceLbs[0] * sourceUbs[1] -
+                                ( 1 - coeffs[1] ) * sourceUbs[0] * sourceLbs[1];
 
         double lb = FloatUtils::infinity();
         double ub = FloatUtils::negativeInfinity();
@@ -4283,21 +4318,21 @@ void Layer::computeParameterisedSymbolicBoundsForBilinear( double coeff )
         if ( _lb[i] < _symbolicLbOfLb[i] )
         {
             _lb[i] = _symbolicLbOfLb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
         }
 
         if ( _ub[i] > _symbolicUbOfUb[i] )
         {
             _ub[i] = _symbolicUbOfUb[i];
-            _layerOwner->receiveTighterBound(
-                Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+
+            if ( receive )
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
-}
-
-void Layer::computeParameterisedSymbolicBoundsForSigmoid( double coeff )
-{
 }
 
 double Layer::softmaxLSELowerBound( const Vector<double> &inputs,

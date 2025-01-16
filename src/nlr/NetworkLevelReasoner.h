@@ -137,7 +137,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
-    void parameterisedSymbolicBoundPropagation( Map<unsigned, double> coeffs );
+    void parameterisedSymbolicBoundPropagation( std::vector<double> coeffs );
     void deepPolyPropagation();
     void lpRelaxationPropagation();
     void LPTighteningForOneLayer( unsigned targetIndex );

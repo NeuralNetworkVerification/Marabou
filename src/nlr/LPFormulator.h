@@ -91,6 +91,16 @@ public:
 
     void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
+
+    // Get total number of optimizable parameters for parameterised SBT/LP relaxation.
+    unsigned getNumberOfParameters( const Map<unsigned, Layer *> &layers );
+
+
+    // Get map containing vector of optimizable parameters for parameterised SBT/LP relaxation for
+    // every layer index.
+    static Map<unsigned, std::vector<double>>
+    getParametersForLayers( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs );
+
 private:
     LayerOwner *_layerOwner;
     bool _cutoffInUse;
@@ -139,36 +149,31 @@ private:
                                                   std::vector<double> coeffs = {} );
 
 
-    // Create LP relaxations depending on an external parameter.
+    // Create LP relaxations depending on external parameters.
     void addLayerToParameterisedModel( GurobiWrapper &gurobi,
                                        const Layer *layer,
                                        bool createVariables,
-                                       double coeff );
+                                       std::vector<double> coeffs );
 
     void addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                   const Layer *layer,
                                                   bool createVariables,
-                                                  double coeff );
+                                                  std::vector<double> coeffs );
 
     void addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                        const Layer *layer,
                                                        bool createVariables,
-                                                       double coeff );
+                                                       std::vector<double> coeffs );
 
     void addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                   const Layer *layer,
                                                   bool createVariables,
-                                                  double coeff );
+                                                  std::vector<double> coeffs );
 
     void addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                       const Layer *layer,
                                                       bool createVariables,
-                                                      double coeff );
-
-    void addSigmoidLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
-                                                     const Layer *layer,
-                                                     bool createVariables,
-                                                     double coeff );
+                                                      std::vector<double> coeffs );
 
 
     // Estimate Volume of parameterised LP relaxations.

@@ -221,10 +221,17 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
-void NetworkLevelReasoner::parameterisedSymbolicBoundPropagation( Map<unsigned, double> coeffs )
+void NetworkLevelReasoner::parameterisedSymbolicBoundPropagation( std::vector<double> coeffs )
 {
-    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
-        _layerIndexToLayer[i]->computeParameterisedSymbolicBounds( coeffs[i] );
+    Map<unsigned, std::vector<double>> layerIndicesToParameters =
+        LPFormulator::getParametersForLayers( _layerIndexToLayer, coeffs );
+    for ( auto pair : _layerIndexToLayer )
+    {
+        unsigned layerIndex = pair.first;
+        Layer *layer = _layerIndexToLayer[layerIndex];
+        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[layerIndex];
+        layer->computeParameterisedSymbolicBounds( currentLayerCoeffs );
+    }
 }
 
 void NetworkLevelReasoner::deepPolyPropagation()

@@ -137,7 +137,9 @@ public:
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
     void computeSymbolicBounds();
-    void computeParameterisedSymbolicBounds( double coeff, bool receive = false );
+    void computeParameterisedSymbolicBounds( std::vector<double> coeffs,
+                                             bool receivePolygonal = false,
+                                             bool receive = false );
     double calculateDifferenceFromSymbolic( Map<NeuronIndex, double> &point, unsigned i ) const;
     void computeIntervalArithmeticBounds();
 
@@ -298,11 +300,10 @@ private:
     /*
       Helper functions for parameterised symbolic bound tightening
     */
-    void computeParameterisedSymbolicBoundsForRelu( double coeff );
-    void computeParameterisedSymbolicBoundsForSign( double coeff );
-    void computeParameterisedSymbolicBoundsForLeakyRelu( double coeff );
-    void computeParameterisedSymbolicBoundsForBilinear( double coeff );
-    void computeParameterisedSymbolicBoundsForSigmoid( double coeff );
+    void computeParameterisedSymbolicBoundsForRelu( std::vector<double> coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForSign( std::vector<double> coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForLeakyRelu( std::vector<double> coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForBilinear( std::vector<double> coeffs, bool receive );
 
     /*
       Helper functions for interval bound tightening
