@@ -2910,9 +2910,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy strategy )
 {
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( strategy == SnCDivideStrategy::BaBsrHeuristic )
-        candidatePLConstraint = pickSplitPLConstraintBasedOnBaBsrHeuristic();
-    else if ( strategy == SnCDivideStrategy::Polarity )
+    if ( strategy == SnCDivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == SnCDivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
