@@ -2886,7 +2886,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
                 candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
         }
     }
-    else if ( strategy == DivideStrategy::BaBsrHeuristic )
+    else if ( strategy == DivideStrategy::BaBSR )
         candidatePLConstraint = pickSplitPLConstraintBasedOnBaBsrHeuristic();
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
