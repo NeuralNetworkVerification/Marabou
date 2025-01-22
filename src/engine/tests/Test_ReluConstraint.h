@@ -51,18 +51,18 @@ using namespace CVC4::context;
 class ReluConstraintTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForReluConstraint *mock;
+    MockForReluConstraint *nlr;
     Context ctx;
     BoundManager *bm;
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForReluConstraint );
+        TS_ASSERT( nlr = new MockForReluConstraint );
     }
 
     void tearDown()
     {
-        TS_ASSERT_THROWS_NOTHING( delete mock );
+        TS_ASSERT_THROWS_NOTHING( delete nlr );
     }
 
     void test_relu_constraint()

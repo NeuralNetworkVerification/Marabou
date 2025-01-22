@@ -47,6 +47,7 @@ engine_add_unit_test(SoftmaxConstraint)
 engine_add_unit_test(SmtCore)
 engine_add_unit_test(SumOfInfeasibilitiesManager)
 engine_add_unit_test(Tableau)
+engine_add_unit_test(BaBsrSplitting)
 
 if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

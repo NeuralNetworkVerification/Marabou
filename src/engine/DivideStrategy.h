@@ -19,12 +19,13 @@
 enum class DivideStrategy {
     // Relu splitting
     Polarity = 0,    // Pick the ReLU with the polarity closest to 0 among the first K nodes
+    BaBSR,           // Pick the ReLU with the highest BaBSR score
     EarliestReLU,    // Pick a ReLU that appears in the earliest layer
     ReLUViolation,   // Pick the ReLU that has been violated for the most times
     LargestInterval, // Pick the largest interval every K split steps, use ReLUViolation in other
                      // steps
     PseudoImpact,    // The pseudo-impact heuristic associated with SoI.
-    Auto,            // See decideBranchingHeursitics() in Engine.h
+    Auto,            // See decideBranchingHeuristics() in Engine.h
 };
 
 #endif // __DivideStrategy_h__
