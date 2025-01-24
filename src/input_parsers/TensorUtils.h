@@ -79,7 +79,7 @@ Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation perm
     // NOTE this implementation is *very* inefficient. Eventually we might want to
     // switch to a similar implementation as NumPy arrays with internal strides etc.
     ASSERT( shape.size() == permutation.size() );
-    ASSERT( tensorSize(shape) == tensor.size() );
+    ASSERT( tensorSize( shape ) == tensor.size() );
 
     TensorShape transposedShape = transposeVector( shape, permutation );
     Vector<T> result( tensor.size() );
