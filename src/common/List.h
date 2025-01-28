@@ -31,27 +31,27 @@ public:
     typedef typename Super::reverse_iterator reverse_iterator;
     typedef typename Super::const_reverse_iterator const_reverse_iterator;
 
-    List<T>()
+    List()
     {
     }
 
-    List<T>( const std::initializer_list<T> &initializerList )
+    List( const std::initializer_list<T> &initializerList )
         : _container( initializerList )
     {
     }
 
-    List<T>( unsigned size, T value )
+    List( unsigned size, T value )
         : _container( size, value )
     {
     }
 
     template <class InputIt>
-    List<T>( InputIt begin, InputIt end )
+    List( InputIt begin, InputIt end )
         : _container( begin, end )
     {
     }
 
-    void append( const List<T> &other )
+    void append( const List &other )
     {
         for ( const auto &element : other )
             _container.push_back( element );
@@ -67,7 +67,7 @@ public:
         _container.push_front( value );
     }
 
-    void appendHead( const List<T> &other )
+    void appendHead( const List &other )
     {
         _container.insert( begin(), other.begin(), other.end() );
     }
@@ -188,12 +188,12 @@ public:
         _container.remove_if( p );
     }
 
-    bool operator==( const List<T> &other ) const
+    bool operator==( const List &other ) const
     {
         return _container == other._container;
     }
 
-    bool operator!=( const List<T> &other ) const
+    bool operator!=( const List &other ) const
     {
         return _container != other._container;
     }
