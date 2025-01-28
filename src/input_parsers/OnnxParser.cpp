@@ -353,7 +353,7 @@ int getRequiredIntAttribute( onnx::NodeProto &node, String name )
     return attr->i();
 }
 
-const onnx::TensorProto &getTensorAttribute( onnx::NodeProto &node, String name )
+const onnx::TensorProto getTensorAttribute( onnx::NodeProto &node, String name )
 {
     const onnx::AttributeProto *attr =
         findAttribute( node, name, onnx::AttributeProto_AttributeType_TENSOR );
