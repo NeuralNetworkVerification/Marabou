@@ -32,7 +32,7 @@ class ONNXParser:
     """
 
     @staticmethod
-    def parse(query:InputQueryBuilder, graph, inputNames:List[str], outputNames:List[str]):
+    def parse(query:InputQueryBuilder, graph, inputNames:List[str], outputNames:List[str], maxNumberOfLinearEquations=None):
         """
         Parses the provided ONNX graph into constraints which are stored in the query argument.
 
@@ -45,11 +45,11 @@ class ONNXParser:
         Returns:
             :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
         """
-        parser = ONNXParser(query, graph, inputNames, outputNames)
+        parser = ONNXParser(query, graph, inputNames, outputNames, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
         parser.parseGraph()
 
 
-    def __init__(self, query:InputQueryBuilder, graph, inputNames, outputNames):
+    def __init__(self, query:InputQueryBuilder, graph, inputNames, outputNames, maxNumberOfLinearEquations=None):
         """
         Should not be called directly. Use `ONNXParser.parse` instead.
 
@@ -65,6 +65,9 @@ class ONNXParser:
         self.varMap = dict()
         self.constantMap = dict()
         self.shapeMap = dict()
+
+        self.maxNumberOfLinearEquations = maxNumberOfLinearEquations
+        self.thresholdReached = False
 
 
     def parseGraph(self):
@@ -84,7 +87,11 @@ class ONNXParser:
         for outputName in self.outputNames:
             if outputName in self.constantMap:
                 raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
-        self.query.outputVars.extend([self.varMap[outputName] for outputName in self.outputNames])
+
+        for outputName in self.outputNames:
+            # If maxNumberOfLinearEquations is reached, the network is split and the outputVars are not set
+            if outputName in self.varMap:
+                self.query.outputVars.extend([self.varMap[outputName]])
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
@@ -142,7 +149,14 @@ class ONNXParser:
             raise RuntimeError(err_msg)
 
         # Compute node's shape and create Marabou equations as needed
+        if self.thresholdReached:
+            return
         self.makeMarabouEquations(nodeName, makeEquations)
+
+        if self.maxNumberOfLinearEquations is not None:
+            if not self.thresholdReached and len(self.query.equList) > self.maxNumberOfLinearEquations:
+                if self.query.splitNetworkAtNode(nodeName, networkNamePostSplit='post_split.onnx'):
+                    self.thresholdReached = True
 
         # Create new variables when we find one of the inputs
         if nodeName in self.inputNames:
