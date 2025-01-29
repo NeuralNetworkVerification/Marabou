@@ -2,7 +2,7 @@
 /*! \file Layer.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Ido Shmuel
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -209,13 +209,87 @@ private:
     void freeMemoryIfNeeded();
 
     /*
+       The following methods compute concrete softmax output bounds
+       using different linear approximation, as well as the coefficients
+       of softmax inputs in the symbolic bounds
+    */
+    double softmaxLSELowerBound( const Vector<double> &inputs,
+                                 const Vector<double> &inputLbs,
+                                 const Vector<double> &inputUbs,
+                                 unsigned i );
+
+    double softmaxdLSELowerBound( const Vector<double> &inputMids,
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned i,
+                                  unsigned di );
+
+    double softmaxLSELowerBound2( const Vector<double> &inputMids,
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned i );
+
+    double softmaxdLSELowerBound2( const Vector<double> &inputMids,
+                                   const Vector<double> &inputLbs,
+                                   const Vector<double> &inputUbs,
+                                   unsigned i,
+                                   unsigned di );
+
+    double softmaxLSEUpperBound( const Vector<double> &inputs,
+                                 const Vector<double> &outputLb,
+                                 const Vector<double> &outputUb,
+                                 unsigned i );
+
+    double softmaxdLSEUpperbound( const Vector<double> &inputMids,
+                                  const Vector<double> &outputLb,
+                                  const Vector<double> &outputUb,
+                                  unsigned i,
+                                  unsigned di );
+
+    double softmaxERLowerBound( const Vector<double> &inputs,
+                                const Vector<double> &inputLbs,
+                                const Vector<double> &inputUbs,
+                                unsigned i );
+
+    double softmaxdERLowerBound( const Vector<double> &inputMids,
+                                 const Vector<double> &inputLbs,
+                                 const Vector<double> &inputUbs,
+                                 unsigned i,
+                                 unsigned di );
+
+    double softmaxERUpperBound( const Vector<double> &inputs,
+                                const Vector<double> &outputLb,
+                                const Vector<double> &outputUb,
+                                unsigned i );
+
+    double softmaxdERUpperBound( const Vector<double> &inputMids,
+                                 const Vector<double> &outputLb,
+                                 const Vector<double> &outputUb,
+                                 unsigned i,
+                                 unsigned di );
+
+    double softmaxLinearLowerBound( const Vector<double> &inputLbs,
+                                    const Vector<double> &inputUbs,
+                                    unsigned i );
+
+    double softmaxLinearUpperBound( const Vector<double> &inputLbs,
+                                    const Vector<double> &inputUbs,
+                                    unsigned i );
+
+    /*
       Helper functions for symbolic bound tightening
     */
-    void comptueSymbolicBoundsForInput();
+    void computeSymbolicBoundsForInput();
     void computeSymbolicBoundsForRelu();
     void computeSymbolicBoundsForSign();
     void computeSymbolicBoundsForAbsoluteValue();
     void computeSymbolicBoundsForWeightedSum();
+    void computeSymbolicBoundsForMax();
+    void computeSymbolicBoundsForLeakyRelu();
+    void computeSymbolicBoundsForSigmoid();
+    void computeSymbolicBoundsForRound();
+    void computeSymbolicBoundsForSoftmax();
+    void computeSymbolicBoundsForBilinear();
     void computeSymbolicBoundsDefault();
 
     /*
@@ -225,6 +299,12 @@ private:
     void computeIntervalArithmeticBoundsForRelu();
     void computeIntervalArithmeticBoundsForAbs();
     void computeIntervalArithmeticBoundsForSign();
+    void computeIntervalArithmeticBoundsForMax();
+    void computeIntervalArithmeticBoundsForLeakyRelu();
+    void computeIntervalArithmeticBoundsForSigmoid();
+    void computeIntervalArithmeticBoundsForRound();
+    void computeIntervalArithmeticBoundsForSoftmax();
+    void computeIntervalArithmeticBoundsForBilinear();
 
     const double *getSymbolicLb() const;
     const double *getSymbolicUb() const;
