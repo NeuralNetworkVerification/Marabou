@@ -75,7 +75,9 @@ void Layer::allocateMemory()
 
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
     if ( Options::get()->getSymbolicBoundTighteningType() ==
-         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+             SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING ||
+         Options::get()->getMILPSolverBoundTighteningType() ==
+             MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX )
     {
         _symbolicLb = new double[_size * _inputLayerSize];
         _symbolicUb = new double[_size * _inputLayerSize];
@@ -3392,21 +3394,6 @@ void Layer::computeSymbolicBoundsForWeightedSum()
     }
 }
 
-double Layer::calculateDifferenceFromSymbolic( Map<NeuronIndex, double> &point, unsigned i ) const
-{
-    double lowerSum = _symbolicLowerBias[i];
-    double upperSum = _symbolicUpperBias[i];
-
-    for ( unsigned j = 0; j < _inputLayerSize; ++j )
-    {
-        NeuronIndex neuron( 0, j );
-        lowerSum += _symbolicLb[j * _size + i] * point[neuron];
-        upperSum += _symbolicUb[j * _size + i] * point[neuron];
-    }
-
-    return std::max( _ub[i] - upperSum, lowerSum - _lb[i] );
-}
-
 void Layer::computeParameterisedSymbolicBounds( std::vector<double> coeffs,
                                                 bool receivePolygonal,
                                                 bool receive )
@@ -4333,6 +4320,243 @@ void Layer::computeParameterisedSymbolicBoundsForBilinear( std::vector<double> c
                     Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
+}
+
+std::vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
+{
+    const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
+
+    // Search over coeffs in [0, 1]^number_of_parameters with projected grdient descent.
+    unsigned max_iterations =
+        GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
+    double step_size = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
+    double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    double weight_decay = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY;
+    double lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+    bool maximize = false;
+
+    unsigned dimension = getNumberOfParameters( layers );
+    std::vector<double> lower_bounds;
+    std::vector<double> upper_bounds;
+    std::vector<double> guess;
+    lower_bounds.resize( dimension, 0 );
+    upper_bounds.resize( dimension, 1 );
+    guess.resize( dimension, 0 );
+
+    // Initialize initial guess uniformly.
+    std::mt19937_64 rng( GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED );
+    std::uniform_real_distribution<double> dis( 0, 1 );
+    for ( size_t j = 0; j < dimension; ++j )
+    {
+        double lb = lower_bounds[j];
+        double ub = upper_bounds[j];
+        guess[j] = lb + dis( rng ) * ( ub - lb );
+    }
+
+    std::vector<std::vector<double>> candidates( dimension );
+    std::vector<double> gradient( dimension );
+    std::vector<double> current_minimum = guess;
+
+    for ( size_t i = 0; i < max_iterations; ++i )
+    {
+        double current_cost = EstimateVolume( guess );
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            candidates[j] = guess;
+            candidates[j][j] += step_size;
+
+            if ( candidates[j][j] > upper_bounds[j] || candidates[j][j] < lower_bounds[j] )
+            {
+                gradient[j] = 0;
+                continue;
+            }
+
+            size_t sign = ( maximize == false ? 1 : -1 );
+            double cost = EstimateVolume( candidates[j] );
+            gradient[j] = sign * ( cost - current_cost ) / step_size + weight_decay * guess[j];
+        }
+
+        bool gradient_is_zero = true;
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            if ( FloatUtils::abs( gradient[j] ) > epsilon )
+            {
+                gradient_is_zero = false;
+            }
+        }
+        if ( gradient_is_zero )
+        {
+            break;
+        }
+
+        for ( size_t j = 0; j < dimension; ++j )
+        {
+            guess[j] -= lr * gradient[j];
+
+            if ( guess[j] > upper_bounds[j] )
+            {
+                guess[j] = upper_bounds[j];
+            }
+
+            if ( guess[j] < lower_bounds[j] )
+            {
+                guess[j] = lower_bounds[j];
+            }
+        }
+    }
+
+    return guess;
+}
+
+double Layer::EstimateVolume( std::vector<double> coeffs )
+{
+    // First, run parameterised symbolic bound propagation.
+    const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
+    Map<unsigned, std::vector<double>> layerIndicesToParameters =
+        getParametersForLayers( layers, coeffs );
+    for ( unsigned i = 0; i < layers.size(); ++i )
+    {
+        ASSERT( layers.exists( i ) );
+        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[i];
+        layers[i]->computeParameterisedSymbolicBounds( currentLayerCoeffs );
+    }
+
+    std::mt19937_64 rng( GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED );
+    double log_box_volume = 0;
+    double sigmoid_sum = 0;
+
+    unsigned inputLayerIndex = 0;
+    unsigned outputLayerIndex = layers.size() - 1;
+    Layer *inputLayer = layers[inputLayerIndex];
+    Layer *outputLayer = layers[outputLayerIndex];
+
+    // Calculate volume of input variables' bounding box.
+    for ( unsigned index = 0; index < inputLayer->getSize(); ++index )
+    {
+        if ( inputLayer->neuronEliminated( index ) )
+            continue;
+
+        double lb = inputLayer->getLb( index );
+        double ub = inputLayer->getUb( index );
+
+        if ( lb == ub )
+            return 0;
+
+        log_box_volume += std::log( ub - lb );
+    }
+
+    for ( unsigned i = 0; i < GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS; ++i )
+    {
+        // Sample input point from known bounds.
+        Map<unsigned, double> point;
+        for ( unsigned j = 0; j < inputLayer->getSize(); ++j )
+        {
+            if ( inputLayer->neuronEliminated( j ) )
+            {
+                point.insert( j, 0 );
+            }
+            else
+            {
+                double lb = inputLayer->getLb( j );
+                double ub = inputLayer->getUb( j );
+                std::uniform_real_distribution<> dis( lb, ub );
+                point.insert( j, dis( rng ) );
+            }
+        }
+
+        // Calculate sigmoid of maximum margin from output symbolic bounds.
+        double max_margin = 0;
+        for ( unsigned j = 0; j < outputLayer->getSize(); ++j )
+        {
+            if ( outputLayer->neuronEliminated( j ) )
+                continue;
+
+            double margin = outputLayer->calculateDifferenceFromSymbolic( point, j );
+            max_margin = std::max( max_margin, margin );
+        }
+        sigmoid_sum += SigmoidConstraint::sigmoid( max_margin );
+    }
+
+    return std::exp( log_box_volume + std::log( sigmoid_sum ) ) /
+           GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS;
+}
+
+double Layer::calculateDifferenceFromSymbolic( Map<unsigned, double> &point, unsigned i ) const
+{
+    double lowerSum = _symbolicLowerBias[i];
+    double upperSum = _symbolicUpperBias[i];
+
+    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+    {
+        lowerSum += _symbolicLb[j * _size + i] * point[j];
+        upperSum += _symbolicUb[j * _size + i] * point[j];
+    }
+
+    return std::max( _ub[i] - upperSum, lowerSum - _lb[i] );
+}
+
+unsigned Layer::getNumberOfParameters( const Map<unsigned, Layer *> &layers )
+{
+    unsigned index = 0;
+    for ( auto pair : layers )
+    {
+        unsigned layerIndex = pair.first;
+        Layer *layer = layers[layerIndex];
+        switch ( layer->getLayerType() )
+        {
+        case Layer::RELU:
+        case Layer::LEAKY_RELU:
+            index++;
+            break;
+
+        case Layer::SIGN:
+        case Layer::BILINEAR:
+            index += 2;
+            break;
+
+        default:
+            break;
+        }
+    }
+    return index;
+}
+
+Map<unsigned, std::vector<double>>
+Layer::getParametersForLayers( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs )
+{
+    unsigned index = 0;
+    Map<unsigned, std::vector<double>> layerIndicesToParameters;
+    for ( auto pair : layers )
+    {
+        unsigned layerIndex = pair.first;
+        Layer *layer = layers[layerIndex];
+        std::vector<double> parameters = {};
+        switch ( layer->getLayerType() )
+        {
+        case Layer::RELU:
+        case Layer::LEAKY_RELU:
+        {
+            parameters = std::vector<double>( coeffs.begin() + index, coeffs.begin() + index + 1 );
+            layerIndicesToParameters.insert( layerIndex, parameters );
+            index++;
+        }
+        break;
+
+        case Layer::SIGN:
+        case Layer::BILINEAR:
+        {
+            parameters = std::vector<double>( coeffs.begin() + index, coeffs.begin() + index + 2 );
+            layerIndicesToParameters.insert( layerIndex, parameters );
+            index += 2;
+        }
+        break;
+
+        default:
+            layerIndicesToParameters.insert( layerIndex, parameters );
+            break;
+        }
+    }
+    return layerIndicesToParameters;
 }
 
 double Layer::softmaxLSELowerBound( const Vector<double> &inputs,

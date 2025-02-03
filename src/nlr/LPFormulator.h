@@ -16,7 +16,6 @@
 #ifndef __LPFormulator_h__
 #define __LPFormulator_h__
 
-#include "GradientDescent.h"
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "Map.h"
@@ -56,8 +55,7 @@ public:
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                          bool backward = false,
                                          std::vector<double> coeffs = {} );
-    void optimizeBoundsWithInvprop( const Map<unsigned, Layer *> &layers );
-    void optimizeBoundsWithPreimageApproximation( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsWithPreimageApproximation( Map<unsigned, Layer *> &layers );
     void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                                    unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
@@ -90,16 +88,6 @@ public:
                               unsigned lastLayer = UINT_MAX );
 
     void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
-
-
-    // Get total number of optimizable parameters for parameterised SBT/LP relaxation.
-    unsigned getNumberOfParameters( const Map<unsigned, Layer *> &layers );
-
-
-    // Get map containing vector of optimizable parameters for parameterised SBT/LP relaxation for
-    // every layer index.
-    static Map<unsigned, std::vector<double>>
-    getParametersForLayers( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs );
 
 private:
     LayerOwner *_layerOwner;
@@ -174,11 +162,6 @@ private:
                                                       const Layer *layer,
                                                       bool createVariables,
                                                       std::vector<double> coeffs );
-
-
-    // Estimate Volume of parameterised LP relaxations.
-    static double EstimateVolume( const Map<unsigned, Layer *> &layers,
-                                  std::vector<double> coeffs );
 
 
     /*

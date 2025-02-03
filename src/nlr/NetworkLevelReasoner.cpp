@@ -224,13 +224,11 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 void NetworkLevelReasoner::parameterisedSymbolicBoundPropagation( std::vector<double> coeffs )
 {
     Map<unsigned, std::vector<double>> layerIndicesToParameters =
-        LPFormulator::getParametersForLayers( _layerIndexToLayer, coeffs );
-    for ( auto pair : _layerIndexToLayer )
+        _layerIndexToLayer[0]->getParametersForLayers( _layerIndexToLayer, coeffs );
+    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
     {
-        unsigned layerIndex = pair.first;
-        Layer *layer = _layerIndexToLayer[layerIndex];
-        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[layerIndex];
-        layer->computeParameterisedSymbolicBounds( currentLayerCoeffs );
+        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[i];
+        _layerIndexToLayer[i]->computeParameterisedSymbolicBounds( currentLayerCoeffs );
     }
 }
 
@@ -251,9 +249,6 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
          Options::get()->getMILPSolverBoundTighteningType() ==
              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer, true );
-    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
-              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_INVPROP )
-        lpFormulator.optimizeBoundsWithInvprop( _layerIndexToLayer );
     else if ( Options::get()->getMILPSolverBoundTighteningType() ==
               MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX )
         lpFormulator.optimizeBoundsWithPreimageApproximation( _layerIndexToLayer );

@@ -337,118 +337,11 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         throw InfeasibleQueryException();
 }
 
-void LPFormulator::optimizeBoundsWithInvprop( const Map<unsigned, Layer *> &layers )
+void LPFormulator::optimizeBoundsWithPreimageApproximation( Map<unsigned, Layer *> &layers )
 {
-}
-
-void LPFormulator::optimizeBoundsWithPreimageApproximation( const Map<unsigned, Layer *> &layers )
-{
-    // Define EstimateVolume bind which captures layers and only receives coeffs as its input.
-    auto EstimateVolumeBind = std::bind( EstimateVolume, layers, std::placeholders::_1 );
-
-    // Search over coeffs in [0, 1]^number_of_parameters. Enforce single-threaded optimization.
-    auto opt_params = gradient_descent_parameters<std::vector<double>>();
-    unsigned num = getNumberOfParameters( layers );
-    opt_params.lower_bounds.resize( num, 0 );
-    opt_params.upper_bounds.resize( num, 1 );
-    double value_to_reach = 0;
-    std::mt19937_64 rng( GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED );
-
-    // Find optimal coeffs and run final parameterised symbolic bound tightening + backward LP
-    // relaxation.
-    auto optimal_coeffs = gradient_descent( EstimateVolumeBind, opt_params, rng, value_to_reach );
-
-    // First, run parameterised symbolic bound propagation.
-    unsigned i = 0;
-    Map<unsigned, std::vector<double>> layerIndicesToParameters =
-        getParametersForLayers( layers, optimal_coeffs );
-    for ( auto pair : layers )
-    {
-        unsigned layerIndex = pair.first;
-        Layer *layer = layers[layerIndex];
-        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[layerIndex];
-        if ( i == layers.size() - 1 )
-        {
-            layer->computeParameterisedSymbolicBounds( currentLayerCoeffs, true, false );
-        }
-        else
-        {
-            layer->computeParameterisedSymbolicBounds( currentLayerCoeffs );
-        }
-        i++;
-    }
-
-    // Finally, run parameterised forward LP and parameterised backward LP.
+    std::vector<double> optimal_coeffs = layers[0]->OptimalParameterisedSymbolicBoundTightening();
     optimizeBoundsWithLpRelaxation( layers, false, optimal_coeffs );
     optimizeBoundsWithLpRelaxation( layers, true, optimal_coeffs );
-}
-
-double LPFormulator::EstimateVolume( const Map<unsigned, Layer *> &layers,
-                                     std::vector<double> coeffs )
-{
-    // First, run parameterised symbolic bound propagation.
-    Map<unsigned, std::vector<double>> layerIndicesToParameters =
-        getParametersForLayers( layers, coeffs );
-    for ( auto pair : layers )
-    {
-        unsigned layerIndex = pair.first;
-        Layer *layer = layers[layerIndex];
-        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[layerIndex];
-        layer->computeParameterisedSymbolicBounds( currentLayerCoeffs );
-    }
-
-    std::mt19937_64 rng( GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED );
-    double log_box_volume = 0;
-    double sigmoid_sum = 0;
-
-    unsigned inputLayerIndex = 0;
-    unsigned outputLayerIndex = layers.size() - 1;
-    Layer *inputLayer = layers[inputLayerIndex];
-    Layer *outputLayer = layers[outputLayerIndex];
-
-    // Calculate volume of input variables' bounding box.
-    for ( unsigned index = 0; index < inputLayer->getSize(); ++index )
-    {
-        if ( inputLayer->neuronEliminated( index ) )
-            continue;
-
-        double lb = inputLayer->getLb( index );
-        double ub = inputLayer->getUb( index );
-
-        log_box_volume += std::log( ub - lb );
-    }
-
-    for ( unsigned i = 0; i < GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS; ++i )
-    {
-        // Sample input point from known bounds.
-        Map<NeuronIndex, double> point;
-        for ( unsigned index = 0; index < inputLayer->getSize(); ++index )
-        {
-            if ( inputLayer->neuronEliminated( index ) )
-                continue;
-
-            NeuronIndex neuron( inputLayerIndex, index );
-            double lb = inputLayer->getLb( index );
-            double ub = inputLayer->getUb( index );
-            std::uniform_real_distribution<> dis( lb, ub );
-            point.insert( neuron, dis( rng ) );
-        }
-
-        // Calculate sigmoid of maximum margin from output symbolic bounds.
-        double max_margin = 0;
-        for ( unsigned index = 0; index < outputLayer->getSize(); ++index )
-        {
-            if ( outputLayer->neuronEliminated( index ) )
-                continue;
-
-            double margin = outputLayer->calculateDifferenceFromSymbolic( point, index );
-            max_margin = std::max( max_margin, margin );
-        }
-        sigmoid_sum += SigmoidConstraint::sigmoid( max_margin );
-    }
-
-    return std::exp( log_box_volume + std::log( sigmoid_sum ) ) /
-           GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS;
 }
 
 void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
@@ -777,7 +670,7 @@ void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
         else
         {
             Map<unsigned, std::vector<double>> layerIndicesToParameters =
-                getParametersForLayers( layers, coeffs );
+                layer.second->getParametersForLayers( layers, coeffs );
             std::vector<double> currentLayerCoeffs = layerIndicesToParameters[currentLayerIndex];
             addLayerToParameterisedModel( gurobi, layer.second, false, currentLayerCoeffs );
         }
@@ -810,7 +703,7 @@ void LPFormulator::createLPRelaxationAfter( const Map<unsigned, Layer *> &layers
             else
             {
                 Map<unsigned, std::vector<double>> layerIndicesToParameters =
-                    getParametersForLayers( layers, coeffs );
+                    currentLayer->getParametersForLayers( layers, coeffs );
                 std::vector<double> currentLayerCoeffs =
                     layerIndicesToParameters[currentLayerIndex];
                 addLayerToParameterisedModel( gurobi, currentLayer, true, currentLayerCoeffs );
@@ -1825,71 +1718,6 @@ void LPFormulator::addLeakyReluLayerToLpRelaxation( GurobiWrapper &gurobi,
             }
         }
     }
-}
-
-unsigned LPFormulator::getNumberOfParameters( const Map<unsigned, Layer *> &layers )
-{
-    unsigned index = 0;
-    for ( auto pair : layers )
-    {
-        unsigned layerIndex = pair.first;
-        Layer *layer = layers[layerIndex];
-        switch ( layer->getLayerType() )
-        {
-        case Layer::RELU:
-        case Layer::LEAKY_RELU:
-            index++;
-            break;
-
-        case Layer::SIGN:
-        case Layer::BILINEAR:
-            index += 2;
-            break;
-
-        default:
-            break;
-        }
-    }
-    return index;
-}
-
-Map<unsigned, std::vector<double>>
-LPFormulator::getParametersForLayers( const Map<unsigned, Layer *> &layers,
-                                      std::vector<double> coeffs )
-{
-    unsigned index = 0;
-    Map<unsigned, std::vector<double>> layerIndicesToParameters;
-    for ( auto pair : layers )
-    {
-        unsigned layerIndex = pair.first;
-        Layer *layer = layers[layerIndex];
-        std::vector<double> parameters = {};
-        switch ( layer->getLayerType() )
-        {
-        case Layer::RELU:
-        case Layer::LEAKY_RELU:
-        {
-            parameters = std::vector<double>( coeffs.begin() + index, coeffs.begin() + index + 1 );
-            layerIndicesToParameters.insert( layerIndex, parameters );
-            index++;
-        }
-        break;
-
-        case Layer::SIGN:
-        case Layer::BILINEAR:
-        {
-            parameters = std::vector<double>( coeffs.begin() + index, coeffs.begin() + index + 2 );
-            layerIndicesToParameters.insert( layerIndex, parameters );
-            index += 2;
-        }
-        break;
-
-        default:
-            layerIndicesToParameters.insert( layerIndex, parameters );
-            break;
-        }
-    }
-    return layerIndicesToParameters;
 }
 
 void LPFormulator::addLayerToParameterisedModel( GurobiWrapper &gurobi,
