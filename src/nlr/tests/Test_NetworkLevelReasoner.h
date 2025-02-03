@@ -13454,7 +13454,6 @@ public:
 
     void updateTableau( MockTableau &tableau, List<Tightening> &tightenings )
     {
-        ASSERT( tableau );
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
