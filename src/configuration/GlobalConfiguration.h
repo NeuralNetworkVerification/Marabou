@@ -169,6 +169,9 @@ public:
     // Learning rate for PreimageApproximation optimization.
     static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
 
+    // Weight decay for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 

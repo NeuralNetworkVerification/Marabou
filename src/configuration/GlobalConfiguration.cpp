@@ -73,6 +73,7 @@ const unsigned GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS = 25000;
 const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS = 25;
 const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE = 0.025;
 const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE = 0.25;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY = 0;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
