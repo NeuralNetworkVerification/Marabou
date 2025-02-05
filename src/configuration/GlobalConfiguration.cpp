@@ -88,7 +88,7 @@ const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCES
 const bool GlobalConfiguration::NL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 
-const unsigned GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND = 10;
+const unsigned GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND = 1000;
 
 const bool GlobalConfiguration::WARM_START = false;
 
