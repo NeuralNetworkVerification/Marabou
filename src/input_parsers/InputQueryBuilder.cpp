@@ -231,3 +231,42 @@ Equation *InputQueryBuilder::findEquationWithOutputVariable( Variable variable )
     }
     return NULL;
 }
+
+InputQueryBuilder::~InputQueryBuilder()
+{
+    for ( ReluConstraint *constraintPtr : _reluList )
+    {
+        delete constraintPtr;
+    }
+    _reluList = {};
+
+    for ( LeakyReluConstraint *constraintPtr : _leakyReluList )
+    {
+        delete constraintPtr;
+    }
+    _leakyReluList = {};
+
+    for ( SigmoidConstraint *constraintPtr : _sigmoidList )
+    {
+        delete constraintPtr;
+    }
+    _sigmoidList = {};
+
+    for ( MaxConstraint *constraintPtr : _maxList )
+    {
+        delete constraintPtr;
+    }
+    _maxList = {};
+
+    for ( AbsoluteValueConstraint *constraintPtr : _absList )
+    {
+        delete constraintPtr;
+    }
+    _absList = {};
+
+    for ( SignConstraint *constraintPtr : _signList )
+    {
+        delete constraintPtr;
+    }
+    _signList = {};
+}
