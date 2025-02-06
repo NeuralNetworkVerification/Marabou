@@ -55,6 +55,8 @@ TensorIndices unpackIndex( TensorShape shape, PackedTensorIndices packedIndex );
 
 PackedTensorIndices packIndex( TensorShape shape, TensorIndices indices );
 
+unsigned int tensorSize( TensorShape shape );
+
 template <typename T> T tensorLookup( Vector<T> tensor, TensorShape shape, TensorIndices indices )
 {
     return tensor[packIndex( shape, indices )];
@@ -77,19 +79,19 @@ Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation perm
     // NOTE this implementation is *very* inefficient. Eventually we might want to
     // switch to a similar implementation as NumPy arrays with internal strides etc.
     ASSERT( shape.size() == permutation.size() );
+    ASSERT( tensorSize( shape ) == tensor.size() );
+
     TensorShape transposedShape = transposeVector( shape, permutation );
     Vector<T> result( tensor.size() );
-    for ( PackedTensorIndices rawOutputIndex = 0; rawOutputIndex < tensor.size(); rawOutputIndex++ )
+    for ( PackedTensorIndices rawInputIndex = 0; rawInputIndex < tensor.size(); rawInputIndex++ )
     {
-        TensorIndices outputIndex = unpackIndex( transposedShape, rawOutputIndex );
-        TensorIndices inputIndex = transposeVector( outputIndex, permutation );
-        T value = tensorLookup( tensor, shape, inputIndex );
-        result[rawOutputIndex] = value;
+        TensorIndices inputIndex = unpackIndex( shape, rawInputIndex );
+        TensorIndices outputIndex = transposeVector( inputIndex, permutation );
+        int rawOutputIndex = packIndex( transposedShape, outputIndex );
+        result[rawOutputIndex] = tensor[rawInputIndex];
     }
     return result;
 }
-
-unsigned int tensorSize( TensorShape shape );
 
 // See https://github.com/onnx/onnx/blob/main/docs/Broadcasting.md#multidirectional-broadcasting
 TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape shape2 );
