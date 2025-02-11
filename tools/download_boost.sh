@@ -22,10 +22,10 @@ if [[ $OSTYPE == 'darwin'* ]]; then
     export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
 fi
 mkdir installed
-./bootstrap.sh --prefix=`pwd`/installed --with-libraries=program_options,timer,chrono,thread >> /dev/null ;
+./bootstrap.sh --prefix=`pwd`/installed --with-libraries=program_options,timer,chrono,thread,regex >> /dev/null ;
 ./b2 cxxflags=-fPIC link=static cxxflags=-std=c++11 install >> /dev/null
 mkdir installed32
-./bootstrap.sh --prefix=`pwd`/installed32 --with-libraries=program_options,timer,chrono,thread >> /dev/null ;
+./bootstrap.sh --prefix=`pwd`/installed32 --with-libraries=program_options,timer,chrono,thread,regex >> /dev/null ;
 ./b2 cxxflags=-fPIC link=static cxxflags=-std=c++11 install address-model=32 >> /dev/null
 
 cd $curdir
