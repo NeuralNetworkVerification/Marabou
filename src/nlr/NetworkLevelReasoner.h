@@ -24,6 +24,7 @@
 #include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
+#include "PolygonalTightening.h"
 #include "Tightening.h"
 #include "Vector.h"
 
@@ -103,6 +104,12 @@ public:
           bound on the upper bound of a ReLU node is negative, that
           ReLU is inactive and its output can be set to 0.
 
+        - Parametrised Symbolic: For certain activation functions, there
+          is a continuum of valid symbolic bounds. We receive a map of
+          coefficients in range [0, 1] for every layer index, then compute
+          the parameterised symbolic bounds (or default to regular
+          symbolic bounds if parameterised bounds not implemented).
+
         - LP Relaxation: invoking an LP solver on a series of LP
           relaxations of the problem we're trying to solve, and
           optimizing the lower and upper bounds of each of the
@@ -114,6 +121,13 @@ public:
         - getConstraintTightenings: this is the function that an
           external user calls in order to collect the tighter bounds
           discovered by the NLR.
+
+        - receiveTighterPolygonalBound: this is a callback from the layer
+          objects, through which they report tighter polygonal bounds.
+
+        - getConstraintPolygonalTightenings: this is the function that an
+          external user calls in order to collect the tighter polygonal bounds
+          discovered by the NLR.
     */
 
     void setTableau( const ITableau *tableau );
@@ -123,6 +137,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
+    void parameterisedSymbolicBoundPropagation( std::vector<double> coeffs );
     void deepPolyPropagation();
     void lpRelaxationPropagation();
     void LPTighteningForOneLayer( unsigned targetIndex );
@@ -133,6 +148,10 @@ public:
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
     void clearConstraintTightenings();
+
+    void receivePolygonalTighterBound( PolygonalTightening polygonal_tightening );
+    void getConstraintPolygonalTightenings( List<PolygonalTightening> &polygonal_tightenings );
+    void clearConstraintPolygonalTightenings();
 
     /*
       For debugging purposes: dump the network topology
@@ -198,8 +217,9 @@ private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
-    // Tightenings discovered by the various layers
+    // Tightenings and Polyognal Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
+    List<PolygonalTightening> _polygonalBoundTightenings;
 
 
     std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;

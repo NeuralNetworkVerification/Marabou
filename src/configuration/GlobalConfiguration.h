@@ -151,6 +151,27 @@ public:
     // Random seed for generating simulation values.
     static const unsigned SIMULATION_RANDOM_SEED;
 
+    // Random seed for EstimateVolume procedure (PreimageApproximation).
+    static const unsigned VOLUME_ESTIMATION_RANDOM_SEED;
+
+    // Number of iterations for EstimateVolume procedure (PreimageApproximation).
+    static const unsigned VOLUME_ESTIMATION_ITERATIONS;
+
+    // Random seed for PreimageApproximation optimization.
+    static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED;
+
+    // Maximum iterations for PreimageApproximation optimization.
+    static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
+
+    // Step size for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
+
+    // Learning rate for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+
+    // Weight decay for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
@@ -195,8 +216,9 @@ public:
       Symbolic bound tightening options
     */
 
-    // Symbolic tightening rounding constant
+    // Symbolic tightening, LP rounding constants
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+    static const double LP_TIGHTENING_ROUNDING_CONSTANT;
 
     static const double SIGMOID_CUTOFF_CONSTANT;
 

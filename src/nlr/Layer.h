@@ -136,8 +136,22 @@ public:
 
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
-    void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
+    void computeSymbolicBounds();
+    void computeParameterisedSymbolicBounds( std::vector<double> coeffs,
+                                             bool receivePolygonal = false,
+                                             bool receive = false );
+
+    // Get total number of optimizable parameters for parameterised SBT relaxation.
+    unsigned getNumberOfParameters( const Map<unsigned, Layer *> &layers );
+
+    // Get map containing vector of optimizable parameters for parameterised SBT relaxation for
+    // every layer index.
+    Map<unsigned, std::vector<double>> getParametersForLayers( const Map<unsigned, Layer *> &layers,
+                                                               std::vector<double> coeffs );
+
+    // Return optimizable parameters which minimize parameterised SBT bounds' volume.
+    std::vector<double> OptimalParameterisedSymbolicBoundTightening();
 
     /*
       Preprocessing functionality: variable elimination and reindexing
@@ -209,14 +223,104 @@ private:
     void freeMemoryIfNeeded();
 
     /*
+       The following methods compute concrete softmax output bounds
+       using different linear approximation, as well as the coefficients
+       of softmax inputs in the symbolic bounds
+    */
+    double softmaxLSELowerBound( const Vector<double> &inputs,
+                                 const Vector<double> &inputLbs,
+                                 const Vector<double> &inputUbs,
+                                 unsigned i );
+
+    double softmaxdLSELowerBound( const Vector<double> &inputMids,
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned i,
+                                  unsigned di );
+
+    double softmaxLSELowerBound2( const Vector<double> &inputMids,
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned i );
+
+    double softmaxdLSELowerBound2( const Vector<double> &inputMids,
+                                   const Vector<double> &inputLbs,
+                                   const Vector<double> &inputUbs,
+                                   unsigned i,
+                                   unsigned di );
+
+    double softmaxLSEUpperBound( const Vector<double> &inputs,
+                                 const Vector<double> &outputLb,
+                                 const Vector<double> &outputUb,
+                                 unsigned i );
+
+    double softmaxdLSEUpperbound( const Vector<double> &inputMids,
+                                  const Vector<double> &outputLb,
+                                  const Vector<double> &outputUb,
+                                  unsigned i,
+                                  unsigned di );
+
+    double softmaxERLowerBound( const Vector<double> &inputs,
+                                const Vector<double> &inputLbs,
+                                const Vector<double> &inputUbs,
+                                unsigned i );
+
+    double softmaxdERLowerBound( const Vector<double> &inputMids,
+                                 const Vector<double> &inputLbs,
+                                 const Vector<double> &inputUbs,
+                                 unsigned i,
+                                 unsigned di );
+
+    double softmaxERUpperBound( const Vector<double> &inputs,
+                                const Vector<double> &outputLb,
+                                const Vector<double> &outputUb,
+                                unsigned i );
+
+    double softmaxdERUpperBound( const Vector<double> &inputMids,
+                                 const Vector<double> &outputLb,
+                                 const Vector<double> &outputUb,
+                                 unsigned i,
+                                 unsigned di );
+
+    double softmaxLinearLowerBound( const Vector<double> &inputLbs,
+                                    const Vector<double> &inputUbs,
+                                    unsigned i );
+
+    double softmaxLinearUpperBound( const Vector<double> &inputLbs,
+                                    const Vector<double> &inputUbs,
+                                    unsigned i );
+
+    /*
       Helper functions for symbolic bound tightening
     */
-    void comptueSymbolicBoundsForInput();
+    void computeSymbolicBoundsForInput();
     void computeSymbolicBoundsForRelu();
     void computeSymbolicBoundsForSign();
     void computeSymbolicBoundsForAbsoluteValue();
     void computeSymbolicBoundsForWeightedSum();
+    void computeSymbolicBoundsForMax();
+    void computeSymbolicBoundsForLeakyRelu();
+    void computeSymbolicBoundsForSigmoid();
+    void computeSymbolicBoundsForRound();
+    void computeSymbolicBoundsForSoftmax();
+    void computeSymbolicBoundsForBilinear();
     void computeSymbolicBoundsDefault();
+
+
+    /*
+      Helper functions for parameterised symbolic bound tightening
+    */
+    void computeParameterisedSymbolicBoundsForRelu( std::vector<double> coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForSign( std::vector<double> coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForLeakyRelu( std::vector<double> coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForBilinear( std::vector<double> coeffs, bool receive );
+
+    // Estimate Volume of parameterised symbolic bound tightening.
+    double EstimateVolume( std::vector<double> coeffs );
+
+    // Return difference between given point and upper and lower bounds determined by parameterised
+    // SBT relaxation.
+    double calculateDifferenceFromSymbolic( Map<unsigned, double> &point, unsigned i ) const;
 
     /*
       Helper functions for interval bound tightening
@@ -225,6 +329,12 @@ private:
     void computeIntervalArithmeticBoundsForRelu();
     void computeIntervalArithmeticBoundsForAbs();
     void computeIntervalArithmeticBoundsForSign();
+    void computeIntervalArithmeticBoundsForMax();
+    void computeIntervalArithmeticBoundsForLeakyRelu();
+    void computeIntervalArithmeticBoundsForSigmoid();
+    void computeIntervalArithmeticBoundsForRound();
+    void computeIntervalArithmeticBoundsForSoftmax();
+    void computeIntervalArithmeticBoundsForBilinear();
 
     const double *getSymbolicLb() const;
     const double *getSymbolicUb() const;
