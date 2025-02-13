@@ -104,6 +104,25 @@ private:
     void
     addMaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
+    void
+    addRoundLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
+
+    void addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                              const Layer *layer,
+                                              bool createVariables );
+
+    void addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                        const Layer *layer,
+                                        bool createVariables );
+
+    void addSoftmaxLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                        const Layer *layer,
+                                        bool createVariables );
+
+    void addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                         const Layer *layer,
+                                         bool createVariables );
+
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer,
                                             bool createVariables );
