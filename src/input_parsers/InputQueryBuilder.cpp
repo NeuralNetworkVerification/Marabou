@@ -133,6 +133,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         query.markInputVariable( inputVar, i );
         i++;
     }
+    _inputVars.clear();
 
     int j = 0;
     for ( Variable outputVar : _outputVars )
@@ -140,11 +141,13 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         query.markOutputVariable( outputVar, j );
         j++;
     }
+    _outputVars.clear();
 
     for ( Equation equation : _equationList )
     {
         query.addEquation( equation );
     }
+    _equationList.clear();
 
     for ( ReluConstraint *constraintPtr : _reluList )
     {
@@ -154,6 +157,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
+    _reluList.clear();
 
     for ( LeakyReluConstraint *constraintPtr : _leakyReluList )
     {
@@ -163,6 +167,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
+    _leakyReluList.clear();
 
     for ( SigmoidConstraint *constraintPtr : _sigmoidList )
     {
@@ -172,6 +177,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         } );
         query.addNonlinearConstraint( constraintPtr );
     }
+    _sigmoidList.clear();
 
     for ( MaxConstraint *constraintPtr : _maxList )
     {
@@ -185,6 +191,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
+    _maxList.clear();
 
     for ( AbsoluteValueConstraint *constraintPtr : _absList )
     {
@@ -194,6 +201,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
+    _absList.clear();
 
     for ( SignConstraint *constraintPtr : _signList )
     {
@@ -203,6 +211,7 @@ void InputQueryBuilder::generateQuery( IQuery &query )
         } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
+    _signList.clear();
 
     // TODO check this last two
     for ( std::pair<Variable, float> lower : _lowerBounds )
@@ -230,4 +239,43 @@ Equation *InputQueryBuilder::findEquationWithOutputVariable( Variable variable )
         }
     }
     return NULL;
+}
+
+InputQueryBuilder::~InputQueryBuilder()
+{
+    for ( ReluConstraint *constraintPtr : _reluList )
+    {
+        delete constraintPtr;
+    }
+    _reluList = {};
+
+    for ( LeakyReluConstraint *constraintPtr : _leakyReluList )
+    {
+        delete constraintPtr;
+    }
+    _leakyReluList = {};
+
+    for ( SigmoidConstraint *constraintPtr : _sigmoidList )
+    {
+        delete constraintPtr;
+    }
+    _sigmoidList = {};
+
+    for ( MaxConstraint *constraintPtr : _maxList )
+    {
+        delete constraintPtr;
+    }
+    _maxList = {};
+
+    for ( AbsoluteValueConstraint *constraintPtr : _absList )
+    {
+        delete constraintPtr;
+    }
+    _absList = {};
+
+    for ( SignConstraint *constraintPtr : _signList )
+    {
+        delete constraintPtr;
+    }
+    _signList = {};
 }
