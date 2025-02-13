@@ -98,7 +98,7 @@ find_package(Boost ${BOOST_VERSION} COMPONENTS program_options timer chrono thre
 # Find boost
 if (NOT ${Boost_FOUND})
   execute_process(COMMAND ${TOOLS_DIR}/download_boost.${SCRIPT_EXTENSION} ${BOOST_VERSION})
-  find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS program_options timer chrono thread)
+  find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS program_options timer chrono thread regex)
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 list(APPEND LIBS ${Boost_LIBRARIES})

@@ -212,7 +212,7 @@ public:
         SparseUnsortedArrays sv1;
         sv1.initialize( M1, 4, 4 );
 
-        const SparseUnsortedArray *row;
+        const SparseUnsortedArray *row = nullptr;
         TS_ASSERT_THROWS_NOTHING( row = sv1.getRow( 1 ) );
         TS_ASSERT_EQUALS( row->getNnz(), 2U );
         TS_ASSERT_EQUALS( row->get( 0 ), 5.0 );

@@ -316,6 +316,14 @@ public:
     }
 
     /*
+      Return true if and only if this piecewise linear constraint supports the BaBsr Heuristic
+    */
+    virtual bool supportBaBsr() const
+    {
+        return false;
+    }
+
+    /*
       Update the preferred direction to take first when splitting on this PLConstraint
     */
     virtual void updateDirection()
@@ -327,6 +335,9 @@ public:
         return _score;
     }
 
+    virtual void updateScoreBasedOnBaBsr()
+    {
+    }
 
     virtual void updateScoreBasedOnPolarity()
     {

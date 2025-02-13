@@ -12201,4 +12201,65 @@ public:
             }
         }
     }
+
+    void test_get_previous_bias()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate query to create ReLU constraints
+        Query query;
+        nlr.generateQuery( query );
+
+        // Find ReLU constraints from the query
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
+
+        for ( const auto &constraint : constraints )
+        {
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            TS_ASSERT( relu );
+
+            nlr.addConstraintInTopologicalOrder( relu );
+
+            // First ReLU layer (nodes 2,0 through 2,2) has previous bias 1
+            if ( relu->getB() == 3 || relu->getB() == 5 || relu->getB() == 7 )
+            {
+                TS_ASSERT_EQUALS( nlr.getPreviousBias( relu ), 1 );
+            }
+            // Second ReLU layer (nodes 4,0 and 4,1) has previous bias 2
+            else if ( relu->getB() == 9 || relu->getB() == 11 )
+            {
+                TS_ASSERT_EQUALS( nlr.getPreviousBias( relu ), 2 );
+            }
+        }
+    }
+
+    void test_get_previous_bias_error_handling()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate invalid ReLU constraint
+        ReluConstraint invalidRelu( 15, 16 ); // Variables not in network
+
+        // Should throw since variables don't exist in network
+        TS_ASSERT_THROWS_EQUALS( nlr.getPreviousBias( &invalidRelu ),
+                                 const NLRError &e,
+                                 e.getCode(),
+                                 NLRError::RELU_NOT_FOUND );
+
+        // Test missing activation source using fresh network
+        NLR::NetworkLevelReasoner nlrNoActivations;
+        // Create minimal network without activation sources
+        nlrNoActivations.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlrNoActivations.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlrNoActivations.addLayer( 2, NLR::Layer::RELU, 2 );
+
+        ReluConstraint missingActivation( 2, 3 );
+
+        TS_ASSERT_THROWS_EQUALS( nlrNoActivations.getPreviousBias( &missingActivation ),
+                                 const NLRError &e,
+                                 e.getCode(),
+                                 NLRError::RELU_NOT_FOUND );
+    }
 };

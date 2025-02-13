@@ -353,7 +353,7 @@ int getRequiredIntAttribute( onnx::NodeProto &node, String name )
     return attr->i();
 }
 
-const onnx::TensorProto &getTensorAttribute( onnx::NodeProto &node, String name )
+const onnx::AttributeProto *getTensorAttribute( onnx::NodeProto &node, String name )
 {
     const onnx::AttributeProto *attr =
         findAttribute( node, name, onnx::AttributeProto_AttributeType_TENSOR );
@@ -361,7 +361,7 @@ const onnx::TensorProto &getTensorAttribute( onnx::NodeProto &node, String name 
     {
         missingAttributeError( node, name );
     }
-    return attr->t();
+    return attr;
 }
 
 Vector<int> getIntsAttribute( onnx::NodeProto &node, String name, Vector<int> &defaultValue )
@@ -972,7 +972,7 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
 void OnnxParser::constant( onnx::NodeProto &node )
 {
     String outputNodeName = node.output()[0];
-    const onnx::TensorProto &value = getTensorAttribute( node, "value" );
+    const onnx::TensorProto &value = getTensorAttribute( node, "value" )->t();
     const TensorShape shape = shapeOfConstant( value );
 
     _shapeMap[outputNodeName] = shape;
