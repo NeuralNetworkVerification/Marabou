@@ -195,8 +195,19 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
     } );
 
     // First, pick a pl constraint whose cost component we will update.
-    unsigned index = (unsigned)T::rand() % _plConstraintsInCurrentPhasePattern.size();
-    PiecewiseLinearConstraint *plConstraintToUpdate = _plConstraintsInCurrentPhasePattern[index];
+    bool fixed = true;
+    PiecewiseLinearConstraint *plConstraintToUpdate;
+    while ( fixed )
+    {
+        if ( _plConstraintsInCurrentPhasePattern.empty() )
+            return;
+
+        unsigned index = (unsigned)T::rand() % _plConstraintsInCurrentPhasePattern.size();
+        plConstraintToUpdate = _plConstraintsInCurrentPhasePattern[index];
+        fixed = plConstraintToUpdate->phaseFixed();
+        if ( fixed )
+            removeCostComponentFromHeuristicCost( plConstraintToUpdate );
+    }
 
     // Next, pick an alternative phase.
     PhaseStatus currentPhase = _currentPhasePattern[plConstraintToUpdate];
