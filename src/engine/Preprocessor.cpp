@@ -680,10 +680,10 @@ void Preprocessor::collectFixedValues()
         {
             _fixedVariables[i] = getLowerBound( i );
         }
-        else if ( getLowerBound( i ) > getUpperBound( i ) )
+        else if ( FloatUtils::gt( getLowerBound( i ), getUpperBound( i ) ) )
         {
-            // Insatifisfiable variable, don't eliminate
-            continue;
+            // Infeasible condition over the variable
+            throw InfeasibleQueryException();
         }
         else if ( !usedVariables.exists( i ) )
         {
