@@ -250,6 +250,11 @@ public:
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
 
+    /* In the BaBSR-based branching heuristics, only this many earliest nodes are considered to
+       branch on.
+    */
+    static const unsigned BABSR_CANDIDATES_THRESHOLD;
+
     /* In the polarity-based branching heuristics, only this many earliest nodes
        are considered to branch on.
     */

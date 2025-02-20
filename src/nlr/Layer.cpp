@@ -2,7 +2,7 @@
 /*! \file Layer.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Ido Shmuel
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -1063,6 +1063,10 @@ void Layer::computeIntervalArithmeticBoundsForSigmoid()
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void Layer::computeIntervalArithmeticBoundsForRound()
 {
     for ( unsigned i = 0; i < _size; ++i )
@@ -1095,6 +1099,10 @@ void Layer::computeIntervalArithmeticBoundsForRound()
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void Layer::computeIntervalArithmeticBoundsForMax()
 {
     for ( unsigned i = 0; i < _size; ++i )
@@ -2046,17 +2054,29 @@ void Layer::computeSymbolicBoundsForLeakyRelu()
             // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
             // Concrete upper bound: x_f <= ub_b
             double width = sourceUb - sourceLb;
+<<<<<<< HEAD
             double weight = ( sourceUb - _alpha * sourceLb ) / width;
+=======
+            double coeff = ( sourceUb - _alpha * sourceLb ) / width;
+>>>>>>> upstream/master
 
             if ( _alpha <= 1 )
             {
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
+<<<<<<< HEAD
                     _symbolicUb[j * _size + i] *= weight;
                 }
 
                 // Do the same for the bias, and then adjust
                 _symbolicUpperBias[i] *= weight;
+=======
+                    _symbolicUb[j * _size + i] *= coeff;
+                }
+
+                // Do the same for the bias, and then adjust
+                _symbolicUpperBias[i] *= coeff;
+>>>>>>> upstream/master
                 _symbolicUpperBias[i] += ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
 
 
@@ -2091,11 +2111,19 @@ void Layer::computeSymbolicBoundsForLeakyRelu()
             {
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
+<<<<<<< HEAD
                     _symbolicLb[j * _size + i] *= weight;
                 }
 
                 // Do the same for the bias, and then adjust
                 _symbolicLowerBias[i] *= weight;
+=======
+                    _symbolicLb[j * _size + i] *= coeff;
+                }
+
+                // Do the same for the bias, and then adjust
+                _symbolicLowerBias[i] *= coeff;
+>>>>>>> upstream/master
                 _symbolicLowerBias[i] += ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
 
                 if ( sourceUb > sourceLb )
@@ -2208,6 +2236,10 @@ void Layer::computeSymbolicBoundsForLeakyRelu()
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void Layer::computeSymbolicBoundsForSigmoid()
 {
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
@@ -3124,7 +3156,11 @@ void Layer::computeSymbolicBoundsForBilinear()
             }
             else
             {
+<<<<<<< HEAD
                 _symbolicUb[j * _size + i] +=
+=======
+                _symbolicLb[j * _size + i] +=
+>>>>>>> upstream/master
                     sourceUbs[1] * sourceSymbolicLb[j * sourceLayerSize + indexA];
             }
 
@@ -3394,6 +3430,7 @@ void Layer::computeSymbolicBoundsForWeightedSum()
     }
 }
 
+<<<<<<< HEAD
 void Layer::computeParameterisedSymbolicBounds( std::vector<double> coeffs,
                                                 bool receivePolygonal,
                                                 bool receive )
@@ -4559,6 +4596,8 @@ Layer::getParametersForLayers( const Map<unsigned, Layer *> &layers, std::vector
     return layerIndicesToParameters;
 }
 
+=======
+>>>>>>> upstream/master
 double Layer::softmaxLSELowerBound( const Vector<double> &inputs,
                                     const Vector<double> &inputLbs,
                                     const Vector<double> &inputUbs,
@@ -4838,6 +4877,10 @@ double Layer::softmaxdERUpperBound( const Vector<double> &inputMids,
     double li = outputLb[i];
     double ui = outputUb[i];
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
     if ( i == di )
     {
         double val2 = -1;

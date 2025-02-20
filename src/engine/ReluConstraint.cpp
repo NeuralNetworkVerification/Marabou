@@ -1019,6 +1019,11 @@ bool ReluConstraint::supportPolarity() const
     return true;
 }
 
+bool ReluConstraint::supportBaBsr() const
+{
+    return true;
+}
+
 bool ReluConstraint::auxVariableInUse() const
 {
     return _auxVarInUse;
@@ -1027,6 +1032,31 @@ bool ReluConstraint::auxVariableInUse() const
 unsigned ReluConstraint::getAux() const
 {
     return _aux;
+}
+
+
+double ReluConstraint::computeBaBsr() const
+{
+    if ( !_networkLevelReasoner )
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+
+    double biasTerm = _networkLevelReasoner->getPreviousBias( this );
+
+    // get upper and lower bounds
+    double ub = getUpperBound( _b );
+    double lb = getLowerBound( _b );
+
+    // cast _b and _f to doubles
+    double reluInput = _tableau->getValue( _b );  // ReLU input before activation
+    double reluOutput = _tableau->getValue( _f ); // ReLU output after activation
+
+    // compute ReLU score
+    double scaler = ub / ( ub - lb );
+    double term1 =
+        std::min( scaler * reluInput * biasTerm, ( scaler - 1.0 ) * reluInput * biasTerm );
+    double term2 = ( scaler * lb ) * reluOutput;
+
+    return term1 - term2;
 }
 
 double ReluConstraint::computePolarity() const
@@ -1050,6 +1080,11 @@ void ReluConstraint::updateDirection()
 PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
+}
+
+void ReluConstraint::updateScoreBasedOnBaBsr()
+{
+    _score = std::abs( computeBaBsr() );
 }
 
 void ReluConstraint::updateScoreBasedOnPolarity()

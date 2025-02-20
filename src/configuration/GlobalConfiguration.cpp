@@ -114,6 +114,7 @@ const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
 
+const unsigned GlobalConfiguration::BABSR_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;

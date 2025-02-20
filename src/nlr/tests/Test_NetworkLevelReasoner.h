@@ -1937,7 +1937,11 @@ public:
     {
         /*
 
+<<<<<<< HEAD
               1      R      -1      R      -1
+=======
+              1      R      -1      R      -1  2
+>>>>>>> upstream/master
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -1946,7 +1950,11 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   R    /    \    R     /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
+<<<<<<< HEAD
               1             -1              2   2
+=======
+              1             -1              2
+>>>>>>> upstream/master
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -2218,7 +2226,11 @@ public:
     {
         /*
 
+<<<<<<< HEAD
               1      S      -1      S      -1
+=======
+              1      S      -1      S      -1  2
+>>>>>>> upstream/master
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -2227,7 +2239,11 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   S    /    \    S     /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
+<<<<<<< HEAD
               1             -1              2   2
+=======
+              1             -1              2
+>>>>>>> upstream/master
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -2496,7 +2512,11 @@ public:
     {
         /*
 
+<<<<<<< HEAD
               1     Sign    -1     Sign    -1
+=======
+              1     Sign    -1     Sign    -1  2
+>>>>>>> upstream/master
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -2505,7 +2525,11 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \  Sign  /    \   Sign   /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
+<<<<<<< HEAD
               1             -1              2   2
+=======
+              1             -1              2
+>>>>>>> upstream/master
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -2774,7 +2798,11 @@ public:
     {
         /*
 
+<<<<<<< HEAD
               1     Rnd     -1     Rnd     -1
+=======
+              1     Rnd     -1     Rnd     -1  2
+>>>>>>> upstream/master
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -2783,7 +2811,11 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \  Rnd   /    \   Rnd    /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
+<<<<<<< HEAD
               1             -1              2  2
+=======
+              1             -1              2
+>>>>>>> upstream/master
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -3052,7 +3084,11 @@ public:
     {
         /*
 
+<<<<<<< HEAD
               1      A      -1      A      -1
+=======
+              1      A      -1      A      -1  2
+>>>>>>> upstream/master
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -3061,7 +3097,11 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   A    /    \    A     /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
+<<<<<<< HEAD
               1             -1              2   2
+=======
+              1             -1              2
+>>>>>>> upstream/master
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -3330,7 +3370,11 @@ public:
     {
         /*
 
+<<<<<<< HEAD
               1      LR     -1      LR     -1
+=======
+              1      LR     -1      LR     -1  2
+>>>>>>> upstream/master
           x0 --- x2 ---> x4 --- x6 ---> x8 --- x10
             \    /        \    /          \    /
            1 \  /        2 \  /          1 \  /
@@ -3339,7 +3383,11 @@ public:
           -1 /  \        1 /  \         -1 /  \
             /    \   LR   /    \    LR    /    \
           x1 --- x3 ---> x5 --- x7 ---> x9 --- x11
+<<<<<<< HEAD
               1             -1              2   2
+=======
+              1             -1              2
+>>>>>>> upstream/master
 
           The example described in Fig. 2 of
           https://dl.acm.org/doi/10.1145/3563325
@@ -12165,6 +12213,7 @@ public:
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
 
+<<<<<<< HEAD
     void test_preimage_approximation_relu()
     {
         Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
@@ -13397,6 +13446,11 @@ public:
     bool boundsEqual( const List<Tightening> &bounds, const List<Tightening> &expectedBounds )
     {
         if ( bounds.size() < expectedBounds.size() )
+=======
+    bool boundsEqual( const List<Tightening> &bounds, const List<Tightening> &expectedBounds )
+    {
+        if ( bounds.size() != expectedBounds.size() )
+>>>>>>> upstream/master
             return false;
 
         bool allFound = true;
@@ -13415,6 +13469,7 @@ public:
         return allFound;
     }
 
+<<<<<<< HEAD
 
     // Create list of all tightenings in newBounds for which there is no bound in newBounds or in
     // bounds which is at least as tight.
@@ -13454,6 +13509,11 @@ public:
 
     void updateTableau( MockTableau &tableau, List<Tightening> &tightenings )
     {
+=======
+    void updateTableau( MockTableau &tableau, List<Tightening> &tightenings )
+    {
+        ASSERT( tableau );
+>>>>>>> upstream/master
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
@@ -13467,4 +13527,68 @@ public:
             }
         }
     }
+<<<<<<< HEAD
+=======
+
+    void test_get_previous_bias()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate query to create ReLU constraints
+        Query query;
+        nlr.generateQuery( query );
+
+        // Find ReLU constraints from the query
+        List<PiecewiseLinearConstraint *> constraints = query.getPiecewiseLinearConstraints();
+
+        for ( const auto &constraint : constraints )
+        {
+            ReluConstraint *relu = dynamic_cast<ReluConstraint *>( constraint );
+            TS_ASSERT( relu );
+
+            nlr.addConstraintInTopologicalOrder( relu );
+
+            // First ReLU layer (nodes 2,0 through 2,2) has previous bias 1
+            if ( relu->getB() == 3 || relu->getB() == 5 || relu->getB() == 7 )
+            {
+                TS_ASSERT_EQUALS( nlr.getPreviousBias( relu ), 1 );
+            }
+            // Second ReLU layer (nodes 4,0 and 4,1) has previous bias 2
+            else if ( relu->getB() == 9 || relu->getB() == 11 )
+            {
+                TS_ASSERT_EQUALS( nlr.getPreviousBias( relu ), 2 );
+            }
+        }
+    }
+
+    void test_get_previous_bias_error_handling()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        // Generate invalid ReLU constraint
+        ReluConstraint invalidRelu( 15, 16 ); // Variables not in network
+
+        // Should throw since variables don't exist in network
+        TS_ASSERT_THROWS_EQUALS( nlr.getPreviousBias( &invalidRelu ),
+                                 const NLRError &e,
+                                 e.getCode(),
+                                 NLRError::RELU_NOT_FOUND );
+
+        // Test missing activation source using fresh network
+        NLR::NetworkLevelReasoner nlrNoActivations;
+        // Create minimal network without activation sources
+        nlrNoActivations.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlrNoActivations.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlrNoActivations.addLayer( 2, NLR::Layer::RELU, 2 );
+
+        ReluConstraint missingActivation( 2, 3 );
+
+        TS_ASSERT_THROWS_EQUALS( nlrNoActivations.getPreviousBias( &missingActivation ),
+                                 const NLRError &e,
+                                 e.getCode(),
+                                 NLRError::RELU_NOT_FOUND );
+    }
+>>>>>>> upstream/master
 };

@@ -152,7 +152,7 @@ void OptionParser::initialize()
             &( ( *_stringOptions )[Options::SPLITTING_STRATEGY] ) )
             ->default_value( ( *_stringOptions )[Options::SPLITTING_STRATEGY] ),
         "The branching strategy "
-        "(earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity)."
+        "(earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity/babsr)."
         " pseudo-impact is specific to the DeepSoI (default) procedure and relu-violation is "
         "specific to the Reluplex procedure.\n" )(
         "soi-split-threshold",
@@ -267,7 +267,11 @@ void OptionParser::initialize()
                 &( ( *_stringOptions )[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE] ) )
                 ->default_value( ( *_stringOptions )[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE] ),
             "The MILP solver bound tightening type: "
+<<<<<<< HEAD
             "lp/backward-once/backward-converge/backward-preimage-approx/lp-inc/milp/milp-inc/iter-prop/none." )
+=======
+            "lp/backward-once/backward-converge/lp-inc/milp/milp-inc/iter-prop/none." )
+>>>>>>> upstream/master
 #endif
         ;
 

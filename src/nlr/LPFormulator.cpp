@@ -876,6 +876,10 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void LPFormulator::addRoundLayerToLpRelaxation( GurobiWrapper &gurobi,
                                                 const Layer *layer,
                                                 bool createVariables )
@@ -940,6 +944,10 @@ void LPFormulator::addRoundLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
                                                         const Layer *layer,
                                                         bool createVariables )
@@ -1004,10 +1012,17 @@ void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
                 double ub = std::min( std::max( -sourceLb, sourceUb ), layer->getUb( i ) );
                 double lb = std::max( 0.0, layer->getLb( i ) );
                 gurobi.addVariable( Stringf( "x%u", targetVariable ), lb, ub );
+<<<<<<< HEAD
                 /*
                   The phase of this AbsoluteValue is not yet fixed, 0 <= y <= max(-lb, ub).
                 */
 
+=======
+
+                /*
+                  The phase of this AbsoluteValue is not yet fixed, 0 <= y <= max(-lb, ub).
+                */
+>>>>>>> upstream/master
                 // y >= 0
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -1022,6 +1037,10 @@ void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void LPFormulator::addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
                                                   const Layer *layer,
                                                   bool createVariables )
@@ -1054,6 +1073,10 @@ void LPFormulator::addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
             if ( createVariables && !gurobi.containsVariable( sourceName ) )
                 gurobi.addVariable( sourceName, sourceLb, sourceUb );
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
             double sourceUbSigmoid = SigmoidConstraint::sigmoid( sourceUb );
             double sourceLbSigmoid = SigmoidConstraint::sigmoid( sourceLb );
 
@@ -1127,6 +1150,10 @@ void LPFormulator::addSigmoidLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
                                                const Layer *layer,
                                                bool createVariables )
@@ -1210,6 +1237,7 @@ void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+
 void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                                               const Layer *layer,
                                               bool createVariables )
@@ -1290,6 +1318,10 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void LPFormulator::addSoftmaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                                                   const Layer *layer,
                                                   bool createVariables )
@@ -1353,6 +1385,10 @@ void LPFormulator::addSoftmaxLayerToLpRelaxation( GurobiWrapper &gurobi,
         double bias;
         SoftmaxBoundType boundType = Options::get()->getSoftmaxBoundType();
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
         List<GurobiWrapper::Term> terms;
         if ( FloatUtils::areEqual( lb, ub ) )
         {
@@ -1567,6 +1603,10 @@ void LPFormulator::addBilinearLayerToLpRelaxation( GurobiWrapper &gurobi,
     }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                                       const Layer *layer,
                                                       bool createVariables )
