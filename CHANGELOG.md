@@ -5,11 +5,8 @@
   - Dropped support for parsing Tensorflow network format. Newest Marabou version that supports Tensorflow is at commit 190555573e4702.
   - Fixed bug in the parsing of `transpose` nodes in command line C++ parser.
   - Implemented forward-backward abstract interpretation, symbolic bound tightening, interval arithmetic and simulations for all activation functions.
-<<<<<<< HEAD
   - Implemented backward analysis using preimage-approximation algorithm for `Relu`, `LeakyRelu`, `Sign` and `Bilinear` Layers.
-=======
   - Added the BaBSR heuristic as a new branching strategy for ReLU Splitting
->>>>>>> upstream/master
 
 ## Version 2.0.0
 
