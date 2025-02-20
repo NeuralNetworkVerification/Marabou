@@ -20,6 +20,7 @@
 #include "LayerOwner.h"
 #include "Map.h"
 #include "ParallelSolver.h"
+#include "PolygonalTightening.h"
 
 #include <atomic>
 #include <boost/chrono.hpp>
@@ -52,7 +53,9 @@ public:
       constructed from scratch
     */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
-                                         bool backward = false );
+                                         bool backward = false,
+                                         std::vector<double> coeffs = {} );
+    void optimizeBoundsWithPreimageApproximation( Map<unsigned, Layer *> &layers );
     void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                                    unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
@@ -72,10 +75,12 @@ public:
     */
     void createLPRelaxation( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
-                             unsigned lastLayer = UINT_MAX );
+                             unsigned lastLayer = UINT_MAX,
+                             std::vector<double> coeffs = {} );
     void createLPRelaxationAfter( const Map<unsigned, Layer *> &layers,
                                   GurobiWrapper &gurobi,
-                                  unsigned firstLayer );
+                                  unsigned firstLayer,
+                                  std::vector<double> coeffs = {} );
     double solveLPRelaxation( GurobiWrapper &gurobi,
                               const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax,
@@ -127,7 +132,37 @@ private:
                                             const Layer *layer,
                                             bool createVariables );
 
-    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args, bool backward );
+    void optimizeBoundsOfNeuronsWithLpRelaxation( ThreadArgument &args,
+                                                  bool backward,
+                                                  std::vector<double> coeffs = {} );
+
+
+    // Create LP relaxations depending on external parameters.
+    void addLayerToParameterisedModel( GurobiWrapper &gurobi,
+                                       const Layer *layer,
+                                       bool createVariables,
+                                       std::vector<double> coeffs );
+
+    void addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                  const Layer *layer,
+                                                  bool createVariables,
+                                                  std::vector<double> coeffs );
+
+    void addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                       const Layer *layer,
+                                                       bool createVariables,
+                                                       std::vector<double> coeffs );
+
+    void addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                  const Layer *layer,
+                                                  bool createVariables,
+                                                  std::vector<double> coeffs );
+
+    void addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
+                                                      const Layer *layer,
+                                                      bool createVariables,
+                                                      std::vector<double> coeffs );
+
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints

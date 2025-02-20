@@ -198,10 +198,38 @@ void NetworkLevelReasoner::clearConstraintTightenings()
     _boundTightenings.clear();
 }
 
+void NetworkLevelReasoner::receivePolygonalTighterBound( PolygonalTightening polygonal_tightening )
+{
+    _polygonalBoundTightenings.append( polygonal_tightening );
+}
+
+void NetworkLevelReasoner::getConstraintPolygonalTightenings(
+    List<PolygonalTightening> &polygonal_tightenings )
+{
+    polygonal_tightenings = _polygonalBoundTightenings;
+    _polygonalBoundTightenings.clear();
+}
+
+void NetworkLevelReasoner::clearConstraintPolygonalTightenings()
+{
+    _polygonalBoundTightenings.clear();
+}
+
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
+}
+
+void NetworkLevelReasoner::parameterisedSymbolicBoundPropagation( std::vector<double> coeffs )
+{
+    Map<unsigned, std::vector<double>> layerIndicesToParameters =
+        _layerIndexToLayer[0]->getParametersForLayers( _layerIndexToLayer, coeffs );
+    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
+    {
+        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[i];
+        _layerIndexToLayer[i]->computeParameterisedSymbolicBounds( currentLayerCoeffs );
+    }
 }
 
 void NetworkLevelReasoner::deepPolyPropagation()
@@ -221,6 +249,9 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
          Options::get()->getMILPSolverBoundTighteningType() ==
              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer, true );
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX )
+        lpFormulator.optimizeBoundsWithPreimageApproximation( _layerIndexToLayer );
     else if ( Options::get()->getMILPSolverBoundTighteningType() ==
               MILPSolverBoundTighteningType::LP_RELAXATION )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
