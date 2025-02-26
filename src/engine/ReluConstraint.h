@@ -37,6 +37,15 @@
 
 #include <cmath>
 
+/*
+  Namespace for Network Level Reasoner Instance.
+*/
+namespace NLR {
+class NetworkLevelReasoner;
+class Layer;
+struct NeuronIndex;
+} // namespace NLR
+
 class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
@@ -56,6 +65,15 @@ public:
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const override;
+
+    /*
+      Initialize the network level reasoner needed for BaBSR branching heuristics.
+    */
+
+    void initializeNLRForBaBSR( NLR::NetworkLevelReasoner *nlr )
+    {
+        _networkLevelReasoner = nlr;
+    }
 
     /*
       Restore the state of this constraint from the given one.
@@ -170,7 +188,7 @@ public:
       non-negative. This way, case splits will be bound
       update of the aux variables.
     */
-    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( Query &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.
@@ -215,6 +233,10 @@ public:
 
     bool supportPolarity() const override;
 
+    bool supportBaBsr() const override;
+
+    double computeBaBsr() const;
+
     /*
       Return the polarity of this ReLU, which computes how symmetric
       the bound of the input to this ReLU is with respect to 0.
@@ -227,6 +249,7 @@ public:
       always between -1 and 1. The closer it is to 0, the more symmetric the
       bound is.
     */
+
     double computePolarity() const;
 
     /*
@@ -236,6 +259,11 @@ public:
 
 
     PhaseStatus getDirection() const;
+
+    /*
+      Update the score based on the BaBsr heuristic
+    */
+    void updateScoreBasedOnBaBsr() override;
 
     void updateScoreBasedOnPolarity() override;
 
@@ -276,6 +304,7 @@ public:
 
 private:
     unsigned _b, _f;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
     bool _auxVarInUse;
     unsigned _aux;
 

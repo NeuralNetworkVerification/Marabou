@@ -60,7 +60,6 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
-// #include "SmtCore.h"
 #include "Tightening.h"
 #include "context/cdlist.h"
 #include "context/cdo.h"
@@ -69,7 +68,7 @@
 class Equation;
 class BoundManager;
 class ITableau;
-class InputQuery;
+class Query;
 class String;
 class SmtCore;
 
@@ -252,7 +251,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ) {};
+    virtual void transformToUseAuxVariables( Query & ){};
 
     void setStatistics( Statistics *statistics );
 
@@ -260,7 +259,7 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery & /* inputQuery */ )
+    virtual void addAuxiliaryEquationsAfterPreprocessing( Query & /* inputQuery */ )
     {
     }
 
@@ -320,6 +319,14 @@ public:
     }
 
     /*
+      Return true if and only if this piecewise linear constraint supports the BaBsr Heuristic
+    */
+    virtual bool supportBaBsr() const
+    {
+        return false;
+    }
+
+    /*
       Update the preferred direction to take first when splitting on this PLConstraint
     */
     virtual void updateDirection()
@@ -331,6 +338,9 @@ public:
         return _score;
     }
 
+    virtual void updateScoreBasedOnBaBsr()
+    {
+    }
 
     virtual void updateScoreBasedOnPolarity()
     {

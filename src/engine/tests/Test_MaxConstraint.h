@@ -14,11 +14,11 @@
 **/
 
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 #include <string.h>
@@ -72,7 +72,7 @@ public:
         for ( unsigned i = 2; i < 10; ++i )
             elements.insert( i );
 
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
 
         MaxConstraint max( f, elements );
@@ -218,7 +218,7 @@ public:
 
         MaxConstraint max( f, elements );
 
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 10u );
         TS_ASSERT_EQUALS( ipq.getEquations().size(), 0u );
@@ -255,7 +255,7 @@ public:
 
         MaxConstraint max( f, elements );
 
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -294,7 +294,7 @@ public:
 
         MaxConstraint max( f, elements );
 
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -338,7 +338,7 @@ public:
         elements.insert( 3 );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 4 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -370,7 +370,7 @@ public:
         elements.insert( 3 );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 4 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -458,7 +458,7 @@ public:
 
         elements.insert( 1 );
         MaxConstraint max3( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_THROWS_NOTHING( max3.transformToUseAuxVariables( ipq ) );
 
@@ -580,7 +580,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 9u );
@@ -607,7 +607,7 @@ public:
             elements2.insert( i );
 
         MaxConstraint max2( f2, elements2 );
-        InputQuery ipq2;
+        Query ipq2;
         ipq2.setNumberOfVariables( 45 );
         TS_ASSERT_THROWS_NOTHING( max2.transformToUseAuxVariables( ipq2 ) );
         TS_ASSERT_EQUALS( ipq2.getNumberOfVariables(), 49u );
@@ -638,7 +638,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 9u );
@@ -670,7 +670,7 @@ public:
             elements2.insert( i );
 
         MaxConstraint max2( f2, elements2 );
-        InputQuery ipq2;
+        Query ipq2;
         ipq2.setNumberOfVariables( 45 );
         TS_ASSERT_THROWS_NOTHING( max2.transformToUseAuxVariables( ipq2 ) );
         TS_ASSERT_EQUALS( ipq2.getNumberOfVariables(), 49u );
@@ -705,7 +705,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 6 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 10u );
@@ -769,7 +769,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 6 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 10u );
@@ -824,7 +824,7 @@ public:
             elements2.insert( i );
 
         MaxConstraint max2( f2, elements2 );
-        InputQuery ipq2;
+        Query ipq2;
         ipq2.setNumberOfVariables( 6 );
         TS_ASSERT_THROWS_NOTHING( max2.transformToUseAuxVariables( ipq2 ) );
         TS_ASSERT_EQUALS( ipq2.getNumberOfVariables(), 10u );
@@ -896,7 +896,7 @@ public:
             elements3.insert( i );
 
         MaxConstraint max3( f3, elements3 );
-        InputQuery ipq3;
+        Query ipq3;
         ipq3.setNumberOfVariables( 6 );
         TS_ASSERT_THROWS_NOTHING( max3.transformToUseAuxVariables( ipq3 ) );
         TS_ASSERT_EQUALS( ipq3.getNumberOfVariables(), 10u );
@@ -939,7 +939,7 @@ public:
         elements.insert( 4 );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
@@ -985,7 +985,7 @@ public:
         MaxConstraint max( f, elements );
         MockTableau tableau;
         max.registerTableau( &tableau );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 18u );
@@ -1028,7 +1028,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -1068,7 +1068,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 10 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -1104,7 +1104,7 @@ public:
 
         TestMaxConstraint max( f, elements );
 
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
@@ -1163,7 +1163,7 @@ public:
             elements.insert( i );
 
         TestMaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 6 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 10u );
@@ -1232,7 +1232,7 @@ public:
         MockTableau tableau;
         max1.registerTableau( &tableau );
 
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max1.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
@@ -1397,7 +1397,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
@@ -1439,7 +1439,7 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
-        InputQuery ipq;
+        Query ipq;
         ipq.setNumberOfVariables( 5 );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );

@@ -20,7 +20,7 @@
 #include "Options.h"
 #include "Set.h"
 
-SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery &inputQuery,
+SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const Query &inputQuery,
                                                           const ITableau &tableau )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
     , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )
@@ -32,6 +32,10 @@ SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery &inpu
           Options::get()->getFloat( Options::PROBABILITY_DENSITY_PARAMETER ) )
     , _statistics( NULL )
 {
+    if ( !inputQuery._networkLevelReasoner ||
+         inputQuery._networkLevelReasoner->getConstraintsInTopologicalOrder().size() <
+             _plConstraints.size() )
+        _initializationStrategy = SoIInitializationStrategy::CURRENT_ASSIGNMENT;
 }
 
 void SumOfInfeasibilitiesManager::resetPhasePattern()
@@ -82,13 +86,12 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
 
     resetPhasePattern();
 
-    if ( _initializationStrategy == SoIInitializationStrategy::INPUT_ASSIGNMENT &&
-         _networkLevelReasoner )
+    if ( _initializationStrategy == SoIInitializationStrategy::INPUT_ASSIGNMENT )
     {
+        ASSERT( _networkLevelReasoner );
         initializePhasePatternWithCurrentInputAssignment();
     }
-    else if ( _initializationStrategy == SoIInitializationStrategy::CURRENT_ASSIGNMENT ||
-              !_networkLevelReasoner )
+    else if ( _initializationStrategy == SoIInitializationStrategy::CURRENT_ASSIGNMENT )
     {
         initializePhasePatternWithCurrentAssignment();
     }
@@ -192,8 +195,19 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
     } );
 
     // First, pick a pl constraint whose cost component we will update.
-    unsigned index = (unsigned)T::rand() % _plConstraintsInCurrentPhasePattern.size();
-    PiecewiseLinearConstraint *plConstraintToUpdate = _plConstraintsInCurrentPhasePattern[index];
+    bool fixed = true;
+    PiecewiseLinearConstraint *plConstraintToUpdate;
+    while ( fixed )
+    {
+        if ( _plConstraintsInCurrentPhasePattern.empty() )
+            return;
+
+        unsigned index = (unsigned)T::rand() % _plConstraintsInCurrentPhasePattern.size();
+        plConstraintToUpdate = _plConstraintsInCurrentPhasePattern[index];
+        fixed = plConstraintToUpdate->phaseFixed();
+        if ( fixed )
+            removeCostComponentFromHeuristicCost( plConstraintToUpdate );
+    }
 
     // Next, pick an alternative phase.
     PhaseStatus currentPhase = _currentPhasePattern[plConstraintToUpdate];
@@ -349,6 +363,12 @@ void SumOfInfeasibilitiesManager::setPhaseStatusInCurrentPhasePattern(
     ASSERT( _currentPhasePattern.exists( constraint ) &&
             _plConstraintsInCurrentPhasePattern.exists( constraint ) );
     _currentPhasePattern[constraint] = phase;
+}
+
+void SumOfInfeasibilitiesManager::setPLConstraintsInCurrentPhasePattern(
+    const Vector<PiecewiseLinearConstraint *> &constraints )
+{
+    _plConstraintsInCurrentPhasePattern = constraints;
 }
 
 void SumOfInfeasibilitiesManager::getCostReduction( PiecewiseLinearConstraint *plConstraint,

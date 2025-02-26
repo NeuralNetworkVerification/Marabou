@@ -17,10 +17,10 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 #include "SmtCore.h"
 #include "Statistics.h"
 
@@ -686,7 +686,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     /*
       We want to add the two equations
@@ -828,81 +828,86 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
                 _posAux, 0, Tightening::UB, { _b }, Tightening::LB, *this, true );
+        return;
     }
 
     // Option 2: b's range is strictly negative:
-    else if ( existsUpperBound( _b ) && getUpperBound( _b ) <= 0 )
+    if ( existsUpperBound( _b ) && getUpperBound( _b ) <= 0 )
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
                 _negAux, 0, Tightening::UB, { _b }, Tightening::UB, *this, true );
+        return;
     }
 
-    else if ( existsLowerBound( _f ) )
-    {
-        // Option 3: f's range is strictly disjoint from b's positive
-        // range
-        if ( existsUpperBound( _b ) && getLowerBound( _f ) > getUpperBound( _b ) )
-        {
-            setPhaseStatus( ABS_PHASE_NEGATIVE );
-            if ( proofs )
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this, true );
-        }
+    if ( !existsLowerBound( _f ) )
+        return;
 
-        // Option 4: f's range is strictly disjoint from b's negative
-        // range, in absolute value
-        else if ( existsLowerBound( _b ) && getLowerBound( _f ) > -getLowerBound( _b ) )
+    // Option 3: f's range is strictly disjoint from b's positive
+    // range
+    if ( existsUpperBound( _b ) && getLowerBound( _f ) > getUpperBound( _b ) )
+    {
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
+        if ( proofs )
+            _boundManager->addLemmaExplanationAndTightenBound(
+                _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this, true );
+        return;
+    }
+
+    // Option 4: f's range is strictly disjoint from b's negative
+    // range, in absolute value
+    if ( existsLowerBound( _b ) && getLowerBound( _f ) > -getLowerBound( _b ) )
+    {
+        setPhaseStatus( ABS_PHASE_POSITIVE );
+        if ( proofs )
+            _boundManager->addLemmaExplanationAndTightenBound(
+                _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this, true );
+        return;
+    }
+
+    if ( _auxVarsInUse )
+    {
+        // Option 5: posAux has become zero, phase is positive
+        if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this, true );
+                    _posAux, 0, Tightening::UB, { _posAux }, Tightening::UB, *this, true );
+            return;
         }
 
-        else if ( _auxVarsInUse )
+        // Option 6: posAux can never be zero, phase is negative
+        if ( existsLowerBound( _posAux ) && FloatUtils::isPositive( getLowerBound( _posAux ) ) )
         {
-            // Option 5: posAux has become zero, phase is positive
-            if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
-            {
-                setPhaseStatus( ABS_PHASE_POSITIVE );
-                if ( proofs )
-                    _boundManager->addLemmaExplanationAndTightenBound(
-                        _posAux, 0, Tightening::UB, { _posAux }, Tightening::UB, *this, true );
-            }
+            setPhaseStatus( ABS_PHASE_NEGATIVE );
+            // TODO modify code to accept phase fixings without a lemma
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this, true );
+            return;
+        }
 
-            // Option 6: posAux can never be zero, phase is negative
-            else if ( existsLowerBound( _posAux ) &&
-                      FloatUtils::isPositive( getLowerBound( _posAux ) ) )
-            {
-                setPhaseStatus( ABS_PHASE_NEGATIVE );
-                // TODO modify code to accept phase fixings without a lemma
-                if ( proofs )
-                    _boundManager->addLemmaExplanationAndTightenBound(
-                        _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this, true );
-            }
+        // Option 7: negAux has become zero, phase is negative
+        if ( existsUpperBound( _negAux ) && FloatUtils::isZero( getUpperBound( _negAux ) ) )
+        {
+            setPhaseStatus( ABS_PHASE_NEGATIVE );
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _negAux, 0, Tightening::UB, { _negAux }, Tightening::UB, *this, true );
+            return;
+        }
 
-            // Option 7: negAux has become zero, phase is negative
-            else if ( existsUpperBound( _negAux ) &&
-                      FloatUtils::isZero( getUpperBound( _negAux ) ) )
-            {
-                setPhaseStatus( ABS_PHASE_NEGATIVE );
-                if ( proofs )
-                    _boundManager->addLemmaExplanationAndTightenBound(
-                        _negAux, 0, Tightening::UB, { _negAux }, Tightening::UB, *this, true );
-            }
-
-            // Option 8: negAux can never be zero, phase is positive
-            else if ( existsLowerBound( _negAux ) &&
-                      FloatUtils::isPositive( getLowerBound( _negAux ) ) )
-            {
-                setPhaseStatus( ABS_PHASE_POSITIVE );
-                // TODO modify code to accept phase fixings without a lemma
-                if ( proofs )
-                    _boundManager->addLemmaExplanationAndTightenBound(
-                        _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this, true );
-            }
+        // Option 8: negAux can never be zero, phase is positive
+        if ( existsLowerBound( _negAux ) && FloatUtils::isPositive( getLowerBound( _negAux ) ) )
+        {
+            setPhaseStatus( ABS_PHASE_POSITIVE );
+            // TODO modify code to accept phase fixings without a lemma
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this, true );
+            return;
         }
     }
 

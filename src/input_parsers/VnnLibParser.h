@@ -16,7 +16,7 @@
 #ifndef _VnnLibParser_h_
 #define _VnnLibParser_h_
 
-#include "InputQuery.h"
+#include "IQuery.h"
 #include "MString.h"
 #include "Map.h"
 #include "Vector.h"
@@ -24,7 +24,7 @@
 class VnnLibParser
 {
 public:
-    void parse( const String &vnnlibFilePath, InputQuery &inputQuery );
+    void parse( const String &vnnlibFilePath, IQuery &inputQuery );
 
 private:
     class Term
@@ -45,15 +45,15 @@ private:
 
     Map<String, unsigned int> _varMap;
 
-    void parseVnnlib( const String &vnnlibContent, InputQuery &inputQuery );
+    void parseVnnlib( const String &vnnlibContent, IQuery &inputQuery );
 
-    int parseScript( const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseScript( const Vector<String> &tokens, IQuery &inputQuery );
 
-    int parseCommand( int index, const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseCommand( int index, const Vector<String> &tokens, IQuery &inputQuery );
 
-    int parseDeclareConst( int index, const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseDeclareConst( int index, const Vector<String> &tokens, IQuery &inputQuery );
 
-    int parseAssert( int index, const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseAssert( int index, const Vector<String> &tokens, IQuery &inputQuery );
 
     int parseCondition( int index, const Vector<String> &tokens, List<Equation> &equations );
 

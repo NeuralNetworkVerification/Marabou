@@ -2,65 +2,109 @@
 /*! \file InputQuery.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Shantanu Thakoor, Derek Huang, Andrew Wu
+ **   Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** This implementation of the IQuery abstract class allows the pushing/poping
+ ** of constraints in an incremental manner.
+ **
  **/
 
 #ifndef __InputQuery_h__
 #define __InputQuery_h__
 
+#include "CDMap.h"
+#include "CommonError.h"
 #include "Equation.h"
+#include "IQuery.h"
 #include "List.h"
 #include "MString.h"
-#include "Map.h"
-#include "NetworkLevelReasoner.h"
 #include "NonlinearConstraint.h"
 #include "PiecewiseLinearConstraint.h"
+#include "context/cdo.h"
 
-class InputQuery
+#include <context/cdlist.h>
+#include <context/context.h>
+
+class InputQuery : public IQuery
 {
+    typedef CDMap<unsigned, double> VariableValueMap;
+    typedef CDMap<unsigned, unsigned> VariableIndexMap;
+    typedef CDMap<unsigned, unsigned> IndexVariableMap;
+
+    struct CleanUpEquation
+    {
+        void operator()( Equation **ptr ) const
+        {
+            delete *ptr;
+        }
+    };
+
+    struct CleanUpPLConstraint
+    {
+        void operator()( PiecewiseLinearConstraint **ptr ) const
+        {
+            delete *ptr;
+        }
+    };
+
+    struct CleanUpNLConstraint
+    {
+        void operator()( NonlinearConstraint **ptr ) const
+        {
+            delete *ptr;
+        }
+    };
+
+    typedef CVC4::context::CDList<Equation *, CleanUpEquation> EquationList;
+    typedef CVC4::context::CDList<PiecewiseLinearConstraint *, CleanUpPLConstraint>
+        PLConstraintsList;
+    typedef CVC4::context::CDList<NonlinearConstraint *, CleanUpNLConstraint> NLConstraintsList;
+
 public:
     InputQuery();
     ~InputQuery();
 
-    /*
-      Methods for setting and getting the input part of the query
-    */
     void setNumberOfVariables( unsigned numberOfVariables );
-    void setLowerBound( unsigned variable, double bound );
-    void setUpperBound( unsigned variable, double bound );
-
-    void addEquation( const Equation &equation );
-
     unsigned getNumberOfVariables() const;
     unsigned getNewVariable();
+
+    /*
+      The set*Bound methods will overwrite the currently stored bound of the variable.
+      They will throw an error if the context level is positive and the variable bound
+      has already been set.
+
+      The tighten*Bound methods will have update the currently stored bound of the
+      variable if and only if the new bound is tighter. The methods return true if and
+      if only the bound is tightened.
+    */
+    void setLowerBound( unsigned variable, double bound );
+    void setUpperBound( unsigned variable, double bound );
+    bool tightenLowerBound( unsigned variable, double bound );
+    bool tightenUpperBound( unsigned variable, double bound );
+
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
-    const Map<unsigned, double> &getLowerBounds() const;
-    const Map<unsigned, double> &getUpperBounds() const;
-    void clearBounds();
 
-    const List<Equation> &getEquations() const;
-    List<Equation> &getEquations();
-    void removeEquationsByIndex( const Set<unsigned> indices );
+    /*
+      Note: currently there is no API call for removing equations, PLConstraints or NLConstraints,
+      becaues CDList does not support removal.
+    */
+    void addEquation( const Equation &equation );
+    unsigned getNumberOfEquations() const;
+    ;
+    void getEquations( List<Equation> &equations ) const;
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
-    const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
-    List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
-
-    // Encode a clip constraint using two ReLU constraints
+    void getPiecewiseLinearConstraints( List<PiecewiseLinearConstraint *> &constraints ) const;
     void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling );
 
     void addNonlinearConstraint( NonlinearConstraint *constraint );
-    const List<NonlinearConstraint *> &getNonlinearConstraints() const;
-    List<NonlinearConstraint *> &getNonlinearConstraints();
+    void getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const;
 
     /*
       Methods for handling input and output variables
@@ -71,6 +115,8 @@ public:
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;
     unsigned getNumOutputVariables() const;
+    void getInputVariables( List<unsigned> &inputVariables ) const;
+    void getOutputVariables( List<unsigned> &outputVariables ) const;
     List<unsigned> getInputVariables() const;
     List<unsigned> getOutputVariables() const;
 
@@ -81,167 +127,81 @@ public:
     double getSolutionValue( unsigned variable ) const;
 
     /*
-      Count the number of infinite bounds in the input query.
-    */
-    unsigned countInfiniteBounds();
-
-    /*
-      If two variables are known to be identical, merge them.
-      (v1 will be merged into v2).
-    */
-    void mergeIdenticalVariables( unsigned v1, unsigned v2 );
-
-    /*
-      Remove an equation from equation list
-    */
-    void removeEquation( Equation e );
-
-    /*
-      Assignment operator and copy constructor, duplicate the constraints.
-    */
-    InputQuery &operator=( const InputQuery &other );
-    InputQuery( const InputQuery &other );
-
-    /*
-      Debugging methods
-    */
-
-    /*
       Store a correct possible solution
     */
     void storeDebuggingSolution( unsigned variable, double value );
-    Map<unsigned, double> _debuggingSolution;
 
     /*
       Serializes the query to a file which can then be loaded using QueryLoader.
     */
     void saveQuery( const String &fileName );
+    void saveQueryAsSmtLib( const String &filename ) const;
 
     /*
-      Print input and output bounds
+      Generate a non-context-dependent version of the Query
     */
-    void printInputOutputBounds() const;
+    Query *generateQuery() const;
+
     void dump() const;
-    void printAllBounds() const;
 
     /*
-      Adjsut the input/output variable mappings because variables have been merged
-      or have become fixed
+      The following methods perform directly read/write to the _userContext object.
     */
-    void adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
-                                   const Map<unsigned, unsigned> &mergedVariables );
-
-    /*
-      Attempt to figure out the network topology and construct a
-      network level reasoner. Also collect the equations that are not handled
-      by the NLR, as well as variables that participate in
-      equations/plconstraints/nlconstraints that are not handled by the NLR.
-
-      Return true iff the construction was successful
-    */
-    bool constructNetworkLevelReasoner( List<Equation> &unhandledEquations,
-                                        Set<unsigned> &varsInUnhandledConstraints );
-
-    /*
-      Merge consecutive weighted sum layers, and update _equation accordingly.
-      Equalities corresponding to the merge layers are added, and equalities
-      corresponding to pre-merged layers are removed.
-    */
-    void mergeConsecutiveWeightedSumLayers( const List<Equation> &unhandledEquations,
-                                            const Set<unsigned> &varsInUnhandledConstraints,
-                                            Map<unsigned, LinearExpression> &eliminatedNeurons );
-
-    /*
-      Include a network level reasoner in the query
-    */
-    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
-    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const;
-
-    // A map for storing the tableau aux variable assigned to each PLC
-    Map<unsigned, unsigned> _lastAddendToAux;
+    inline unsigned getLevel()
+    {
+        return _userContext.getLevel();
+    };
+    inline void push()
+    {
+        _userContext.push();
+    };
+    inline void pop()
+    {
+        if ( getLevel() == 0 )
+            throw CommonError( CommonError::POPPING_ZERO_CONTEXT_LEVEL,
+                               "Cannot pop when context level is 0." );
+        _userContext.pop();
+    };
+    inline void popTo( unsigned toLevel )
+    {
+        _userContext.popto( toLevel );
+    };
 
 private:
-    unsigned _numberOfVariables;
-    List<Equation> _equations;
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
-    List<PiecewiseLinearConstraint *> _plConstraints;
-    List<NonlinearConstraint *> _nlConstraints;
-
-    Map<unsigned, double> _solution;
+    /*
+      This is an outward-facing context which manages incrementally pushing and popping constraints
+    */
+    CVC4::context::Context _userContext;
 
     /*
-      Attempt to ensure that neurons in the same non-linear NLR layer
-      have the same source layer by spacing neurons with different
-      source neurons in separate NLR layers.
+      The following constitutes a verification query
+      Mapping between input/output variables and their indices are optional
     */
-    bool _ensureSameSourceLayerInNLR;
+    CVC4::context::CDO<unsigned> _numberOfVariables;
+    EquationList _equations;
+    VariableValueMap _lowerBounds;
+    VariableValueMap _upperBounds;
+    PLConstraintsList _plConstraints;
+    NLConstraintsList _nlConstraints;
+    VariableIndexMap _variableToInputIndex;
+    IndexVariableMap _inputIndexToVariable;
+    VariableIndexMap _variableToOutputIndex;
+    IndexVariableMap _outputIndexToVariable;
+
+    /*
+      Stores the satisfying assignment.
+    */
+    VariableValueMap _solution;
+
+    /*
+      Stores a correct possible assignment.
+    */
+    VariableValueMap _debuggingSolution;
 
     /*
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();
-
-    /*
-      Methods called by constructNetworkLevelReasoner
-    */
-    bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
-                                   Map<unsigned, unsigned> &handledVariableToLayer,
-                                   unsigned newLayerIndex,
-                                   Set<unsigned> &handledEquations );
-    bool constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
-                              Map<unsigned, unsigned> &handledVariableToLayer,
-                              unsigned newLayerIndex,
-                              Set<NonlinearConstraint *> &handledNLConstraints );
-    bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
-                             Map<unsigned, unsigned> &handledVariableToLayer,
-                             unsigned newLayerIndex,
-                             Set<PiecewiseLinearConstraint *> &handledPLConstraints );
-    bool constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
-                                  Map<unsigned, unsigned> &handledVariableToLayer,
-                                  unsigned newLayerIndex,
-                                  Set<PiecewiseLinearConstraint *> &handledPLConstraints );
-    bool constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
-                                Map<unsigned, unsigned> &handledVariableToLayer,
-                                unsigned newLayerIndex,
-                                Set<NonlinearConstraint *> &handledNLConstraints );
-    bool constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
-                                      Map<unsigned, unsigned> &handledVariableToLayer,
-                                      unsigned newLayerIndex,
-                                      Set<PiecewiseLinearConstraint *> &handledPLConstraints );
-    bool constructSignLayer( NLR::NetworkLevelReasoner *nlr,
-                             Map<unsigned, unsigned> &handledVariableToLayer,
-                             unsigned newLayerIndex,
-                             Set<PiecewiseLinearConstraint *> &handledPLConstraints );
-    bool constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
-                            Map<unsigned, unsigned> &handledVariableToLayer,
-                            unsigned newLayerIndex,
-                            Set<PiecewiseLinearConstraint *> &handledPLConstraints );
-    bool constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
-                                 Map<unsigned, unsigned> &handledVariableToLayer,
-                                 unsigned newLayerIndex,
-                                 Set<NonlinearConstraint *> &handledNLConstraints );
-    bool constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
-                                Map<unsigned, unsigned> &handledVariableToLayer,
-                                unsigned newLayerIndex,
-                                Set<NonlinearConstraint *> &handledNLConstraints );
-
-public:
-    /*
-      Mapping of input/output variables to their indices.
-      Made public for easy access from the preprocessor.
-    */
-    Map<unsigned, unsigned> _variableToInputIndex;
-    Map<unsigned, unsigned> _inputIndexToVariable;
-    Map<unsigned, unsigned> _variableToOutputIndex;
-    Map<unsigned, unsigned> _outputIndexToVariable;
-
-    /*
-      An object that knows the topology of the network being checked,
-      and can be used for various operations such as network
-      evaluation of topology-based bound tightening.
-     */
-    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 };
 
 #endif // __InputQuery_h__

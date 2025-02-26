@@ -21,13 +21,13 @@
 #include "DisjunctionConstraint.h"
 #include "EngineState.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "NLRError.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
+#include "Query.h"
 #include "QuitFromPrecisionRestorationException.h"
 #include "SmtCore.h"
 #include "TableauRow.h"
@@ -85,6 +85,7 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
+    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -152,12 +153,12 @@ void Engine::setRandomSeed( unsigned seed )
     srand( seed );
 }
 
-InputQuery Engine::prepareSnCInputQuery()
+Query Engine::prepareSnCQuery()
 {
     List<Tightening> bounds = _sncSplit.getBoundTightenings();
     List<Equation> equations = _sncSplit.getEquations();
 
-    InputQuery sncIPQ = *_preprocessedQuery;
+    Query sncIPQ = *_preprocessedQuery;
     for ( auto &equation : equations )
         sncIPQ.addEquation( equation );
 
@@ -177,10 +178,10 @@ InputQuery Engine::prepareSnCInputQuery()
     return sncIPQ;
 }
 
-void Engine::exportInputQueryWithError( String errorMessage )
+void Engine::exportQueryWithError( String errorMessage )
 {
-    String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedMarabouQuery.ipq";
-    prepareSnCInputQuery().saveQuery( ipqFileName );
+    String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedInputQuery.ipq";
+    prepareSnCQuery().saveQuery( ipqFileName );
     printf( "Engine: %s!\nInput query has been saved as %s. Please attach the input query when you "
             "open the issue on GitHub.\n",
             errorMessage.ascii(),
@@ -189,7 +190,6 @@ void Engine::exportInputQueryWithError( String errorMessage )
 
 void Engine::preSolve() // TODO: change the name of this method
 {
-    // TODO: when Marabou uses signals? Is it necessary?
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -209,20 +209,18 @@ void Engine::preSolve() // TODO: change the name of this method
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
         storeInitialEngineState();
-
-    if ( _lpSolverType == LPSolverType::GUROBI )
+    else if ( _lpSolverType == LPSolverType::GUROBI )
     {
         ENGINE_LOG( "Encoding convex relaxation into Gurobi..." );
         _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
         _tableau->setGurobi( &( *_gurobi ) );
         _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
         _milpEncoder->setStatistics( &_statistics );
-        _milpEncoder->encodeInputQuery( *_gurobi, *_preprocessedQuery, true );
+        _milpEncoder->encodeQuery( *_gurobi, *_preprocessedQuery, true );
         ENGINE_LOG( "Encoding convex relaxation into Gurobi - done" );
     }
 
-    mainLoopStatistics(); // TODO: update usage of statistics, maybe should be called in
-                          // solveWithCadical
+    mainLoopStatistics();
     if ( _verbosity > 0 )
     {
         printf( "\nEngine::solve: Initial statistics\n" );
@@ -335,7 +333,6 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound = adjustAssignmentToSatisfyNonLinearConstraints();
-
                 if ( solutionFound )
                 {
                     if ( allNonlinearConstraintsHold() )
@@ -371,7 +368,6 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                     }
                     else if ( !hasBranchingCandidate() )
                     {
-                        // TODO: check if this case still applies with CDCL
                         mainLoopEnd = TimeUtils::sampleMicro();
                         _statistics.incLongAttribute(
                             Statistics::TIME_MAIN_LOOP_MICRO,
@@ -417,7 +413,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             {
                 ASSERT( _lpSolverType == LPSolverType::NATIVE );
                 _smtCore.setExitCode( ExitCode::ERROR );
-                exportInputQueryWithError( "Cannot restore tableau" );
+                exportQueryWithError( "Cannot restore tableau" );
                 mainLoopEnd = TimeUtils::sampleMicro();
                 _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
                                               TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
@@ -524,7 +520,6 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         // and perform any valid case splits.
         tightenBoundsOnConstraintMatrix();
         _boundManager.propagateTightenings();
-
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
 
@@ -916,19 +911,18 @@ void Engine::fixViolatedPlConstraintIfPossible()
     _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
 }
 
-bool Engine::processInputQuery( InputQuery &inputQuery )
+bool Engine::processInputQuery( const IQuery &inputQuery )
 {
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
-bool Engine::calculateBounds( InputQuery &inputQuery )
+bool Engine::calculateBounds( const IQuery &inputQuery )
 {
     ENGINE_LOG( "calculateBounds starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
 
     try
     {
-        informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, true );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
@@ -970,35 +964,12 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
     return true;
 }
 
-void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
-{
-    for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
-    {
-        List<unsigned> variables = plConstraint->getParticipatingVariables();
-        for ( unsigned variable : variables )
-        {
-            plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
-            plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
-        }
-    }
-
-    for ( const auto &nlConstraint : inputQuery.getNonlinearConstraints() )
-    {
-        List<unsigned> variables = nlConstraint->getParticipatingVariables();
-        for ( unsigned variable : variables )
-        {
-            nlConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
-            nlConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
-        }
-    }
-}
-
-void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
+void Engine::invokePreprocessor( const IQuery &inputQuery, bool preprocess )
 {
     if ( _verbosity > 0 )
         printf( "Engine::processInputQuery: Input query (before preprocessing): "
                 "%u equations, %u variables\n",
-                inputQuery.getEquations().size(),
+                inputQuery.getNumberOfEquations(),
                 inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
@@ -1007,12 +978,15 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
         _preprocessedQuery = _preprocessor.preprocess(
             inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
     else
-        _preprocessedQuery = std::unique_ptr<InputQuery>( new InputQuery( inputQuery ) );
+    {
+        _preprocessedQuery = std::unique_ptr<Query>( inputQuery.generateQuery() );
+        Preprocessor().informConstraintsOfInitialBounds( *_preprocessedQuery );
+    }
 
     if ( _verbosity > 0 )
         printf( "Engine::processInputQuery: Input query (after preprocessing): "
                 "%u equations, %u variables\n\n",
-                _preprocessedQuery->getEquations().size(),
+                _preprocessedQuery->getNumberOfEquations(),
                 _preprocessedQuery->getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery->countInfiniteBounds();
@@ -1024,7 +998,7 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     }
 }
 
-void Engine::printInputBounds( const InputQuery &inputQuery ) const
+void Engine::printInputBounds( const IQuery &inputQuery ) const
 {
     printf( "Input bounds:\n" );
     for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
@@ -1424,14 +1398,13 @@ void Engine::initializeNetworkLevelReasoning()
     }
 }
 
-bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
+bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
 
     try
     {
-        informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 1 )
             printInputBounds( inputQuery );
@@ -1600,7 +1573,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     return true;
 }
 
-void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
+void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
@@ -1612,7 +1585,11 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound
         // Tightening.
-        if ( _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE &&
+        if ( ( _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::MILP_ENCODING ||
+               _milpSolverBoundTighteningType ==
+                   MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL ||
+               _milpSolverBoundTighteningType ==
+                   MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION ) &&
              _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
@@ -1732,7 +1709,7 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
     }
 }
 
-void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor )
+void Engine::extractSolution( IQuery &inputQuery, Preprocessor *preprocessor )
 {
     Preprocessor *preprocessorInUse = nullptr;
     if ( preprocessor != nullptr )
@@ -1991,7 +1968,6 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
 
 void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
-    ASSERT( false );
     ENGINE_LOG( "" );
     ENGINE_LOG( "Applying a split. " );
 
@@ -2097,6 +2073,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     {
         adjustWorkMemorySize();
     }
+
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
@@ -2427,7 +2404,7 @@ const Statistics *Engine::getStatistics() const
     return &_statistics;
 }
 
-InputQuery *Engine::getInputQuery()
+Query *Engine::getQuery()
 {
     return &( *_preprocessedQuery );
 }
@@ -2511,7 +2488,7 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-unsigned Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
+unsigned Engine::performSymbolicBoundTightening( Query *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) || _produceUNSATProofs )
@@ -2797,6 +2774,77 @@ void Engine::decideBranchingHeuristics()
     _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
+{
+    ENGINE_LOG( Stringf( "Using BaBsr heuristic with normalized scores..." ).ascii() );
+
+    if ( !_networkLevelReasoner )
+        return NULL;
+
+    // Get constraints from NLR
+    List<PiecewiseLinearConstraint *> constraints =
+        _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+    // Temporary vector to store raw scores for normalization
+    Vector<double> rawScores;
+    Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
+
+    // Filter for ReLU constraints
+    for ( auto &plConstraint : constraints )
+    {
+        if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
+             !plConstraint->phaseFixed() )
+        {
+            ReluConstraint *reluConstraint = dynamic_cast<ReluConstraint *>( plConstraint );
+            if ( reluConstraint )
+            {
+                // Set NLR if not already set
+                reluConstraint->initializeNLRForBaBSR( _networkLevelReasoner );
+
+                // Calculate heuristic score - bias calculation happens inside computeBaBsr
+                plConstraint->updateScoreBasedOnBaBsr();
+
+                // Collect raw scores
+                rawScores.append( plConstraint->getScore() );
+            }
+        }
+    }
+
+    // Normalize scores
+    if ( !rawScores.empty() )
+    {
+        double minScore = *std::min_element( rawScores.begin(), rawScores.end() );
+        double maxScore = *std::max_element( rawScores.begin(), rawScores.end() );
+        double range = maxScore - minScore;
+
+        for ( auto &plConstraint : constraints )
+        {
+            if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
+                 !plConstraint->phaseFixed() )
+            {
+                double rawScore = plConstraint->getScore();
+                double normalizedScore = range > 0 ? ( rawScore - minScore ) / range : 0;
+
+                // Store normalized score in the map
+                scoreToConstraint[normalizedScore] = plConstraint;
+                if ( scoreToConstraint.size() >= GlobalConfiguration::BABSR_CANDIDATES_THRESHOLD )
+                    break;
+            }
+        }
+    }
+
+    // Split on neuron or constraint with highest normalized score
+    if ( !scoreToConstraint.empty() )
+    {
+        ENGINE_LOG( Stringf( "Normalized score of the picked ReLU: %f",
+                             ( *scoreToConstraint.begin() ).first )
+                        .ascii() );
+        return ( *scoreToConstraint.begin() ).second;
+    }
+    else
+        return NULL;
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
@@ -2908,6 +2956,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
                 candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
         }
     }
+    else if ( strategy == DivideStrategy::BaBSR )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnBaBsrHeuristic();
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
@@ -3041,7 +3091,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _tableau->setGurobi( &( *_gurobi ) );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
-    _milpEncoder->encodeInputQuery( *_gurobi, *_preprocessedQuery );
+    _milpEncoder->encodeQuery( *_gurobi, *_preprocessedQuery );
     ENGINE_LOG( "Query encoded in Gurobi...\n" );
 
     double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity() : timeoutInSeconds );
@@ -3385,9 +3435,9 @@ bool Engine::consistentBounds() const
     return _boundManager.consistentBounds();
 }
 
-InputQuery Engine::buildQueryFromCurrentState() const
+Query Engine::buildQueryFromCurrentState() const
 {
-    InputQuery query = *_preprocessedQuery;
+    Query query = *_preprocessedQuery;
     for ( unsigned i = 0; i < query.getNumberOfVariables(); ++i )
     {
         query.setLowerBound( i, _tableau->getLowerBound( i ) );
@@ -3781,6 +3831,7 @@ bool Engine::certifyUNSATCertificate()
     if ( certificationSucceeded )
     {
         printf( "Certified\n" );
+        _statistics.incUnsignedAttribute( Statistics::CERTIFIED_UNSAT );
         if ( _statistics.getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) )
             printf( "Some leaves were delegated and need to be certified separately by an SMT "
                     "solver\n" );
@@ -3887,7 +3938,7 @@ bool Engine::propagateBoundManagerTightenings()
     }
 }
 
-void Engine::extractBounds( InputQuery &inputQuery )
+void Engine::extractBounds( IQuery &inputQuery )
 {
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
@@ -3901,16 +3952,16 @@ void Engine::extractBounds( InputQuery &inputQuery )
             // Symbolically fixed variables are ignored
             if ( _preprocessor.variableIsUnusedAndSymbolicallyFixed( i ) )
             {
-                inputQuery.setLowerBound( i, FloatUtils::negativeInfinity() );
-                inputQuery.setUpperBound( i, FloatUtils::infinity() );
+                inputQuery.tightenLowerBound( i, FloatUtils::negativeInfinity() );
+                inputQuery.tightenUpperBound( i, FloatUtils::infinity() );
                 continue;
             }
 
             // Fixed variables are easy: return the value they've been fixed to.
             if ( _preprocessor.variableIsFixed( variable ) )
             {
-                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.tightenLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.tightenUpperBound( i, _preprocessor.getFixedValue( variable ) );
                 continue;
             }
 
@@ -3918,17 +3969,26 @@ void Engine::extractBounds( InputQuery &inputQuery )
             // a new index, due to variable elimination
             variable = _preprocessor.getNewIndex( variable );
 
-            inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( variable ) );
-            inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( variable ) );
+            inputQuery.tightenLowerBound( i, _preprocessedQuery->getLowerBound( variable ) );
+            inputQuery.tightenUpperBound( i, _preprocessedQuery->getUpperBound( variable ) );
         }
         else
         {
-            inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
-            inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+            inputQuery.tightenLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+            inputQuery.tightenUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
         }
     }
 }
 
+void Engine::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
+{
+    if ( !_produceUNSATProofs )
+        return;
+
+    ASSERT( explanation && _UNSATCertificate && _UNSATCertificateCurrentPointer )
+    _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
+    _UNSATCertificateCurrentPointer->get()->addPLCLemma( explanation );
+}
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                 unsigned id,
                                                 int explainedVar,

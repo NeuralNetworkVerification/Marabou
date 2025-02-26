@@ -199,8 +199,9 @@ public:
       Symbolic bound tightening options
     */
 
-    // Symbolic tightening rounding constant
+    // Symbolic tightening, LP rounding constants
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+    static const double LP_TIGHTENING_ROUNDING_CONSTANT;
 
     static const double SIGMOID_CUTOFF_CONSTANT;
 
@@ -231,6 +232,11 @@ public:
         SPARSE_FORREST_TOMLIN_FACTORIZATION,
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
+
+    /* In the BaBSR-based branching heuristics, only this many earliest nodes are considered to
+       branch on.
+    */
+    static const unsigned BABSR_CANDIDATES_THRESHOLD;
 
     /* In the polarity-based branching heuristics, only this many earliest nodes
        are considered to branch on.

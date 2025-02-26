@@ -39,6 +39,10 @@ def test_split_onnx():
     os.remove(presplit_filename)
     os.remove(postsplit_filename)
 
+def test_sub():
+    filename =  "test_sub.onnx"
+    evaluateFile(filename)
+
 def test_dropout():
     filename =  "test_dropout.onnx"
     evaluateFile(filename)

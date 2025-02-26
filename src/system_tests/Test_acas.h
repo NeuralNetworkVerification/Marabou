@@ -17,9 +17,9 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "Preprocessor.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -36,7 +36,7 @@ public:
 
     void test_acas_1_1()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         AcasParser acasParser( RESOURCES_DIR "/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet" );
         acasParser.generateQuery( inputQuery );
 
@@ -72,7 +72,7 @@ public:
 
     void test_acas_2_2_fixed_input()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         AcasParser acasParser( RESOURCES_DIR "/nnet/acasxu/ACASXU_experimental_v2a_2_2.nnet" );
         acasParser.generateQuery( inputQuery );
 
@@ -117,7 +117,7 @@ public:
 
     void test_acas_1_1_fixed_input()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         AcasParser acasParser( RESOURCES_DIR "/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet" );
         acasParser.generateQuery( inputQuery );
 

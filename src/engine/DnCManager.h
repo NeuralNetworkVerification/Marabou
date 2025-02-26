@@ -17,7 +17,7 @@
 #define __DnCManager_h__
 
 #include "Engine.h"
-#include "InputQuery.h"
+#include "IQuery.h"
 #include "SnCDivideStrategy.h"
 #include "SubQuery.h"
 #include "Vector.h"
@@ -27,10 +27,12 @@
 #define DNC_MANAGER_LOG( x, ... )                                                                  \
     LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
 
+class Query;
+
 class DnCManager
 {
 public:
-    DnCManager( InputQuery *inputQuery );
+    DnCManager( IQuery *inputQuery );
 
     ~DnCManager();
 
@@ -61,12 +63,12 @@ public:
 
       NOTE: Currently used in the Python API
     */
-    void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
+    void getSolution( std::map<int, double> &ret, IQuery &inputQuery );
 
     /*
       Store the solution into the input query
     */
-    void extractSolution( InputQuery &inputQuery );
+    void extractSolution( IQuery &inputQuery );
 
 private:
     /*
@@ -74,7 +76,7 @@ private:
     */
     static void dncSolve( WorkerQueue *workload,
                           std::shared_ptr<Engine> engine,
-                          std::unique_ptr<InputQuery> inputQuery,
+                          std::unique_ptr<Query> inputQuery,
                           std::atomic_int &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId,
@@ -128,7 +130,7 @@ private:
       Alternatively, we could construct the DnCManager by directly providing the
       inputQuery instead of the network and property filepaths.
     */
-    InputQuery *_baseInputQuery;
+    IQuery *_baseQuery;
 
     /*
       The exit code of the DnCManager.

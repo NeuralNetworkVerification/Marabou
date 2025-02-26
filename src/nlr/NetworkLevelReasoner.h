@@ -119,7 +119,7 @@ public:
     void setTableau( const ITableau *tableau );
     const ITableau *getTableau() const;
 
-    void obtainCurrentBounds( const InputQuery &inputQuery );
+    void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
@@ -162,15 +162,21 @@ public:
     void removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint );
 
     /*
-      Add an ecoding of all the affine layers as equations in the given InputQuery
+      Add an ecoding of all the affine layers as equations in the given Query
     */
-    void encodeAffineLayers( InputQuery &inputQuery );
+    void encodeAffineLayers( Query &inputQuery );
 
     /*
       Generate an input query from this NLR, according to the
       discovered network topology
     */
-    InputQuery generateInputQuery();
+    void generateQuery( Query &query );
+
+    /*
+      Given a ReLU Constraint, get the previous layer bias
+      for the BaBSR Heuristic
+    */
+    double getPreviousBias( const ReluConstraint *reluConstraint ) const;
 
     /*
       Finds logically consecutive WS layers and merges them, in order
@@ -214,14 +220,14 @@ private:
         const Layer &layer );
 
     // Helper functions for generating an input query
-    void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
-    void generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateQueryForLayer( Query &inputQuery, const Layer &layer );
+    void generateQueryForWeightedSumLayer( Query &inputQuery, const Layer &layer );
     void generateEquationsForWeightedSumLayer( List<Equation> &equations, const Layer &layer );
-    void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
-    void generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer );
-    void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
-    void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
-    void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateQueryForReluLayer( Query &inputQuery, const Layer &layer );
+    void generateQueryForSigmoidLayer( Query &inputQuery, const Layer &layer );
+    void generateQueryForSignLayer( Query &inputQuery, const Layer &layer );
+    void generateQueryForAbsoluteValueLayer( Query &inputQuery, const Layer &layer );
+    void generateQueryForMaxLayer( Query &inputQuery, const Layer &layer );
 
     bool suitableForMerging( unsigned secondLayerIndex,
                              const Map<unsigned, double> &lowerBounds,
@@ -235,6 +241,13 @@ private:
                              unsigned middleDimension,
                              unsigned outputDimension );
     void reduceLayerIndex( unsigned layer, unsigned startIndex );
+
+    /*
+      Store previous biases for each ReLU neuron in a map for getPreviousBias()
+      and BaBSR heuristic
+    */
+    Map<const ReluConstraint *, double> _previousBiases;
+    void initializePreviousBiasMap();
 
     /*
       If the NLR is manipulated manually in order to generate a new

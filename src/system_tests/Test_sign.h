@@ -15,7 +15,7 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
+#include "Query.h"
 #include "SignConstraint.h"
 
 #include <cxxtest/TestSuite.h>
@@ -33,7 +33,7 @@ public:
 
     void test_sign_1()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         // 0 <= x0 <= 10
@@ -85,7 +85,7 @@ public:
 
     void test_sign_2()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         // 0 <= x0 <= 10
@@ -208,7 +208,7 @@ public:
     // more advanced BNN
     void test_sign_3()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 11 );
 
         // -10 <= x0 <= -5   -> input to the BNN is negative
@@ -306,7 +306,7 @@ public:
     // more advanced BNN
     void test_sign_4()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 11 );
 
         // x0 = 0   -> input to the BNN is negative
@@ -403,7 +403,7 @@ public:
 
     void test_sign_5()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 11 );
 
         // -10 <= x0 <= -5   -> input to the BNN is negative
@@ -622,7 +622,7 @@ public:
 
     void test_sign_6()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 11 );
 
         // -10 <= x0 <= 10   -> input to the BNN is negative

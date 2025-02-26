@@ -20,11 +20,11 @@
 #include "DisjunctionConstraint.h"
 #include "GurobiWrapper.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MStringf.h"
 #include "Map.h"
+#include "Query.h"
 #include "RoundConstraint.h"
 #include "SoftmaxConstraint.h"
 #include "Statistics.h"
@@ -38,8 +38,7 @@ public:
       Encode the input query as a Gurobi query, variables and inequalities
       are from inputQuery, and latest variable bounds are from tableau
     */
-    void
-    encodeInputQuery( GurobiWrapper &gurobi, const InputQuery &inputQuery, bool relax = false );
+    void encodeQuery( GurobiWrapper &gurobi, const Query &inputQuery, bool relax = false );
 
     /*
       get variable name from a variable in the encoded inputquery

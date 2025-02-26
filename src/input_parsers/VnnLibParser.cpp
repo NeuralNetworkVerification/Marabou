@@ -20,7 +20,7 @@
 #include "File.h"
 #include "InputParserError.h"
 
-#include <regex>
+#include <boost/regex.hpp>
 
 static double extractScalar( const String &token )
 {
@@ -70,27 +70,33 @@ static String readVnnlibFile( const String &vnnlibFilePath )
     return vnnlibContent;
 }
 
-void VnnLibParser::parse( const String &vnnlibFilePath, InputQuery &inputQuery )
+void VnnLibParser::parse( const String &vnnlibFilePath, IQuery &inputQuery )
 {
     String vnnlibContent = readVnnlibFile( vnnlibFilePath );
 
     parseVnnlib( vnnlibContent, inputQuery );
 }
 
-void VnnLibParser::parseVnnlib( const String &vnnlibContent, InputQuery &inputQuery )
+void VnnLibParser::parseVnnlib( const String &vnnlibContent, IQuery &inputQuery )
 {
-    std::regex re( R"(\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*)" );
+    boost::regex re( R"(\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*)" );
 
-    auto tokens_begin = std::cregex_token_iterator(
+    // Use a Boost cregex_token_iterator to tokenize a C-string range
+    auto tokens_begin = boost::cregex_token_iterator(
         vnnlibContent.ascii(), vnnlibContent.ascii() + vnnlibContent.length(), re );
-    auto tokens_end = std::cregex_token_iterator();
+    auto tokens_end = boost::cregex_token_iterator();
 
     Vector<String> all_tokens;
 
-    for ( std::cregex_token_iterator it = tokens_begin; it != tokens_end; ++it )
+    // Iterate over all matches
+    for ( boost::cregex_token_iterator it = tokens_begin; it != tokens_end; ++it )
     {
-        auto match = *it;
-        auto match_str = String( match.str().c_str() );
+        // Each match is a boost::csub_match, from which we can get a std::string
+        boost::csub_match match = *it;
+
+        // Convert match.str() to your custom String type
+        // Assuming your String can be constructed from a const char*
+        String match_str( match.str().c_str() );
 
         all_tokens.append( match_str );
     }
@@ -98,7 +104,7 @@ void VnnLibParser::parseVnnlib( const String &vnnlibContent, InputQuery &inputQu
     parseScript( all_tokens, inputQuery );
 }
 
-int VnnLibParser::parseScript( const Vector<String> &tokens, InputQuery &inputQuery )
+int VnnLibParser::parseScript( const Vector<String> &tokens, IQuery &inputQuery )
 {
     int index = 0;
 
@@ -114,7 +120,7 @@ int VnnLibParser::parseScript( const Vector<String> &tokens, InputQuery &inputQu
     return index;
 }
 
-int VnnLibParser::parseCommand( int index, const Vector<String> &tokens, InputQuery &inputQuery )
+int VnnLibParser::parseCommand( int index, const Vector<String> &tokens, IQuery &inputQuery )
 {
     const String &command_name = tokens[index];
 
@@ -134,9 +140,7 @@ int VnnLibParser::parseCommand( int index, const Vector<String> &tokens, InputQu
     return index;
 }
 
-int VnnLibParser::parseDeclareConst( int index,
-                                     const Vector<String> &tokens,
-                                     InputQuery &inputQuery )
+int VnnLibParser::parseDeclareConst( int index, const Vector<String> &tokens, IQuery &inputQuery )
 {
     const String &varName = tokens[index];
     const String &varType = tokens[++index];
@@ -195,7 +199,7 @@ int VnnLibParser::parseDeclareConst( int index,
     return index;
 }
 
-int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, InputQuery &inputQuery )
+int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, IQuery &inputQuery )
 {
     ASSERT( tokens[index] == "(" );
     ++index;

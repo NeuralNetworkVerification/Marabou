@@ -101,11 +101,6 @@ public:
     virtual bool solve() = 0;
 
     /*
-      Print the given error message, and export the input query into a file.
-     */
-    virtual void exportInputQueryWithError( String errorMessage ) = 0;
-
-    /*
       Methods for DnC: reset the engine state for re-use,
       get input variables.
     */
@@ -186,6 +181,12 @@ public:
     /*
       Propagate bound tightenings stored in the BoundManager
     */
+    virtual void propagateBoundManagerTightenings() = 0;
+
+    /*
+      Add lemma to the UNSAT Certificate
+    */
+    virtual void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) = 0;
     virtual bool propagateBoundManagerTightenings() = 0;
 
     /*

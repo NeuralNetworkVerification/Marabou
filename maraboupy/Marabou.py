@@ -22,10 +22,6 @@ try:
 except ImportError:
     warnings.warn("NNet parser is unavailable because the numpy package is not installed")
 try:
-    from maraboupy.MarabouNetworkTF import *
-except ImportError:
-    warnings.warn("Tensorflow parser is unavailable because tensorflow package is not installed")
-try:
     from maraboupy.MarabouNetworkONNX import *
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
@@ -42,24 +38,6 @@ def read_nnet(filename, normalize=False):
         :class:`~maraboupy.MarabouNetworkNNet.MarabouNetworkNNet`
     """
     return MarabouNetworkNNet(filename, normalize=normalize)
-
-
-def read_tf(filename, inputNames=None, outputNames=None, modelType="frozen", savedModelTags=[]):
-    """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
-
-    Args:
-        filename (str): Path to tensorflow network
-        inputNames (list of str, optional): List of operation names corresponding to inputs
-        outputNames (list of str, optional): List of operation names corresponding to outputs
-        modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
-                            Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
-                            created from either tensorflow versions 1.X or 2.X respectively.
-        savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
-
-    Returns:
-        :class:`~maraboupy.MarabouNetworkTF.MarabouNetworkTF`
-    """
-    return MarabouNetworkTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
 def read_onnx(filename, inputNames=None, outputNames=None):
     """Constructs a MarabouNetworkONNX object from an ONNX file
@@ -83,7 +61,9 @@ def load_query(filename):
     Returns:
         :class:`~maraboupy.MarabouCore.InputQuery`
     """
-    return MarabouCore.loadQuery(filename)
+    query = MarabouCore.InputQuery()
+    MarabouCore.loadQuery(filename, query)
+    return query
 
 def solve_query(ipq, filename="", verbose=True, options=None, propertyFilename=""):
     """Function to solve query represented by this network

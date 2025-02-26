@@ -7,6 +7,7 @@ macro(add_system_test name)
 endmacro()
 
 add_system_test(acas)
+add_system_test(incremental)
 add_system_test(lp)
 add_system_test(max)
 add_system_test(mps)

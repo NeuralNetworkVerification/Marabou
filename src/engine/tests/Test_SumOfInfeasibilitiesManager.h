@@ -13,12 +13,12 @@
 
 **/
 
-#include "InputQuery.h"
 #include "LinearExpression.h"
 #include "MaxConstraint.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "Options.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 #include "SumOfInfeasibilitiesManager.h"
 #include "Vector.h"
@@ -58,9 +58,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void createInputQuery( InputQuery &ipq,
-                           Vector<PiecewiseLinearConstraint *> &plConstraints,
-                           ITableau &tableau )
+    void
+    createQuery( Query &ipq, Vector<PiecewiseLinearConstraint *> &plConstraints, ITableau &tableau )
     {
         /*  R
           0 -- 1
@@ -128,10 +127,10 @@ public:
 
     void test_initialize_phase_pattern_with_input_assignment1()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -173,10 +172,10 @@ public:
 
     void test_initialize_phase_pattern_with_input_assignment2()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -221,10 +220,10 @@ public:
 
     void test_initialize_phase_pattern_with_current_assignment()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString( Options::SOI_INITIALIZATION_STRATEGY, "current-assignment" );
@@ -266,10 +265,10 @@ public:
 
     void test_propose_phase_pattern_update_randomly()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
         tableau.nextValues[0] = -1;
         tableau.nextValues[1] = 1;
@@ -290,6 +289,8 @@ public:
                                       new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         TS_ASSERT_THROWS_NOTHING( soiManager->initializePhasePattern() );
+        TS_ASSERT_THROWS_NOTHING(
+            soiManager->setPLConstraintsInCurrentPhasePattern( plConstraints ) );
 
         for ( const auto &plConstraint : plConstraints )
         {
@@ -312,6 +313,7 @@ public:
             cost1, *( plConstraints[2]->getAllCases().begin() ) ) );
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent(
             cost1, *( plConstraints[3]->getAllCases().begin() ) ) );
+
 
         TS_ASSERT_EQUALS( soiManager->getConstraintsUpdatedInLastProposal().size(), 1u );
         TS_ASSERT_EQUALS( *soiManager->getConstraintsUpdatedInLastProposal().begin(),
@@ -354,10 +356,10 @@ public:
 
     void test_propose_phase_pattern_update_walksat()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
         tableau.nextValues[0] = -2;
         tableau.nextValues[1] = 0.5;
@@ -435,7 +437,7 @@ public:
 
     void test_decide_to_accept_current_proposal()
     {
-        InputQuery ipq;
+        Query ipq;
         MockTableau tableau;
 
         // Set beta to 5.
@@ -478,10 +480,10 @@ public:
 
     void test_update_current_phase_pattern_for_satisfied_pl_constraints()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -529,10 +531,10 @@ public:
 
     void test_remove_cost_component_from_heuristic_cost()
     {
-        InputQuery ipq;
+        Query ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         MockTableau tableau;
-        createInputQuery( ipq, plConstraints, tableau );
+        createQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );

@@ -12,7 +12,7 @@
  ** This file provides a general interface for parsing a neural network file.
  ** Keeps track of internal state such as equations and variables that
  ** may be altered during parsing of a network. Once the network has been parsed
- ** they are then loaded into an InputQuery.
+ ** they are then loaded into an Query.
  ** Future parsers for individual network formats should extend this interface.
  **/
 
@@ -21,7 +21,7 @@
 
 #include "DisjunctionConstraint.h"
 #include "Equation.h"
-#include "InputQuery.h"
+#include "IQuery.h"
 #include "LeakyReluConstraint.h"
 #include "List.h"
 #include "Map.h"
@@ -72,7 +72,7 @@ public:
     void addMaxConstraint( Variable maxVar, Set<Variable> elements );
     void addAbsConstraint( Variable var1, Variable var2 );
 
-    void generateQuery( InputQuery &query );
+    void generateQuery( IQuery &query );
 
     Equation *findEquationWithOutputVariable( Variable variable );
 };

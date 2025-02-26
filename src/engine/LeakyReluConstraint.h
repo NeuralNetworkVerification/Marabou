@@ -169,7 +169,7 @@ public:
           aux_active = f - b, where aux is non-negative.
           aux_inactive = f - slope * b, where aux is non-negative
     */
-    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( Query &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.

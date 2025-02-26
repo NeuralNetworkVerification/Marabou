@@ -14,11 +14,11 @@
 **/
 
 #include "AbsoluteValueConstraint.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 #include <iostream>
@@ -1426,7 +1426,7 @@ public:
 
             AbsoluteValueConstraint abs( b, f );
 
-            InputQuery ipq;
+            Query ipq;
             ipq.setNumberOfVariables( 10 );
             unsigned posAux = 10;
             unsigned negAux = 11;
@@ -1494,7 +1494,7 @@ public:
             unsigned b = 1;
             unsigned f = 4;
 
-            InputQuery ipq;
+            Query ipq;
             ipq.setNumberOfVariables( 10 );
             unsigned posAux = 10;
             unsigned negAux = 11;

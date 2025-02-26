@@ -15,7 +15,7 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
+#include "Query.h"
 #include "ReluConstraint.h"
 
 #include <cxxtest/TestSuite.h>
@@ -36,7 +36,7 @@ public:
     {
         double large = 1000;
 
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 9 );
 
         inputQuery.setLowerBound( 0, 0 );
@@ -140,7 +140,7 @@ public:
 
     void test_relu_2()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
         inputQuery.setLowerBound( 0, 0 );

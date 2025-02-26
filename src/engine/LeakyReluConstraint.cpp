@@ -20,11 +20,11 @@
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "InfeasibleQueryException.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Query.h"
 #include "SmtCore.h"
 #include "Statistics.h"
 #include "TableauRow.h"
@@ -244,10 +244,9 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
             else
                 _boundManager->tightenUpperBound( _activeAux, 0 );
         }
-
-        checkIfLowerBoundUpdateFixesPhase( variable, bound );
     }
 
+    checkIfLowerBoundUpdateFixesPhase( variable, bound );
 }
 
 void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -302,10 +301,9 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 _boundManager->tightenUpperBound( _b, bound / _slope, *_inactiveTighteningRow );
             }
         }
-
-        checkIfUpperBoundUpdateFixesPhase( variable, bound );
     }
 
+    checkIfUpperBoundUpdateFixesPhase( variable, bound );
 }
 
 bool LeakyReluConstraint::participatingVariable( unsigned variable ) const
@@ -777,7 +775,7 @@ String LeakyReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void LeakyReluConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
+void LeakyReluConstraint::transformToUseAuxVariables( Query &inputQuery )
 {
     /*
       We want to add the equations

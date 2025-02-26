@@ -18,11 +18,11 @@
 
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
-#include "InputQuery.h"
 #include "LinearExpression.h"
 #include "List.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Query.h"
 #include "SoIInitializationStrategy.h"
 #include "SoISearchStrategy.h"
 #include "Statistics.h"
@@ -34,7 +34,7 @@
 class SumOfInfeasibilitiesManager
 {
 public:
-    SumOfInfeasibilitiesManager( const InputQuery &inputQuery, const ITableau &tableau );
+    SumOfInfeasibilitiesManager( const Query &inputQuery, const ITableau &tableau );
 
     /*
       Returns the actual current phase pattern from _currentPhasePattern
@@ -111,6 +111,8 @@ public:
     void setPhaseStatusInCurrentPhasePattern( PiecewiseLinearConstraint *constraint,
                                               PhaseStatus phase );
 
+    void
+    setPLConstraintsInCurrentPhasePattern( const Vector<PiecewiseLinearConstraint *> &constraints );
 
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;

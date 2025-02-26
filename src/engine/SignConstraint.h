@@ -138,7 +138,7 @@ public:
       _f + 2/lb_b * _b + aux_ub = 1, 0 <= aux_ub <= 1 - lb_f - 2 * ub_b/lb_b
       _f - 2/ub_b * _b + aux2_lb = -1, -1 - ub_f + 2 * lb_b/ub_b  <= aux_lb <= 0
     */
-    void addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery ) override;
+    void addAuxiliaryEquationsAfterPreprocessing( Query &inputQuery ) override;
 
     /*
       Preprocessing related functions, to inform that a variable has

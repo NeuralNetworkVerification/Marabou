@@ -15,9 +15,9 @@
 
 #include "BilinearConstraint.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
+#include "Query.h"
 #include "Tightening.h"
 
 #include <cxxtest/TestSuite.h>

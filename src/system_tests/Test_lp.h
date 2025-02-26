@@ -15,8 +15,8 @@
 
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
 #include "LinearExpression.h"
+#include "Query.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -33,7 +33,7 @@ public:
 
     void test_optimize_for_heuristic_cost()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 4 );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -110,7 +110,7 @@ public:
 
     void test_fesiablbe()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 4 );
 
         inputQuery.setLowerBound( 0, 0 );
@@ -166,7 +166,7 @@ public:
 
     void test_infesiable()
     {
-        InputQuery inputQuery;
+        Query inputQuery;
         inputQuery.setNumberOfVariables( 7 );
         inputQuery.setLowerBound( 0, 0 );
         inputQuery.setUpperBound( 0, 1 );

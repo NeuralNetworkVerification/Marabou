@@ -176,7 +176,7 @@ public:
     /*
       Represent the Max constraint using the aux variables.
     */
-    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( Query &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.
