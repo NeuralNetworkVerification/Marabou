@@ -19,7 +19,6 @@
 #include "Layer.h"
 #include "NetworkLevelReasoner.h"
 #include "Options.h"
-#include "PolygonalTightening.h"
 #include "Query.h"
 #include "Tightening.h"
 #include "Vector.h"

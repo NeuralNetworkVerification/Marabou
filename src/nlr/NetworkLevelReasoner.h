@@ -24,7 +24,6 @@
 #include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
-#include "PolygonalTightening.h"
 #include "Tightening.h"
 #include "Vector.h"
 
@@ -121,13 +120,6 @@ public:
         - getConstraintTightenings: this is the function that an
           external user calls in order to collect the tighter bounds
           discovered by the NLR.
-
-        - receiveTighterPolygonalBound: this is a callback from the layer
-          objects, through which they report tighter polygonal bounds.
-
-        - getConstraintPolygonalTightenings: this is the function that an
-          external user calls in order to collect the tighter polygonal bounds
-          discovered by the NLR.
     */
 
     void setTableau( const ITableau *tableau );
@@ -137,7 +129,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
-    void parameterisedSymbolicBoundPropagation( std::vector<double> coeffs );
+    void parameterisedSymbolicBoundPropagation( const Vector<double> &coeffs );
     void deepPolyPropagation();
     void lpRelaxationPropagation();
     void LPTighteningForOneLayer( unsigned targetIndex );
@@ -148,10 +140,6 @@ public:
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
     void clearConstraintTightenings();
-
-    void receivePolygonalTighterBound( PolygonalTightening polygonal_tightening );
-    void getConstraintPolygonalTightenings( List<PolygonalTightening> &polygonal_tightenings );
-    void clearConstraintPolygonalTightenings();
 
     /*
       For debugging purposes: dump the network topology
@@ -223,9 +211,8 @@ private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
-    // Tightenings and Polyognal Tightenings discovered by the various layers
+    // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
-    List<PolygonalTightening> _polygonalBoundTightenings;
 
 
     std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;

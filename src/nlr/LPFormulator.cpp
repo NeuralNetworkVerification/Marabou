@@ -250,7 +250,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
 
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                                    bool backward,
-                                                   std::vector<double> coeffs )
+                                                   const Vector<double> &coeffs )
 {
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
@@ -339,7 +339,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
 void LPFormulator::optimizeBoundsWithPreimageApproximation( Map<unsigned, Layer *> &layers )
 {
-    std::vector<double> optimal_coeffs = layers[0]->OptimalParameterisedSymbolicBoundTightening();
+    const Vector<double> &optimal_coeffs = layers[0]->OptimalParameterisedSymbolicBoundTightening();
     optimizeBoundsWithLpRelaxation( layers, false, optimal_coeffs );
     optimizeBoundsWithLpRelaxation( layers, true, optimal_coeffs );
 }
@@ -419,7 +419,7 @@ void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned,
 
 void LPFormulator::optimizeBoundsOfNeuronsWithLpRelaxation( ThreadArgument &args,
                                                             bool backward,
-                                                            std::vector<double> coeffs )
+                                                            const Vector<double> &coeffs )
 {
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
@@ -657,7 +657,7 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
 void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
                                        GurobiWrapper &gurobi,
                                        unsigned lastLayer,
-                                       std::vector<double> coeffs )
+                                       const Vector<double> &coeffs )
 {
     for ( const auto &layer : layers )
     {
@@ -669,9 +669,9 @@ void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
             addLayerToModel( gurobi, layer.second, false );
         else
         {
-            Map<unsigned, std::vector<double>> layerIndicesToParameters =
+            Map<unsigned, Vector<double>> layerIndicesToParameters =
                 layer.second->getParametersForLayers( layers, coeffs );
-            std::vector<double> currentLayerCoeffs = layerIndicesToParameters[currentLayerIndex];
+            const Vector<double> &currentLayerCoeffs = layerIndicesToParameters[currentLayerIndex];
             addLayerToParameterisedModel( gurobi, layer.second, false, currentLayerCoeffs );
         }
     }
@@ -680,7 +680,7 @@ void LPFormulator::createLPRelaxation( const Map<unsigned, Layer *> &layers,
 void LPFormulator::createLPRelaxationAfter( const Map<unsigned, Layer *> &layers,
                                             GurobiWrapper &gurobi,
                                             unsigned firstLayer,
-                                            std::vector<double> coeffs )
+                                            const Vector<double> &coeffs )
 {
     unsigned depth = GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH;
     std::priority_queue<unsigned, std::vector<unsigned>, std::greater<unsigned>> layersToAdd;
@@ -702,9 +702,9 @@ void LPFormulator::createLPRelaxationAfter( const Map<unsigned, Layer *> &layers
                 addLayerToModel( gurobi, currentLayer, true );
             else
             {
-                Map<unsigned, std::vector<double>> layerIndicesToParameters =
+                Map<unsigned, Vector<double>> layerIndicesToParameters =
                     currentLayer->getParametersForLayers( layers, coeffs );
-                std::vector<double> currentLayerCoeffs =
+                const Vector<double> &currentLayerCoeffs =
                     layerIndicesToParameters[currentLayerIndex];
                 addLayerToParameterisedModel( gurobi, currentLayer, true, currentLayerCoeffs );
             }
@@ -1006,7 +1006,6 @@ void LPFormulator::addAbsoluteValueLayerToLpRelaxation( GurobiWrapper &gurobi,
                 gurobi.addVariable( Stringf( "x%u", targetVariable ), lb, ub );
 
                 // The phase of this AbsoluteValue is not yet fixed, 0 <= y <= max(-lb, ub).
-
                 // y >= 0
                 List<GurobiWrapper::Term> terms;
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -1722,7 +1721,7 @@ void LPFormulator::addLeakyReluLayerToLpRelaxation( GurobiWrapper &gurobi,
 void LPFormulator::addLayerToParameterisedModel( GurobiWrapper &gurobi,
                                                  const Layer *layer,
                                                  bool createVariables,
-                                                 std::vector<double> coeffs )
+                                                 const Vector<double> &coeffs )
 {
     switch ( layer->getLayerType() )
     {
@@ -1751,7 +1750,7 @@ void LPFormulator::addLayerToParameterisedModel( GurobiWrapper &gurobi,
 void LPFormulator::addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                             const Layer *layer,
                                                             bool createVariables,
-                                                            std::vector<double> coeffs )
+                                                            const Vector<double> &coeffs )
 {
     double coeff = coeffs[0];
     for ( unsigned i = 0; i < layer->getSize(); ++i )
@@ -1852,7 +1851,7 @@ void LPFormulator::addReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurob
 void LPFormulator::addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                             const Layer *layer,
                                                             bool createVariables,
-                                                            std::vector<double> coeffs )
+                                                            const Vector<double> &coeffs )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
@@ -1939,7 +1938,7 @@ void LPFormulator::addSignLayerToParameterisedLpRelaxation( GurobiWrapper &gurob
 void LPFormulator::addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                                  const Layer *layer,
                                                                  bool createVariables,
-                                                                 std::vector<double> coeffs )
+                                                                 const Vector<double> &coeffs )
 {
     double slope = layer->getAlpha();
     double coeff = coeffs[0];
@@ -2039,7 +2038,7 @@ void LPFormulator::addLeakyReluLayerToParameterisedLpRelaxation( GurobiWrapper &
 void LPFormulator::addBilinearLayerToParameterisedLpRelaxation( GurobiWrapper &gurobi,
                                                                 const Layer *layer,
                                                                 bool createVariables,
-                                                                std::vector<double> coeffs )
+                                                                const Vector<double> &coeffs )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {

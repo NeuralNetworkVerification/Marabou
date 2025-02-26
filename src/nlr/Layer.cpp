@@ -3394,9 +3394,7 @@ void Layer::computeSymbolicBoundsForWeightedSum()
     }
 }
 
-void Layer::computeParameterisedSymbolicBounds( std::vector<double> coeffs,
-                                                bool receivePolygonal,
-                                                bool receive )
+void Layer::computeParameterisedSymbolicBounds( const Vector<double> &coeffs, bool receive )
 {
     switch ( _type )
     {
@@ -3420,30 +3418,9 @@ void Layer::computeParameterisedSymbolicBounds( std::vector<double> coeffs,
         computeSymbolicBounds();
         break;
     }
-
-    if ( receivePolygonal )
-    {
-        for ( unsigned i = 0; i < _size; ++i )
-        {
-            Map<NeuronIndex, double> lower_polygonal_tightening;
-            Map<NeuronIndex, double> upper_polygonal_tightening;
-
-            for ( unsigned j = 0; j < _inputLayerSize; ++j )
-            {
-                const NeuronIndex neuron( 0, j );
-                lower_polygonal_tightening.insert( neuron, _symbolicLb[j * _size + i] );
-                upper_polygonal_tightening.insert( neuron, _symbolicUb[j * _size + i] );
-            }
-
-            _layerOwner->receivePolygonalTighterBound( PolygonalTightening(
-                lower_polygonal_tightening, _symbolicLowerBias[i], PolygonalTightening::LB ) );
-            _layerOwner->receivePolygonalTighterBound( PolygonalTightening(
-                upper_polygonal_tightening, _symbolicUpperBias[i], PolygonalTightening::UB ) );
-        }
-    }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForRelu( std::vector<double> coeffs, bool receive )
+void Layer::computeParameterisedSymbolicBoundsForRelu( const Vector<double> &coeffs, bool receive )
 {
     ASSERT( coeffs.size() == 1 );
 
@@ -3623,7 +3600,7 @@ void Layer::computeParameterisedSymbolicBoundsForRelu( std::vector<double> coeff
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForSign( std::vector<double> coeffs, bool receive )
+void Layer::computeParameterisedSymbolicBoundsForSign( const Vector<double> &coeffs, bool receive )
 {
     ASSERT( coeffs.size() == 2 );
     ASSERT( coeffs[0] >= 0 && coeffs[0] <= 1 );
@@ -3840,7 +3817,7 @@ void Layer::computeParameterisedSymbolicBoundsForSign( std::vector<double> coeff
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( std::vector<double> coeffs,
+void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( const Vector<double> &coeffs,
                                                             bool receive )
 {
     ASSERT( _alpha > 0 && _alpha < 1 );
@@ -4084,7 +4061,7 @@ void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( std::vector<double> 
     }
 }
 
-void Layer::computeParameterisedSymbolicBoundsForBilinear( std::vector<double> coeffs,
+void Layer::computeParameterisedSymbolicBoundsForBilinear( const Vector<double> &coeffs,
                                                            bool receive )
 {
     ASSERT( coeffs.size() == 2 );
@@ -4322,7 +4299,7 @@ void Layer::computeParameterisedSymbolicBoundsForBilinear( std::vector<double> c
     }
 }
 
-std::vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
+const Vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
 {
     const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
 
@@ -4333,17 +4310,19 @@ std::vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
     double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
     double weight_decay = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY;
     double lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+    unsigned dimension = getNumberOfParameters( layers );
     bool maximize = false;
 
-    unsigned dimension = getNumberOfParameters( layers );
-    std::vector<double> lower_bounds;
-    std::vector<double> upper_bounds;
-    std::vector<double> guess;
-    lower_bounds.resize( dimension, 0 );
-    upper_bounds.resize( dimension, 1 );
-    guess.resize( dimension, 0 );
+    Vector<double> lower_bounds( dimension );
+    Vector<double> upper_bounds( dimension );
+    for ( size_t j = 0; j < dimension; ++j )
+    {
+        lower_bounds[j] = 0;
+        upper_bounds[j] = 1;
+    }
 
     // Initialize initial guess uniformly.
+    Vector<double> guess( dimension );
     std::mt19937_64 rng( GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED );
     std::uniform_real_distribution<double> dis( 0, 1 );
     for ( size_t j = 0; j < dimension; ++j )
@@ -4353,16 +4332,15 @@ std::vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
         guess[j] = lb + dis( rng ) * ( ub - lb );
     }
 
-    std::vector<std::vector<double>> candidates( dimension );
-    std::vector<double> gradient( dimension );
-    std::vector<double> current_minimum = guess;
+    Vector<Vector<double>> candidates( dimension );
+    Vector<double> gradient( dimension );
 
     for ( size_t i = 0; i < max_iterations; ++i )
     {
         double current_cost = EstimateVolume( guess );
         for ( size_t j = 0; j < dimension; ++j )
         {
-            candidates[j] = guess;
+            candidates[j] = Vector<double>( guess );
             candidates[j][j] += step_size;
 
             if ( candidates[j][j] > upper_bounds[j] || candidates[j][j] < lower_bounds[j] )
@@ -4405,19 +4383,20 @@ std::vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
         }
     }
 
-    return guess;
+    const Vector<double> optimal_coeffs( guess );
+    return optimal_coeffs;
 }
 
-double Layer::EstimateVolume( std::vector<double> coeffs )
+double Layer::EstimateVolume( const Vector<double> &coeffs )
 {
     // First, run parameterised symbolic bound propagation.
     const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
-    Map<unsigned, std::vector<double>> layerIndicesToParameters =
+    Map<unsigned, Vector<double>> layerIndicesToParameters =
         getParametersForLayers( layers, coeffs );
     for ( unsigned i = 0; i < layers.size(); ++i )
     {
         ASSERT( layers.exists( i ) );
-        std::vector<double> currentLayerCoeffs = layerIndicesToParameters[i];
+        const Vector<double> &currentLayerCoeffs = layerIndicesToParameters[i];
         layers[i]->computeParameterisedSymbolicBounds( currentLayerCoeffs );
     }
 
@@ -4521,23 +4500,21 @@ unsigned Layer::getNumberOfParameters( const Map<unsigned, Layer *> &layers )
     return index;
 }
 
-Map<unsigned, std::vector<double>>
-Layer::getParametersForLayers( const Map<unsigned, Layer *> &layers, std::vector<double> coeffs )
+Map<unsigned, Vector<double>> Layer::getParametersForLayers( const Map<unsigned, Layer *> &layers,
+                                                             const Vector<double> &coeffs )
 {
     unsigned index = 0;
-    Map<unsigned, std::vector<double>> layerIndicesToParameters;
+    Map<unsigned, Vector<double>> layerIndicesToParameters;
     for ( auto pair : layers )
     {
         unsigned layerIndex = pair.first;
         Layer *layer = layers[layerIndex];
-        std::vector<double> parameters = {};
         switch ( layer->getLayerType() )
         {
         case Layer::RELU:
         case Layer::LEAKY_RELU:
         {
-            parameters = std::vector<double>( coeffs.begin() + index, coeffs.begin() + index + 1 );
-            layerIndicesToParameters.insert( layerIndex, parameters );
+            layerIndicesToParameters.insert( layerIndex, Vector<double>( { coeffs[index] } ) );
             index++;
         }
         break;
@@ -4545,14 +4522,14 @@ Layer::getParametersForLayers( const Map<unsigned, Layer *> &layers, std::vector
         case Layer::SIGN:
         case Layer::BILINEAR:
         {
-            parameters = std::vector<double>( coeffs.begin() + index, coeffs.begin() + index + 2 );
-            layerIndicesToParameters.insert( layerIndex, parameters );
+            layerIndicesToParameters.insert(
+                layerIndex, Vector<double>( { coeffs[index], coeffs[index + 1] } ) );
             index += 2;
         }
         break;
 
         default:
-            layerIndicesToParameters.insert( layerIndex, parameters );
+            layerIndicesToParameters.insert( layerIndex, Vector<double>( {} ) );
             break;
         }
     }
