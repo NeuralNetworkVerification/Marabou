@@ -183,7 +183,7 @@ public:
         Engine engine;
         engine.setVerbosity( 0 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *_query ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == ExitCode::SAT )
     }
 
@@ -256,7 +256,7 @@ public:
         Engine engine;
         engine.setVerbosity( 0 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *_query ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == ExitCode::UNSAT )
     }
 

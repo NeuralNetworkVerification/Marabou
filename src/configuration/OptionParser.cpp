@@ -136,7 +136,12 @@ void OptionParser::initialize()
         "prove-unsat",
         boost::program_options::bool_switch( &( ( *_boolOptions )[Options::PRODUCE_PROOFS] ) )
             ->default_value( ( *_boolOptions )[Options::PRODUCE_PROOFS] ),
-        "Produce proofs of UNSAT and check them" )
+        "Produce proofs of UNSAT and check them" )(
+        "cdcl",
+        boost::program_options::bool_switch( &( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ) )
+            ->default_value( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ),
+        "Solve the input query with CDCL as the solving procedure" )
+
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
         ;
@@ -214,8 +219,8 @@ void OptionParser::initialize()
         "vsids-decay-threshold",
         boost::program_options::value<int>( &( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ) )
             ->default_value( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ),
-        "The number of clauses on which the literal to decide will be chosen according to the "
-        "VSIDS branching huristic." )(
+        "(CDCL) The number of clauses on which the literal to decide will be chosen according to "
+        "the VSIDS branching huristic." )(
         "preprocessor-bound-tolerance",
         boost::program_options::value<float>(
             &( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ) )
@@ -252,12 +257,12 @@ void OptionParser::initialize()
         boost::program_options::value<std::string>(
             &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH] )
             ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH] ),
-        "Filename of external NAP clause" )(
+        "(CDCL) Filename of external NAP clause" )(
         "nap-external-clause2",
         boost::program_options::value<std::string>(
             &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2] )
             ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2] ),
-        "Filename of external NAP clause" )
+        "(CDCL) Filename of a second external NAP clause" )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
           boost::program_options::value<std::string>( &( ( *_stringOptions )[Options::LP_SOLVER] ) )

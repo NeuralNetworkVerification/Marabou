@@ -73,6 +73,7 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
+    , _solveWithCDCL( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -85,7 +86,7 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
-    _groundBoundManager.registerEngine( this );
+//    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -188,7 +189,7 @@ void Engine::exportQueryWithError( String errorMessage )
             ipqFileName.ascii() );
 }
 
-void Engine::preSolve() // TODO: change the name of this method
+void Engine::initializeSolver()
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -202,9 +203,13 @@ void Engine::preSolve() // TODO: change the name of this method
     // Before encoding, make sure all valid constraints are applied.
     applyAllValidConstraintCaseSplits();
 
-    for ( const auto plConstraint : _plConstraints )
-        if ( plConstraint->phaseFixed() )
-            _smtCore.phase( plConstraint->propagatePhaseAsLit() );
+    if ( _solveWithMILP )
+        return;
+
+    if ( _solveWithCDCL )
+        for ( const auto plConstraint : _plConstraints )
+            if ( plConstraint->phaseFixed() )
+                _smtCore.phase( plConstraint->propagatePhaseAsLit() );
 
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
@@ -229,19 +234,18 @@ void Engine::preSolve() // TODO: change the name of this method
     }
 }
 
-bool Engine::solve() // TODO: change the name of this method, and remove
-                     // argument
+bool Engine::solve( double timeoutInSeconds )
 {
-    //    if ( _solveWithMILP ) // TODO: add support for MILP solving with CDCL
-    //        return solveWithMILPEncoding( timeoutInSeconds );
-
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    _smtCore.resetSplitConditions();
+    if ( _solveWithCDCL )
+    {
+        _smtCore.resetSplitConditions();
+        applyAllBoundTightenings();
 
-    applyAllBoundTightenings();
-    if ( _lpSolverType == LPSolverType::NATIVE && !propagateBoundManagerTightenings() )
-        return false;
+        if ( _lpSolverType == LPSolverType::NATIVE && !propagateBoundManagerTightenings() )
+            return false;
+    }
 
     while ( true )
     {
@@ -250,19 +254,32 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                                       TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
 
-        // TODO: Check when quit requested, and whether it still applies to CDCL
-        //        if ( _quitRequested )
-        //        {
-        //            if ( _verbosity > 0 )
-        //            {
-        //                printf( "\n\nEngine: quitting due to external request...\n\n" );
-        //                printf( "Final statistics:\n" );
-        //                _statistics.print();
-        //            }
-        //
-        //            _exitCode = Engine::QUIT_REQUESTED;
-        //            return false;
-        //        }
+        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to timeout...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
+
+            setExitCode( ExitCode::TIMEOUT );
+            _statistics.timeout();
+            return false;
+        }
+
+        if ( _quitRequested )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to external request...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
+
+            setExitCode( ExitCode::QUIT_REQUESTED );
+            return false;
+        }
 
         try
         {
@@ -275,8 +292,9 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                      0 )
                 _statistics.print();
 
-            // If smtCore demands splitting, stop the loop before performing other actions
-            if ( _smtCore.needToSplit() )
+            // If solving with CDCL, and smtCore demands splitting, stop the loop before performing
+            // other actions
+            if ( _solveWithCDCL && _smtCore.needToSplit() )
             {
                 if ( std::any_of(
                          _plConstraints.begin(),
@@ -314,6 +332,12 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                 splitJustPerformed = false;
             }
 
+            if ( !_solveWithCDCL && _smtCore.needToSplit() )
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
+                continue;
+            }
 
             if ( !_tableau->allBoundsValid() )
             {
@@ -346,24 +370,24 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                         } );
 
 
-                        // TODO: update time measurements
-                        //                        mainLoopEnd = TimeUtils::sampleMicro();
-                        //                        _statistics.incLongAttribute(
-                        //                            Statistics::TIME_MAIN_LOOP_MICRO,
-                        //                            TimeUtils::timePassed( mainLoopStart,
-                        //                            mainLoopEnd ) );
+                        mainLoopEnd = TimeUtils::sampleMicro();
+                        _statistics.incLongAttribute(
+                            Statistics::TIME_MAIN_LOOP_MICRO,
+                            TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "\nEngine::solve: sat assignment found\n" );
+                            _statistics.print();
+                        }
 
-
-                        // TODO: how to construct proof tree with CDCL
                         // Allows checking proofs produced for UNSAT leaves of satisfiable query
                         // search tree
-                        //                        if ( _produceUNSATProofs )
-                        //                        {
-                        //                            ASSERT( _UNSATCertificateCurrentPointer );
-                        //                            ( **_UNSATCertificateCurrentPointer
-                        //                            ).setSATSolutionFlag();
-                        //                        }
-
+                        if ( !_solveWithCDCL && _produceUNSATProofs )
+                        {
+                            ASSERT( _UNSATCertificateCurrentPointer );
+                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
+                        }
+                        setExitCode( ExitCode::SAT );
                         return true;
                     }
                     else if ( !hasBranchingCandidate() )
@@ -377,7 +401,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                             printf( "\nEngine::solve: at leaf node but solving inconclusive\n" );
                             _statistics.print();
                         }
-
+                        setExitCode( ExitCode::UNKNOWN );
                         return false;
                     }
                     else
@@ -412,7 +436,7 @@ bool Engine::solve() // TODO: change the name of this method, and remove
             if ( !handleMalformedBasisException() )
             {
                 ASSERT( _lpSolverType == LPSolverType::NATIVE );
-                _smtCore.setExitCode( ExitCode::ERROR );
+                setExitCode( ExitCode::ERROR );
                 exportQueryWithError( "Cannot restore tableau" );
                 mainLoopEnd = TimeUtils::sampleMicro();
                 _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -433,7 +457,29 @@ bool Engine::solve() // TODO: change the name of this method, and remove
                     explainGurobiFailure();
             }
 
-            return false;
+            if ( !_solveWithCDCL )
+            {
+                if ( !_smtCore.popSplit() )
+                {
+                    mainLoopEnd = TimeUtils::sampleMicro();
+                    _statistics.incLongAttribute(
+                        Statistics::TIME_MAIN_LOOP_MICRO,
+                        TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: unsat query\n" );
+                        _statistics.print();
+                    }
+                    setExitCode( ExitCode::UNSAT );
+                    return false;
+                }
+                else
+                {
+                    splitJustPerformed = true;
+                }
+            }
+            else
+                return false;
         }
         catch ( const VariableOutOfBoundDuringOptimizationException & )
         {
@@ -443,6 +489,26 @@ bool Engine::solve() // TODO: change the name of this method, and remove
         catch ( const QuitFromPrecisionRestorationException & )
         {
             _tableau->toggleOptimization( false );
+            return false;
+        }
+        catch ( MarabouError &e )
+        {
+            String message = Stringf(
+                "Caught a MarabouError. Code: %u. Message: %s ", e.getCode(), e.getUserMessage() );
+            setExitCode( ExitCode::ERROR );
+            exportQueryWithError( message );
+            mainLoopEnd = TimeUtils::sampleMicro();
+            _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+                                          TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+            return false;
+        }
+        catch ( ... )
+        {
+            setExitCode( ExitCode::ERROR );
+            exportQueryWithError( "Unknown error" );
+            mainLoopEnd = TimeUtils::sampleMicro();
+            _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
+                                          TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
             return false;
         }
     }
@@ -520,6 +586,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
         // and perform any valid case splits.
         tightenBoundsOnConstraintMatrix();
         _boundManager.propagateTightenings();
+
         // For debugging purposes
         checkBoundCompliancyWithDebugSolution();
 
@@ -1538,9 +1605,9 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
             throw InfeasibleQueryException();
         }
 
-        if ( GlobalConfiguration::CDCL )
+        if ( _solveWithCDCL )
         {
-            for (auto & _plConstraint : _plConstraints)
+            for ( auto &_plConstraint : _plConstraints )
             {
                 _smtCore.initBooleanAbstraction( _plConstraint );
                 _plConstraint->initializeCDOs( &_context );
@@ -2073,7 +2140,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     {
         adjustWorkMemorySize();
     }
-
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
@@ -2292,6 +2358,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
                                   TimeUtils::timePassed( start, end ) );
 }
 
+// TODO: examine if the implementation of this method for CDCL is still necessary
 void Engine::explicitBasisBoundTightening()
 {
     struct timespec start = TimeUtils::sampleMicro();
@@ -2299,26 +2366,15 @@ void Engine::explicitBasisBoundTightening()
     bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     _statistics.incLongAttribute( Statistics::NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS );
-    bool canSplit = std::any_of( _plConstraints.begin(),
-                                 _plConstraints.end(),
-                                 []( PiecewiseLinearConstraint *p ) { return !p->phaseFixed(); } );
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX:
-        if ( _rowBoundTightener->examineInvertedBasisMatrix( saturation ) <
-             ( _tableau->getN() *
-               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD ) /
-                 50 )
-            _smtCore.setNeedToSplit( canSplit );
+        _rowBoundTightener->examineInvertedBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
-        if ( _rowBoundTightener->examineInvertedBasisMatrix( saturation ) <
-             ( _tableau->getN() *
-               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD ) /
-                 50 )
-            _smtCore.setNeedToSplit( canSplit );
+        _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
         break;
 
     case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
@@ -3519,9 +3575,9 @@ void Engine::explainSimplexFailure()
         sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
     // If possible, attempt to reduce the clause size
-//    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-//        clause = reduceClauseSizeWithProof(
-//            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+    //    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+    //        clause = reduceClauseSizeWithProof(
+    //            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
 
     _smtCore.addExternalClause( clause );
 }
@@ -4113,14 +4169,25 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
 
-//    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
-//        clause = reduceClauseSizeWithProof(
-//            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
+    //    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma
+    //    ) )
+    //        clause = reduceClauseSizeWithProof(
+    //            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
     return Vector<int>( clause.begin(), clause.end() );
 }
 
-bool Engine::solveWithCadical( double timeoutInSeconds )
+bool Engine::shouldSolveWithMILP() const
+{
+    return _solveWithMILP;
+}
+
+bool Engine::shouldSolveWithCDCL() const
+{
+    return _solveWithCDCL;
+}
+
+bool Engine::solveWithCDCL( double timeoutInSeconds )
 {
     return _smtCore.solveWithCadical( timeoutInSeconds );
 }
@@ -4314,7 +4381,7 @@ void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
 
 void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
 {
-    InputQuery ipq( *_preprocessedQuery );
+    Query ipq( *_preprocessedQuery );
     for ( int lit : clause )
     {
         ASSERT( lit != 0 );
@@ -4420,16 +4487,6 @@ LPSolverType Engine::getLpSolverType() const
 NLR::NetworkLevelReasoner *Engine::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
-}
-
-void Engine::storeTableauState( TableauState &state )
-{
-    _tableau->storeState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
-}
-
-void Engine::restoreTableauState( const TableauState &state )
-{
-    _tableau->restoreState( state, TableauStateStorageLevel::STORE_BASICS_ONLY );
 }
 
 bool Engine::checkAssignmentComplianceWithClause( const Set<int> &clause ) const

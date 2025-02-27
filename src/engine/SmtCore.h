@@ -350,7 +350,7 @@ private:
     /*
       A code indicating how the run terminated.
     */
-    ExitCode _exitCode;
+    ExitCode _exitCode; // TODO: maybe move the exit code back to engine
 
     /*
       Valid splits that were implied by level 0 of the stack.

@@ -107,7 +107,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         ExitCode result = ExitCode::NOT_DONE;
         if ( fullSolveNeeded )
         {
-            _engine->solve(); // TODO: how to integrate CDCL with SNC?
+            _engine->solve( timeoutInSeconds );
             result = _engine->getExitCode();
         }
         else

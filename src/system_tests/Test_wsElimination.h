@@ -51,7 +51,7 @@ public:
         }
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 
@@ -84,7 +84,7 @@ public:
         }
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 
@@ -117,7 +117,7 @@ public:
         }
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 
@@ -150,7 +150,7 @@ public:
         }
 
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 

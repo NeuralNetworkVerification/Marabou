@@ -99,7 +99,7 @@ public:
         }
         else
         {
-            bool result = engine.solveWithCadical();
+            bool result = engine.solve();
             TS_ASSERT( !result );
         }
     }
@@ -167,7 +167,7 @@ public:
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, true ) )
 
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 

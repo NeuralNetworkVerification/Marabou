@@ -73,7 +73,7 @@ public:
 
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
         engine.extractSolution( inputQuery );
 
         for ( unsigned int i = 0; i < expectedOutputValues.size(); ++i )

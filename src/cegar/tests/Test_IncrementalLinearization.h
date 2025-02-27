@@ -58,7 +58,7 @@ public:
         Engine engine;
         engine.setVerbosity( 2 );
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( ipq ) );
-        TS_ASSERT_THROWS_NOTHING( engine.solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
         ExitCode code = engine.getExitCode();
         TS_ASSERT( code == ExitCode::SAT || code == ExitCode::UNKNOWN );
     }
@@ -115,7 +115,7 @@ public:
         Engine *initialEngine = new Engine();
         initialEngine->setVerbosity( 0 );
         TS_ASSERT( initialEngine->processInputQuery( ipq ) );
-        TS_ASSERT_THROWS_NOTHING( initialEngine->solveWithCadical() );
+        TS_ASSERT_THROWS_NOTHING( initialEngine->solve() );
 
         TS_ASSERT( initialEngine->getExitCode() == ExitCode::UNKNOWN ||
                    initialEngine->getExitCode() == ExitCode::SAT );

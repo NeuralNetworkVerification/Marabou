@@ -127,8 +127,10 @@ public:
     unsigned _timeToSolve;
     ExitCode _exitCode;
 
-    bool solve() override
+    bool solve( double timeoutInSeconds ) override
     {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = ExitCode::TIMEOUT;
         return _exitCode == ExitCode::SAT;
     }
 
@@ -315,6 +317,23 @@ public:
         return nullptr;
     }
 
+    bool shouldSolveWithMILP() const override
+    {
+        return false;
+    }
+
+    bool shouldSolveWithCDCL() const override
+    {
+        return false;
+    }
+
+    bool solveWithCDCL( double timeoutInSeconds ) override
+    {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = ExitCode::TIMEOUT;
+        return _exitCode == ExitCode::SAT;
+    }
+
     Set<int>
     clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool ) override
     {
@@ -326,18 +345,15 @@ public:
         return Vector<int>();
     }
 
-    bool solveWithCadical( double timeoutInSeconds ) override
-    {
-        if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = ExitCode::TIMEOUT;
-        return _exitCode == ExitCode::SAT;
-    }
-
-    void preSolve() override
+    void explainGurobiFailure() override
     {
     }
 
     void removeLiteralFromPropagations( int /*literal*/ ) override
+    {
+    }
+
+    void initializeSolver() override
     {
     }
 
@@ -355,17 +371,13 @@ public:
         return 0;
     }
 
-    void exportInputQueryWithError( String ) override
+    void exportQueryWithError( String ) override
     {
     }
 
     const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override
     {
         return NULL;
-    }
-
-    void explainGurobiFailure() override
-    {
     }
 
     LPSolverType getLpSolverType() const override
@@ -376,14 +388,6 @@ public:
     NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override
     {
         return nullptr;
-    }
-
-    void storeTableauState( TableauState & /*state*/ ) override
-    {
-    }
-
-    void restoreTableauState( const TableauState & /*state*/ ) override
-    {
     }
 
     void restoreInitialEngineState() override
@@ -397,6 +401,13 @@ public:
 
     void addPLCLemma( std::shared_ptr<PLCLemma> & /*explanation*/ )
     {
+    }
+
+    bool solveWithMILPEncoding( double timeoutInSeconds ) override
+    {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = ExitCode::TIMEOUT;
+        return _exitCode == ExitCode::SAT;
     }
 };
 

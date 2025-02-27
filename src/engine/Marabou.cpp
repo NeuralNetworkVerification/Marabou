@@ -213,7 +213,6 @@ void Marabou::exportAssignment() const
 
 void Marabou::solveQuery()
 {
-    // TODO: Marabou should hold smtCore object, and it should be the wrapper for the engine
     enum {
         MICROSECONDS_IN_SECOND = 1000000
     };
@@ -222,10 +221,17 @@ void Marabou::solveQuery()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     if ( _engine->processInputQuery( _inputQuery ) )
     {
-        //        _engine->solve( timeoutInSeconds );
-        _engine->solveWithCadical( timeoutInSeconds );
-        //        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
-        //            _engine->certifyUNSATCertificate();
+        _engine->initializeSolver();
+        if ( _engine->shouldSolveWithMILP() )
+            _engine->solveWithMILPEncoding( timeoutInSeconds );
+        else if ( _engine->shouldSolveWithCDCL() )
+            _engine->solveWithCDCL( timeoutInSeconds );
+        else
+        {
+            _engine->solve( timeoutInSeconds );
+            if ( _engine->shouldProduceProofs() && _engine->getExitCode() == ExitCode::UNSAT )
+                _engine->certifyUNSATCertificate();
+        }
     }
 
     if ( _engine->getExitCode() == ExitCode::UNKNOWN )

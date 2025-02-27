@@ -126,7 +126,11 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
     {
         _needToSplit = true;
-        assert( !constraint->phaseFixed() );
+        ASSERT( !constraint->phaseFixed() );
+        if ( !pickSplitPLConstraint() )
+            // If pickSplitConstraint failed to pick one, use the native
+            // relu-violation based splitting heuristic.
+            _constraintForSplitting = constraint;
     }
 }
 
@@ -255,6 +259,18 @@ void SmtCore::performSplit()
     }
 
     _stack.append( stackEntry );
+
+    if ( _statistics )
+    {
+        unsigned level = getStackDepth();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        //        struct timespec end = TimeUtils::sampleMicro();
+        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        //                                       TimeUtils::timePassed( start, end ) );
+        // TODO: fix Statistics::TOTAL_TIME_SMT_CORE_MICRO
+    }
 
     _constraintForSplitting = NULL;
 }
@@ -413,6 +429,18 @@ bool SmtCore::popSplit()
             _engine->explainSimplexFailure();
     }
 
+    if ( _statistics )
+    {
+        unsigned level = getStackDepth();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        //        struct timespec end = TimeUtils::sampleMicro();
+        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        //                                       TimeUtils::timePassed( start, end ) );
+        // TODO: fix Statistics::TOTAL_TIME_SMT_CORE_MICRO
+    }
+
     checkSkewFromDebuggingSolution();
 
     return true;
@@ -422,7 +450,6 @@ void SmtCore::resetSplitConditions()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
-    _constraintForSplitting = NULL;
     _needToSplit = false;
 }
 
@@ -617,16 +644,17 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
 
     _stack.append( stackEntry );
 
-    //    if ( _statistics )
-    //    {
-    //        unsigned level = getStackDepth();
-    //        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-    //        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-    //            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
-    //        struct timespec end = TimeUtils::sampleMicro();
-    //        _statistics->incLongAttribute( Statistics::TIME_SMT_CORE_CALLBACKS_MICRO,
-    //                                       TimeUtils::timePassed( start, end ) );
-    //    }
+    if ( _statistics )
+    {
+        unsigned level = getStackDepth();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        //        struct timespec end = TimeUtils::sampleMicro();
+        //        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        //                                       TimeUtils::timePassed( start, end ) );
+        // TODO: fix Statistics::TOTAL_TIME_SMT_CORE_MICRO
+    }
 }
 
 void SmtCore::storeSmtState( SmtState &smtState )
@@ -846,7 +874,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         if ( !_externalClauseToAdd.empty() )
             return false;
 
-        result = _engine->solve();
+        result = _engine->solve( 0 );
 
         // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
         if ( !result && _externalClauseToAdd.empty() )
@@ -856,7 +884,7 @@ bool SmtCore::cb_check_found_model( const std::vector<int> &model )
         result = result && _externalClauseToAdd.empty();
     }
     else
-        result = _engine->solve();
+        result = _engine->solve( 0 );
 
     return result;
 }
@@ -1021,7 +1049,7 @@ int SmtCore::cb_propagate()
 
     if ( _engine->getLpSolverType() == LPSolverType::GUROBI )
     {
-        if ( _engine->solve() )
+        if ( _engine->solve( 0 ) )
         {
             bool allInitialClausesSatisfied = true;
             for ( const Set<int> &clause : _initialClauses )
@@ -1052,7 +1080,7 @@ int SmtCore::cb_propagate()
         // If no literals left to propagate, and no clause already found, attempt solving
         if ( _externalClauseToAdd.empty() )
         {
-            if ( _engine->solve() )
+            if ( _engine->solve( 0 ) )
             {
                 bool allInitialClausesSatisfied = true;
                 for ( const Set<int> &clause : _initialClauses )
@@ -1295,15 +1323,16 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         if ( _exitCode == UNSAT )
             return false;
 
-        _engine->preSolve();
+        _engine->initializeSolver();
 
-        if ( Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) == "" &&
-             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) == "" )
-            if ( _engine->solve() )
-            {
-                _exitCode = SAT;
-                return true;
-            }
+        // TODO: Update the following fast-sat code to reflect the new changes of solving
+        //        if ( Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) == "" &&
+        //             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) == "" )
+        //            if ( _engine->solve() )
+        //            {
+        //                _exitCode = SAT;
+        //                return true;
+        //            }
 
         if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
             _engine->propagateBoundManagerTightenings();
@@ -1388,7 +1417,7 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         String message = Stringf(
             "Caught a MarabouError. Code: %u. Message: %s ", e.getCode(), e.getUserMessage() );
         _exitCode = ExitCode::ERROR;
-        _engine->exportInputQueryWithError( message );
+        _engine->exportQueryWithError( message );
 
         // TODO: uncomment after handling statistics
         //        mainLoopEnd = TimeUtils::sampleMicro();
@@ -1628,7 +1657,7 @@ void SmtCore::notifySingleAssignment( int lit, bool isFixed )
 
     // Pick the split to perform
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( FloatUtils::abs( lit ) );
-    PhaseStatus originalPlcPhase = plc->getPhaseStatus();
+    DEBUG( PhaseStatus originalPlcPhase = plc->getPhaseStatus() );
 
     plc->propagateLitAsSplit( lit );
     _engine->applyPlcPhaseFixingTightenings( *plc );

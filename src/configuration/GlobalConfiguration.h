@@ -267,10 +267,6 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
-    /* Use CDCL
-     */
-    static const bool CDCL;
-
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns

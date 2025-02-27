@@ -449,7 +449,7 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
         else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            engine.solveWithCadical( timeoutInSeconds );
+            engine.solve( timeoutInSeconds ); // TODO: add option to maraboupy to run cdcl
 
             resultString = exitCodeToString( engine.getExitCode() );
 

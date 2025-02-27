@@ -84,13 +84,14 @@ public:
     /*
       Required initialization before starting the solving loop.
      */
-    void preSolve() override;
+    void initializeSolver() override;
 
     /*
-      Attempt to find a feasible solution for the input within a time limit
-      (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
-    */
-    bool solve() override;
+      Run a single solver iteration, used by the native and CDCL solvers.
+      Return true if this iteration a solution is found, or an error was detected, return false
+      otherwise.
+     */
+    bool solve( double timeoutInSeconds = 0 ) override;
 
     /*
       Minimize the cost function with respect to the current set of linear constraints.
@@ -111,7 +112,7 @@ public:
     bool processInputQuery( const IQuery &inputQuery, bool preprocess );
 
     Query prepareSnCQuery();
-    void exportQueryWithError( String errorMessage );
+    void exportQueryWithError( String errorMessage ) override;
 
     /*
       Methods for calculating bounds.
@@ -310,11 +311,20 @@ public:
     setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) override;
 
     /*
+      Returns true if the query should be solved using MILP
+     */
+    bool shouldSolveWithMILP() const override;
+
+    /*
+      Methods for running the CDCL-based solving procedure.
+    */
+    bool shouldSolveWithCDCL() const override;
+    bool solveWithCDCL( double timeoutInSeconds = 0 ) override;
+
+    /*
       Creates a boolean-abstracted clause explaining a boolean-abstracted literal
     */
     Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) override;
-
-    bool solveWithCadical( double timeoutInSeconds = 0 ) override;
 
     /*
       Check whether a timeout value has been provided and exceeded.
@@ -347,6 +357,11 @@ public:
     void explainGurobiFailure() override;
 
     /*
+      Returns true if the current assignment complies with the given clause (CDCL).
+     */
+    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override;
+
+    /*
       Returns the type of the LP Solver in use.
      */
     LPSolverType getLpSolverType() const override;
@@ -356,12 +371,15 @@ public:
      */
     NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override;
 
-    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override;
+    /*
+     Solve the input query with a MILP solver (Gurobi)
+    */
+    bool solveWithMILPEncoding( double timeoutInSeconds ) override;
 
     /*
       Add lemma to the UNSAT Certificate
     */
-    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation );
+    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) override;
 
 private:
     enum BasisRestorationRequired {
@@ -596,6 +614,19 @@ private:
     LinearExpression _heuristicCost;
 
     /*
+      Proof Production data structures
+    */
+    bool _produceUNSATProofs;
+    GroundBoundManager _groundBoundManager;
+    UnsatCertificateNode *_UNSATCertificate;
+    CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
+
+    /*
+      Solve the query with CDCL
+     */
+    bool _solveWithCDCL;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
       Return true only if the current assignment is optimal
@@ -822,11 +853,6 @@ private:
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
 
     /*
-      Solve the input query with a MILP solver (Gurobi)
-    */
-    bool solveWithMILPEncoding( double timeoutInSeconds );
-
-    /*
       Perform SoI-based stochastic local search
     */
     bool performDeepSoILocalSearch();
@@ -881,15 +907,6 @@ private:
       Check that the variable bounds in Gurobi is up-to-date.
     */
     void checkGurobiBoundConsistency() const;
-
-    /*
-      Proof Production data structures
-     */
-
-    bool _produceUNSATProofs;
-    GroundBoundManager _groundBoundManager;
-    UnsatCertificateNode *_UNSATCertificate;
-    CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
 
     /*
       Returns true iff there is a variable with bounds that can explain infeasibility of the tableau
@@ -1005,9 +1022,6 @@ private:
     void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
 
     void dumpClauseToIpqFile( const List<int> &clause, String prefix );
-
-    void storeTableauState( TableauState &state ) override;
-    void restoreTableauState( const TableauState &state ) override;
 };
 
 #endif // __Engine_h__

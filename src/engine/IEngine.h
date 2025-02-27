@@ -93,12 +93,14 @@ public:
     /*
       Required initialization before starting the solving loop.
      */
-    virtual void preSolve() = 0;
+    virtual void initializeSolver() = 0;
 
     /*
-      Solve the encoded query.
-    */
-    virtual bool solve() = 0;
+      Run a single solver iteration, used by the native and CDCL solvers.
+      Return true if this iteration a solution is found, or an error was detected, return false
+      otherwise.
+     */
+    virtual bool solve( double timeoutInSeconds ) = 0;
 
     /*
       Methods for DnC: reset the engine state for re-use,
@@ -143,6 +145,7 @@ public:
     virtual double getGroundBound( unsigned var, bool isUpper ) const = 0;
     virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
     getGroundBoundEntry( unsigned var, bool isUpper ) const = 0;
+
     /*
       Get the current pointer in the UNSAT certificate node
     */
@@ -181,30 +184,52 @@ public:
     /*
       Propagate bound tightenings stored in the BoundManager
     */
-    virtual void propagateBoundManagerTightenings() = 0;
+    virtual bool propagateBoundManagerTightenings() = 0;
 
     /*
       Add lemma to the UNSAT Certificate
     */
     virtual void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) = 0;
-    virtual bool propagateBoundManagerTightenings() = 0;
 
     /*
-     Add ground bound entry using a lemma
+      Add ground bound entry using a lemma
     */
     virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
     setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) = 0;
 
+    /*
+      Returns true if the query should be solved using MILP
+     */
+    virtual bool shouldSolveWithMILP() const = 0;
+
+    /*
+      Methods for running the CDCL-based solving procedure.
+    */
+    virtual bool shouldSolveWithCDCL() const = 0;
+    virtual bool solveWithCDCL( double timeoutInSeconds ) = 0;
+
+    /*
+      Methods for creating conflict clauses and lemmas, for CDCL.
+     */
     virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                     unsigned id,
                                                     int explainedVar,
                                                     bool isUpper ) = 0;
-
     virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
 
-    virtual bool solveWithCadical( double timeoutInSeconds ) = 0;
+    /*
+      Explain infeasibility of Gurobi, for CDCL conflict clauses
+    */
+    virtual void explainGurobiFailure() = 0;
 
+    /*
+      Returns true if the current assignment complies with the given clause (CDCL).
+     */
+    virtual bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const = 0;
 
+    /*
+      Remove a literal from the propagation list to the SAT solver, during the CDCL solving.
+     */
     virtual void removeLiteralFromPropagations( int literal ) = 0;
 
     virtual void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) = 0;
@@ -218,6 +243,8 @@ public:
       Returns the verbosity level.
     */
     virtual unsigned getVerbosity() const = 0;
+
+    virtual void exportQueryWithError( String ) = 0;
 
     /*
       Returns the exit code.
@@ -235,11 +262,6 @@ public:
     virtual const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const = 0;
 
     /*
-      Explain infeasibility of gurobi
-    */
-    virtual void explainGurobiFailure() = 0;
-
-    /*
       Returns the type of the LP Solver in use.
      */
     virtual LPSolverType getLpSolverType() const = 0;
@@ -249,12 +271,12 @@ public:
      */
     virtual NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const = 0;
 
-    virtual void storeTableauState( TableauState &state ) = 0;
-    virtual void restoreTableauState( const TableauState &state ) = 0;
-
     virtual void restoreInitialEngineState() = 0;
 
-    virtual bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const = 0;
+    /*
+     Solve the input query with a MILP solver
+    */
+    virtual bool solveWithMILPEncoding( double timeoutInSeconds ) = 0;
 };
 
 #endif // __IEngine_h__
