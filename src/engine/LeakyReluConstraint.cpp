@@ -277,8 +277,13 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
             {
                 unsigned partner = ( variable == _f ) ? _b : _f;
                 if ( proofs )
-                    _boundManager->addLemmaExplanationAndTightenBound(
-                        partner, bound, Tightening::UB, { variable }, Tightening::UB, *this, false );
+                    _boundManager->addLemmaExplanationAndTightenBound( partner,
+                                                                       bound,
+                                                                       Tightening::UB,
+                                                                       { variable },
+                                                                       Tightening::UB,
+                                                                       *this,
+                                                                       false );
                 else
                     _boundManager->tightenUpperBound( partner, bound );
             }

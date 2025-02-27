@@ -7,7 +7,7 @@
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
+ ** directory for li2censing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
 
@@ -213,8 +213,8 @@ void TableauState::setDimensions( unsigned m,
 }
 
 void TableauState::setDimensionsForBasics( unsigned m,
-                                  unsigned n,
-                                  const IBasisFactorization::BasisColumnOracle &oracle )
+                                           unsigned n,
+                                           const IBasisFactorization::BasisColumnOracle &oracle )
 {
     _m = m;
     _n = n;

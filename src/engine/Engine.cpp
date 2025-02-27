@@ -86,7 +86,7 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
-//    _groundBoundManager.registerEngine( this );
+    //    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -4422,8 +4422,10 @@ ExitCode Engine::getExitCode() const
 {
     return _smtCore.getExitCode();
 }
+8
 
-void Engine::setExitCode( ExitCode exitCode )
+    void
+    Engine::setExitCode( ExitCode exitCode )
 {
     _smtCore.setExitCode( exitCode );
 }

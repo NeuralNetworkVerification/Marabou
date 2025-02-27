@@ -116,7 +116,7 @@ public:
      */
     void forceBacktrack( size_t newLevel );
 
-    Set<int> addExternalNAPClause(const String&externalNAPClauseFilename );
+    Set<int> addExternalNAPClause( const String &externalNAPClauseFilename );
 
 private:
     std::shared_ptr<CaDiCaL::Solver> d_solver;

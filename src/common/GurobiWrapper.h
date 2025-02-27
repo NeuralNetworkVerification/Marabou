@@ -223,8 +223,8 @@ public:
 
     // Extract the list of bound participating in an IIS, assuming it is computed
     void extractIIS( Map<String, GurobiWrapper::IISBoundType> &bounds,
-                                    List<String> &constraints,
-                                    const List<String> &constraintNames );
+                     List<String> &constraints,
+                     const List<String> &constraintNames );
 
 
 private:
@@ -292,8 +292,8 @@ public:
     {
         (void)type;
     }
-    void setLowerBound( String, double ){};
-    void setUpperBound( String, double ){};
+    void setLowerBound( String, double ) {};
+    void setUpperBound( String, double ) {};
     double getLowerBound( const String & )
     {
         return 0;
@@ -336,7 +336,7 @@ public:
     {
         return 0;
     };
-    void setCutoff( double ){};
+    void setCutoff( double ) {};
     void solve()
     {
     }
@@ -369,14 +369,14 @@ public:
     {
         return true;
     };
-    void setTimeLimit( double ){};
-    void setVerbosity( unsigned ){};
+    void setTimeLimit( double ) {};
+    void setVerbosity( unsigned ) {};
     bool containsVariable( String /*name*/ ) const
     {
         return false;
     };
-    void setNumberOfThreads( unsigned ){};
-    void nonConvex(){};
+    void setNumberOfThreads( unsigned ) {};
+    void nonConvex() {};
     double getObjectiveBound()
     {
         return 0;
@@ -397,7 +397,7 @@ public:
     {
         return 0;
     };
-    void updateModel(){};
+    void updateModel() {};
     bool existsAssignment( const String & )
     {
         return false;

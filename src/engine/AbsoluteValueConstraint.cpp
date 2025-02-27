@@ -153,7 +153,8 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       *this, false );
+                                                                       *this,
+                                                                       false );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -233,7 +234,8 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       *this, false );
+                                                                       *this,
+                                                                       false );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -1052,7 +1054,7 @@ bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,
     {
         if ( var == _b && boundType == Tightening::UB && bound <= 0 )
             return true;
-        if ( var == _f && boundType == Tightening::LB && bound >getUpperBound( _b ) )
+        if ( var == _f && boundType == Tightening::LB && bound > getUpperBound( _b ) )
             return true;
         if ( _auxVarsInUse )
         {

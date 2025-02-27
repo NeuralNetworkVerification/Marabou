@@ -877,7 +877,7 @@ public:
         unsigned f = 4;
         unsigned activeAux = 10;
 
-        BoundManager boundManager(context);
+        BoundManager boundManager( context );
 
         LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
 

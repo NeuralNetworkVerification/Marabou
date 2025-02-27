@@ -32,7 +32,7 @@ public:
     /*
       Force the default decision phase of a variable to a certain value.
      */
-    virtual void phase ( int lit ) = 0;
+    virtual void phase( int lit ) = 0;
 
     /*
       Try to solve the current formula.
@@ -52,8 +52,7 @@ public:
     /*
       Add call-back which allows to learn, propagate and backtrack based on external constraints.
     */
-    virtual void
-    connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator ) = 0;
+    virtual void connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator ) = 0;
 
     /*
       Disconnect the theory solver, resets all the observed variables.
