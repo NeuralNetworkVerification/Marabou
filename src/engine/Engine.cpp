@@ -4422,10 +4422,8 @@ ExitCode Engine::getExitCode() const
 {
     return _smtCore.getExitCode();
 }
-8
 
-    void
-    Engine::setExitCode( ExitCode exitCode )
+void Engine::setExitCode( ExitCode exitCode )
 {
     _smtCore.setExitCode( exitCode );
 }
