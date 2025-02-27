@@ -9941,7 +9941,7 @@ public:
 
     bool boundsEqual( const List<Tightening> &bounds, const List<Tightening> &expectedBounds )
     {
-        if ( bounds.size() < expectedBounds.size() )
+        if ( bounds.size() != expectedBounds.size() )
             return false;
 
         bool allFound = true;

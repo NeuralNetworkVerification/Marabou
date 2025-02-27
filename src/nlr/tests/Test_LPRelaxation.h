@@ -4486,7 +4486,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
         TS_ASSERT( boundsEqual( bounds, expectedBounds4 ) );
     }
-
+    
     void test_preimage_approximation_relu()
     {
         Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
@@ -5736,7 +5736,7 @@ public:
         }
         return allFound;
     }
-
+    
     // Create list of all tightenings in newBounds for which there is no bound in newBounds or in
     // bounds which is at least as tight.
     List<Tightening> removeRedundancies( const List<Tightening> &bounds,
@@ -5772,7 +5772,7 @@ public:
         }
         return minimalBounds;
     }
-
+    
     void updateTableau( MockTableau &tableau, List<Tightening> &tightenings )
     {
         for ( const auto &tightening : tightenings )
