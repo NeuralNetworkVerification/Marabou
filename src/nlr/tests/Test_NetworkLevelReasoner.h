@@ -8530,6 +8530,7 @@ public:
         TS_ASSERT( boundsEqual( bounds, expectedBounds ) );
     }
 
+
     void test_sbt_abs_positive_and_negative()
     {
         Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "sbt" );
