@@ -284,6 +284,7 @@ public:
     GurobiWrapper()
     {
     }
+
     ~GurobiWrapper()
     {
     }
@@ -292,120 +293,174 @@ public:
     {
         (void)type;
     }
-    void setLowerBound( String, double ) {};
-    void setUpperBound( String, double ) {};
+
+    void setLowerBound( String, double )
+    {
+    }
+
+    void setUpperBound( String, double )
+    {
+    }
+
     double getLowerBound( const String & )
     {
         return 0;
-    };
+    }
+
     double getUpperBound( const String & )
     {
         return 0;
-    };
+    }
+
     void addLeqConstraint( const List<Term> &, double )
     {
     }
+
     void addGeqConstraint( const List<Term> &, double )
     {
     }
+
     void addEqConstraint( const List<Term> &, double )
     {
     }
+
     void addPiecewiseLinearConstraint( String, String, unsigned, const double *, const double * )
     {
     }
+
     void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double )
     {
     }
+
     void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double )
     {
     }
+
     void addEqIndicatorConstraint( const String, const int, const List<Term> &, double )
     {
     }
+
     void addBilinearConstraint( const String, const String, const String )
     {
     }
+
     void setCost( const List<Term> &, double /* constant */ = 0 )
     {
     }
+
     void setObjective( const List<Term> &, double /* constant */ = 0 )
     {
     }
+
     double getOptimalCostOrObjective()
     {
         return 0;
-    };
-    void setCutoff( double ) {};
+    }
+
+    void setCutoff( double )
+    {
+    }
+
     void solve()
     {
     }
+
     void extractSolution( Map<String, double> &, double & )
     {
     }
+
     void reset()
     {
     }
+
     void resetModel()
     {
     }
+
     bool optimal()
     {
         return true;
     }
+
     bool cutoffOccurred()
     {
         return false;
-    };
+    }
+
     bool infeasible()
     {
         return false;
-    };
+    }
+
     bool timeout()
     {
         return false;
-    };
+    }
+
     bool haveFeasibleSolution()
     {
         return true;
-    };
-    void setTimeLimit( double ) {};
-    void setVerbosity( unsigned ) {};
+    }
+
+    void setTimeLimit( double )
+    {
+    }
+
+    void setVerbosity( unsigned )
+    {
+    }
+
     bool containsVariable( String /*name*/ ) const
     {
         return false;
-    };
-    void setNumberOfThreads( unsigned ) {};
-    void nonConvex() {};
+    }
+
+    void setNumberOfThreads( unsigned )
+    {
+    }
+
+    void nonConvex()
+    {
+    }
+
     double getObjectiveBound()
     {
         return 0;
-    };
+    }
+
     double getAssignment( const String & )
     {
         return 0;
-    };
+    }
+
     unsigned getNumberOfSimplexIterations()
     {
         return 0;
-    };
+    }
+
     unsigned getNumberOfNodes()
     {
         return 0;
-    };
+    }
+
     unsigned getStatusCode()
     {
         return 0;
-    };
-    void updateModel() {};
+    }
+
+    void updateModel()
+    {
+    }
+
     bool existsAssignment( const String & )
     {
         return false;
-    };
+    }
 
     void dump()
     {
     }
+
     static void log( const String & );
 
     void computeIIS( int /*method*/ = 0 )
