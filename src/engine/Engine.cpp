@@ -4393,40 +4393,6 @@ void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
     }
 }
 
-void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
-{
-    Query ipq( *_preprocessedQuery );
-    for ( int lit : clause )
-    {
-        ASSERT( lit != 0 );
-        if ( lit > 0 )
-        {
-            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
-            unsigned int b = relu->getB();
-            unsigned int f = relu->getF();
-
-            Equation eq( Equation::EQ );
-            eq.addAddend( 1, b );
-            eq.addAddend( -1, f );
-            eq.setScalar( 0 );
-            ipq.addEquation( eq );
-
-            ipq.setLowerBound( b, 0 );
-            ipq.setLowerBound( f, 0 );
-        }
-        else
-        {
-            const ReluConstraint *relu = (ReluConstraint *)_smtCore.getConstraintFromLit( lit );
-            unsigned int b = relu->getB();
-            unsigned int f = relu->getF();
-
-            ipq.setUpperBound( b, 0 );
-            ipq.setUpperBound( f, 0 );
-        }
-    }
-    ipq.saveQuery( prefix + ".ipq" );
-}
-
 unsigned Engine::getVerbosity() const
 {
     return _verbosity;
