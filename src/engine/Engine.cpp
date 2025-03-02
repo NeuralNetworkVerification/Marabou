@@ -3564,14 +3564,21 @@ void Engine::explainSimplexFailure()
     }
 
     ASSERT( infeasibleVar < _tableau->getN() );
-    //    ASSERT( _UNSATCertificateCurrentPointer &&
-    //            !( **_UNSATCertificateCurrentPointer ).getContradiction() );
+    if ( !_solveWithCDCL )
+        ASSERT( _UNSATCertificateCurrentPointer &&
+                !( **_UNSATCertificateCurrentPointer ).getContradiction() );
+
     _statistics.incUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
 
     Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
-    //    writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
+
+    if ( !_solveWithCDCL )
+        writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
+
+    if ( !_solveWithCDCL )
+        return;
 
     // If both bounds are ground bounds, explanation would be empty and the clause trivial
     if ( _boundManager.getUpperBound( infeasibleVar ) ==
@@ -3926,17 +3933,21 @@ bool Engine::certifyUNSATCertificate()
 void Engine::markLeafToDelegate()
 {
     ASSERT( _produceUNSATProofs );
+    UnsatCertificateNode *currentUnsatCertificateNode = NULL;
+    if ( !_solveWithCDCL )
+    {
+        // Mark leaf with toDelegate Flag
+        currentUnsatCertificateNode = _UNSATCertificateCurrentPointer->get();
+        ASSERT( _UNSATCertificateCurrentPointer &&
+                !currentUnsatCertificateNode->getContradiction() );
+        currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_SAVE );
+        currentUnsatCertificateNode->deletePLCExplanations();
+    }
 
-    // Mark leaf with toDelegate Flag
-    //    UnsatCertificateNode *currentUnsatCertificateNode =
-    //    _UNSATCertificateCurrentPointer->get(); ASSERT( _UNSATCertificateCurrentPointer &&
-    //    !currentUnsatCertificateNode->getContradiction() );
-    //    currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_SAVE );
-    //    currentUnsatCertificateNode->deletePLCExplanations();
     _statistics.incUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES );
-    //
-    //    if ( !currentUnsatCertificateNode->getChildren().empty() )
-    //        currentUnsatCertificateNode->makeLeaf();
+
+    if ( !_solveWithCDCL && currentUnsatCertificateNode->getChildren().empty() )
+        currentUnsatCertificateNode->makeLeaf();
 }
 
 const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) const
