@@ -126,8 +126,9 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
     {
         _needToSplit = true;
-        ASSERT( !constraint->phaseFixed() );
-        if ( !pickSplitPLConstraint() )
+        if ( _engine->shouldSolveWithCDCL() )
+            ASSERT( !constraint->phaseFixed() );
+        if ( !_engine->shouldSolveWithCDCL() && !pickSplitPLConstraint() )
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
@@ -450,6 +451,8 @@ void SmtCore::resetSplitConditions()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
+    if ( _engine->shouldSolveWithCDCL() )
+        _constraintForSplitting = NULL;
     _needToSplit = false;
 }
 

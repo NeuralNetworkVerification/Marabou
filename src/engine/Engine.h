@@ -87,10 +87,9 @@ public:
     void initializeSolver() override;
 
     /*
-      Run a single solver iteration, used by the native and CDCL solvers.
-      Return true if this iteration a solution is found, or an error was detected, return false
-      otherwise.
-     */
+      Attempt to find a feasible solution for the input within a time limit
+      (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
+    */
     bool solve( double timeoutInSeconds = 0 ) override;
 
     /*

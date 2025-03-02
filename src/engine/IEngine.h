@@ -96,10 +96,8 @@ public:
     virtual void initializeSolver() = 0;
 
     /*
-      Run a single solver iteration, used by the native and CDCL solvers.
-      Return true if this iteration a solution is found, or an error was detected, return false
-      otherwise.
-     */
+      Solve the encoded query.
+    */
     virtual bool solve( double timeoutInSeconds ) = 0;
 
     /*

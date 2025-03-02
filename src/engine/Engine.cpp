@@ -3130,6 +3130,12 @@ void Engine::storeSmtState( SmtState &smtState )
 bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
 {
     // TODO: this method should be updated when integrating milp with cdcl
+    if ( !_initialized )
+    {
+        initializeSolver();
+        _initialized = true;
+    }
+
     try
     {
         if ( _lpSolverType == LPSolverType::NATIVE && _tableau->basisMatrixAvailable() )
@@ -3552,7 +3558,8 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
-        _smtCore.addTrivialConflictClause();
+        if ( _solveWithCDCL )
+            _smtCore.addTrivialConflictClause();
         return;
     }
 

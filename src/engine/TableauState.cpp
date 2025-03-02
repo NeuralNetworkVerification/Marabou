@@ -7,7 +7,7 @@
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
- ** directory for li2censing information.\endverbatim
+ ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
 

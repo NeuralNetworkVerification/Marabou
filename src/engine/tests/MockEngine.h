@@ -394,7 +394,7 @@ public:
     {
     }
 
-    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override
+    bool checkAssignmentComplianceWithClause( const Set<int> & /*clause*/ ) const override
     {
         return true;
     }
