@@ -221,7 +221,6 @@ void Marabou::solveQuery()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     if ( _engine->processInputQuery( _inputQuery ) )
     {
-        _engine->initializeSolver();
         if ( _engine->shouldSolveWithMILP() )
             _engine->solveWithMILPEncoding( timeoutInSeconds );
         else if ( _engine->shouldSolveWithCDCL() )

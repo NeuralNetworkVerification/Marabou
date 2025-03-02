@@ -1323,8 +1323,6 @@ bool SmtCore::solveWithCadical( double timeoutInSeconds )
         if ( _exitCode == UNSAT )
             return false;
 
-        _engine->initializeSolver();
-
         // TODO: Update the following fast-sat code to reflect the new changes of solving
         //        if ( Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) == "" &&
         //             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) == "" )

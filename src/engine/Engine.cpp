@@ -74,6 +74,7 @@ Engine::Engine()
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
     , _solveWithCDCL( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
+    , _initialized( false )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -236,6 +237,12 @@ void Engine::initializeSolver()
 
 bool Engine::solve( double timeoutInSeconds )
 {
+    if ( !_initialized )
+    {
+        initializeSolver();
+        _initialized = true;
+    }
+
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     if ( _solveWithCDCL )
@@ -4367,8 +4374,8 @@ void Engine::removeLiteralFromPropagations( int literal )
 
 void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
 {
-    DEBUG( for ( const auto &bound
-                 : split.getBoundTightenings() ) {
+    for ( const auto &bound : split.getBoundTightenings() )
+    {
         if ( bound._type == Tightening::UB )
             ASSERT(
                 FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
@@ -4376,7 +4383,7 @@ void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
         if ( bound._type == Tightening::LB )
             ASSERT(
                 FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
-    } )
+    }
 }
 
 void Engine::dumpClauseToIpqFile( const List<int> &clause, String prefix )
