@@ -22,7 +22,7 @@ CadicalWrapper::CadicalWrapper( CaDiCaL::ExternalPropagator *externalPropagator,
 {
     _solver->set( "walk", 0 );
     _solver->set( "lucky", 0 );
-    _solver->set( "log", 1 );
+    _solver->set( "log", 0 );
 
     _solver->connect_external_propagator( externalPropagator );
     _solver->connect_terminator( terminator );

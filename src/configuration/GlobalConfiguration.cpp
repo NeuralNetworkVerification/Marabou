@@ -144,7 +144,7 @@ const bool GlobalConfiguration::ONNX_PARSER_LOGGING = false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
 const bool GlobalConfiguration::CEGAR_LOGGING = false;
-const bool GlobalConfiguration::CDCL_LOGGING = true;
+const bool GlobalConfiguration::CDCL_LOGGING = false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
