@@ -243,7 +243,7 @@ void Statistics::print()
             totalTimeApplyingStoredTighteningsMicro / 1000 );
     unsigned long long totalTimeSearchTreeHandlerMainLoopMicro =
         getLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO );
-    printf( "\t\t[%.2lf%%] CDCL Core: %llu milli\n",
+    printf( "\t\t[%.2lf%%] Search Tree Handler: %llu milli\n",
             printPercents( totalTimeSearchTreeHandlerMainLoopMicro, timeMainLoopMicro ),
             totalTimeSearchTreeHandlerMainLoopMicro / 1000 );
     unsigned long long totalTimeCdclCoreMainLoopMicro =
