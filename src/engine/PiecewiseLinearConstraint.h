@@ -47,7 +47,6 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
-#include "CadicalWrapper.h"
 #include "FloatUtils.h"
 #include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
@@ -65,12 +64,13 @@
 #include "context/cdo.h"
 #include "context/context.h"
 
+class CdclCore;
 class Equation;
 class BoundManager;
 class ITableau;
 class Query;
 class String;
-class SmtCore;
+class SearchTreeHandler;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
@@ -207,7 +207,7 @@ public:
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
       Transitioning from Valid to Implied with integration of
-      context-dependentSMTCore.
+      context-dependent SearchTreeHandler.
     */
     virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
@@ -368,11 +368,11 @@ public:
     }
 
     /*
-      Register the SmtCore object
+      Register the SearchTreeHandler object
      */
-    inline void registerSmtCore( SmtCore *smtCore )
+    inline void registerCdclCore( CdclCore *cdclCore )
     {
-        _smtCore = smtCore;
+        _cdclCore = cdclCore;
     }
 
     /*
@@ -515,8 +515,7 @@ public:
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
    */
     virtual void
-    booleanAbstraction( CadicalWrapper &cadical,
-                        Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) = 0;
+    booleanAbstraction( Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) = 0;
 
     /*
      Returns a literal representing a boolean propagation
@@ -577,7 +576,7 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSearchTreeHandler
 
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
@@ -611,9 +610,9 @@ protected:
     GurobiWrapper *_gurobi;
 
     /*
-      The SmtCore object servers as the theory solver of CDCL.
+      The CdclCore object servers as the theory solver of CDCL.
      */
-    SmtCore *_smtCore;
+    CdclCore *_cdclCore;
 
     List<unsigned> _tableauAuxVars;
     List<unsigned> _cadicalVars;

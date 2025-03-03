@@ -18,7 +18,7 @@
 
 #include "EngineState.h"
 
-class SmtCore;
+class SearchTreeHandler;
 
 class PrecisionRestorer
 {

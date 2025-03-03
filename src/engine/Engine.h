@@ -22,7 +22,7 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "BoundManager.h"
-#include "CadicalWrapper.h"
+#include "CdclCore.h"
 #include "Checker.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
@@ -41,8 +41,8 @@
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "Query.h"
+#include "SearchTreeHandler.h"
 #include "SignalHandler.h"
-#include "SmtCore.h"
 #include "SmtLibWriter.h"
 #include "SnCDivideStrategy.h"
 #include "SparseUnsortedList.h"
@@ -201,15 +201,15 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      Apply the stack to the newly created SearchTreeHandler, returns false if UNSAT is
       found in this process.
     */
-    bool restoreSmtState( SmtState &smtState ) override;
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState ) override;
 
     /*
-      Store the current stack of the smtCore into smtState
+      Store the current stack of the searchTreeHandler into searchTreeState
     */
-    void storeSmtState( SmtState &smtState ) override;
+    void storeSearchTreeState( SearchTreeState &searchTreeState ) override;
 
     /*
       Pick the piecewise linear constraint for splitting
@@ -226,7 +226,7 @@ public:
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
-    void resetSmtCore();
+    void resetSearchTreeHandler();
     void resetBoundTighteners();
 
     /*
@@ -336,7 +336,7 @@ public:
     unsigned getVerbosity() const override;
 
     /*
-      Returns the exit code from the SmtCore
+      Returns the exit code from the SearchTreeHandler
     */
     ExitCode getExitCode() const override;
 
@@ -401,8 +401,13 @@ private:
     void explicitBasisBoundTightening();
 
     /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
+
+    /*
        Context is the central object that manages memory and back-tracking
-       across context-dependent components - SMTCore,
+       across context-dependent components - SearchTreeHandler,
        PiecewiseLinearConstraints, BoundManager, etc.
      */
     Context _context;
@@ -462,9 +467,14 @@ private:
     AutoRowBoundTightener _rowBoundTightener;
 
     /*
-      The SMT engine is in charge of case splitting.
+      The Search Tree engine is in charge of case splitting.
     */
-    SmtCore _smtCore;
+    SearchTreeHandler _searchTreeHandler;
+
+    /*
+      The CDCL core in charge of communicating with the SAT solver.
+     */
+    CdclCore _cdclCore;
 
     /*
       Number of pl constraints disabled by valid splits.
@@ -680,7 +690,7 @@ private:
     void selectViolatedPlConstraint();
 
     /*
-      Report the violated PL constraint to the SMT engine.
+      Report the violated PL constraint to the Search Tree engine.
     */
     void reportPlViolation();
 
@@ -902,7 +912,7 @@ private:
     }
 
     /*
-       Checks whether the current bounds are consistent. Exposed for the SmtCore.
+       Checks whether the current bounds are consistent. Exposed for the SearchTreeHandler.
      */
     bool consistentBounds() const override;
 

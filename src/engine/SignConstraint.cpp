@@ -14,6 +14,7 @@
 
 #include "SignConstraint.h"
 
+#include "CdclCore.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -23,8 +24,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
-#include "SignConstraint.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 #include "Statistics.h"
 
 #ifdef _WIN32
@@ -429,7 +429,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
             }
         }
         if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-            _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+            _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
     }
 }
 
@@ -484,7 +484,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         }
 
         if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-            _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+            _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
     }
 }
 
@@ -676,7 +676,6 @@ void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
 {
 }
 void SignConstraint::booleanAbstraction(
-    CadicalWrapper & /*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();

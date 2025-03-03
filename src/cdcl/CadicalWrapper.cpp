@@ -1,119 +1,87 @@
+/*********************                                                        */
+/*! \file CadicalWrapper.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Idan Refaeli, Omri Isac
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
+**/
+
 #include "CadicalWrapper.h"
 
-#include <utility>
-
-CadicalWrapper::CadicalWrapper()
-    : d_solver( new CaDiCaL::Solver() )
+CadicalWrapper::CadicalWrapper( CaDiCaL::ExternalPropagator *externalPropagator,
+                                CaDiCaL::Terminator *terminator,
+                                CaDiCaL::FixedAssignmentListener *fixedListener )
+    : _solver( new CaDiCaL::Solver() )
 {
-    d_solver->set( "walk", 0 );
-    d_solver->set( "lucky", 0 );
-    d_solver->set( "log", 0 );
-}
+    _solver->set( "walk", 0 );
+    _solver->set( "lucky", 0 );
+    _solver->set( "log", 1 );
 
+    _solver->connect_external_propagator( externalPropagator );
+    _solver->connect_terminator( terminator );
+    _solver->connect_fixed_listener( fixedListener );
+}
 
 void CadicalWrapper::addLiteral( int lit )
 {
-    d_solver->add( lit );
+    _solver->add( lit );
 }
 
 void CadicalWrapper::addClause( const Set<int> &clause )
 {
-    d_solver->clause( std::vector<int>( clause.begin(), clause.end() ) );
-}
-
-bool CadicalWrapper::inconsistent()
-{
-    return d_solver->inconsistent();
+    _solver->clause( std::vector<int>( clause.begin(), clause.end() ) );
 }
 
 void CadicalWrapper::assume( int lit )
 {
-    d_solver->assume( lit );
+    _solver->assume( lit );
 }
 
 void CadicalWrapper::phase( int lit )
 {
-    d_solver->phase( lit );
+    _solver->phase( lit );
 }
 
 int CadicalWrapper::solve()
 {
-    return d_solver->solve();
+    return _solver->solve();
 }
 
 int CadicalWrapper::val( int lit )
 {
-    return d_solver->val( lit );
-}
-
-Map<int, int> CadicalWrapper::getModel()
-{
-    Map<int, int> model;
-    int numVars = d_solver->vars();
-    for ( int var = 1; var <= numVars; ++var )
-        model[var] = d_solver->val( var );
-
-    return model;
+    return _solver->val( lit );
 }
 
 void CadicalWrapper::flip( int lit )
 {
-    d_solver->flip( lit );
-}
-
-void CadicalWrapper::connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator )
-{
-    d_solver->connect_external_propagator( externalPropagator );
-}
-
-void CadicalWrapper::disconnectTheorySolver()
-{
-    d_solver->disconnect_external_propagator();
+    _solver->flip( lit );
 }
 
 void CadicalWrapper::addObservedVar( int var )
 {
-    d_solver->add_observed_var( var );
-}
-
-void CadicalWrapper::removeObservedVar( int var )
-{
-    d_solver->remove_observed_var( var );
+    _solver->add_observed_var( var );
 }
 
 bool CadicalWrapper::isDecision( int observedVar ) const
 {
-    return d_solver->is_decision( observedVar );
+    return _solver->is_decision( observedVar );
 }
 
 int CadicalWrapper::vars()
 {
-    return d_solver->vars();
-}
-
-void CadicalWrapper::connectTerminator( CaDiCaL::Terminator *terminator )
-{
-    d_solver->connect_terminator( terminator );
-}
-
-void CadicalWrapper::disconnectTerminator()
-{
-    d_solver->disconnect_terminator();
-}
-
-void CadicalWrapper::connectFixedListener( CaDiCaL::FixedAssignmentListener *fixedListener )
-{
-    d_solver->connect_fixed_listener( fixedListener );
-}
-
-void CadicalWrapper::disconnectFixedListener()
-{
-    d_solver->disconnect_fixed_listener();
+    return _solver->vars();
 }
 
 void CadicalWrapper::forceBacktrack( size_t newLevel )
 {
-    d_solver->force_backtrack( newLevel );
+    _solver->force_backtrack( newLevel );
 }
 
 Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFilename )
@@ -139,4 +107,11 @@ Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFi
     }
 
     return clause;
+}
+
+CadicalWrapper::~CadicalWrapper()
+{
+    _solver->disconnect_fixed_listener();
+    _solver->disconnect_terminator();
+    _solver->disconnect_external_propagator();
 }

@@ -20,7 +20,7 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 #include "context/context.h"
 
 #include <cxxtest/TestSuite.h>
@@ -168,17 +168,17 @@ public:
     {
     }
 
-    mutable SmtState *lastRestoredSmtState;
-    bool restoreSmtState( SmtState &smtState ) override
+    mutable SearchTreeState *lastRestoredSearchTreeState;
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState ) override
     {
-        lastRestoredSmtState = &smtState;
+        lastRestoredSearchTreeState = &searchTreeState;
         return true;
     }
 
-    mutable SmtState *lastStoredSmtState;
-    void storeSmtState( SmtState &smtState ) override
+    mutable SearchTreeState *lastStoredSearchTreeState;
+    void storeSearchTreeState( SearchTreeState &searchTreeState ) override
     {
-        lastStoredSmtState = &smtState;
+        lastStoredSearchTreeState = &searchTreeState;
     }
 
     List<PiecewiseLinearConstraint *> _constraintsToSplit;

@@ -14,6 +14,7 @@
 
 #include "DisjunctionConstraint.h"
 
+#include "CdclCore.h"
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
 #include "MStringf.h"
@@ -626,7 +627,6 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
     return maxUpperBound;
 }
 void DisjunctionConstraint::booleanAbstraction(
-    CadicalWrapper &cadical,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx;
@@ -637,9 +637,9 @@ void DisjunctionConstraint::booleanAbstraction(
         cadicalVarToPlc.insert( idx, this );
         _disjunctsToCadicalVars.insert( &disjunct, idx );
         _cadicalVarsToDisjuncts.insert( idx, &disjunct );
-        cadical.addLiteral( (int)idx );
+        _cdclCore->addLiteral( (int)idx );
     }
-    cadical.addLiteral( 0 );
+    _cdclCore->addLiteral( 0 );
 }
 
 int DisjunctionConstraint::propagatePhaseAsLit() const

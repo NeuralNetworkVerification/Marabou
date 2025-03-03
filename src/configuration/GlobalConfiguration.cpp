@@ -129,7 +129,7 @@ const bool GlobalConfiguration::GUROBI_LOGGING = false;
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
-const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
+const bool GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;
 const bool GlobalConfiguration::PREPROCESSOR_LOGGING = false;
@@ -144,6 +144,7 @@ const bool GlobalConfiguration::ONNX_PARSER_LOGGING = false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
 const bool GlobalConfiguration::CEGAR_LOGGING = false;
+const bool GlobalConfiguration::CDCL_LOGGING = true;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;

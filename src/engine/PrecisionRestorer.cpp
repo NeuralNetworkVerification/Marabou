@@ -20,7 +20,7 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "QuitFromPrecisionRestorationException.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 #include "TableauStateStorageLevel.h"
 #include "UnsatCertificateNode.h"
 

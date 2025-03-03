@@ -243,8 +243,7 @@ public:
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
     */
     void
-    booleanAbstraction( CadicalWrapper &cadical,
-                        Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
+    booleanAbstraction( Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
 
     /*
      Returns a literal representing a boolean propagation

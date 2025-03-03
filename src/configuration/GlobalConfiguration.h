@@ -281,7 +281,7 @@ public:
     static const bool DNC_MANAGER_LOGGING;
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
-    static const bool SMT_CORE_LOGGING;
+    static const bool SEARCH_TREE_HANDLER_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
     static const bool PREPROCESSOR_LOGGING;
@@ -296,6 +296,7 @@ public:
     static const bool SOI_LOGGING;
     static const bool SCORE_TRACKER_LOGGING;
     static const bool CEGAR_LOGGING;
+    static const bool CDCL_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

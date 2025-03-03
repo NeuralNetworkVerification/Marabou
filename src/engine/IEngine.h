@@ -39,7 +39,7 @@ namespace NLR {
 class NetworkLevelReasoner;
 }
 class PiecewiseLinearCaseSplit;
-class SmtState;
+class SearchTreeState;
 class String;
 class PiecewiseLinearConstraint;
 class PLCLemma;
@@ -80,15 +80,15 @@ public:
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
-      Store the current stack of the smtCore into smtState
+      Store the current stack of the searchTreeHandler into searchTreeState
     */
-    virtual void storeSmtState( SmtState &smtState ) = 0;
+    virtual void storeSearchTreeState( SearchTreeState &searchTreeState ) = 0;
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      Apply the stack to the newly created SearchTreeHandler, returns false if UNSAT is
       found in this process.
     */
-    virtual bool restoreSmtState( SmtState &smtState ) = 0;
+    virtual bool restoreSearchTreeState( SearchTreeState &searchTreeState ) = 0;
 
     /*
       Required initialization before starting the solving loop.

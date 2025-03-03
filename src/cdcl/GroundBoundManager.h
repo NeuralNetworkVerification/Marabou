@@ -1,3 +1,21 @@
+/*********************                                                        */
+/*! \file GroundBoundManager.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Idan Refaeli, Omri Isac
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
+**/
+
+#ifndef __GroundBoundManager_h__
+#define __GroundBoundManager_h__
+
 #include "PlcLemma.h"
 #include "Set.h"
 #include "Tightening.h"
@@ -5,10 +23,6 @@
 #include "context/cdlist.h"
 #include "context/cdo.h"
 #include "context/context.h"
-
-#ifndef MARABOU_GROUNDBOUNDMANAGER_H
-#define MARABOU_GROUNDBOUNDMANAGER_H
-
 
 class GroundBoundManager
 {
@@ -77,4 +91,4 @@ private:
 };
 
 
-#endif // MARABOU_GROUNDBOUNDMANAGER_H
+#endif // __GroundBoundManager_h__

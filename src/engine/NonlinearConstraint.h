@@ -162,7 +162,7 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSearchTreeHandler
 
     /*
       Statistics collection

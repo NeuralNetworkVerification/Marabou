@@ -1,5 +1,20 @@
-#ifndef MARABOU_CADICALWRAPPER_H
-#define MARABOU_CADICALWRAPPER_H
+/*********************                                                        */
+/*! \file CadicalWrapper.h
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Idan Refaeli, Omri Isac
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
+**/
+
+#ifndef __CadicalWrapper_h__
+#define __CadicalWrapper_h__
 
 #include "File.h"
 #include "SatSolverWrapper.h"
@@ -8,13 +23,16 @@
 #include <memory>
 
 
-class CadicalWrapper : SatSolverWrapper
+class CadicalWrapper : public SatSolverWrapper
 {
 public:
     /*
-      Constructs the Cadical Wrapper.
+      Constructs and destructs the Cadical Wrapper.
      */
-    explicit CadicalWrapper();
+    explicit CadicalWrapper( CaDiCaL::ExternalPropagator *externalPropagator,
+                             CaDiCaL::Terminator *terminator,
+                             CaDiCaL::FixedAssignmentListener *fixedListener );
+    ~CadicalWrapper() override;
 
     /*
       Add valid literal to clause or zero to terminate clause.
@@ -25,11 +43,6 @@ public:
       Add a clause to the solver
     */
     void addClause( const Set<int> &clause ) override;
-
-    /*
-     check if the formula is already inconsistent
-    */
-    bool inconsistent() override;
 
     /*
       Assume valid non zero literal for next call to 'solve'.
@@ -52,34 +65,14 @@ public:
     int val( int lit ) override;
 
     /*
-      Get values of all of the literals.
-    */
-    Map<int, int> getModel();
-
-    /*
       Try to flip the value of the given literal without falsifying the formula.
     */
     void flip( int lit ) override;
 
     /*
-      Add call-back which allows to learn, propagate and backtrack based on external constraints.
-    */
-    void connectTheorySolver( CaDiCaL::ExternalPropagator *externalPropagator ) override;
-
-    /*
-      Disconnect the theory solver, resets all the observed variables.
-    */
-    void disconnectTheorySolver() override;
-
-    /*
       Mark as 'observed' those variables that are relevant to the theory solver.
     */
     void addObservedVar( int var ) override;
-
-    /*
-      Removes the 'observed' flag from the given variable.
-    */
-    void removeObservedVar( int var ) override;
 
     /*
       Get reason of valid observed literal.
@@ -89,38 +82,18 @@ public:
     /*
       Return the number of vars;
      */
-    int vars();
-
-    /*
-      Add call-back which is checked regularly for termination.
-     */
-    void connectTerminator( CaDiCaL::Terminator *terminator );
-
-    /*
-      Disconnects the terminator, stops the CaDiCaL solver.
-     */
-    void disconnectTerminator();
-
-    /*
-     * Add call-back which notifying on a fixed assignment.
-     */
-    void connectFixedListener( CaDiCaL::FixedAssignmentListener *fixedListener );
-
-    /*
-     * Disconnects the fixed assignment listener.
-     */
-    void disconnectFixedListener();
+    int vars() override;
 
     /*
      * Forces backtracking to the given level
      */
-    void forceBacktrack( size_t newLevel );
+    void forceBacktrack( size_t newLevel ) override;
 
     Set<int> addExternalNAPClause( const String &externalNAPClauseFilename );
 
 private:
-    std::shared_ptr<CaDiCaL::Solver> d_solver;
+    std::shared_ptr<CaDiCaL::Solver> _solver;
 };
 
 
-#endif // MARABOU_CADICALWRAPPER_H
+#endif // __CadicalWrapper_h__

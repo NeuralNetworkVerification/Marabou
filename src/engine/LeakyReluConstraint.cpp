@@ -14,6 +14,7 @@
 
 #include "LeakyReluConstraint.h"
 
+#include "CdclCore.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -25,7 +26,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Query.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -152,7 +153,7 @@ void LeakyReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, 
     }
 
     if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+        _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -170,7 +171,7 @@ void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, 
     }
 
     if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+        _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
@@ -1021,7 +1022,6 @@ void LeakyReluConstraint::createInactiveTighteningRow()
 }
 
 void LeakyReluConstraint::booleanAbstraction(
-    CadicalWrapper & /*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();

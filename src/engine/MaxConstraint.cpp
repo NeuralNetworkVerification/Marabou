@@ -14,6 +14,7 @@
 
 #include "MaxConstraint.h"
 
+#include "CdclCore.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -800,7 +801,6 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings )
     }
 }
 void MaxConstraint::booleanAbstraction(
-    CadicalWrapper &cadical,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx;
@@ -811,9 +811,9 @@ void MaxConstraint::booleanAbstraction(
         cadicalVarToPlc.insert( idx, this );
         _elementsToCadicalVars.insert( element, idx );
         _cadicalVarsToElements.insert( idx, element );
-        cadical.addLiteral( (int)idx );
+        _cdclCore->addLiteral( (int)idx );
     }
-    cadical.addLiteral( 0 );
+    _cdclCore->addLiteral( 0 );
 
     // TODO add additional clauses
 }

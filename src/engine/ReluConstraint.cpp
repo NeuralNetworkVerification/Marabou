@@ -14,6 +14,7 @@
 
 #include "ReluConstraint.h"
 
+#include "CdclCore.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -25,7 +26,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Query.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -133,7 +134,7 @@ void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, doubl
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
     if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+        _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -145,7 +146,7 @@ void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, doubl
         setPhaseStatus( RELU_PHASE_ACTIVE );
 
     if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+        _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
@@ -1129,7 +1130,6 @@ void ReluConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrai
 }
 
 void ReluConstraint::booleanAbstraction(
-    CadicalWrapper /*cadical*/ &,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     ASSERT( !cadicalVarToPlc.empty() );

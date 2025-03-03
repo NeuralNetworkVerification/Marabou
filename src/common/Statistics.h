@@ -31,7 +31,7 @@ public:
         NUM_PL_CONSTRAINTS,
         NUM_ACTIVE_PL_CONSTRAINTS,
         NUM_PL_VALID_SPLITS,
-        NUM_PL_SMT_ORIGINATED_SPLITS,
+        NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS,
 
         // Precision restoration
         NUM_PRECISION_RESTORATIONS,
@@ -210,20 +210,23 @@ public:
         // Total amount of time spent applying previously stored bound tightenings
         TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO,
 
-        // Total amount of time spent within the SmtCore as a result of CaDiCal callbacks
-        TIME_SMT_CORE_CALLBACKS_MICRO,
+        // Total amount of time spent within the Search Tree Handler
+        TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
 
-        // Total amount of time spent within each one of CaDiCal callbacks in SmtCore
-        TOTAL_TIME_SMT_CORE_NOTIFY_ASSIGNMENT_MICRO,
-        TOTAL_TIME_SMT_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO,
-        TOTAL_TIME_SMT_CORE_NOTIFY_BACKTRACK_MICRO,
-        TOTAL_TIME_SMT_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO,
-        TOTAL_TIME_SMT_CORE_CB_DECIDE_MICRO,
-        TOTAL_TIME_SMT_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO,
-        TOTAL_TIME_SMT_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO,
+        // Total amount of time spent within the CDCL core as a result of CaDiCal callbacks
+        TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO,
 
-        // Total amount of time spent within the SMT core from Engine main loop
-        TOTAL_TIME_SMT_CORE_MAIN_LOOP_MICRO,
+        // Total amount of time spent within each one of CaDiCal callbacks in SearchTreeHandler
+        TOTAL_TIME_CDCL_CORE_NOTIFY_ASSIGNMENT_MICRO,
+        TOTAL_TIME_CDCL_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO,
+        TOTAL_TIME_CDCL_CORE_NOTIFY_BACKTRACK_MICRO,
+        TOTAL_TIME_CDCL_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO,
+        TOTAL_TIME_CDCL_CORE_CB_DECIDE_MICRO,
+        TOTAL_TIME_CDCL_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO,
+        TOTAL_TIME_CDCL_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO,
+
+        // Total amount of time spent within the CDCL core from Engine main loop
+        TOTAL_TIME_CDCL_CORE_MAIN_LOOP_MICRO,
 
         // Total time heuristically updating the SoI phase pattern
         TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO,

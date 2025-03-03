@@ -14,6 +14,7 @@
 
 #include "AbsoluteValueConstraint.h"
 
+#include "CdclCore.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -21,7 +22,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
@@ -914,7 +915,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     }
 
     if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
-        _smtCore->addLiteralToPropagate( propagatePhaseAsLit() );
+        _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
 String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
@@ -994,7 +995,6 @@ void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned
 }
 
 void AbsoluteValueConstraint::booleanAbstraction(
-    CadicalWrapper & /*cadical*/,
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
