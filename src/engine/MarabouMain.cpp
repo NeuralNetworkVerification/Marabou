@@ -103,6 +103,13 @@ int marabouMain( int argc, char **argv )
                     "not yet supported.\n" );
         }
 
+        if ( options->getBool( Options::PRODUCE_PROOFS ) )
+        {
+            GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+            printf( "Proof production is not yet supported with DEEPSOI search, turning search "
+                    "off.\n" );
+        }
+
         if ( options->getBool( Options::PRODUCE_PROOFS ) &&
              ( options->getBool( Options::DNC_MODE ) ) )
         {

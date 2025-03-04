@@ -2367,7 +2367,6 @@ void Engine::tightenBoundsOnConstraintMatrix()
                                   TimeUtils::timePassed( start, end ) );
 }
 
-// TODO: examine if the implementation of this method for CDCL is still necessary
 void Engine::explicitBasisBoundTightening()
 {
     struct timespec start = TimeUtils::sampleMicro();

@@ -311,7 +311,8 @@ struct MarabouOptions
         , _milpTighteningString(
               Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
-        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) ){};
+        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
+        , _cdcl( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) ){};
 
     void setOptions()
     {
@@ -323,6 +324,7 @@ struct MarabouOptions
         Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT,
                                  _performLpTighteningAfterSplit );
         Options::get()->setBool( Options::PRODUCE_PROOFS, _produceProofs );
+        Options::get()->setBool( Options::SOLVE_WITH_CDCL, _cdcl );
 
         // int options
         Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -356,6 +358,7 @@ struct MarabouOptions
     bool _dumpBounds;
     bool _performLpTighteningAfterSplit;
     bool _produceProofs;
+    bool _cdcl;
     unsigned _numWorkers;
     unsigned _numBlasThreads;
     unsigned _initialTimeout;
@@ -412,6 +415,38 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
         output = redirectOutputToFile( redirect );
     try
     {
+        if ( options._cdcl )
+        {
+            if ( !options._produceProofs )
+            {
+                options._produceProofs = true;
+                printf( "Turning produceProofs on to allow proof-based conflict clauses.\n" );
+            }
+            printf( "Please note that producing complete UNSAT proofs while cdcl is on is not yet "
+                    "supported.\n" );
+        }
+
+        if ( options._produceProofs )
+        {
+            GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+            printf( "Proof production is not yet supported with DEEPSOI search, turning search "
+                    "off.\n" );
+        }
+
+        if ( options._produceProofs && options._snc )
+        {
+            options._snc = false;
+            printf( "Proof production is not yet supported with snc mode, turning snc off.\n" );
+        }
+
+        if ( options._produceProofs && options._solveWithMILP )
+        {
+            options._solveWithMILP = false;
+            printf(
+                "Proof production is not yet supported with MILP solvers, turning solveWithMILP "
+                "off.\n" );
+        }
+
         options.setOptions();
 
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
@@ -449,7 +484,16 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
         else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            engine.solve( timeoutInSeconds ); // TODO: add option to maraboupy to run cdcl
+            if ( engine.shouldSolveWithMILP() )
+                engine.solveWithMILPEncoding( timeoutInSeconds );
+            else if ( engine.shouldSolveWithCDCL() )
+                engine.solveWithCDCL( timeoutInSeconds );
+            else
+            {
+                engine.solve( timeoutInSeconds );
+                if ( engine.shouldProduceProofs() && engine.getExitCode() == ExitCode::UNSAT )
+                    engine.certifyUNSATCertificate();
+            }
 
             resultString = exitCodeToString( engine.getExitCode() );
 
@@ -566,7 +610,8 @@ PYBIND11_MODULE( MarabouCore, m )
         .def_readwrite( "_numSimulations", &MarabouOptions::_numSimulations )
         .def_readwrite( "_performLpTighteningAfterSplit",
                         &MarabouOptions::_performLpTighteningAfterSplit )
-        .def_readwrite( "_produceProofs", &MarabouOptions::_produceProofs );
+        .def_readwrite( "_produceProofs", &MarabouOptions::_produceProofs )
+        .def_readwrite( "_cdcl", &MarabouOptions::_cdcl );
     m.def( "maraboupyMain", &maraboupyMain, "Run the Marabou command-line interface" );
     m.def( "loadProperty", &loadProperty, "Load a property file into a input query" );
     m.def( "createInputQuery",
