@@ -27,6 +27,7 @@
 #include "SoISearchStrategy.h"
 #include "SoftmaxBoundType.h"
 #include "SymbolicBoundTighteningType.h"
+#include "Vector.h"
 #include "boost/program_options.hpp"
 
 /*
@@ -86,6 +87,9 @@ public:
 
         // Switch the solving procedure to be CDCL-based
         SOLVE_WITH_CDCL,
+
+        // (CDCL) Solve a NAP query
+        SOLVE_NAP,
     };
 
     enum IntOptions {
@@ -161,9 +165,12 @@ public:
 
         // The procedure/solver for solving the LP
         LP_SOLVER,
+    };
 
-        NAP_EXTERNAL_CLAUSE_FILE_PATH, // TODO: delete or keep for artifact
-        NAP_EXTERNAL_CLAUSE_FILE_PATH2 // TODO: delete or keep for artifact
+    enum ArrayOfStringOptions {
+        // List of filenames containing external NAP clauses, as positive and negative NAPs
+        NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES,
+        NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES,
     };
 
     /*
@@ -188,6 +195,7 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
+    Vector<String> getArrayOfStrings( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
     SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
@@ -238,6 +246,7 @@ private:
     Map<unsigned, int> _intOptions;
     Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
+    Map<unsigned , std::vector<std::string>> _arrayOfStringOptions;
 };
 
 #endif // __Options_h__

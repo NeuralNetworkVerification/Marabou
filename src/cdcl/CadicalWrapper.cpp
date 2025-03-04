@@ -84,7 +84,8 @@ void CadicalWrapper::forceBacktrack( size_t newLevel )
     _solver->force_backtrack( newLevel );
 }
 
-Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFilename )
+Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFilename,
+                                               bool isNegated )
 {
     Set<int> clause;
 
@@ -100,7 +101,10 @@ Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFi
             if ( lit == "" )
                 break;
 
-            clause.insert( -atoi( lit.ascii() ) );
+            if ( isNegated )
+                clause.insert( -atoi( lit.ascii() ) );
+            else
+                clause.insert( atoi( lit.ascii() ) );
         }
 
         addClause( clause );

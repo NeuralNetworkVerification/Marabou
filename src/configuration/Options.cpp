@@ -26,7 +26,11 @@ Options *Options::get()
 }
 
 Options::Options()
-    : _optionParser( &_boolOptions, &_intOptions, &_floatOptions, &_stringOptions )
+    : _optionParser( &_boolOptions,
+                     &_intOptions,
+                     &_floatOptions,
+                     &_stringOptions,
+                     &_arrayOfStringOptions )
 {
     initializeDefaultValues();
     _optionParser.initialize();
@@ -56,6 +60,7 @@ void Options::initializeDefaultValues()
     _boolOptions[PRODUCE_PROOFS] = false;
     _boolOptions[DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] = false;
     _boolOptions[SOLVE_WITH_CDCL] = false;
+    _boolOptions[SOLVE_NAP] = false;
 
     /*
       Int options
@@ -102,8 +107,12 @@ void Options::initializeDefaultValues()
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
     _stringOptions[SOFTMAX_BOUND_TYPE] = "lse";
-    _stringOptions[NAP_EXTERNAL_CLAUSE_FILE_PATH] = "";
-    _stringOptions[NAP_EXTERNAL_CLAUSE_FILE_PATH2] = "";
+
+    /*
+       Array of string options
+     */
+    _arrayOfStringOptions[NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES] = {};
+    _arrayOfStringOptions[NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES] = {};
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -134,6 +143,16 @@ float Options::getFloat( unsigned option ) const
 String Options::getString( unsigned option ) const
 {
     return String( _stringOptions.get( option ) );
+}
+
+Vector<String> Options::getArrayOfStrings( unsigned int option ) const
+{
+    Vector<String> arrayOfStrings;
+    const std::vector<std::string> &originalArray = _arrayOfStringOptions[option];
+    for ( const auto &str : originalArray )
+        arrayOfStrings.append( String( str ) );
+
+    return arrayOfStrings;
 }
 
 void Options::setBool( unsigned option, bool value )

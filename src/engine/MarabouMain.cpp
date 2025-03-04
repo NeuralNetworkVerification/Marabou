@@ -48,9 +48,8 @@ static std::string getCompiledDateTime()
 void printVersion()
 {
     std::cout << "Marabou version " << MARABOU_VERSION << " [" << GIT_BRANCH << " "
-              << GIT_COMMIT_HASH << "]"
-              << "\ncompiled with " << getCompiler() << "\non " << getCompiledDateTime()
-              << std::endl;
+              << GIT_COMMIT_HASH << "]" << "\ncompiled with " << getCompiler() << "\non "
+              << getCompiledDateTime() << std::endl;
 }
 
 void printHelpMessage()
@@ -76,14 +75,29 @@ int marabouMain( int argc, char **argv )
         {
             printVersion();
             return 0;
-        };
+        }
+
+        if ( options->getBool( Options::SOLVE_NAP ) ||
+             !options->getArrayOfStrings( Options::NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES )
+                  .empty() ||
+             !options->getArrayOfStrings( Options::NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES )
+                  .empty() )
+        {
+            if ( !options->getBool( Options::SOLVE_WITH_CDCL ) )
+            {
+                options->setBool( Options::SOLVE_WITH_CDCL, true );
+                printf( "Turning --cdcl on to allow solving of NAP query.\n" );
+            }
+            if ( !options->getBool( Options::SOLVE_NAP ) )
+                options->setBool( Options::SOLVE_NAP, true );
+        }
 
         if ( options->getBool( Options::SOLVE_WITH_CDCL ) )
         {
             if ( !options->getBool( Options::PRODUCE_PROOFS ) )
             {
                 options->setBool( Options::PRODUCE_PROOFS, true );
-                printf( "Turning --prove-unsat to allow proof-based conflict clauses. " );
+                printf( "Turning --prove-unsat on to allow proof-based conflict clauses.\n" );
             }
             printf( "Please note that producing complete UNSAT proofs while --cdcl is on is "
                     "not yet supported.\n" );

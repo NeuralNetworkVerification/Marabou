@@ -446,7 +446,7 @@ int CdclCore::cb_propagate()
     // In case of assigned boolean variable with opposite assignment, find a conflict clause and
     // terminate propagating
     if ( lit )
-        if ( isLiteralAssigned( -lit ) ) // TODO: currently not counted for smt core time, maybe add
+        if ( isLiteralAssigned( -lit ) )
         {
             if ( _externalClauseToAdd.empty() )
                 _engine->explainSimplexFailure();
@@ -633,14 +633,12 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
         if ( _engine->getExitCode() == ExitCode::UNSAT )
             return false;
 
-        // TODO: Update the following fast-sat code to reflect the new changes of solving
-        //        if ( Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) == "" &&
-        //             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) == "" )
-        //            if ( _engine->solve() )
-        //            {
-        //                _exitCode = SAT;
-        //                return true;
-        //            }
+        if ( !Options::get()->getBool( Options::SOLVE_NAP ) )
+            if ( _engine->solve( 0 ) )
+            {
+                _engine->setExitCode( ExitCode::SAT );
+                return true;
+            }
 
         if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
             _engine->propagateBoundManagerTightenings();
@@ -661,16 +659,38 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
 
         Set<int> externalClause;
 
-        // TODO: think if to include, and how to integrate code for NAP clauses in a clean way
-        //        externalClause = _satSolverWrapper->addExternalNAPClause(
-        //            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) );
-        //        if ( !externalClause.empty() )
-        //            _initialClauses.append( externalClause );
-        //
-        //        externalClause = _satSolverWrapper->addExternalNAPClause(
-        //            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) );
-        //        if ( !externalClause.empty() )
-        //            _initialClauses.append( externalClause );
+        Vector<String> positiveNapFilenames =
+            Options::get()->getArrayOfStrings( Options::NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES );
+        Vector<String> negativeNapFilenames =
+            Options::get()->getArrayOfStrings( Options::NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES );
+
+        for ( const String &filename : positiveNapFilenames )
+        {
+            externalClause = _satSolverWrapper->addExternalNAPClause( filename, false );
+            if ( !externalClause.empty() )
+                for ( int lit : externalClause )
+                {
+                    ASSERT( lit != 0 )
+                    PiecewiseLinearConstraint *plcToFix = _cadicalVarToPlc[abs( lit )];
+                    ASSERT( plcToFix->getType() == RELU )
+                    if ( plcToFix->phaseFixed() && lit != plcToFix->propagatePhaseAsLit() )
+                    {
+                        // Two conflicting positive NAPs. query is UNSAT
+                        _engine->setExitCode( ExitCode::UNSAT );
+                        return false;
+                    }
+
+                    plcToFix->propagateLitAsSplit( lit );
+                    phase( lit );
+                }
+        }
+
+        for ( const String &filename : negativeNapFilenames )
+        {
+            externalClause = _satSolverWrapper->addExternalNAPClause( filename, true );
+            if ( !externalClause.empty() )
+                _initialClauses.append( externalClause );
+        }
 
         int result = _satSolverWrapper->solve();
 

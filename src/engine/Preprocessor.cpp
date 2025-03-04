@@ -150,7 +150,7 @@ std::unique_ptr<Query> Preprocessor::preprocess( const IQuery &query,
         } );
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-        if ( attemptVariableElimination )
+        if ( attemptVariableElimination && !Options::get()->getBool( Options::SOLVE_NAP ) )
             continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
@@ -160,7 +160,7 @@ std::unique_ptr<Query> Preprocessor::preprocess( const IQuery &query,
     collectFixedValues();
     separateMergedAndFixed();
 
-    if ( attemptVariableElimination )
+    if ( attemptVariableElimination && !Options::get()->getBool( Options::SOLVE_NAP ) )
         eliminateVariables();
 
     /*

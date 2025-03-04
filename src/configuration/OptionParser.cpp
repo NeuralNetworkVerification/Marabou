@@ -27,7 +27,8 @@ OptionParser::OptionParser()
 OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
                             Map<unsigned, int> *intOptions,
                             Map<unsigned, float> *floatOptions,
-                            Map<unsigned, std::string> *stringOptions )
+                            Map<unsigned, std::string> *stringOptions,
+                            Map<unsigned, std::vector<std::string>> *arrayOfStringOptions )
     : _positional( "" )
     , _common( "Common options" )
     , _other( "Less common options" )
@@ -36,6 +37,7 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
     , _intOptions( intOptions )
     , _floatOptions( floatOptions )
     , _stringOptions( stringOptions )
+    , _arrayOfStringOptions( arrayOfStringOptions )
 {
 }
 
@@ -140,7 +142,21 @@ void OptionParser::initialize()
         "cdcl",
         boost::program_options::bool_switch( &( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ) )
             ->default_value( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ),
-        "Solve the input query with CDCL as the solving procedure" )
+        "Solve the input query with CDCL as the solving procedure" )(
+        "solve-nap",
+        boost::program_options::bool_switch( &( *_boolOptions )[Options::SOLVE_NAP] )
+            ->default_value( ( *_boolOptions )[Options::SOLVE_NAP] ),
+        "(CDCL) Solve a NAP query." )(
+        "nap-positive-clauses",
+        boost::program_options::value<std::vector<std::string>>(
+            &( *_arrayOfStringOptions )[Options::NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES] ),
+        "(CDCL) A filename of external positive NAP clause. You can specify multiple filenames "
+        "by repeating this argument." )(
+        "nap-negative-clauses",
+        boost::program_options::value<std::vector<std::string>>(
+            &( *_arrayOfStringOptions )[Options::NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES] ),
+        "(CDCL) A filename of external negative NAP clause. You can specify multiple filenames "
+        "by repeating this argument." )
 
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
@@ -252,17 +268,7 @@ void OptionParser::initialize()
             &( *_boolOptions )[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] )
             ->default_value(
                 ( *_boolOptions )[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] ),
-        "Do no merge consecutive weighted-sum layers." )(
-        "nap-external-clause",
-        boost::program_options::value<std::string>(
-            &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH] )
-            ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH] ),
-        "(CDCL) Filename of external NAP clause" )(
-        "nap-external-clause2",
-        boost::program_options::value<std::string>(
-            &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2] )
-            ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2] ),
-        "(CDCL) Filename of a second external NAP clause" )
+        "Do no merge consecutive weighted-sum layers." )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
           boost::program_options::value<std::string>( &( ( *_stringOptions )[Options::LP_SOLVER] ) )

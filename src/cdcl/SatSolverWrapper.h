@@ -80,6 +80,9 @@ public:
      * Forces backtracking to the given level
      */
     virtual void forceBacktrack( size_t newLevel ) = 0;
+
+    virtual Set<int> addExternalNAPClause( const String &externalNAPClauseFilename,
+                                           bool isNegated ) = 0;
 };
 
 
