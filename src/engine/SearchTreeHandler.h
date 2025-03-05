@@ -32,7 +32,8 @@
 
 #include <memory>
 
-#define SEARCH_TREE_LOG( x, ... ) LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "SearchTreeHandler: %s\n", x )
+#define SEARCH_TREE_LOG( x, ... )                                                                  \
+    LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "SearchTreeHandler: %s\n", x )
 
 class EngineState;
 class IEngine;
@@ -127,7 +128,6 @@ public:
      */
     void pushContext();
 
-
     /*
       The current stack depth.
     */
@@ -183,6 +183,11 @@ public:
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
+
+    /*
+      Set the needToSplit flag with the given value;
+     */
+    void setNeedToSplit( bool value );
 
 private:
     /*

@@ -267,6 +267,10 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
+    /* While solving with CDCL, denotes if to try and reduce the conflict clause size with proof
+     */
+    static const bool CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns

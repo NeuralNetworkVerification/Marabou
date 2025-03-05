@@ -971,3 +971,11 @@ void CdclCore::addLiteral( int lit )
 {
     _satSolverWrapper->addLiteral( lit );
 }
+
+bool CdclCore::isSupported( const PiecewiseLinearConstraint *plc )
+{
+    if ( plc->getType() != RELU )
+        return false;
+
+    return true;
+}

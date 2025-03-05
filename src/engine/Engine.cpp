@@ -90,7 +90,6 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
-    //    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -314,6 +313,8 @@ bool Engine::solve( double timeoutInSeconds )
                     _boundManager.propagateTightenings();
                     return false;
                 }
+                else
+                    _searchTreeHandler.setNeedToSplit( false );
             }
 
             if ( _lpSolverType == LPSolverType::NATIVE )
@@ -1584,6 +1585,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
         {
             constraint->registerTableau( _tableau );
             constraint->registerCdclCore( &_cdclCore );
+            constraint->initializeCDOs( &_context );
         }
         for ( const auto &constraint : _nlConstraints )
             constraint->registerTableau( _tableau );
@@ -1614,13 +1616,15 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
         }
 
         if ( _solveWithCDCL )
-        {
-            for ( auto &_plConstraint : _plConstraints )
+            for ( auto *constraint : _plConstraints )
             {
-                _cdclCore.initBooleanAbstraction( _plConstraint );
-                _plConstraint->initializeCDOs( &_context );
+                if ( !CdclCore::isSupported( constraint ) )
+                    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                                        "The network contains constraints currently "
+                                        "unsupported by CDCL" );
+
+                _cdclCore.initBooleanAbstraction( constraint );
             }
-        }
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -2649,8 +2653,6 @@ void Engine::preContextPushHook()
 {
     struct timespec start = TimeUtils::sampleMicro();
     _boundManager.storeLocalBounds();
-    //    if ( _produceUNSATProofs )
-    //        _groundBoundManager.storeLocalBounds();
     struct timespec end = TimeUtils::sampleMicro();
 
     _statistics.incLongAttribute( Statistics::TIME_CONTEXT_PUSH_HOOK,
@@ -2662,8 +2664,6 @@ void Engine::postContextPopHook()
     struct timespec start = TimeUtils::sampleMicro();
 
     _boundManager.restoreLocalBounds();
-    //    if ( _produceUNSATProofs )
-    //        _groundBoundManager.restoreLocalBounds();
     _tableau->postContextPopHook();
     _costFunctionManager->computeCoreCostFunction();
 
@@ -3596,10 +3596,13 @@ void Engine::explainSimplexFailure()
     Set<int> clause = clauseFromContradictionVector(
         sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
-    // If possible, attempt to reduce the clause size
-    //    if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-    //        clause = reduceClauseSizeWithProof(
-    //            sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+    if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
+    {
+        // If possible, attempt to reduce the clause size
+        if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+            clause = reduceClauseSizeWithProof(
+                sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+    }
 
     _cdclCore.addExternalClause( clause );
 }
@@ -4228,12 +4231,10 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
     // if not assigned yet then should be last
     Vector<int> toReturn = clause;
     std::sort( toReturn.begin(), toReturn.end(), [this]( int a, int b ) {
-        unsigned aVal = _cdclCore.isLiteralFixed( a )
-                          ? 0
-                          : _cdclCore.getLiteralAssignmentIndex( a );
-        unsigned bVal = _cdclCore.isLiteralFixed( b )
-                          ? 0
-                          : _cdclCore.getLiteralAssignmentIndex( b );
+        unsigned aVal =
+            _cdclCore.isLiteralFixed( a ) ? 0 : _cdclCore.getLiteralAssignmentIndex( a );
+        unsigned bVal =
+            _cdclCore.isLiteralFixed( b ) ? 0 : _cdclCore.getLiteralAssignmentIndex( b );
         return aVal < bVal;
     } );
 

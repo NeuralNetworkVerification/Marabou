@@ -614,3 +614,8 @@ bool SearchTreeHandler::pickSplitPLConstraint()
     }
     return _constraintForSplitting != NULL;
 }
+
+void SearchTreeHandler::setNeedToSplit( bool value )
+{
+    _needToSplit = value;
+}

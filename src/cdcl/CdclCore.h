@@ -179,19 +179,24 @@ public:
     bool isLiteralFixed( int literal ) const;
 
     /*
-     * Notifying on a fixed literal assignment.
-     */
+  Notifying on a fixed literal assignment.
+ */
     void notify_fixed_assignment( int lit ) override;
 
     /*
-     * Notify about a single assignment
+      Notify about a single assignment
      */
     void notifySingleAssignment( int lit, bool isFixed );
 
     /*
-     * Returns true if a conflict clause exists
+      Returns true if a conflict clause exists
      */
     bool hasConflictClause() const;
+
+    /*
+      Check if the given piecewise-linear constraint is currently supported by CDCL
+     */
+    static bool isSupported( const PiecewiseLinearConstraint *plc ) ;
 
 private:
     /*
