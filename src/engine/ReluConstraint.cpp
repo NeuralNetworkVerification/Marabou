@@ -133,7 +133,7 @@ void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, doubl
     else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+    if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
@@ -145,7 +145,7 @@ void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, doubl
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
 
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+    if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
@@ -1134,24 +1134,24 @@ void ReluConstraint::booleanAbstraction(
 {
     ASSERT( !cadicalVarToPlc.empty() );
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append( idx );
+    _cdclVars.append( idx );
     cadicalVarToPlc.insert( idx, this );
 }
 
 int ReluConstraint::propagatePhaseAsLit() const
 {
-    ASSERT( _cadicalVars.size() == 1 )
+    ASSERT( _cdclVars.size() == 1 )
     if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
-        return _cadicalVars.back();
+        return _cdclVars.back();
     else if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
-        return -_cadicalVars.back();
+        return -_cdclVars.back();
     else
         return 0;
 }
 
 void ReluConstraint::propagateLitAsSplit( int lit )
 {
-    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) );
 
     setActiveConstraint( false );
 
@@ -1198,22 +1198,22 @@ int ReluConstraint::getLiteralForDecision() const
     ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
 
     if ( _direction == RELU_PHASE_INACTIVE )
-        return -(int)_cadicalVars.front();
+        return -(int)_cdclVars.front();
     if ( _direction == RELU_PHASE_ACTIVE )
-        return (int)_cadicalVars.front();
+        return (int)_cdclVars.front();
 
     if ( existsAssignment( _f ) )
         if ( FloatUtils::isPositive( getAssignment( _f ) ) )
-            return (int)_cadicalVars.front();
+            return (int)_cdclVars.front();
         else
-            return -(int)_cadicalVars.front();
+            return -(int)_cdclVars.front();
     else
-        return -(int)_cadicalVars.front();
+        return -(int)_cdclVars.front();
 }
 
 unsigned ReluConstraint::getVariableForDecision() const
 {
-    return _cadicalVars.front();
+    return _cdclVars.front();
 }
 
 //

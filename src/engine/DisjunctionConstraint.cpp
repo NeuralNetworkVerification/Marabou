@@ -633,7 +633,7 @@ void DisjunctionConstraint::booleanAbstraction(
     for ( auto &disjunct : _disjuncts )
     {
         idx = cadicalVarToPlc.size();
-        _cadicalVars.append( idx );
+        _cdclVars.append( idx );
         cadicalVarToPlc.insert( idx, this );
         _disjunctsToCadicalVars.insert( &disjunct, idx );
         _cadicalVarsToDisjuncts.insert( idx, &disjunct );
@@ -654,7 +654,7 @@ int DisjunctionConstraint::propagatePhaseAsLit() const
 
 void DisjunctionConstraint::propagateLitAsSplit( int lit )
 {
-    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
 
     setActiveConstraint( false );
     PiecewiseLinearCaseSplit disjunct = *_cadicalVarsToDisjuncts.at( lit );

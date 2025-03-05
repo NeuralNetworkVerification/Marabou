@@ -152,7 +152,7 @@ void LeakyReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, 
             setPhaseStatus( RELU_PHASE_ACTIVE );
     }
 
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+    if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
@@ -170,7 +170,7 @@ void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, 
             setPhaseStatus( RELU_PHASE_INACTIVE );
     }
 
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+    if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
@@ -1025,24 +1025,24 @@ void LeakyReluConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append( idx );
+    _cdclVars.append( idx );
     cadicalVarToPlc.insert( idx, this );
 }
 
 int LeakyReluConstraint::propagatePhaseAsLit() const
 {
-    ASSERT( _cadicalVars.size() == 1 )
+    ASSERT( _cdclVars.size() == 1 )
     if ( getPhaseStatus() == RELU_PHASE_ACTIVE )
-        return _cadicalVars.back();
+        return _cdclVars.back();
     else if ( getPhaseStatus() == RELU_PHASE_INACTIVE )
-        return -_cadicalVars.back();
+        return -_cdclVars.back();
     else
         return 0;
 }
 
 void LeakyReluConstraint::propagateLitAsSplit( int lit )
 {
-    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) );
     setActiveConstraint( false );
 
     if ( lit > 0 )
@@ -1056,17 +1056,17 @@ int LeakyReluConstraint::getLiteralForDecision() const
     ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
 
     if ( _direction == RELU_PHASE_INACTIVE )
-        return -(int)_cadicalVars.front();
+        return -(int)_cdclVars.front();
     if ( _direction == RELU_PHASE_ACTIVE )
-        return (int)_cadicalVars.front();
+        return (int)_cdclVars.front();
 
     if ( existsAssignment( _f ) )
         if ( FloatUtils::isPositive( getAssignment( _f ) ) )
-            return (int)_cadicalVars.front();
+            return (int)_cdclVars.front();
         else
-            return -(int)_cadicalVars.front();
+            return -(int)_cdclVars.front();
     else
-        return -(int)_cadicalVars.front();
+        return -(int)_cdclVars.front();
 }
 
 bool LeakyReluConstraint::isBoundFixingPhase( unsigned int var,

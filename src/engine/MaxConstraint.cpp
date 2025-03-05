@@ -807,7 +807,7 @@ void MaxConstraint::booleanAbstraction(
     for ( auto &element : _elements )
     {
         idx = cadicalVarToPlc.size();
-        _cadicalVars.append( idx );
+        _cdclVars.append( idx );
         cadicalVarToPlc.insert( idx, this );
         _elementsToCadicalVars.insert( element, idx );
         _cadicalVarsToElements.insert( idx, element );
@@ -830,7 +830,7 @@ int MaxConstraint::propagatePhaseAsLit() const
 
 void MaxConstraint::propagateLitAsSplit( int lit )
 {
-    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
 
     setActiveConstraint( false );
     PhaseStatus phaseToFix = variableToPhase( _cadicalVarsToElements.at( lit ) );

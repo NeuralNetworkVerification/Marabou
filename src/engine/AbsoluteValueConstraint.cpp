@@ -914,7 +914,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         }
     }
 
-    if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+    if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
 }
 
@@ -998,24 +998,24 @@ void AbsoluteValueConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append( idx );
+    _cdclVars.append( idx );
     cadicalVarToPlc.insert( idx, this );
 }
 
 int AbsoluteValueConstraint::propagatePhaseAsLit() const
 {
-    ASSERT( _cadicalVars.size() == 1 )
+    ASSERT( _cdclVars.size() == 1 )
     if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
-        return _cadicalVars.back();
+        return _cdclVars.back();
     else if ( getPhaseStatus() == ABS_PHASE_NEGATIVE )
-        return -_cadicalVars.back();
+        return -_cdclVars.back();
     else
         return 0;
 }
 
 void AbsoluteValueConstraint::propagateLitAsSplit( int lit )
 {
-    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) );
 
     setActiveConstraint( false );
 
@@ -1029,7 +1029,7 @@ int AbsoluteValueConstraint::getLiteralForDecision() const
 {
     ASSERT( getPhaseStatus() == PhaseStatus::PHASE_NOT_FIXED );
 
-    return -(int)_cadicalVars.front();
+    return -(int)_cdclVars.front();
 }
 
 bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,

@@ -31,7 +31,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _statistics( NULL )
     , _gurobi( NULL )
     , _tableauAuxVars()
-    , _cadicalVars()
+    , _cdclVars()
     , _cdPhaseFixingEntry( nullptr )
 {
 }
@@ -50,7 +50,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _statistics( NULL )
     , _gurobi( NULL )
     , _tableauAuxVars()
-    , _cadicalVars()
+    , _cdclVars()
     , _cdPhaseFixingEntry( nullptr )
 {
 }

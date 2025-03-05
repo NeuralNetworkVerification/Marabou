@@ -428,7 +428,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                     _boundManager->tightenLowerBound( _f, 1 );
             }
         }
-        if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        if ( !_cdclVars.empty() && phaseFixed() && isActive() )
             _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
     }
 }
@@ -483,7 +483,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
             }
         }
 
-        if ( !_cadicalVars.empty() && phaseFixed() && isActive() )
+        if ( !_cdclVars.empty() && phaseFixed() && isActive() )
             _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
     }
 }
@@ -679,24 +679,24 @@ void SignConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
     unsigned int idx = cadicalVarToPlc.size();
-    _cadicalVars.append( idx );
+    _cdclVars.append( idx );
     cadicalVarToPlc.insert( idx, this );
 }
 
 int SignConstraint::propagatePhaseAsLit() const
 {
-    ASSERT( _cadicalVars.size() == 1 )
+    ASSERT( _cdclVars.size() == 1 )
     if ( getPhaseStatus() == SIGN_PHASE_POSITIVE )
-        return (int)_cadicalVars.back();
+        return (int)_cdclVars.back();
     else if ( getPhaseStatus() == SIGN_PHASE_NEGATIVE )
-        return -(int)_cadicalVars.back();
+        return -(int)_cdclVars.back();
     else
         return 0;
 }
 
 void SignConstraint::propagateLitAsSplit( int lit )
 {
-    ASSERT( _cadicalVars.exists( FloatUtils::abs( lit ) ) );
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) );
 
     setActiveConstraint( false );
 
@@ -711,17 +711,17 @@ int SignConstraint::getLiteralForDecision() const
     ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
 
     if ( _direction == SIGN_PHASE_NEGATIVE )
-        return -(int)_cadicalVars.front();
+        return -(int)_cdclVars.front();
     if ( _direction == SIGN_PHASE_POSITIVE )
-        return (int)_cadicalVars.front();
+        return (int)_cdclVars.front();
 
     if ( existsAssignment( _f ) )
         if ( FloatUtils::isPositive( getAssignment( _f ) ) )
-            return (int)_cadicalVars.front();
+            return (int)_cdclVars.front();
         else
-            return -(int)_cadicalVars.front();
+            return -(int)_cdclVars.front();
     else
-        return -(int)_cadicalVars.front();
+        return -(int)_cdclVars.front();
 }
 
 bool SignConstraint::isBoundFixingPhase( unsigned int var,

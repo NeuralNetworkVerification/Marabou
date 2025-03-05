@@ -615,7 +615,7 @@ protected:
     CdclCore *_cdclCore;
 
     List<unsigned> _tableauAuxVars;
-    List<unsigned> _cadicalVars;
+    List<unsigned> _cdclVars;
 
     CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
 
