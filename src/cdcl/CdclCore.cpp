@@ -361,6 +361,42 @@ int CdclCore::cb_propagate()
     struct timespec end = {};
     unsigned long long total = 0;
 
+    if ( _engine->getLpSolverType() == LPSolverType::GUROBI )
+    {
+        if ( _engine->solve( 0 ) )
+        {
+            if ( _statistics )
+                start = TimeUtils::sampleMicro();
+
+            bool allInitialClausesSatisfied = true;
+            for ( const Set<int> &clause : _initialClauses )
+                if ( !_engine->checkAssignmentComplianceWithClause( clause ) )
+                {
+                    allInitialClausesSatisfied = false;
+                    break;
+                }
+
+            if ( _statistics )
+            {
+                end = TimeUtils::sampleMicro();
+                total += TimeUtils::timePassed( start, end );
+            }
+
+            if ( allInitialClausesSatisfied )
+            {
+                _engine->setExitCode( ExitCode::SAT );
+                if ( _statistics )
+                {
+                    _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO,
+                                                   total );
+                    _statistics->incLongAttribute(
+                        Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO, total );
+                }
+                return 0;
+            }
+        }
+    }
+
     ASSERT( _engine->getLpSolverType() == LPSolverType::NATIVE )
 
     if ( _literalsToPropagate.empty() )
@@ -396,11 +432,9 @@ int CdclCore::cb_propagate()
                     if ( _statistics )
                     {
                         _statistics->incLongAttribute(
-                            Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO,
-                            TimeUtils::timePassed( start, end ) );
+                            Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO, total );
                         _statistics->incLongAttribute(
-                            Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO,
-                            TimeUtils::timePassed( start, end ) );
+                            Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO, total );
                     }
                     return 0;
                 }
@@ -475,10 +509,10 @@ int CdclCore::cb_propagate()
     if ( _statistics )
     {
         end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
+        total += TimeUtils::timePassed( start, end );
+
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO, total );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO, total );
     }
     return lit;
 }
