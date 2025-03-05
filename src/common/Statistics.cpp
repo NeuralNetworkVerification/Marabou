@@ -97,6 +97,7 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_CDCL_CORE_NOTIFY_BACKTRACK_MICRO] = 0;
     _longAttributes[TOTAL_TIME_CDCL_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_CDCL_CORE_CB_DECIDE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO] = 0;
     _longAttributes[TOTAL_TIME_CDCL_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_CDCL_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_CDCL_CORE_MAIN_LOOP_MICRO] = 0;
@@ -305,6 +306,11 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] cb_decide: %llu milli\n",
             printPercents( timeCbDecideMicro, timeSearchTreeHandlerMicro ),
             timeCbDecideMicro / 1000 );
+    unsigned long long timeCbPropagateMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO );
+    printf( "\t\t[%.2lf%%] cb_propagate: %llu milli\n",
+            printPercents( timeCbPropagateMicro, timeSearchTreeHandlerMicro ),
+            timeCbPropagateMicro / 1000 );
     unsigned long long timeCbAddReasonClauseLitMicro =
         getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO );
     printf( "\t\t[%.2lf%%] cb_add_reason_clause_lit: %llu milli\n",
@@ -318,8 +324,8 @@ void Statistics::print()
 
     unsigned long long totalCdclCoreCallbacks =
         timeNotifyAssignmentMicro + timeNotifyNewDecisionLevelMicro + timeNotifyBacktrackMicro +
-        timeNotifyFixedAssignmentMicro + timeCbDecideMicro + timeCbAddReasonClauseLitMicro +
-        timeCbAddExternalClauseLitMicro;
+        timeNotifyFixedAssignmentMicro + timeCbDecideMicro +
+        timeCbPropagateMicro + timeCbAddReasonClauseLitMicro + timeCbAddExternalClauseLitMicro;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
             printPercents( timeSearchTreeHandlerMicro - totalCdclCoreCallbacks,

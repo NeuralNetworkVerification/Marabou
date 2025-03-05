@@ -357,25 +357,9 @@ int CdclCore::cb_propagate()
 
     checkIfShouldExitDueToTimeout();
 
-    if ( _engine->getLpSolverType() == LPSolverType::GUROBI )
-    {
-        if ( _engine->solve( 0 ) )
-        {
-            bool allInitialClausesSatisfied = true;
-            for ( const Set<int> &clause : _initialClauses )
-                if ( !_engine->checkAssignmentComplianceWithClause( clause ) )
-                {
-                    allInitialClausesSatisfied = false;
-                    break;
-                }
-
-            if ( allInitialClausesSatisfied )
-            {
-                _engine->setExitCode( ExitCode::SAT );
-                return 0;
-            }
-        }
-    }
+    struct timespec start = {};
+    struct timespec end = {};
+    unsigned long long total = 0;
 
     ASSERT( _engine->getLpSolverType() == LPSolverType::NATIVE )
 
@@ -389,6 +373,9 @@ int CdclCore::cb_propagate()
         {
             if ( _engine->solve( 0 ) )
             {
+                if ( _statistics )
+                    start = TimeUtils::sampleMicro();
+
                 bool allInitialClausesSatisfied = true;
                 for ( const Set<int> &clause : _initialClauses )
                     if ( !_engine->checkAssignmentComplianceWithClause( clause ) )
@@ -397,13 +384,31 @@ int CdclCore::cb_propagate()
                         break;
                     }
 
+                if ( _statistics )
+                {
+                    end = TimeUtils::sampleMicro();
+                    total += TimeUtils::timePassed( start, end );
+                }
+
                 if ( allInitialClausesSatisfied )
                 {
                     _engine->setExitCode( ExitCode::SAT );
+                    if ( _statistics )
+                    {
+                        _statistics->incLongAttribute(
+                            Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO,
+                            TimeUtils::timePassed( start, end ) );
+                        _statistics->incLongAttribute(
+                            Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO,
+                            TimeUtils::timePassed( start, end ) );
+                    }
                     return 0;
                 }
             }
         }
+
+        if ( _statistics )
+            start = TimeUtils::sampleMicro();
 
         // Try learning a conflict clause if possible
         if ( _externalClauseToAdd.empty() )
@@ -439,7 +444,16 @@ int CdclCore::cb_propagate()
 
         // Add the zero literal at the end
         _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
+
+        if ( _statistics )
+        {
+            end = TimeUtils::sampleMicro();
+            total += TimeUtils::timePassed( start, end );
+        }
     }
+
+    if ( _statistics )
+        start = TimeUtils::sampleMicro();
 
     int lit = _literalsToPropagate.popFront().first();
 
@@ -457,6 +471,15 @@ int CdclCore::cb_propagate()
 
     CDCL_LOG( Stringf( "Propagating literal %d", lit ).ascii() )
     ASSERT( FloatUtils::abs( lit ) <= _satSolverWrapper->vars() )
+
+    if ( _statistics )
+    {
+        end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
+    }
     return lit;
 }
 
@@ -681,6 +704,7 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
                     }
 
                     plcToFix->propagateLitAsSplit( lit );
+                    _engine->applyPlcPhaseFixingTightenings( *plcToFix );
                     phase( lit );
                 }
         }
@@ -801,7 +825,6 @@ void CdclCore::phase( int literal )
 {
     CDCL_LOG( Stringf( "Phasing literal %d", literal ).ascii() )
     _satSolverWrapper->phase( literal );
-    _literalsToPropagate.append( Pair<int, int>( literal, 0 ) );
     _fixedCadicalVars.insert( literal );
 }
 
