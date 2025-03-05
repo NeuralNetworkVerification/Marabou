@@ -1616,6 +1616,12 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
         }
 
         if ( _solveWithCDCL )
+        {
+            if (!_nlConstraints.empty())
+                throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                                    "The network contains constraints currently "
+                                    "unsupported by CDCL" );
+
             for ( auto *constraint : _plConstraints )
             {
                 if ( !CdclCore::isSupported( constraint ) )
@@ -1625,6 +1631,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
 
                 _cdclCore.initBooleanAbstraction( constraint );
             }
+        }
     }
     catch ( const InfeasibleQueryException & )
     {
