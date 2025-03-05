@@ -3545,7 +3545,7 @@ bool Engine::shouldProduceProofs() const
 void Engine::explainSimplexFailure()
 {
     ASSERT( _produceUNSATProofs && _lpSolverType == LPSolverType::NATIVE );
-    ASSERT( !_cdclCore.hasConflictClause() );
+    ASSERT( !_solveWithCDCL || !_cdclCore.hasConflictClause() );
     DEBUG( checkGroundBounds() );
 
     unsigned infeasibleVar = _boundManager.getInconsistentVariable();
@@ -3863,7 +3863,8 @@ const UnsatCertificateNode *Engine::getUNSATCertificateRoot() const
 
 bool Engine::certifyUNSATCertificate()
 {
-    ASSERT( _produceUNSATProofs && _UNSATCertificate && !_searchTreeHandler.getStackDepth() );
+    ASSERT( _produceUNSATProofs && _UNSATCertificate && !_searchTreeHandler.getStackDepth() &&
+            !_solveWithCDCL );
 
     for ( auto &constraint : _plConstraints )
     {
@@ -4072,20 +4073,21 @@ void Engine::extractBounds( IQuery &inputQuery )
     }
 }
 
-void Engine::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
+void Engine::incNumOfLemmas()
 {
     if ( !_produceUNSATProofs )
         return;
 
-    ASSERT( explanation && _UNSATCertificate && _UNSATCertificateCurrentPointer )
+    ASSERT( _UNSATCertificate && _UNSATCertificateCurrentPointer )
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
-    _UNSATCertificateCurrentPointer->get()->addPLCLemma( explanation );
 }
+
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                 unsigned id,
                                                 int explainedVar,
                                                 bool isUpper )
 {
+    ASSERT( _solveWithCDCL );
     ASSERT( _nlConstraints.empty() && !explanation.empty() );
     Set<int> clause = Set<int>();
 
@@ -4189,6 +4191,7 @@ Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isP
 
 Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
 {
+    ASSERT( _solveWithCDCL );
     ASSERT( litConstraint );
     ASSERT( litConstraint->phaseFixed() || !litConstraint->isActive() );
 
@@ -4205,10 +4208,11 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
 
-    //    if ( clause.size() > 1 && checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma
-    //    ) )
-    //        clause = reduceClauseSizeWithProof(
-    //            tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
+    if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
+        if ( clause.size() > 1 &&
+             checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
+            clause = reduceClauseSizeWithProof(
+                tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
     return Vector<int>( clause.begin(), clause.end() );
 }
@@ -4232,6 +4236,7 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
                                             const Vector<int> &clause,
                                             const std::shared_ptr<PLCLemma> lemma )
 {
+    ASSERT( _solveWithCDCL );
     ASSERT( !clause.empty() && !explanation.empty() );
 
     // Order clause by appearance in assigned constraints of the SearchTreeHandler
@@ -4283,6 +4288,7 @@ Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombi
                                                const Vector<int> &clause,
                                                const std::shared_ptr<PLCLemma> lemma ) const
 {
+    ASSERT( _solveWithCDCL );
     ASSERT( !clause.empty() );
 
     if ( clause.size() == 1 )
@@ -4318,6 +4324,8 @@ bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombin
                                               const Vector<int> &clause,
                                               const std::shared_ptr<PLCLemma> lemma ) const
 {
+    ASSERT( _solveWithCDCL );
+
     const PiecewiseLinearConstraint *constraint;
     for ( int lit : clause )
     {
@@ -4382,6 +4390,7 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
                                    const Set<int> &clause,
                                    const std::shared_ptr<PLCLemma> lemma ) const
 {
+    ASSERT( _solveWithCDCL );
     ASSERT( !explanation.empty() && !clause.empty() );
     Vector<double> explanationLinearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
@@ -4400,6 +4409,7 @@ bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
 
 void Engine::removeLiteralFromPropagations( int literal )
 {
+    ASSERT( _solveWithCDCL );
     _cdclCore.removeLiteralFromPropagations( literal );
 }
 
@@ -4476,7 +4486,9 @@ void Engine::explainGurobiFailure()
         }
     }
 
-    _cdclCore.addExternalClause( clause );
+    if ( _solveWithCDCL )
+        _cdclCore.addExternalClause( clause );
+
     ENGINE_LOG( Stringf( "Conflict analysis - done, conflict length %u, level %u",
                          clause.size(),
                          _context.getLevel() )
@@ -4495,6 +4507,8 @@ NLR::NetworkLevelReasoner *Engine::getNetworkLevelReasoner() const
 
 bool Engine::checkAssignmentComplianceWithClause( const Set<int> &clause ) const
 {
+    ASSERT( _solveWithCDCL );
+
     bool compliant = false;
     for ( const auto &lit : clause )
     {

@@ -187,7 +187,7 @@ public:
     /*
       Add lemma to the UNSAT Certificate
     */
-    virtual void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) = 0;
+    virtual void incNumOfLemmas() = 0;
 
     /*
       Add ground bound entry using a lemma

@@ -378,7 +378,7 @@ public:
     /*
       Add lemma to the UNSAT Certificate
     */
-    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) override;
+    void incNumOfLemmas() override;
 
 private:
     enum BasisRestorationRequired {

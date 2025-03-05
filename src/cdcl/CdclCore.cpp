@@ -4,7 +4,7 @@
  ** Top contributors (to current version):
  **   Idan Refaeli, Omri Isac
  ** This file is part of the Marabou project.
- ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2017-2025 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim

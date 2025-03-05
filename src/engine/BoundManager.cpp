@@ -478,12 +478,16 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
         std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
             _engine->setGroundBoundFromLemma( PLCExpl, isPhaseFixing );
         resetExplanation( var, affectedVarBound );
+
         if ( isPhaseFixing )
         {
             ASSERT( constraint.getPhaseFixingEntry() == nullptr );
             constraint.setPhaseFixingEntry( phaseFixingEntry );
         }
+
+        _engine->incNumOfLemmas();
     }
+
     return true;
 }
 
