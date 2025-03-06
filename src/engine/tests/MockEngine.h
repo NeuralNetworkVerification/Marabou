@@ -399,7 +399,7 @@ public:
         return true;
     }
 
-    void addPLCLemma( std::shared_ptr<PLCLemma> & /*explanation*/ )
+    void incNumOfLemmas() override
     {
     }
 
