@@ -409,10 +409,6 @@ public:
             _exitCode = ExitCode::TIMEOUT;
         return _exitCode == ExitCode::SAT;
     }
-
-    void incNumOfLemmas() override
-    {
-    }
 };
 
 #endif // __MockEngine_h__
