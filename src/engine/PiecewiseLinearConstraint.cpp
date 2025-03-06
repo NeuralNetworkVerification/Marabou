@@ -79,7 +79,9 @@ void PiecewiseLinearConstraint::registerBoundManager( IBoundManager *boundManage
 
 void PiecewiseLinearConstraint::initializeCDOs( CVC4::context::Context *context )
 {
-    ASSERT( _context == nullptr );
+    if ( _context != nullptr )
+        return;
+
     _context = context;
 
     initializeCDActiveStatus();

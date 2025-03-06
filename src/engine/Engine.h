@@ -380,6 +380,11 @@ public:
     */
     void incNumOfLemmas() override;
 
+    /*
+      Configure the engine to allow solving with CDCL, used for testing only.
+     */
+    void configureForCDCL();
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,

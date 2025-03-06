@@ -185,6 +185,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *_query ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == ExitCode::SAT )
+
+//        Engine engineCDCL;
+//        engineCDCL.configureForCDCL();
+//        engineCDCL.setVerbosity( 0 );
+//        TS_ASSERT_THROWS_NOTHING( engineCDCL.processInputQuery( *_query ) );
+//        TS_ASSERT_THROWS_NOTHING( engineCDCL.solveWithCDCL() );
+//        TS_ASSERT( engineCDCL.getExitCode() == ExitCode::SAT )
     }
 
     void test_unsat_vnncomp()
@@ -258,6 +265,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *_query ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == ExitCode::UNSAT )
+
+//        Engine engineCDCL;
+//        engineCDCL.configureForCDCL();
+//        engineCDCL.setVerbosity( 0 );
+//        TS_ASSERT_THROWS_NOTHING( engineCDCL.processInputQuery( *_query ) );
+//        TS_ASSERT_THROWS_NOTHING( engineCDCL.solveWithCDCL() );
+//        TS_ASSERT( engineCDCL.getExitCode() == ExitCode::UNSAT )
     }
 
     void test_add_const()

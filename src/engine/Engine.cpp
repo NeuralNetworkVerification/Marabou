@@ -4540,3 +4540,15 @@ bool Engine::checkAssignmentComplianceWithClause( const Set<int> &clause ) const
     }
     return compliant;
 }
+
+void Engine::configureForCDCL()
+{
+    GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+    _solveWithCDCL = true;
+    _produceUNSATProofs = true;
+    _solveWithMILP = false;
+    _sncMode = false;
+
+    _UNSATCertificateCurrentPointer =
+        new ( true ) CVC4::context::CDO<UnsatCertificateNode *>( &_context, NULL );
+}
