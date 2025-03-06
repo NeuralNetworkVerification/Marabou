@@ -796,6 +796,8 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
         _engine->setExitCode( ExitCode::TIMEOUT );
         return false;
     }
+
+    return false;
 }
 
 void CdclCore::addLiteralToPropagate( int literal )
