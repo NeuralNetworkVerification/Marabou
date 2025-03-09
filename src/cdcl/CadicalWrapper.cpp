@@ -30,6 +30,13 @@ CadicalWrapper::CadicalWrapper( CaDiCaL::ExternalPropagator *externalPropagator,
     _solver->connect_fixed_listener( fixedListener );
 }
 
+CadicalWrapper::~CadicalWrapper()
+{
+    _solver->disconnect_fixed_listener();
+    _solver->disconnect_terminator();
+    _solver->disconnect_external_propagator();
+}
+
 void CadicalWrapper::addLiteral( int lit )
 {
     _solver->add( lit );
@@ -83,41 +90,5 @@ int CadicalWrapper::vars()
 void CadicalWrapper::forceBacktrack( size_t newLevel )
 {
     _solver->force_backtrack( newLevel );
-}
-
-Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFilename,
-                                               bool isNegated )
-{
-    Set<int> clause;
-
-    if ( externalNAPClauseFilename != "" && File::exists( externalNAPClauseFilename ) )
-    {
-        File externalNAPClauseFile( externalNAPClauseFilename );
-        externalNAPClauseFile.open( IFile::MODE_READ );
-
-        while ( true )
-        {
-            String lit = externalNAPClauseFile.readLine().trim();
-
-            if ( lit == "" )
-                break;
-
-            if ( isNegated )
-                clause.insert( -atoi( lit.ascii() ) );
-            else
-                clause.insert( atoi( lit.ascii() ) );
-        }
-
-        addClause( clause );
-    }
-
-    return clause;
-}
-
-CadicalWrapper::~CadicalWrapper()
-{
-    _solver->disconnect_fixed_listener();
-    _solver->disconnect_terminator();
-    _solver->disconnect_external_propagator();
 }
 #endif
