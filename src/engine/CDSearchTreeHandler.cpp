@@ -107,7 +107,8 @@ bool CDSearchTreeHandler::needToSplit() const
     return _needToSplit;
 }
 
-void CDSearchTreeHandler::pushDecision( PiecewiseLinearConstraint *constraint, PhaseStatus decision )
+void CDSearchTreeHandler::pushDecision( PiecewiseLinearConstraint *constraint,
+                                        PhaseStatus decision )
 {
     CD_SEARCH_TREE_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
     TrailEntry te( constraint, decision );
@@ -373,7 +374,7 @@ bool CDSearchTreeHandler::checkSkewFromDebuggingSolution()
 }
 
 bool CDSearchTreeHandler::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
-                                           String &error ) const
+                                                     String &error ) const
 {
     // False if the split prevents one of the values in the stored solution, true otherwise.
     error = "";

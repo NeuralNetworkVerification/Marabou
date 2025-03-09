@@ -2625,8 +2625,10 @@ unsigned Tableau::getVariableAfterMerging( unsigned variable ) const
 void Tableau::postContextPopHook()
 {
     updateVariablesToComplyWithBounds();
+#ifdef BUILD_CADICAL
     if ( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
         refreshBasisFactorization();
+#endif
 }
 
 void Tableau::mergeColumns( unsigned x1, unsigned x2 )

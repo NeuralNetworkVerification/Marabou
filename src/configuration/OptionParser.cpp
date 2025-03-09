@@ -138,25 +138,13 @@ void OptionParser::initialize()
         "prove-unsat",
         boost::program_options::bool_switch( &( ( *_boolOptions )[Options::PRODUCE_PROOFS] ) )
             ->default_value( ( *_boolOptions )[Options::PRODUCE_PROOFS] ),
-        "Produce proofs of UNSAT and check them" )(
-        "cdcl",
-        boost::program_options::bool_switch( &( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ) )
-            ->default_value( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ),
-        "Solve the input query with CDCL as the solving procedure" )(
-        "solve-nap",
-        boost::program_options::bool_switch( &( *_boolOptions )[Options::SOLVE_NAP] )
-            ->default_value( ( *_boolOptions )[Options::SOLVE_NAP] ),
-        "(CDCL) Solve a NAP query." )(
-        "nap-positive-clauses",
-        boost::program_options::value<std::vector<std::string>>(
-            &( *_arrayOfStringOptions )[Options::NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES] ),
-        "(CDCL) A filename of external positive NAP clause. You can specify multiple filenames "
-        "by repeating this argument." )(
-        "nap-negative-clauses",
-        boost::program_options::value<std::vector<std::string>>(
-            &( *_arrayOfStringOptions )[Options::NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES] ),
-        "(CDCL) A filename of external negative NAP clause. You can specify multiple filenames "
-        "by repeating this argument." )
+        "Produce proofs of UNSAT and check them" )
+#ifdef BUILD_CADICAL
+        ( "cdcl",
+          boost::program_options::bool_switch( &( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ) )
+              ->default_value( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ),
+          "Solve the input query with CDCL as the solving procedure" )
+#endif
 
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI

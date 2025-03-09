@@ -142,7 +142,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 // create |numNewSubQueries| copies of the current SearchTreeState
                 for ( unsigned i = 0; i < numNewSubQueries; ++i )
                 {
-                    newSearchTreeStates.push_back( std::unique_ptr<SearchTreeState>( new SearchTreeState() ) );
+                    newSearchTreeStates.push_back(
+                        std::unique_ptr<SearchTreeState>( new SearchTreeState() ) );
                     _engine->storeSearchTreeState( *( newSearchTreeStates[i] ) );
                 }
             }

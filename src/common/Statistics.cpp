@@ -324,8 +324,8 @@ void Statistics::print()
 
     unsigned long long totalCdclCoreCallbacks =
         timeNotifyAssignmentMicro + timeNotifyNewDecisionLevelMicro + timeNotifyBacktrackMicro +
-        timeNotifyFixedAssignmentMicro + timeCbDecideMicro +
-        timeCbPropagateMicro + timeCbAddReasonClauseLitMicro + timeCbAddExternalClauseLitMicro;
+        timeNotifyFixedAssignmentMicro + timeCbDecideMicro + timeCbPropagateMicro +
+        timeCbAddReasonClauseLitMicro + timeCbAddExternalClauseLitMicro;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
             printPercents( timeSearchTreeHandlerMicro - totalCdclCoreCallbacks,

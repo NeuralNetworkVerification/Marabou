@@ -59,8 +59,9 @@ void Options::initializeDefaultValues()
     _boolOptions[DEBUG_ASSIGNMENT] = false;
     _boolOptions[PRODUCE_PROOFS] = false;
     _boolOptions[DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] = false;
+#ifdef BUILD_CADICAL
     _boolOptions[SOLVE_WITH_CDCL] = false;
-    _boolOptions[SOLVE_NAP] = false;
+#endif
 
     /*
       Int options

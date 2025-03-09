@@ -85,11 +85,10 @@ public:
         // weighted sum layer, to reduce the number of variables
         DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS,
 
+#ifdef BUILD_CADICAL
         // Switch the solving procedure to be CDCL-based
         SOLVE_WITH_CDCL,
-
-        // (CDCL) Solve a NAP query
-        SOLVE_NAP,
+#endif
     };
 
     enum IntOptions {
@@ -246,7 +245,7 @@ private:
     Map<unsigned, int> _intOptions;
     Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
-    Map<unsigned , std::vector<std::string>> _arrayOfStringOptions;
+    Map<unsigned, std::vector<std::string>> _arrayOfStringOptions;
 };
 
 #endif // __Options_h__
