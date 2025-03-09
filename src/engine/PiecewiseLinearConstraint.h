@@ -251,7 +251,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( Query & ){};
+    virtual void transformToUseAuxVariables( Query & ) {};
 
     void setStatistics( Statistics *statistics );
 
@@ -578,7 +578,8 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSearchTreeHandler
+    ITableau *_tableau;           // Pointer to tableau which simulates CBT until we switch to
+                                  // CDSearchTreeHandler
 
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;

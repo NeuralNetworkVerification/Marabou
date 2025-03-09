@@ -198,7 +198,7 @@ public:
     /*
       Check if the given piecewise-linear constraint is currently supported by CDCL
      */
-    static bool isSupported( const PiecewiseLinearConstraint *plc ) ;
+    static bool isSupported( const PiecewiseLinearConstraint *plc );
 
 private:
     /*
