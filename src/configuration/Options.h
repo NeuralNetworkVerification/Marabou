@@ -166,12 +166,6 @@ public:
         LP_SOLVER,
     };
 
-    enum ArrayOfStringOptions {
-        // List of filenames containing external NAP clauses, as positive and negative NAPs
-        NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES,
-        NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES,
-    };
-
     /*
       The singleton instance
     */
@@ -194,7 +188,6 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
-    Vector<String> getArrayOfStrings( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
     SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
@@ -245,7 +238,6 @@ private:
     Map<unsigned, int> _intOptions;
     Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
-    Map<unsigned, std::vector<std::string>> _arrayOfStringOptions;
 };
 
 #endif // __Options_h__

@@ -27,8 +27,7 @@ public:
     OptionParser( Map<unsigned, bool> *boolOptions,
                   Map<unsigned, int> *intOptions,
                   Map<unsigned, float> *floatOptions,
-                  Map<unsigned, std::string> *stringOptions,
-                  Map<unsigned, std::vector<std::string>> *arrayOfStringOptions );
+                  Map<unsigned, std::string> *stringOptions );
 
     /*
       Parse the command line arguments and extract the option values.
@@ -69,7 +68,6 @@ private:
     Map<unsigned, int> *_intOptions;
     Map<unsigned, float> *_floatOptions;
     Map<unsigned, std::string> *_stringOptions;
-    Map<unsigned, std::vector<std::string>> *_arrayOfStringOptions;
 };
 
 #endif // __OptionParser_h__

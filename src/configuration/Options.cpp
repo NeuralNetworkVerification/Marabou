@@ -26,11 +26,7 @@ Options *Options::get()
 }
 
 Options::Options()
-    : _optionParser( &_boolOptions,
-                     &_intOptions,
-                     &_floatOptions,
-                     &_stringOptions,
-                     &_arrayOfStringOptions )
+    : _optionParser( &_boolOptions, &_intOptions, &_floatOptions, &_stringOptions )
 {
     initializeDefaultValues();
     _optionParser.initialize();
@@ -108,12 +104,6 @@ void Options::initializeDefaultValues()
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
     _stringOptions[SOFTMAX_BOUND_TYPE] = "lse";
-
-    /*
-       Array of string options
-     */
-    _arrayOfStringOptions[NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES] = {};
-    _arrayOfStringOptions[NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES] = {};
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -144,16 +134,6 @@ float Options::getFloat( unsigned option ) const
 String Options::getString( unsigned option ) const
 {
     return String( _stringOptions.get( option ) );
-}
-
-Vector<String> Options::getArrayOfStrings( unsigned int option ) const
-{
-    Vector<String> arrayOfStrings;
-    const std::vector<std::string> &originalArray = _arrayOfStringOptions[option];
-    for ( const auto &str : originalArray )
-        arrayOfStrings.append( String( str ) );
-
-    return arrayOfStrings;
 }
 
 void Options::setBool( unsigned option, bool value )

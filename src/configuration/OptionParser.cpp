@@ -27,8 +27,7 @@ OptionParser::OptionParser()
 OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
                             Map<unsigned, int> *intOptions,
                             Map<unsigned, float> *floatOptions,
-                            Map<unsigned, std::string> *stringOptions,
-                            Map<unsigned, std::vector<std::string>> *arrayOfStringOptions )
+                            Map<unsigned, std::string> *stringOptions )
     : _positional( "" )
     , _common( "Common options" )
     , _other( "Less common options" )
@@ -37,7 +36,6 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
     , _intOptions( intOptions )
     , _floatOptions( floatOptions )
     , _stringOptions( stringOptions )
-    , _arrayOfStringOptions( arrayOfStringOptions )
 {
 }
 
