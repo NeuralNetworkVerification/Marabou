@@ -88,6 +88,7 @@ void SearchTreeHandler::reportViolatedConstraint( PiecewiseLinearConstraint *con
         if ( _engine->shouldSolveWithCDCL() )
             ASSERT( !constraint->phaseFixed() );
         if ( !_engine->shouldSolveWithCDCL() && !pickSplitPLConstraint() )
+
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
@@ -388,8 +389,10 @@ void SearchTreeHandler::resetSplitConditions()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
+#ifdef BUILD_CADICAL
     if ( _engine->shouldSolveWithCDCL() )
         _constraintForSplitting = NULL;
+#endif
     _needToSplit = false;
 }
 

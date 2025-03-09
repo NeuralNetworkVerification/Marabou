@@ -239,6 +239,7 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
+#ifdef BUILD_CADICAL
     /*
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
     */
@@ -265,6 +266,7 @@ public:
     bool isBoundFixingPhase( unsigned var,
                              double bound,
                              Tightening::BoundType boundType ) const override;
+#endif
 
 private:
     unsigned _b, _f;

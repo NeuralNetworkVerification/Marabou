@@ -14,7 +14,9 @@
 
 #include "ReluConstraint.h"
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -133,8 +135,10 @@ void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, doubl
     else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
+#ifdef BUILD_CADICAL
     if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
 }
 
 void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -145,8 +149,10 @@ void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, doubl
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
 
+#ifdef BUILD_CADICAL
     if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
 }
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
@@ -1129,6 +1135,7 @@ void ReluConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrai
         _tableauAuxVars.append( tableauAuxVar );
 }
 
+#ifdef BUILD_CADICAL
 void ReluConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
@@ -1215,6 +1222,7 @@ unsigned ReluConstraint::getVariableForDecision() const
 {
     return _cdclVars.front();
 }
+#endif
 
 //
 // Local Variables:

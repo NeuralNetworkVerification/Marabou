@@ -1,8 +1,0 @@
-init
-add 1
-add 0
-solve
-add -1
-add 0
-solve
-reset

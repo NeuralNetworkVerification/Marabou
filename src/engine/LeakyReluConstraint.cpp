@@ -14,7 +14,9 @@
 
 #include "LeakyReluConstraint.h"
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -152,8 +154,10 @@ void LeakyReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, 
             setPhaseStatus( RELU_PHASE_ACTIVE );
     }
 
+#ifdef BUILD_CADICAL
     if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
 }
 
 void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -170,8 +174,10 @@ void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, 
             setPhaseStatus( RELU_PHASE_INACTIVE );
     }
 
+#ifdef BUILD_CADICAL
     if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
 }
 
 void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
@@ -1021,6 +1027,7 @@ void LeakyReluConstraint::createInactiveTighteningRow()
     _inactiveTighteningRow->_scalar = 0;
 }
 
+#ifdef BUILD_CADICAL
 void LeakyReluConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
@@ -1112,3 +1119,4 @@ bool LeakyReluConstraint::isBoundFixingPhase( unsigned int var,
 
     return false;
 }
+#endif

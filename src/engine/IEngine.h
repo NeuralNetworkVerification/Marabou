@@ -200,36 +200,6 @@ public:
      */
     virtual bool shouldSolveWithMILP() const = 0;
 
-    /*
-      Methods for running the CDCL-based solving procedure.
-    */
-    virtual bool shouldSolveWithCDCL() const = 0;
-    virtual bool solveWithCDCL( double timeoutInSeconds ) = 0;
-
-    /*
-      Methods for creating conflict clauses and lemmas, for CDCL.
-     */
-    virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
-                                                    unsigned id,
-                                                    int explainedVar,
-                                                    bool isUpper ) = 0;
-    virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
-
-    /*
-      Explain infeasibility of Gurobi, for CDCL conflict clauses
-    */
-    virtual void explainGurobiFailure() = 0;
-
-    /*
-      Returns true if the current assignment complies with the given clause (CDCL).
-     */
-    virtual bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const = 0;
-
-    /*
-      Remove a literal from the propagation list to the SAT solver, during the CDCL solving.
-     */
-    virtual void removeLiteralFromPropagations( int literal ) = 0;
-
     virtual void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) = 0;
 
     /*
@@ -275,6 +245,43 @@ public:
      Solve the input query with a MILP solver
     */
     virtual bool solveWithMILPEncoding( double timeoutInSeconds ) = 0;
+
+    /*
+     Should solve the input query with CDCL?
+    */
+    virtual bool shouldSolveWithCDCL() const = 0;
+
+
+#ifdef BUILD_CADICAL
+    /*
+      Solve the input query with CDCL
+    */
+    virtual bool solveWithCDCL( double timeoutInSeconds ) = 0;
+
+    /*
+      Methods for creating conflict clauses and lemmas, for CDCL.
+     */
+    virtual Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
+                                                    unsigned id,
+                                                    int explainedVar,
+                                                    bool isUpper ) = 0;
+    virtual Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
+
+    /*
+      Explain infeasibility of Gurobi, for CDCL conflict clauses
+    */
+    virtual void explainGurobiFailure() = 0;
+
+    /*
+      Returns true if the current assignment complies with the given clause (CDCL).
+     */
+    virtual bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const = 0;
+
+    /*
+      Remove a literal from the propagation list to the SAT solver, during the CDCL solving.
+     */
+    virtual void removeLiteralFromPropagations( int literal ) = 0;
+#endif
 };
 
 #endif // __IEngine_h__

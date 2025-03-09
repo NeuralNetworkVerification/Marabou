@@ -223,6 +223,7 @@ public:
 
     void test_relu_1_cdcl()
     {
+#ifdef BUILD_CADICAL
         double large = 1000;
 
         Query inputQuery;
@@ -326,10 +327,12 @@ public:
         }
 
         TS_ASSERT( correctSolution );
+#endif
     }
 
     void test_relu_2_cdcl()
     {
+#ifdef BUILD_CADICAL
         Query inputQuery;
         inputQuery.setNumberOfVariables( 6 );
 
@@ -409,6 +412,7 @@ public:
         }
 
         TS_ASSERT( correctSolution );
+#endif
     }
 };
 

@@ -16,6 +16,7 @@
 #ifndef __CadicalWrapper_h__
 #define __CadicalWrapper_h__
 
+#ifdef BUILD_CADICAL
 #include "File.h"
 #include "SatSolverWrapper.h"
 
@@ -97,4 +98,5 @@ private:
 };
 
 
+#endif
 #endif // __CadicalWrapper_h__

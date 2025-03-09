@@ -249,6 +249,7 @@ public:
                  : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
+#ifdef BUILD_CADICAL
     /*
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
     */
@@ -266,6 +267,7 @@ public:
      assuming the literal is part of the boolean abstraction
     */
     void propagateLitAsSplit( int lit ) override;
+#endif
 
 private:
     unsigned _f;
@@ -295,12 +297,6 @@ private:
     */
     bool _haveFeasibleEliminatedPhases;
     double _maxValueOfEliminatedPhases;
-
-    /*
-      Returns the phase where variable argMax has maximum value.
-    */
-    PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
-
 
     /*
       Eliminate the case corresponding to the given input variable to Max.

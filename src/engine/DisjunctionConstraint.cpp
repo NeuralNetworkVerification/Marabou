@@ -14,7 +14,9 @@
 
 #include "DisjunctionConstraint.h"
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
 #include "MStringf.h"
@@ -626,6 +628,8 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
 
     return maxUpperBound;
 }
+
+#ifdef BUILD_CADICAL
 void DisjunctionConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
@@ -664,3 +668,4 @@ void DisjunctionConstraint::propagateLitAsSplit( int lit )
 
     setPhaseStatus( phaseToFix );
 }
+#endif

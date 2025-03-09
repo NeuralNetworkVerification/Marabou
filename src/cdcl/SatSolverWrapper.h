@@ -19,8 +19,6 @@
 #include "Map.h"
 #include "Set.h"
 
-#include <cadical.hpp>
-
 class SatSolverWrapper
 {
 public:

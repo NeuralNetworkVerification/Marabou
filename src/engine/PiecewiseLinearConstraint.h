@@ -511,6 +511,18 @@ public:
         return _tableauAuxVars;
     }
 
+    inline std::shared_ptr<GroundBoundManager::GroundBoundEntry> getPhaseFixingEntry() const
+    {
+        return _cdPhaseFixingEntry->get();
+    }
+
+    inline void setPhaseFixingEntry(
+        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &groundBoundEntry )
+    {
+        _cdPhaseFixingEntry->set( groundBoundEntry );
+    }
+
+#ifdef BUILD_CADICAL
     /*
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
    */
@@ -528,17 +540,6 @@ public:
       assuming the literal is part of the boolean abstraction
     */
     virtual void propagateLitAsSplit( int lit ) = 0;
-
-    inline std::shared_ptr<GroundBoundManager::GroundBoundEntry> getPhaseFixingEntry() const
-    {
-        return _cdPhaseFixingEntry->get();
-    }
-
-    inline void setPhaseFixingEntry(
-        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &groundBoundEntry )
-    {
-        _cdPhaseFixingEntry->set( groundBoundEntry );
-    }
 
     virtual bool isBoundFixingPhase( unsigned /*var*/,
                                      double /*bound*/,
@@ -565,6 +566,7 @@ public:
         // TODO: remove default implementation after supporting other PLCs in CDCL
         return 0;
     }
+#endif
 
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint

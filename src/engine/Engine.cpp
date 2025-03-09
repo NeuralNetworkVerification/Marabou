@@ -45,7 +45,9 @@ Engine::Engine()
     , _preprocessedQuery( nullptr )
     , _rowBoundTightener( *_tableau )
     , _searchTreeHandler( this )
+#ifdef BUILD_CADICAL
     , _cdclCore( this )
+#endif
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
@@ -75,11 +77,17 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
+#ifdef BUILD_CADICAL
     , _solveWithCDCL( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
+#else
+    , _solveWithCDCL( false )
+#endif
     , _initialized( false )
 {
     _searchTreeHandler.setStatistics( &_statistics );
+#ifdef BUILD_CADICAL
     _cdclCore.setStatistics( &_statistics );
+#endif
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
@@ -209,10 +217,12 @@ void Engine::initializeSolver()
     if ( _solveWithMILP )
         return;
 
+#ifdef BUILD_CADICAL
     if ( _solveWithCDCL )
         for ( const auto plConstraint : _plConstraints )
             if ( plConstraint->phaseFixed() )
                 _cdclCore.phase( plConstraint->propagatePhaseAsLit() );
+#endif
 
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
@@ -462,8 +472,10 @@ bool Engine::solve( double timeoutInSeconds )
             {
                 if ( _lpSolverType == LPSolverType::NATIVE )
                     explainSimplexFailure();
+#ifdef BUILD_CADICAL
                 else
                     explainGurobiFailure();
+#endif
             }
 
             if ( !_solveWithCDCL )
@@ -1584,7 +1596,9 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
         for ( const auto &constraint : _plConstraints )
         {
             constraint->registerTableau( _tableau );
+#ifdef BUILD_CADICAL
             constraint->registerCdclCore( &_cdclCore );
+#endif
             constraint->initializeCDOs( &_context );
         }
         for ( const auto &constraint : _nlConstraints )
@@ -1615,6 +1629,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
             throw InfeasibleQueryException();
         }
 
+#ifdef BUILD_CADICAL
         if ( _solveWithCDCL )
         {
             if ( !_nlConstraints.empty() )
@@ -1632,6 +1647,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
                 _cdclCore.initBooleanAbstraction( constraint );
             }
         }
+#endif
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -3109,8 +3125,10 @@ bool Engine::restoreSearchTreeState( SearchTreeState &searchTreeState )
         {
             if ( _lpSolverType == LPSolverType::NATIVE )
                 explainSimplexFailure();
+#ifdef BUILD_CADICAL
             else
                 explainGurobiFailure();
+#endif
         }
 
 
@@ -3545,7 +3563,9 @@ bool Engine::shouldProduceProofs() const
 void Engine::explainSimplexFailure()
 {
     ASSERT( _produceUNSATProofs && _lpSolverType == LPSolverType::NATIVE );
+#ifdef BUILD_CADICAL
     ASSERT( !_solveWithCDCL || !_cdclCore.hasConflictClause() );
+#endif
     DEBUG( checkGroundBounds() );
 
     unsigned infeasibleVar = _boundManager.getInconsistentVariable();
@@ -3566,8 +3586,10 @@ void Engine::explainSimplexFailure()
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND )
     {
         markLeafToDelegate();
+#ifdef BUILD_CADICAL
         if ( _solveWithCDCL )
             _cdclCore.addTrivialConflictClause();
+#endif
         return;
     }
 
@@ -3588,6 +3610,7 @@ void Engine::explainSimplexFailure()
     if ( !_solveWithCDCL )
         return;
 
+#ifdef BUILD_CADICAL
     // If both bounds are ground bounds, explanation would be empty and the clause trivial
     if ( _boundManager.getUpperBound( infeasibleVar ) ==
              getGroundBound( infeasibleVar, Tightening::UB ) &&
@@ -3612,6 +3635,7 @@ void Engine::explainSimplexFailure()
     }
 
     _cdclCore.addExternalClause( clause );
+#endif
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -4082,6 +4106,73 @@ void Engine::incNumOfLemmas()
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
 }
 
+void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
+{
+    for ( const auto &bound : split.getBoundTightenings() )
+    {
+        if ( bound._type == Tightening::UB )
+            ASSERT(
+                FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
+
+        if ( bound._type == Tightening::LB )
+            ASSERT(
+                FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
+    }
+}
+
+unsigned Engine::getVerbosity() const
+{
+    return _verbosity;
+}
+
+ExitCode Engine::getExitCode() const
+{
+    return _exitCode;
+}
+
+void Engine::setExitCode( ExitCode exitCode )
+{
+    _exitCode = exitCode;
+}
+
+const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints() const
+{
+    return &_plConstraints;
+}
+
+LPSolverType Engine::getLpSolverType() const
+{
+    return _lpSolverType;
+}
+
+NLR::NetworkLevelReasoner *Engine::getNetworkLevelReasoner() const
+{
+    return _networkLevelReasoner;
+}
+
+bool Engine::shouldSolveWithMILP() const
+{
+    return _solveWithMILP;
+}
+
+std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing )
+{
+    return _groundBoundManager.addGroundBound( lemma, isPhaseFixing );
+}
+
+bool Engine::shouldSolveWithCDCL() const
+{
+    return _solveWithCDCL;
+}
+
+#ifdef BUILD_CADICAL
+
+bool Engine::solveWithCDCL( double timeoutInSeconds )
+{
+    return _cdclCore.solveWithCDCL( timeoutInSeconds );
+}
+
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                 unsigned id,
                                                 int explainedVar,
@@ -4183,12 +4274,6 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     return clause;
 }
 
-std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-Engine::setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing )
-{
-    return _groundBoundManager.addGroundBound( lemma, isPhaseFixing );
-}
-
 Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
 {
     ASSERT( _solveWithCDCL );
@@ -4215,21 +4300,6 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                 tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
 
     return Vector<int>( clause.begin(), clause.end() );
-}
-
-bool Engine::shouldSolveWithMILP() const
-{
-    return _solveWithMILP;
-}
-
-bool Engine::shouldSolveWithCDCL() const
-{
-    return _solveWithCDCL;
-}
-
-bool Engine::solveWithCDCL( double timeoutInSeconds )
-{
-    return _cdclCore.solveWithCDCL( timeoutInSeconds );
 }
 
 Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
@@ -4413,41 +4483,6 @@ void Engine::removeLiteralFromPropagations( int literal )
     _cdclCore.removeLiteralFromPropagations( literal );
 }
 
-void Engine::assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split )
-{
-    for ( const auto &bound : split.getBoundTightenings() )
-    {
-        if ( bound._type == Tightening::UB )
-            ASSERT(
-                FloatUtils::lte( _boundManager.getUpperBound( bound._variable ), bound._value ) );
-
-        if ( bound._type == Tightening::LB )
-            ASSERT(
-                FloatUtils::gte( _boundManager.getLowerBound( bound._variable ), bound._value ) );
-    }
-}
-
-unsigned Engine::getVerbosity() const
-{
-    return _verbosity;
-}
-
-ExitCode Engine::getExitCode() const
-{
-    return _exitCode;
-}
-
-void Engine::setExitCode( ExitCode exitCode )
-{
-    _exitCode = exitCode;
-}
-
-const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints() const
-{
-    return &_plConstraints;
-}
-
-
 void Engine::explainGurobiFailure()
 {
     ASSERT( _lpSolverType == LPSolverType::GUROBI );
@@ -4493,16 +4528,6 @@ void Engine::explainGurobiFailure()
                          clause.size(),
                          _context.getLevel() )
                     .ascii() );
-}
-
-LPSolverType Engine::getLpSolverType() const
-{
-    return _lpSolverType;
-}
-
-NLR::NetworkLevelReasoner *Engine::getNetworkLevelReasoner() const
-{
-    return _networkLevelReasoner;
 }
 
 bool Engine::checkAssignmentComplianceWithClause( const Set<int> &clause ) const
@@ -4552,3 +4577,4 @@ void Engine::configureForCDCL()
     _UNSATCertificateCurrentPointer =
         new ( true ) CVC4::context::CDO<UnsatCertificateNode *>( &_context, NULL );
 }
+#endif

@@ -223,8 +223,10 @@ void Marabou::solveQuery()
     {
         if ( _engine->shouldSolveWithMILP() )
             _engine->solveWithMILPEncoding( timeoutInSeconds );
+#ifdef BUILD_CADICAL
         else if ( _engine->shouldSolveWithCDCL() )
             _engine->solveWithCDCL( timeoutInSeconds );
+#endif
         else
         {
             _engine->solve( timeoutInSeconds );

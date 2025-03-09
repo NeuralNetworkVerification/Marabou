@@ -14,7 +14,9 @@
 
 #include "SignConstraint.h"
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -428,8 +430,11 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                     _boundManager->tightenLowerBound( _f, 1 );
             }
         }
+
+#ifdef BUILD_CADICAL
         if ( !_cdclVars.empty() && phaseFixed() && isActive() )
             _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
     }
 }
 
@@ -483,8 +488,10 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
             }
         }
 
+#ifdef BUILD_CADICAL
         if ( !_cdclVars.empty() && phaseFixed() && isActive() )
             _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
     }
 }
 
@@ -675,6 +682,8 @@ void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
                                        unsigned /* constraintAuxVar */ )
 {
 }
+
+#ifdef BUILD_CADICAL
 void SignConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
@@ -747,3 +756,4 @@ bool SignConstraint::isBoundFixingPhase( unsigned int var,
 
     return false;
 }
+#endif

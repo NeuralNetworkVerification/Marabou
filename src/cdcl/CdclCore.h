@@ -16,6 +16,8 @@
 #ifndef __CdclCore_h__
 #define __CdclCore_h__
 
+#ifdef BUILD_CADICAL
+
 #include "CadicalWrapper.h"
 #include "IEngine.h"
 #include "Pair.h"
@@ -272,5 +274,5 @@ private:
     unsigned luby( unsigned i );
 };
 
-
+#endif
 #endif // __CdclCore_h__

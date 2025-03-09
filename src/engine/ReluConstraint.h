@@ -269,6 +269,7 @@ public:
 
     const List<unsigned> getNativeAuxVars() const override;
 
+#ifdef BUILD_CADICAL
     /*
      Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
     */
@@ -300,6 +301,7 @@ public:
       Returns a cadical variable of this constraint, for decision
      */
     unsigned getVariableForDecision() const override;
+#endif
 
 private:
     unsigned _b, _f;

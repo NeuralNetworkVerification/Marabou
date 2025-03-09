@@ -312,7 +312,10 @@ struct MarabouOptions
               Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
         , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
-        , _cdcl( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) ){};
+#ifdef BUILD_CADICAL
+        , _cdcl( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
+#endif
+              {};
 
     void setOptions()
     {
@@ -324,7 +327,9 @@ struct MarabouOptions
         Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT,
                                  _performLpTighteningAfterSplit );
         Options::get()->setBool( Options::PRODUCE_PROOFS, _produceProofs );
+#ifdef BUILD_CADICAL
         Options::get()->setBool( Options::SOLVE_WITH_CDCL, _cdcl );
+#endif
 
         // int options
         Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -486,8 +491,10 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
             if ( engine.shouldSolveWithMILP() )
                 engine.solveWithMILPEncoding( timeoutInSeconds );
+#ifdef BUILD_CADICAL
             else if ( engine.shouldSolveWithCDCL() )
                 engine.solveWithCDCL( timeoutInSeconds );
+#endif
             else
             {
                 engine.solve( timeoutInSeconds );

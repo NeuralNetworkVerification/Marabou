@@ -1,4 +1,0 @@
-AlignEscapedNewlines: DontAlign
-ColumnLimit: 76
-SpaceBeforeParens: Always
-SpaceAfterCStyleCast: true

@@ -14,7 +14,9 @@
 
 #include "MaxConstraint.h"
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -800,6 +802,8 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings )
         }
     }
 }
+
+#ifdef BUILD_CADICAL
 void MaxConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
@@ -839,3 +843,4 @@ void MaxConstraint::propagateLitAsSplit( int lit )
 
     setPhaseStatus( phaseToFix );
 }
+#endif

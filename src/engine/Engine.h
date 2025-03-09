@@ -22,7 +22,9 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "BoundManager.h"
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Checker.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
@@ -304,26 +306,9 @@ public:
     bool propagateBoundManagerTightenings() override;
 
     /*
-     Add ground bound entry using a lemma
-    */
-    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) override;
-
-    /*
       Returns true if the query should be solved using MILP
      */
     bool shouldSolveWithMILP() const override;
-
-    /*
-      Methods for running the CDCL-based solving procedure.
-    */
-    bool shouldSolveWithCDCL() const override;
-    bool solveWithCDCL( double timeoutInSeconds = 0 ) override;
-
-    /*
-      Creates a boolean-abstracted clause explaining a boolean-abstracted literal
-    */
-    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) override;
 
     /*
       Check whether a timeout value has been provided and exceeded.
@@ -351,16 +336,6 @@ public:
     const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override;
 
     /*
-      Explain infeasibility of gurobi
-    */
-    void explainGurobiFailure() override;
-
-    /*
-      Returns true if the current assignment complies with the given clause (CDCL).
-     */
-    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override;
-
-    /*
       Returns the type of the LP Solver in use.
      */
     LPSolverType getLpSolverType() const override;
@@ -381,9 +356,42 @@ public:
     void incNumOfLemmas() override;
 
     /*
-      Configure the engine to allow solving with CDCL, used for testing only.
+     Add ground bound entry using a lemma
+    */
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) override;
+
+    /*
+     Should solve the input query with CDCL?
+    */
+    bool shouldSolveWithCDCL() const override;
+
+#ifdef BUILD_CADICAL
+    /*
+      Solve the input query with CDCL
+    */
+    bool solveWithCDCL( double timeoutInSeconds = 0 ) override;
+
+    /*
+      Creates a boolean-abstracted clause explaining a boolean-abstracted literal
+    */
+    Vector<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) override;
+
+    /*
+     Explain infeasibility of gurobi
+    */
+    void explainGurobiFailure() override;
+
+    /*
+      Returns true if the current assignment complies with the given clause (CDCL).
      */
+    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override;
+
+    /*
+     Configure the engine to allow solving with CDCL, used for testing only.
+    */
     void configureForCDCL();
+#endif
 
 private:
     enum BasisRestorationRequired {
@@ -476,10 +484,12 @@ private:
     */
     SearchTreeHandler _searchTreeHandler;
 
+#ifdef BUILD_CADICAL
     /*
       The CDCL core in charge of communicating with the SAT solver.
      */
     CdclCore _cdclCore;
+#endif
 
     /*
       Number of pl constraints disabled by valid splits.
@@ -992,8 +1002,12 @@ private:
     void writeContradictionToCertificate( const Vector<double> &contradiction,
                                           unsigned infeasibleVar ) const;
 
+
+    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
+
+#ifdef BUILD_CADICAL
     /*
-      Creates a boolean-abstracted clause from an explanation
+     Creates a boolean-abstracted clause from an explanation
     */
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned id,
@@ -1037,8 +1051,7 @@ private:
                                const std::shared_ptr<PLCLemma> lemma ) const;
 
     void removeLiteralFromPropagations( int literal ) override;
-
-    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
+#endif
 };
 
 #endif // __Engine_h__

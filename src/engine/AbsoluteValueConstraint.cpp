@@ -14,7 +14,9 @@
 
 #include "AbsoluteValueConstraint.h"
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -914,8 +916,10 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         }
     }
 
+#ifdef BUILD_CADICAL
     if ( !_cdclVars.empty() && phaseFixed() && isActive() )
         _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
 }
 
 String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
@@ -994,6 +998,7 @@ void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned
     }
 }
 
+#ifdef BUILD_CADICAL
 void AbsoluteValueConstraint::booleanAbstraction(
     Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
 {
@@ -1067,3 +1072,4 @@ bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,
 
     return false;
 }
+#endif

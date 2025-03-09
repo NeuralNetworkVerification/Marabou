@@ -189,6 +189,7 @@ public:
     */
     bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
 
+#ifdef BUILD_CADICAL
     /*
       Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
     */
@@ -206,6 +207,7 @@ public:
      assuming the literal is part of the boolean abstraction
     */
     void propagateLitAsSplit( int lit ) override;
+#endif
 
 private:
     /*

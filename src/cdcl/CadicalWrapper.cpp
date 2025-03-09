@@ -13,6 +13,7 @@
 
 **/
 
+#ifdef BUILD_CADICAL
 #include "CadicalWrapper.h"
 
 CadicalWrapper::CadicalWrapper( CaDiCaL::ExternalPropagator *externalPropagator,
@@ -119,3 +120,4 @@ CadicalWrapper::~CadicalWrapper()
     _solver->disconnect_terminator();
     _solver->disconnect_external_propagator();
 }
+#endif

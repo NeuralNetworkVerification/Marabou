@@ -322,37 +322,6 @@ public:
         return false;
     }
 
-    bool shouldSolveWithCDCL() const override
-    {
-        return false;
-    }
-
-    bool solveWithCDCL( double timeoutInSeconds ) override
-    {
-        if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = ExitCode::TIMEOUT;
-        return _exitCode == ExitCode::SAT;
-    }
-
-    Set<int>
-    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool ) override
-    {
-        return Set<int>();
-    }
-
-    Vector<int> explainPhase( const PiecewiseLinearConstraint * ) override
-    {
-        return Vector<int>();
-    }
-
-    void explainGurobiFailure() override
-    {
-    }
-
-    void removeLiteralFromPropagations( int /*literal*/ ) override
-    {
-    }
-
     void initializeSolver() override
     {
     }
@@ -394,11 +363,6 @@ public:
     {
     }
 
-    bool checkAssignmentComplianceWithClause( const Set<int> & /*clause*/ ) const override
-    {
-        return true;
-    }
-
     void incNumOfLemmas() override
     {
     }
@@ -409,6 +373,44 @@ public:
             _exitCode = ExitCode::TIMEOUT;
         return _exitCode == ExitCode::SAT;
     }
+
+    bool shouldSolveWithCDCL() const override
+    {
+        return false;
+    }
+
+#ifdef BUILD_CADICAL
+    bool solveWithCDCL( double timeoutInSeconds ) override
+    {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = ExitCode::TIMEOUT;
+        return _exitCode == ExitCode::SAT;
+    }
+
+    Set<int>
+    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool ) override
+    {
+        return Set<int>();
+    }
+
+    Vector<int> explainPhase( const PiecewiseLinearConstraint * ) override
+    {
+        return Vector<int>();
+    }
+
+    void explainGurobiFailure() override
+    {
+    }
+
+    void removeLiteralFromPropagations( int /*literal*/ ) override
+    {
+    }
+
+    bool checkAssignmentComplianceWithClause( const Set<int> & /*clause*/ ) const override
+    {
+        return true;
+    }
+#endif
 };
 
 #endif // __MockEngine_h__

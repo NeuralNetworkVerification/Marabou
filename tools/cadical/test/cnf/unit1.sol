@@ -1,2 +1,0 @@
-s SATISFIABLE
-v -1 0

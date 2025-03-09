@@ -13,6 +13,7 @@
 
 **/
 
+#ifdef BUILD_CADICAL
 #include "CdclCore.h"
 
 #include "NetworkLevelReasoner.h"
@@ -690,12 +691,11 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
         if ( _engine->getExitCode() == ExitCode::UNSAT )
             return false;
 
-        if ( !Options::get()->getBool( Options::SOLVE_NAP ) )
-            if ( _engine->solve( 0 ) )
-            {
-                _engine->setExitCode( ExitCode::SAT );
-                return true;
-            }
+        if ( _engine->solve( 0 ) )
+        {
+            _engine->setExitCode( ExitCode::SAT );
+            return true;
+        }
 
         if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
             _engine->propagateBoundManagerTightenings();
@@ -713,42 +713,6 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
         for ( unsigned var : _cadicalVarToPlc.keys() )
             if ( var != 0 )
                 _satSolverWrapper->addObservedVar( (int)var );
-
-        Set<int> externalClause;
-
-        Vector<String> positiveNapFilenames =
-            Options::get()->getArrayOfStrings( Options::NAP_EXTERNAL_CLAUSES_POSITIVE_FILENAMES );
-        Vector<String> negativeNapFilenames =
-            Options::get()->getArrayOfStrings( Options::NAP_EXTERNAL_CLAUSES_NEGATIVE_FILENAMES );
-
-        for ( const String &filename : positiveNapFilenames )
-        {
-            externalClause = _satSolverWrapper->addExternalNAPClause( filename, false );
-            if ( !externalClause.empty() )
-                for ( int lit : externalClause )
-                {
-                    ASSERT( lit != 0 )
-                    PiecewiseLinearConstraint *plcToFix = _cadicalVarToPlc[abs( lit )];
-                    ASSERT( plcToFix->getType() == RELU )
-                    if ( plcToFix->phaseFixed() && lit != plcToFix->propagatePhaseAsLit() )
-                    {
-                        // Two conflicting positive NAPs. query is UNSAT
-                        _engine->setExitCode( ExitCode::UNSAT );
-                        return false;
-                    }
-
-                    plcToFix->propagateLitAsSplit( lit );
-                    _engine->applyPlcPhaseFixingTightenings( *plcToFix );
-                    phase( lit );
-                }
-        }
-
-        for ( const String &filename : negativeNapFilenames )
-        {
-            externalClause = _satSolverWrapper->addExternalNAPClause( filename, true );
-            if ( !externalClause.empty() )
-                _initialClauses.append( externalClause );
-        }
 
         int result = _satSolverWrapper->solve();
 
@@ -1038,3 +1002,5 @@ bool CdclCore::isSupported( const PiecewiseLinearConstraint *plc )
 
     return true;
 }
+
+#endif
