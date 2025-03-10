@@ -471,10 +471,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         allExplanations,
                                                                         constraint.getType() );
 
-#ifdef BUILD_CADICAL
         if ( !_engine->shouldSolveWithCDCL() )
             _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
-#endif
 
         // Add ground bound entry to the GroundBoundManager
         std::shared_ptr<GroundBoundManager::GroundBoundEntry> phaseFixingEntry =
