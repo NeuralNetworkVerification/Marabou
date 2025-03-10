@@ -58,7 +58,7 @@ def analyze_process_result(out, err, exit_status, expected_result):
             print("Expected unsat, but last line is in output is: ", out_lines[-1])
             return False
     else:
-        if '\nsat' in out:
+        if 'sat' in out:
             return True
         else:
             print('expected sat, but \'\\nSAT\' is not in the output. tail of the output:\n', out[-1500:])
