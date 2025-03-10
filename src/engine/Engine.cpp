@@ -1044,6 +1044,7 @@ bool Engine::calculateBounds( const IQuery &inputQuery )
 
         printf( "unsat\n" );
 
+        _exitCode = ExitCode::UNSAT;
         return false;
     }
 
