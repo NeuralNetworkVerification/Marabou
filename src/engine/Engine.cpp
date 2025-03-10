@@ -1599,7 +1599,8 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
 #ifdef BUILD_CADICAL
             constraint->registerCdclCore( &_cdclCore );
 #endif
-            constraint->initializeCDOs( &_context );
+            if ( !Options::get()->getBool( Options::DNC_MODE ) )
+                constraint->initializeCDOs( &_context );
         }
         for ( const auto &constraint : _nlConstraints )
             constraint->registerTableau( _tableau );
