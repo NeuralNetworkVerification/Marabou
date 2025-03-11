@@ -154,7 +154,13 @@ void DnCManager::solve()
     // Preprocess the input query and create an engine for each of the threads
     if ( !createEngines( numWorkers ) )
     {
-        _exitCode = DnCManager::UNSAT;
+        if ( _baseEngine->getExitCode() == Engine::ExitCode::SAT )
+        {
+            _exitCode = DnCManager::SAT;
+            _engineWithSATAssignment = _baseEngine;
+        }
+        else
+            _exitCode = DnCManager::UNSAT;
         return;
     }
 

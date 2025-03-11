@@ -2,6 +2,17 @@
 #include "Vector.h"
 #ifdef BUILD_TORCH
 
+CustomRelu::CustomRelu( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
+    : _networkLevelReasoner( nlr )
+    , _reluLayerIndex( layerIndex )
+{
+}
+
+torch::Tensor CustomRelu::forward( torch::Tensor x ) const
+{
+    return CustomReluFunction::apply( x, _networkLevelReasoner, _reluLayerIndex );
+}
+
 CustomMaxPool::CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
     : _networkLevelReasoner( nlr )
     , _maxLayerIndex( layerIndex )
@@ -91,7 +102,7 @@ CustomDNN::CustomDNN( const NLR::NetworkLevelReasoner *nlr )
             break;
         case NLR::Layer::RELU:
         {
-            auto reluLayer = torch::nn::ReLU( torch::nn::ReLUOptions() );
+            auto reluLayer = std::make_shared<CustomRelu>( _networkLevelReasoner, i );
             _reluLayers.append( reluLayer );
             register_module( "ReLU" + std::to_string( i ), reluLayer );
             break;
@@ -105,9 +116,9 @@ CustomDNN::CustomDNN( const NLR::NetworkLevelReasoner *nlr )
         }
         case NLR::Layer::MAX:
         {
-            auto customMaxPoolLayer = std::make_shared<CustomMaxPool>( _networkLevelReasoner, i );
-            _customMaxPoolLayers.append( customMaxPoolLayer );
-            register_module( "maxPool" + std::to_string( i ), customMaxPoolLayer );
+            auto maxPoolLayer = std::make_shared<CustomMaxPool>( _networkLevelReasoner, i );
+            _maxPoolLayers.append( maxPoolLayer );
+            register_module( "maxPool" + std::to_string( i ), maxPoolLayer );
             break;
         }
         case NLR::Layer::SIGMOID:
@@ -147,7 +158,7 @@ torch::Tensor CustomDNN::forward( torch::Tensor x )
             reluIndex++;
             break;
         case NLR::Layer::MAX:
-            x = _customMaxPoolLayers[maxPoolIndex]->forward( x );
+            x = _maxPoolLayers[maxPoolIndex]->forward( x );
             maxPoolIndex++;
             break;
         case NLR::Layer::LEAKY_RELU:
@@ -165,6 +176,45 @@ torch::Tensor CustomDNN::forward( torch::Tensor x )
         }
     }
     return x;
+}
+
+torch::Tensor CustomReluFunction::forward( torch::autograd::AutogradContext *ctx,
+                                           torch::Tensor x,
+                                           const NLR::NetworkLevelReasoner *nlr,
+                                           unsigned int layerIndex )
+{
+    ctx->save_for_backward( { x } );
+
+    const NLR::Layer *layer = nlr->getLayer( layerIndex );
+    torch::Tensor reluOutputs = torch::zeros( { 1, layer->getSize() } );
+    torch::Tensor reluGradients = torch::zeros( { 1, layer->getSize() } );
+
+    for ( unsigned neuron = 0; neuron < layer->getSize(); ++neuron )
+    {
+        auto sources = layer->getActivationSources( neuron );
+        ASSERT( sources.size() == 1 );
+        const NLR::NeuronIndex &sourceNeuron = sources.back();
+        int index = static_cast<int>( sourceNeuron._neuron );
+        reluOutputs.index_put_( { 0, static_cast<int>( neuron ) },
+                                torch::clamp_min( x.index( { 0, index } ), 0 ) );
+        reluGradients.index_put_( { 0, static_cast<int>( neuron ) }, x.index( { 0, index } ) > 0 );
+    }
+
+    ctx->saved_data["reluGradients"] = reluGradients;
+
+    return reluOutputs;
+}
+
+std::vector<torch::Tensor> CustomReluFunction::backward( torch::autograd::AutogradContext *ctx,
+                                                         std::vector<torch::Tensor> grad_output )
+{
+    auto saved = ctx->get_saved_variables();
+    auto input = saved[0];
+
+    auto reluGradients = ctx->saved_data["reluGradients"].toTensor();
+    auto grad_input = grad_output[0] * reluGradients[0];
+
+    return { grad_input, torch::Tensor(), torch::Tensor() };
 }
 
 torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *ctx,
@@ -189,13 +239,13 @@ torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *
             const NLR::NeuronIndex &activationNeuron = sources.back();
             int index = static_cast<int>( activationNeuron._neuron );
             sources.popBack();
-            sourceValues[i] = x.index( { 0, index } );
-            sourceIndices[i] = index;
+            sourceValues.index_put_( { i }, x.index( { 0, index } ) );
+            sourceIndices.index_put_( { i }, index );
         }
 
         maxOutputs.index_put_( { 0, static_cast<int>( neuron ) }, torch::max( sourceValues ) );
         argMaxOutputs.index_put_( { 0, static_cast<int>( neuron ) },
-                                  sourceIndices[torch::argmax( sourceValues )] );
+                                  sourceIndices.index( { torch::argmax( sourceValues ) } ) );
     }
 
     ctx->saved_data["argMaxOutputs"] = argMaxOutputs;

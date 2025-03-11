@@ -165,7 +165,7 @@ calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool padFront
 Permutation reversePermutation( unsigned int size )
 {
     Permutation result;
-    for ( unsigned int i = size - 1; i-- > 0; )
+    for ( unsigned int i = size; i-- > 0; )
     {
         result.append( i );
     }

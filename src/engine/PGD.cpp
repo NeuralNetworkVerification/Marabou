@@ -4,6 +4,7 @@
 
 #include <cmath>
 #ifdef BUILD_TORCH
+
 PGDAttack::PGDAttack( NLR::NetworkLevelReasoner *networkLevelReasoner )
     : networkLevelReasoner( networkLevelReasoner )
     , _device( torch::kCPU )
@@ -110,18 +111,18 @@ bool PGDAttack::isWithinBounds( const torch::Tensor &sample,
         double lower = bounds.first.get( i );
         double upper = bounds.second.get( i );
 
-        if ( std::isinf( lower ) && std::isinf( upper ) )
+        if ( lower == FloatUtils::negativeInfinity() && upper == FloatUtils::infinity() )
         {
             // If both bounds are infinite, any value is acceptable
             continue;
         }
-        else if ( std::isinf( lower ) )
+        else if ( lower == FloatUtils::negativeInfinity() )
         {
             // Only check upper bound
             if ( value > upper )
                 return false;
         }
-        else if ( std::isinf( upper ) )
+        else if ( upper == FloatUtils::infinity() )
         {
             // Only check lower bound
             if ( value < lower )
@@ -162,12 +163,14 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
     PGD_LOG( Stringf( "Adversarial attack timeout set to %f\n", timeoutForAttack ).ascii() );
     timespec startTime = TimeUtils::sampleMicro();
 
-    torch::Tensor currentExample = _inputExample;
+    torch::Tensor inputExample;
+    torch::Tensor currentExample;
+    torch::Tensor prevExample;
     torch::Tensor currentPrediction;
     torch::Tensor lowerBoundTensor =
-        torch::tensor( _inputBounds.first.data(), torch::kFloat32 ).to( _device );
+        torch::tensor( _inputBounds.first.getContainer(), torch::kFloat32 ).to( _device );
     torch::Tensor upperBoundTensor =
-        torch::tensor( _inputBounds.second.data(), torch::kFloat32 ).to( _device );
+        torch::tensor( _inputBounds.second.getContainer(), torch::kFloat32 ).to( _device );
     torch::Tensor delta = torch::zeros( _inputSize ).to( _device ).requires_grad_( true );
 
     for ( unsigned i = 0; i < _restarts; ++i )
@@ -177,10 +180,19 @@ std::pair<torch::Tensor, torch::Tensor> PGDAttack::findAdvExample()
         {
             throw MarabouError( MarabouError::TIMEOUT, "Attack failed due to timeout" );
         }
-        torch::optim::Adam optimizer( { delta }, torch::optim::AdamOptions() );
+        inputExample = torch::rand( _inputExample.sizes() );
+        inputExample = inputExample * ( upperBoundTensor - lowerBoundTensor ) + lowerBoundTensor;
+
+        torch::optim::Adam optimizer( { delta }, torch::optim::AdamOptions( 0.1 ) );
+
         for ( unsigned j = 0; j < _iters; ++j )
         {
-            currentExample = currentExample + delta;
+            prevExample = currentExample;
+            currentExample = inputExample + delta;
+            if ( ( prevExample.defined() && currentExample.equal( prevExample ) ) ||
+                 !isWithinBounds( currentExample, _inputBounds ) )
+                break;
+
             currentPrediction = _model->forward( currentExample );
             if ( isWithinBounds( currentPrediction, _outputBounds ) )
             {
