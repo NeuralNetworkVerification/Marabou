@@ -140,13 +140,17 @@ public:
     void computeSymbolicBounds();
     void computeParameterisedSymbolicBounds( const Vector<double> &coeffs, bool receive = false );
 
+
+    // Get number of optimizable parameters for parameterised SBT relaxation per layer type.
+    unsigned getNumberOfParametersPerType( Type t ) const;
+
     // Get total number of optimizable parameters for parameterised SBT relaxation.
-    unsigned getNumberOfParameters( const Map<unsigned, Layer *> &layers );
+    unsigned getNumberOfParameters( const Map<unsigned, Layer *> &layers ) const;
 
     // Get map containing vector of optimizable parameters for parameterised SBT relaxation for
     // every layer index.
     Map<unsigned, Vector<double>> getParametersForLayers( const Map<unsigned, Layer *> &layers,
-                                                          const Vector<double> &coeffs );
+                                                          const Vector<double> &coeffs ) const;
 
     // Return optimizable parameters which minimize parameterised SBT bounds' volume.
     const Vector<double> OptimalParameterisedSymbolicBoundTightening();

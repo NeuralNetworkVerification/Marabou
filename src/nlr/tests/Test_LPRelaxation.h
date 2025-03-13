@@ -4536,6 +4536,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
+            Tightening( 8, 0, Tightening::LB ),
+
             Tightening( 10, 0, Tightening::UB ),
             Tightening( 11, 1.625, Tightening::LB ),
         } );
@@ -4605,6 +4607,9 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
+            Tightening( 8, 0, Tightening::LB ),
+            Tightening( 9, 0, Tightening::LB ),
+
             Tightening( 11, 0.8472, Tightening::LB ),
         } );
 
@@ -4679,8 +4684,16 @@ public:
             Tightening( 13, -4.25, Tightening::LB ),
             Tightening( 13, 3.25, Tightening::UB ),
 
+            Tightening( 14, 0, Tightening::LB ),
+            Tightening( 15, 0, Tightening::LB ),
+            Tightening( 16, 0, Tightening::LB ),
+            Tightening( 16, 3.25, Tightening::UB ),
+
             Tightening( 17, -11.1417, Tightening::LB ),
             Tightening( 17, 10, Tightening::UB ),
+
+            Tightening( 19, 0, Tightening::LB ),
+            Tightening( 19, 10, Tightening::UB ),
 
             Tightening( 21, -17.3084, Tightening::LB ),
             Tightening( 21, 3.2160, Tightening::UB ),
@@ -4782,14 +4795,24 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
+            Tightening( 7, 0, Tightening::LB ),
+
             Tightening( 11, -5, Tightening::LB ),
             Tightening( 12, -4.6429, Tightening::LB ),
             Tightening( 13, 8.5519, Tightening::UB ),
+
+            Tightening( 14, 0, Tightening::LB ),
+            Tightening( 15, 0, Tightening::LB ),
+            Tightening( 16, 0, Tightening::LB ),
+            Tightening( 16, 8.5519, Tightening::UB ),
 
             Tightening( 17, -23.6231, Tightening::LB ),
             Tightening( 17, 14.0909, Tightening::UB ),
             Tightening( 18, 2, Tightening::LB ),
             Tightening( 18, 28.2015, Tightening::UB ),
+
+            Tightening( 20, 2, Tightening::LB ),
+            Tightening( 20, 28.2015, Tightening::UB ),
 
             Tightening( 21, -29.2015, Tightening::LB ),
             Tightening( 21, 6.5734, Tightening::UB ),
@@ -4849,12 +4872,16 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
+            Tightening( 4, -0.1, Tightening::LB ),
+
             Tightening( 7, -2, Tightening::LB ),
+
+            Tightening( 8, -0.045, Tightening::LB ),
+            Tightening( 9, -0.2, Tightening::LB ),
 
             Tightening( 10, -1.8, Tightening::LB ),
             Tightening( 10, 0, Tightening::UB ),
 
-            Tightening( 11, 1.4542, Tightening::LB ),
             Tightening( 11, 1.4542, Tightening::LB ),
         } );
 
@@ -4923,13 +4950,18 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
+            Tightening( 4, -0.5, Tightening::LB ),
+            Tightening( 5, -0.4, Tightening::LB ),
+
             Tightening( 6, -2, Tightening::LB ),
             Tightening( 6, 3.1, Tightening::UB ),
             Tightening( 7, -3.2, Tightening::LB ),
             Tightening( 7, 4, Tightening::UB ),
 
+            Tightening( 8, -0.2, Tightening::LB ),
             Tightening( 8, 3.1, Tightening::UB ),
             Tightening( 9, -0.32, Tightening::LB ),
+            Tightening( 9, 4, Tightening::UB ),
 
             Tightening( 10, -3.8726, Tightening::LB ),
             Tightening( 10, 0.03, Tightening::UB ),
@@ -5004,28 +5036,24 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
-            Tightening( 11, -4.5, Tightening::LB ),
-            Tightening( 11, 8.5, Tightening::UB ),
-            Tightening( 12, -2.225, Tightening::LB ),
-            Tightening( 13, 2.975, Tightening::UB ),
+            Tightening( 7, -0.2, Tightening::LB ),      Tightening( 8, -0.3, Tightening::LB ),
+            Tightening( 9, -0.3, Tightening::LB ),      Tightening( 10, -0.6, Tightening::LB ),
+
+            Tightening( 11, -4.5, Tightening::LB ),     Tightening( 11, 8.5, Tightening::UB ),
+            Tightening( 12, -2.225, Tightening::LB ),   Tightening( 13, 2.975, Tightening::UB ),
             Tightening( 13, -4.175, Tightening::LB ),
 
-            Tightening( 15, -0.2225, Tightening::LB ),
-            Tightening( 16, 2.975, Tightening::UB ),
+            Tightening( 14, -0.45, Tightening::LB ),    Tightening( 14, 8.5, Tightening::UB ),
+            Tightening( 15, -0.2225, Tightening::LB ),  Tightening( 16, 2.975, Tightening::UB ),
             Tightening( 16, -0.4175, Tightening::LB ),
 
-            Tightening( 17, -11.452, Tightening::LB ),
-            Tightening( 17, 10.18, Tightening::UB ),
-            Tightening( 18, 0.87, Tightening::LB ),
-            Tightening( 18, 16.0688, Tightening::UB ),
+            Tightening( 17, -11.452, Tightening::LB ),  Tightening( 17, 10.18, Tightening::UB ),
+            Tightening( 18, 0.87, Tightening::LB ),     Tightening( 18, 16.0688, Tightening::UB ),
 
-            Tightening( 19, -1.1452, Tightening::LB ),
-            Tightening( 19, 10.18, Tightening::UB ),
-            Tightening( 20, 0.87, Tightening::LB ),
-            Tightening( 20, 16.0688, Tightening::UB ),
+            Tightening( 19, -1.1452, Tightening::LB ),  Tightening( 19, 10.18, Tightening::UB ),
+            Tightening( 20, 0.87, Tightening::LB ),     Tightening( 20, 16.0688, Tightening::UB ),
 
-            Tightening( 21, -17.0684, Tightening::LB ),
-            Tightening( 21, 3.6767, Tightening::UB ),
+            Tightening( 21, -17.0684, Tightening::LB ), Tightening( 21, 3.6767, Tightening::UB ),
         } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
@@ -5124,28 +5152,24 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
-            Tightening( 11, -5.6, Tightening::LB ),
-            Tightening( 11, 16.4636, Tightening::UB ),
-            Tightening( 12, -6.0286, Tightening::LB ),
-            Tightening( 13, -5.9, Tightening::LB ),
+            Tightening( 7, -0.2, Tightening::LB ),      Tightening( 8, -0.5, Tightening::LB ),
+            Tightening( 9, -0.6, Tightening::LB ),      Tightening( 10, -1.5, Tightening::LB ),
+
+            Tightening( 11, -5.6, Tightening::LB ),     Tightening( 11, 16.4636, Tightening::UB ),
+            Tightening( 12, -6.0286, Tightening::LB ),  Tightening( 13, -5.9, Tightening::LB ),
             Tightening( 13, 8.0468, Tightening::UB ),
 
-            Tightening( 15, -0.6029, Tightening::LB ),
-            Tightening( 16, -0.59, Tightening::LB ),
+            Tightening( 14, -0.56, Tightening::LB ),    Tightening( 14, 16.4636, Tightening::UB ),
+            Tightening( 15, -0.6029, Tightening::LB ),  Tightening( 16, -0.59, Tightening::LB ),
             Tightening( 16, 8.0468, Tightening::UB ),
 
-            Tightening( 17, -24.8864, Tightening::LB ),
-            Tightening( 17, 14.3076, Tightening::UB ),
-            Tightening( 18, 0.75, Tightening::LB ),
-            Tightening( 18, 28.0272, Tightening::UB ),
+            Tightening( 17, -24.8864, Tightening::LB ), Tightening( 17, 14.3076, Tightening::UB ),
+            Tightening( 18, 0.75, Tightening::LB ),     Tightening( 18, 28.0272, Tightening::UB ),
 
-            Tightening( 19, -2.4886, Tightening::LB ),
-            Tightening( 19, 14.3076, Tightening::UB ),
-            Tightening( 20, 0.75, Tightening::LB ),
-            Tightening( 20, 28.0272, Tightening::UB ),
+            Tightening( 19, -2.4886, Tightening::LB ),  Tightening( 19, 14.3076, Tightening::UB ),
+            Tightening( 20, 0.75, Tightening::LB ),     Tightening( 20, 28.0272, Tightening::UB ),
 
-            Tightening( 21, -29.9648, Tightening::LB ),
-            Tightening( 21, 6.9619, Tightening::UB ),
+            Tightening( 21, -29.9648, Tightening::LB ), Tightening( 21, 6.9619, Tightening::UB ),
         } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
@@ -5488,6 +5512,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds2( {
+            Tightening( 10, 8.7411, Tightening::UB ),
             Tightening( 11, -2.4149, Tightening::LB ),
         } );
 
@@ -5556,10 +5581,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
+            Tightening( 7, 0, Tightening::LB ),
+
             Tightening( 8, 7, Tightening::UB ),
             Tightening( 9, 5.8235, Tightening::UB ),
 
             Tightening( 10, -14, Tightening::LB ),
+            Tightening( 10, 40.7647, Tightening::UB ),
 
             Tightening( 11, -24.8805, Tightening::LB ),
             Tightening( 11, 14, Tightening::UB ),
@@ -5626,7 +5654,11 @@ public:
         List<Tightening> expectedBounds2( {
             Tightening( 12, -1.75, Tightening::LB ),
 
-            Tightening( 15, 0, Tightening::LB ),
+            Tightening( 13, 0, Tightening::LB ),
+            Tightening( 14, 0, Tightening::LB ),
+
+            Tightening( 15, -0.0001, Tightening::LB ),
+            Tightening( 15, 78.8787, Tightening::UB ),
         } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
@@ -5705,10 +5737,16 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.lpRelaxationPropagation() );
 
         List<Tightening> expectedBounds4( {
+            Tightening( 7, 0, Tightening::LB ),
+
             Tightening( 11, -5, Tightening::LB ),
             Tightening( 12, -4.6429, Tightening::LB ),
 
+            Tightening( 13, 0, Tightening::LB ),
+            Tightening( 14, 0, Tightening::LB ),
+
             Tightening( 15, 0, Tightening::LB ),
+            Tightening( 15, 211.0082, Tightening::UB ),
         } );
 
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( newBounds ) );
