@@ -499,7 +499,7 @@ int CdclCore::cb_propagate()
         {
             if ( _externalClauseToAdd.empty() )
             {
-                if (GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES)
+                if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
                     _engine->explainSimplexFailure();
                 else
                     addDecisionBasedConflictClause();
