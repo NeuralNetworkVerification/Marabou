@@ -500,7 +500,13 @@ bool Engine::solve( double timeoutInSeconds )
                 }
             }
             else
+            {
+#ifdef BUILD_CADICAL
+                if ( !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+                    _cdclCore.addDecisionBasedConflictClause();
+#endif
                 return false;
+            }
         }
         catch ( const VariableOutOfBoundDuringOptimizationException & )
         {
@@ -3133,6 +3139,10 @@ bool Engine::restoreSearchTreeState( SearchTreeState &searchTreeState )
 #endif
         }
 
+#ifdef BUILD_CADICAL
+        if ( !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+            _cdclCore.addDecisionBasedConflictClause();
+#endif
 
         if ( !_searchTreeHandler.popSplit() )
         {
@@ -3569,14 +3579,6 @@ void Engine::explainSimplexFailure()
     ASSERT( !_solveWithCDCL || !_cdclCore.hasConflictClause() );
 #endif
     DEBUG( checkGroundBounds() );
-
-#ifdef BUILD_CADICAL
-    if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
-    {
-        _cdclCore.addDecisionBasedConflictClause();
-        return;
-    }
-#endif
 
     unsigned infeasibleVar = _boundManager.getInconsistentVariable();
 
@@ -4052,8 +4054,15 @@ bool Engine::propagateBoundManagerTightenings()
     try
     {
         _boundManager.propagateTightenings();
-        if ( !consistentBounds() && _produceUNSATProofs )
-            explainSimplexFailure();
+        if ( !consistentBounds() )
+        {
+            if ( _produceUNSATProofs )
+                explainSimplexFailure();
+#ifdef BUILD_CADICAL
+            else if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+                _cdclCore.addDecisionBasedConflictClause();
+#endif
+        }
 
         return consistentBounds();
     }
@@ -4061,6 +4070,10 @@ bool Engine::propagateBoundManagerTightenings()
     {
         if ( _produceUNSATProofs )
             explainSimplexFailure();
+#ifdef BUILD_CADICAL
+        else if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+            _cdclCore.addDecisionBasedConflictClause();
+#endif
         return false;
     }
 }

@@ -498,7 +498,13 @@ int CdclCore::cb_propagate()
         if ( isLiteralAssigned( -lit ) )
         {
             if ( _externalClauseToAdd.empty() )
-                _engine->explainSimplexFailure();
+            {
+                if (GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES)
+                    _engine->explainSimplexFailure();
+                else
+                    addDecisionBasedConflictClause();
+            }
+
             ASSERT( !_externalClauseToAdd.empty() )
             _literalsToPropagate.clear();
             _literalsToPropagate.append( Pair<int, int>( 0, _context.getLevel() ) );
