@@ -242,7 +242,7 @@ bool CdclCore::cb_check_found_model( const std::vector<int> &model )
 
         // In cases where Marabou fails to provide a conflict clause, add the trivial possibility
         if ( !result && _externalClauseToAdd.empty() )
-            addTrivialConflictClause();
+            addDecisionBasedConflictClause();
 
         CDCL_LOG( Stringf( "\tResult is %u", result ).ascii() )
         result = result && _externalClauseToAdd.empty();
@@ -546,7 +546,19 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
 
         if ( !_fixedCadicalVars.exists( propagated_lit ) )
         {
-            Vector<int> toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
+            Vector<int> toAdd;
+            if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+                toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
+            else
+            {
+                for ( const auto &pair : _assignedLiterals )
+                {
+                    int lit = pair.first;
+                    if ( _satSolverWrapper->isDecision( lit ) && !_fixedCadicalVars.exists( lit ) &&
+                         lit != propagated_lit )
+                        toAdd.append( lit );
+                }
+            }
 
             for ( int lit : toAdd )
             {
@@ -792,7 +804,7 @@ bool CdclCore::isLiteralToBePropagated( int literal ) const
     return false;
 }
 
-Set<int> CdclCore::addTrivialConflictClause()
+Set<int> CdclCore::addDecisionBasedConflictClause()
 {
     struct timespec start = TimeUtils::sampleMicro();
 

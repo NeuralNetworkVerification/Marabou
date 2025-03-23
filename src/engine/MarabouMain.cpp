@@ -48,9 +48,8 @@ static std::string getCompiledDateTime()
 void printVersion()
 {
     std::cout << "Marabou version " << MARABOU_VERSION << " [" << GIT_BRANCH << " "
-              << GIT_COMMIT_HASH << "]"
-              << "\ncompiled with " << getCompiler() << "\non " << getCompiledDateTime()
-              << std::endl;
+              << GIT_COMMIT_HASH << "]" << "\ncompiled with " << getCompiler() << "\non "
+              << getCompiledDateTime() << std::endl;
 }
 
 void printHelpMessage()
@@ -81,13 +80,28 @@ int marabouMain( int argc, char **argv )
 #ifdef BUILD_CADICAL
         if ( options->getBool( Options::SOLVE_WITH_CDCL ) )
         {
-            if ( !options->getBool( Options::PRODUCE_PROOFS ) )
+            if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
             {
-                options->setBool( Options::PRODUCE_PROOFS, true );
-                printf( "Turning --prove-unsat on to allow proof-based conflict clauses.\n" );
+                if ( !options->getBool( Options::PRODUCE_PROOFS ) )
+                {
+                    options->setBool( Options::PRODUCE_PROOFS, true );
+                    printf( "Turning --prove-unsat on to allow proof-based conflict clauses.\n" );
+                }
+                printf( "Please note that producing complete UNSAT proofs while --cdcl is on is "
+                        "not yet supported.\n" );
             }
-            printf( "Please note that producing complete UNSAT proofs while --cdcl is on is "
-                    "not yet supported.\n" );
+
+            if ( options->getBool( Options::DNC_MODE ) )
+            {
+                options->setBool( Options::DNC_MODE, false );
+                printf( "CDCL is not yet supported with snc mode, turning --snc off.\n" );
+            }
+
+            if ( options->getBool( Options::SOLVE_WITH_MILP ) )
+            {
+                options->setBool( Options::SOLVE_WITH_MILP, false );
+                printf( "CDCL is not yet supported with MILP solvers, turning --milp off.\n" );
+            }
         }
 #endif
 

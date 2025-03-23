@@ -142,10 +142,10 @@ public:
     void addLiteralToPropagate( int literal );
 
     /*
-      Adds the trivial conflict clause (negation of all decisions) to Marabou,
-      later to be propagated
+      Adds the decision-based conflict clause (negation of all decisions), except the given literal,
+      to Marabou, later to be propagated
     */
-    Set<int> addTrivialConflictClause();
+    Set<int> addDecisionBasedConflictClause();
 
     /*
      Remove a literal from the propagation list

@@ -3570,6 +3570,14 @@ void Engine::explainSimplexFailure()
 #endif
     DEBUG( checkGroundBounds() );
 
+#ifdef BUILD_CADICAL
+    if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+    {
+        _cdclCore.addDecisionBasedConflictClause();
+        return;
+    }
+#endif
+
     unsigned infeasibleVar = _boundManager.getInconsistentVariable();
 
     if ( infeasibleVar == IBoundManager::NO_VARIABLE_FOUND ||
@@ -3590,7 +3598,7 @@ void Engine::explainSimplexFailure()
         markLeafToDelegate();
 #ifdef BUILD_CADICAL
         if ( _solveWithCDCL )
-            _cdclCore.addTrivialConflictClause();
+            _cdclCore.addDecisionBasedConflictClause();
 #endif
         return;
     }
@@ -3619,7 +3627,7 @@ void Engine::explainSimplexFailure()
          _boundManager.getLowerBound( infeasibleVar ) ==
              getGroundBound( infeasibleVar, Tightening::LB ) )
     {
-        _cdclCore.addTrivialConflictClause();
+        _cdclCore.addDecisionBasedConflictClause();
         return;
     }
 
