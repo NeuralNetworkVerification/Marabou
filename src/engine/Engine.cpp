@@ -3140,7 +3140,7 @@ bool Engine::restoreSearchTreeState( SearchTreeState &searchTreeState )
         }
 
 #ifdef BUILD_CADICAL
-        if ( !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+        if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
             _cdclCore.addDecisionBasedConflictClause();
 #endif
 
