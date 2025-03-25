@@ -1266,7 +1266,7 @@ class ONNXParser:
 
         assert inputName1 in self.varMap and (inputName2 in self.constantMap or inputName2 in self.varMap)
 
-        # the sum of the two variables
+        # the difference between the two variables
         if inputName1 in self.varMap and inputName2 in self.varMap:
             outputVariables = self.makeNewVariables(nodeName)
             input1 = self.varMap[inputName1].reshape(-1)
