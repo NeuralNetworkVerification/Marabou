@@ -43,7 +43,7 @@ def test_slice_var():
     filename =  "slice_test.onnx"
     evaluateFile(filename)
 
-def test_slice_var():
+def test_slice_constant():
     filename =  "constant_slice_test.onnx"
     evaluateFile(filename)
 

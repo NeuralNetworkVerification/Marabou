@@ -1269,8 +1269,8 @@ class ONNXParser:
         # the sum of the two variables
         if inputName1 in self.varMap and inputName2 in self.varMap:
             outputVariables = self.makeNewVariables(nodeName)
-            input1 = input1.reshape(-1)
-            input2 = input2.reshape(-1)
+            input1 = self.varMap[inputName1].reshape(-1)
+            input2 = self.varMap[inputName2].reshape(-1)
             outputVariables = outputVariables.reshape(-1)
             for i in range(len(input1)):
                 e = MarabouUtils.Equation()
