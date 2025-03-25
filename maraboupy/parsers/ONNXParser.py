@@ -23,7 +23,7 @@ from maraboupy.parsers.InputQueryBuilder import InputQueryBuilder
 from onnx import TensorProto
 import itertools
 from copy import copy
-from onnx.reference.ops._op_list import Split_18, Unsqueeze_1
+from onnx.reference.ops._op_list import Split_18, Unsqueeze_1, Slice_10
 
 class ONNXParser:
     """
@@ -177,6 +177,8 @@ class ONNXParser:
             self.unsqueeze(node)
         elif node.op_type == 'Squeeze':
             self.squeeze(node)
+        elif node.op_type == "Slice":
+            self.slice(node)
         elif node.op_type == "BatchNormalization":
             self.batchNorm(node, makeEquations)
         elif node.op_type == 'Concat':
@@ -439,6 +441,23 @@ class ONNXParser:
                          perm)
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
+
+    def slice(self, node):
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        starts = self.constantMap[node.input[1]]
+        ends = self.constantMap[node.input[2]]
+        axes = self.constantMap[node.input[3]]
+        steps = self.constantMap[node.input[4]]
+
+        if inputName in self.varMap:
+            output_data = Slice_10.eval(self.varMap[inputName], starts=starts, ends=ends, axes=axes, steps=steps)
+            self.shapeMap[nodeName] = output_data.shape
+            self.varMap[nodeName] = output_data
+        else:
+            output_data = Slice_10.eval(self.constantMap[inputName], starts=starts, ends=ends, axes=axes, steps=steps)
+            self.shapeMap[nodeName] = output_data.shape
+            self.constantMap[nodeName] = output_data
 
     def unsqueeze(self, node):
         """Function representing unsqueeze
@@ -1245,7 +1264,22 @@ class ONNXParser:
         if not makeEquations:
             return
 
-        assert inputName1 in self.varMap and inputName2 in self.constantMap
+        assert inputName1 in self.varMap and (inputName2 in self.constantMap or inputName2 in self.varMap)
+
+        # the sum of the two variables
+        if inputName1 in self.varMap and inputName2 in self.varMap:
+            outputVariables = self.makeNewVariables(nodeName)
+            input1 = input1.reshape(-1)
+            input2 = input2.reshape(-1)
+            outputVariables = outputVariables.reshape(-1)
+            for i in range(len(input1)):
+                e = MarabouUtils.Equation()
+                e.addAddend(1, input1[i])
+                e.addAddend(-1, input2[i])
+                e.addAddend(-1, outputVariables[i])
+                e.setScalar(0.0)
+                self.query.addEquation(e)
+            return
 
         # Get variables
         inputVars = self.varMap[inputName1].reshape(-1)
