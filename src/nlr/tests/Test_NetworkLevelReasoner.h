@@ -1959,9 +1959,6 @@ public:
         nlr.addLayer( 4, NLR::Layer::RELU, 2 );
         nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 );
 
-        nlr.getLayer( 2 )->setAlpha( 0.1 );
-        nlr.getLayer( 4 )->setAlpha( 0.1 );
-
         // Mark layer dependencies
         for ( unsigned i = 1; i <= 5; ++i )
             nlr.addLayerDependency( i - 1, i );
