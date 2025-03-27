@@ -21,6 +21,8 @@
 #include "TimeUtils.h"
 #include "TimeoutException.h"
 
+#include <utility>
+
 CdclCore::CdclCore( IEngine *engine )
     : _engine( engine )
     , _context( _engine->getContext() )
@@ -44,6 +46,7 @@ CdclCore::CdclCore( IEngine *engine )
     , _shouldRestart( false )
     , _tableauState( nullptr )
     , _initialClauses()
+    , _scoreTracker( nullptr )
 {
     _cadicalVarToPlc.insert( 0, NULL );
     _tableauState = std::make_shared<TableauState>();
@@ -268,9 +271,10 @@ int CdclCore::cb_decide()
         return 0;
     }
 
-    unsigned decisionVariable = GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH && _context.getLevel() > 3
-                                  ? decideSplitVarBasedOnPseudoImpactAndVsids()
-                                  : decideSplitVarBasedOnPolarityAndVsids();
+    unsigned decisionVariable =
+        GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH && _context.getLevel() > 3
+            ? decideSplitVarBasedOnPseudoImpactAndVsids()
+            : decideSplitVarBasedOnPolarityAndVsids();
 
     int decisionLiteral = 0;
 
@@ -1032,9 +1036,36 @@ unsigned CdclCore::decideSplitVarBasedOnPolarityAndVsids() const
 
 unsigned CdclCore::decideSplitVarBasedOnPseudoImpactAndVsids() const
 {
-    // TODO include VSIDS
-    PiecewiseLinearConstraint *constraint =
-        _engine->pickSplitPLConstraint( DivideStrategy::PseudoImpact );
-    return constraint->getVariableForDecision();
+    ASSERT( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+    double maxScore = 0;
+    unsigned variableWithMaxScore = 0;
+
+    for ( const auto &pair : _cadicalVarToPlc )
+    {
+        unsigned var = pair.first;
+        if ( var == 0 )
+            continue;
+
+        PiecewiseLinearConstraint *plc = pair.second;
+        if ( plc->isActive() && !plc->phaseFixed() )
+        {
+            ASSERT( !isLiteralAssigned( (int)var ) && !isLiteralAssigned( -(int)var ) )
+            double pseudoImpactScore = _scoreTracker->getScore( plc );
+            double vsidsScore = getVariableVSIDSScore( var );
+            double score = ( vsidsScore + 1 ) * pseudoImpactScore;
+            if ( score > maxScore )
+            {
+                maxScore = score;
+                variableWithMaxScore = var;
+            }
+        }
+    }
+    return variableWithMaxScore;
+}
+
+void CdclCore::initializeScoreTracker( std::shared_ptr<PLConstraintScoreTracker> scoreTracker )
+{
+    ASSERT( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+    _scoreTracker = std::move( scoreTracker );
 }
 #endif

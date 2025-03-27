@@ -22,6 +22,7 @@
 #include "IEngine.h"
 #include "Pair.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PLConstraintScoreTracker.h"
 #include "Statistics.h"
 #include "context/cdhashmap.h"
 #include "context/cdhashset.h"
@@ -200,6 +201,11 @@ public:
      */
     static bool isSupported( const PiecewiseLinearConstraint *plc );
 
+    /*
+      Initialize score stracker for pseudo-impact based decisions.
+     */
+    void initializeScoreTracker( std::shared_ptr<PLConstraintScoreTracker> scoreTracker );
+
 private:
     /*
       The engine.
@@ -260,6 +266,8 @@ private:
     HashMap<unsigned, bool> _largestAssignmentSoFar;
 
     Vector<Set<int>> _initialClauses;
+
+    std::shared_ptr<PLConstraintScoreTracker> _scoreTracker;
 
     /*
      Decision heuristics

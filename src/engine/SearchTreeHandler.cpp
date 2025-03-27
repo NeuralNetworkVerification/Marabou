@@ -104,12 +104,15 @@ unsigned SearchTreeHandler::getViolationCounts( PiecewiseLinearConstraint *const
 }
 
 void SearchTreeHandler::initializeScoreTrackerIfNeeded(
-    const List<PiecewiseLinearConstraint *> &plConstraints )
+    const List<PiecewiseLinearConstraint *> &plConstraints,
+    CdclCore *cdclCore )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {
         _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
         _scoreTracker->initialize( plConstraints );
+        if ( cdclCore )
+            cdclCore->initializeScoreTracker( _scoreTracker );
 
         SEARCH_TREE_LOG( "\tTracking Pseudo Impact..." );
     }

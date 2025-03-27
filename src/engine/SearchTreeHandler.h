@@ -60,7 +60,8 @@ public:
     /*
       Initialize the score tracker with the given list of pl constraints.
     */
-    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints );
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints,
+                                         CdclCore *cdclCore = nullptr );
 
     /*
       Inform the Search Tree handler that a SoI phase pattern proposal is rejected.
@@ -257,7 +258,7 @@ private:
     /*
       Heap to store the scores of each PLConstraint.
     */
-    std::unique_ptr<PLConstraintScoreTracker> _scoreTracker;
+    std::shared_ptr<PLConstraintScoreTracker> _scoreTracker;
 
     /*
       Number of times the phase pattern proposal has been rejected at the

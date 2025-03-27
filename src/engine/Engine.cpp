@@ -2734,7 +2734,11 @@ void Engine::clearViolatedPLConstraints()
 void Engine::resetSearchTreeHandler()
 {
     _searchTreeHandler.reset();
+#ifdef BUILD_CADICAL
+    _searchTreeHandler.initializeScoreTrackerIfNeeded( _plConstraints, &_cdclCore );
+#else
     _searchTreeHandler.initializeScoreTrackerIfNeeded( _plConstraints );
+#endif
 }
 
 void Engine::resetBoundTighteners()
@@ -2866,7 +2870,11 @@ void Engine::decideBranchingHeuristics()
     }
     ASSERT( divideStrategy != DivideStrategy::Auto );
     _searchTreeHandler.setBranchingHeuristics( divideStrategy );
+#ifdef BUILD_CADICAL
+    _searchTreeHandler.initializeScoreTrackerIfNeeded( _plConstraints, &_cdclCore );
+#else
     _searchTreeHandler.initializeScoreTrackerIfNeeded( _plConstraints );
+#endif
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
