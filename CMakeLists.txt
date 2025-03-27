@@ -22,7 +22,7 @@ option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
-option(BUILD_CADICAL "Build the CaDiCaL SAT solver for CDCL solving" OFF)
+option(BUILD_CADICAL "Build the CaDiCaL SAT solver for CDCL solving" ON)
 
 ###################
 ## Git variables ##

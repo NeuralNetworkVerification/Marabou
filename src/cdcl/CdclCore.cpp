@@ -268,67 +268,20 @@ int CdclCore::cb_decide()
         return 0;
     }
 
-    unsigned variableToDecide = 0;
+    unsigned decisionVariable = GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH
+                                  ? decideSplitVarBasedOnPseudoImpactAndVsids()
+                                  : decideSplitVarBasedOnPolarityAndVsids();
 
-    NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
-    ASSERT( networkLevelReasoner )
+    int decisionLiteral = 0;
 
-    List<PiecewiseLinearConstraint *> constraints =
-        networkLevelReasoner->getConstraintsInTopologicalOrder();
+    if ( decisionVariable )
+        decisionLiteral = _cadicalVarToPlc[decisionVariable]->getLiteralForDecision();
 
-    Map<double, PiecewiseLinearConstraint *> polarityScoreToConstraint;
-    for ( auto &plConstraint : constraints )
+    if ( decisionLiteral )
     {
-        if ( _largestAssignmentSoFar.exists( plConstraint->getVariableForDecision() ) )
-            if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
-                 !plConstraint->phaseFixed() )
-            {
-                plConstraint->updateScoreBasedOnPolarity();
-                polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
-                if ( polarityScoreToConstraint.size() >=
-                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
-                    break;
-            }
-    }
-
-    for ( auto &plConstraint : constraints )
-    {
-        if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
-             !plConstraint->phaseFixed() )
-        {
-            plConstraint->updateScoreBasedOnPolarity();
-            polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
-            if ( polarityScoreToConstraint.size() >=
-                 GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
-                break;
-        }
-    }
-
-    if ( !polarityScoreToConstraint.empty() )
-    {
-        double maxScore = 0;
-        for ( double polarityScore : polarityScoreToConstraint.keys() )
-        {
-            unsigned var = polarityScoreToConstraint[polarityScore]->getVariableForDecision();
-            double score = ( getVariableVSIDSScore( var ) + 1 ) * polarityScore;
-            if ( score > maxScore )
-            {
-                variableToDecide = var;
-                maxScore = score;
-            }
-        }
-    }
-
-    int literalToDecide = 0;
-
-    if ( variableToDecide )
-        literalToDecide = _cadicalVarToPlc[variableToDecide]->getLiteralForDecision();
-
-    if ( literalToDecide )
-    {
-        ASSERT( !isLiteralAssigned( -literalToDecide ) && !isLiteralAssigned( literalToDecide ) )
-        ASSERT( FloatUtils::abs( literalToDecide ) <= _satSolverWrapper->vars() )
-        CDCL_LOG( Stringf( "Decided literal %d", literalToDecide ).ascii() )
+        ASSERT( !isLiteralAssigned( -decisionLiteral ) && !isLiteralAssigned( decisionLiteral ) )
+        ASSERT( FloatUtils::abs( decisionLiteral ) <= _satSolverWrapper->vars() )
+        CDCL_LOG( Stringf( "Decided literal %d", decisionLiteral ).ascii() )
         if ( _statistics )
             _statistics->incUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS );
     }
@@ -348,7 +301,7 @@ int CdclCore::cb_decide()
                                        TimeUtils::timePassed( start, end ) );
     }
 
-    return literalToDecide;
+    return decisionLiteral;
 }
 
 int CdclCore::cb_propagate()
@@ -1021,4 +974,64 @@ bool CdclCore::isSupported( const PiecewiseLinearConstraint *plc )
     return true;
 }
 
+unsigned CdclCore::decideSplitVarBasedOnPolarityAndVsids() const
+{
+    unsigned decisionVariable = 0;
+
+    NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
+    ASSERT( networkLevelReasoner )
+
+    List<PiecewiseLinearConstraint *> constraints =
+        networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+    Map<double, PiecewiseLinearConstraint *> polarityScoreToConstraint;
+    for ( auto &plConstraint : constraints )
+    {
+        if ( _largestAssignmentSoFar.exists( plConstraint->getVariableForDecision() ) )
+            if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
+                 !plConstraint->phaseFixed() )
+            {
+                plConstraint->updateScoreBasedOnPolarity();
+                polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
+                if ( polarityScoreToConstraint.size() >=
+                     GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                    break;
+            }
+    }
+
+    for ( auto &plConstraint : constraints )
+    {
+        if ( plConstraint->supportPolarity() && plConstraint->isActive() &&
+             !plConstraint->phaseFixed() )
+        {
+            plConstraint->updateScoreBasedOnPolarity();
+            polarityScoreToConstraint[plConstraint->getScore()] = plConstraint;
+            if ( polarityScoreToConstraint.size() >=
+                 GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                break;
+        }
+    }
+
+    if ( !polarityScoreToConstraint.empty() )
+    {
+        double maxScore = 0;
+        for ( double polarityScore : polarityScoreToConstraint.keys() )
+        {
+            unsigned var = polarityScoreToConstraint[polarityScore]->getVariableForDecision();
+            double score = ( getVariableVSIDSScore( var ) + 1 ) * polarityScore;
+            if ( score > maxScore )
+            {
+                decisionVariable = var;
+                maxScore = score;
+            }
+        }
+    }
+
+    return decisionVariable;
+}
+
+unsigned decideSplitVarBasedOnPseudoImpactAndVsids()
+{
+    return 0;
+}
 #endif

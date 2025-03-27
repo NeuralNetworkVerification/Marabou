@@ -262,6 +262,13 @@ private:
     Vector<Set<int>> _initialClauses;
 
     /*
+     Decision heuristics
+     */
+    unsigned decideSplitVarBasedOnPolarityAndVsids() const;
+    unsigned decideSplitVarBasedOnPseudoImpactAndVsids() const;
+
+
+    /*
       Access info in the internal data structures
     */
     bool isLiteralAssigned( int literal ) const;
