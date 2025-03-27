@@ -167,6 +167,8 @@ class ONNXParser:
             self.dropout(node)
         elif node.op_type == 'Cast':
             self.cast(node)
+        elif node.op_type == 'ConstantOfShape':
+            self.constantOfShape(node)
         elif node.op_type == 'Reshape':
             self.reshape(node)
         elif node.op_type == 'Flatten':
@@ -283,6 +285,24 @@ class ONNXParser:
                 self.shapeMap[nodeName] = self.constantMap[nodeName].shape
                 return
         raise RuntimeError("Could not find value of tensor constant")
+
+    def constantOfShape(self, node):
+        """Function representing a constant tensor of shape
+
+        Args:
+            node (node): ONNX node representing constantOfShape operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        for attr in node.attribute:
+            if attr.name == "value":
+                value = numpy_helper.to_array(get_attribute_value(attr))
+        assert inputName in self.constantMap
+        shape = self.constantMap[inputName]
+        self.constantMap[nodeName] = np.broadcast_to(value, shape)
+        self.shapeMap[nodeName] = shape
 
     def identity(self, node):
         """Function representing identity
@@ -1074,17 +1094,21 @@ class ONNXParser:
             return
 
         multiple = self.constantMap[inputName2]
-        input1 = self.varMap[inputName1]
-        outputVariables = self.makeNewVariables(nodeName)
-        input1 = input1.reshape(-1)
-        outputVariables = outputVariables.reshape(-1)
+        if inputName1 in self.constantMap:
+            input1 = self.constantMap[inputName1]
+            self.constantMap[nodeName] = input1 * multiple
+        else:
+            input1 = self.varMap[inputName1]
+            outputVariables = self.makeNewVariables(nodeName)
+            input1 = input1.reshape(-1)
+            outputVariables = outputVariables.reshape(-1)
 
-        for i in range(len(input1)):
-            e = MarabouUtils.Equation()
-            e.addAddend(multiple, input1[i])
-            e.addAddend(-1, outputVariables[i])
-            e.setScalar(0.0)
-            self.query.addEquation(e)
+            for i in range(len(input1)):
+                e = MarabouUtils.Equation()
+                e.addAddend(multiple, input1[i])
+                e.addAddend(-1, outputVariables[i])
+                e.setScalar(0.0)
+                self.query.addEquation(e)
         return
 
     def addEquations(self, node, makeEquations):
