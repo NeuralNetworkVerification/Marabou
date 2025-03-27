@@ -268,7 +268,7 @@ int CdclCore::cb_decide()
         return 0;
     }
 
-    unsigned decisionVariable = GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH
+    unsigned decisionVariable = GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH && _context.getLevel() > 3
                                   ? decideSplitVarBasedOnPseudoImpactAndVsids()
                                   : decideSplitVarBasedOnPolarityAndVsids();
 
@@ -1030,8 +1030,11 @@ unsigned CdclCore::decideSplitVarBasedOnPolarityAndVsids() const
     return decisionVariable;
 }
 
-unsigned decideSplitVarBasedOnPseudoImpactAndVsids()
+unsigned CdclCore::decideSplitVarBasedOnPseudoImpactAndVsids() const
 {
-    return 0;
+    // TODO include VSIDS
+    PiecewiseLinearConstraint *constraint =
+        _engine->pickSplitPLConstraint( DivideStrategy::PseudoImpact );
+    return constraint->getVariableForDecision();
 }
 #endif
