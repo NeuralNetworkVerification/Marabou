@@ -6,7 +6,7 @@
   - Fixed bug in the parsing of `transpose` nodes in command line C++ parser.
   - Implemented forward-backward abstract interpretation, symbolic bound tightening, interval arithmetic and simulations for all activation functions.
   - Added the BaBSR heuristic as a new branching strategy for ReLU Splitting
-  - Support Sub of two variables and Slice in the python onnx parser
+  - Support Sub of two variables, "Mul" of two constants, Slice, and ConstantOfShape in the python onnx parser
 
 ## Version 2.0.0
 
