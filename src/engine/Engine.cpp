@@ -2695,8 +2695,11 @@ void Engine::postContextPopHook()
     struct timespec start = TimeUtils::sampleMicro();
 
     _boundManager.restoreLocalBounds();
-    _tableau->postContextPopHook();
-    _costFunctionManager->computeCoreCostFunction();
+    if ( getLpSolverType() == LPSolverType::NATIVE )
+    {
+        _tableau->postContextPopHook();
+        _costFunctionManager->computeCoreCostFunction();
+    }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TIME_CONTEXT_POP_HOOK,

@@ -319,7 +319,8 @@ int CdclCore::cb_propagate()
     struct timespec end = {};
     unsigned long long total = 0;
 
-    if ( _engine->getLpSolverType() == LPSolverType::GUROBI )
+    if ( _engine->getLpSolverType() == LPSolverType::GUROBI &&
+         GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
     {
         if ( _engine->solve( 0 ) )
         {
@@ -355,7 +356,7 @@ int CdclCore::cb_propagate()
         }
     }
 
-    ASSERT( _engine->getLpSolverType() == LPSolverType::NATIVE )
+    //    ASSERT( _engine->getLpSolverType() == LPSolverType::NATIVE )
 
     if ( _literalsToPropagate.empty() )
     {
@@ -405,7 +406,8 @@ int CdclCore::cb_propagate()
         // Try learning a conflict clause if possible
         if ( _externalClauseToAdd.empty() )
         {
-            _engine->propagateBoundManagerTightenings();
+            if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
+                _engine->propagateBoundManagerTightenings();
             if ( _externalClauseToAdd.empty() )
             {
                 if ( _assignedLiterals.size() + _literalsToPropagate.size() >
