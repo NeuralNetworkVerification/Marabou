@@ -14,6 +14,9 @@
 
 #include "PlcLemma.h"
 
+#include "Debug.h"
+
+
 PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     unsigned affectedVar,
                     double bound,

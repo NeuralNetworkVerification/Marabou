@@ -42,7 +42,7 @@
 #include "base/output.h"
 #include "context/cdinsert_hashmap_forward.h"
 #include "context/context.h"
-#include "expr/node.h"
+//#include "expr/node.h"
 
 #pragma once
 
@@ -390,22 +390,22 @@ public:
   }
 };/* class CDInsertHashMap<> */
 
-template <class Data, class HashFcn>
-class CDInsertHashMap<TNode, Data, HashFcn> : public ContextObj {
-  /* CDInsertHashMap is challenging to get working with TNode.
-   * Consider using CDHashMap<TNode,...> instead.
-   *
-   * Explanation:
-   * CDInsertHashMap uses keys for deallocation.
-   * If the key is a TNode and the backing (the hard node reference)
-   * for the key in another data structure removes the key at the same context
-   * the ref count could drop to 0.  The key would then not be eligible to be
-   * hashed. Getting the order right with a guarantee is too hard.
-   */
-
-  static_assert(sizeof(Data) == 0,
-                "Cannot create a CDInsertHashMap with TNode keys");
-};
+//template <class Data, class HashFcn>
+//class CDInsertHashMap<TNode, Data, HashFcn> : public ContextObj {
+//  /* CDInsertHashMap is challenging to get working with TNode.
+//   * Consider using CDHashMap<TNode,...> instead.
+//   *
+//   * Explanation:
+//   * CDInsertHashMap uses keys for deallocation.
+//   * If the key is a TNode and the backing (the hard node reference)
+//   * for the key in another data structure removes the key at the same context
+//   * the ref count could drop to 0.  The key would then not be eligible to be
+//   * hashed. Getting the order right with a guarantee is too hard.
+//   */
+//
+//  static_assert(sizeof(Data) == 0,
+//                "Cannot create a CDInsertHashMap with TNode keys");
+//};
 
 }/* CVC4::context namespace */
 }/* CVC4 namespace */

@@ -81,7 +81,7 @@ void IncrementalLinearization::solve()
             _engine->solve( timeoutInSeconds );
         }
 
-        if ( _engine->getExitCode() == IEngine::UNKNOWN )
+        if ( _engine->getExitCode() == ExitCode::UNKNOWN )
         {
             unsigned long long timePassed =
                 TimeUtils::timePassed( start, TimeUtils::sampleMicro() );

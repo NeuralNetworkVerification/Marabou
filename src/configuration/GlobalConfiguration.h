@@ -139,7 +139,7 @@ public:
     static const unsigned INTERVAL_SPLITTING_THRESHOLD;
 
     // How often should we perform full bound tightening, on the entire contraints matrix A.
-    static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
+    static const unsigned BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 
     // When the row bound tightener is asked to run until saturation, it can enter an infinite loop
     // due to tiny increments in bounds. This number limits the number of iterations it can perform.
@@ -190,6 +190,10 @@ public:
 
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
+
+    // Percentage of bounds (out of 2*num of variables) learned during basis bound tightening, to be
+    // used as a threshold to require a split
+    static const double EXPLICIT_BASIS_BOUND_TIGHTENING_PERCENTAGE_THRESHOLD;
 
     /*
       Symbolic bound tightening options
@@ -263,6 +267,14 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
+    /* While solving with CDCL, denotes if to use proof-based clauses or not
+     */
+    static const bool CDCL_USE_PROOF_BASED_CLAUSES;
+
+    /* While solving with CDCL, denotes if to try and reduce the conflict clause size with proof
+     */
+    static const bool CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns
@@ -277,7 +289,7 @@ public:
     static const bool DNC_MANAGER_LOGGING;
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
-    static const bool SMT_CORE_LOGGING;
+    static const bool SEARCH_TREE_HANDLER_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
     static const bool PREPROCESSOR_LOGGING;
@@ -292,6 +304,7 @@ public:
     static const bool SOI_LOGGING;
     static const bool SCORE_TRACKER_LOGGING;
     static const bool CEGAR_LOGGING;
+    static const bool CDCL_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

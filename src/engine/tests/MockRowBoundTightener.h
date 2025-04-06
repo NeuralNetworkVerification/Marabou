@@ -70,9 +70,11 @@ public:
     void notifyUpperBound( unsigned /* variable */, double /* bound */ )
     {
     }
-    void examineInvertedBasisMatrix( bool /* untilSaturation */ )
+    unsigned examineInvertedBasisMatrix( bool /* untilSaturation */ )
     {
+        return 0;
     }
+
     void examineConstraintMatrix( bool /* untilSaturation */ )
     {
     }
@@ -85,8 +87,9 @@ public:
     void setStatistics( Statistics * /* statistics */ )
     {
     }
-    void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ )
+    unsigned examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ )
     {
+        return 0;
     }
     void setBoundsPointers( const double * /* lower */, const double * /* upper */ )
     {

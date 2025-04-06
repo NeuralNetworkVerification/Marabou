@@ -93,6 +93,12 @@ macro(marabou_add_coav_proof_test level net_file result)
             "${CMAKE_SOURCE_DIR}/resources/properties/builtin_property.txt" "${result}" "--prove-unsat" "coav")
 endmacro()
 
+macro(marabou_add_coav_cdcl_test level net_file result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/coav/${net_file}"
+            "${CMAKE_SOURCE_DIR}/resources/properties/builtin_property.txt" "${result}" "--cdcl" "coav")
+endmacro()
+
 add_subdirectory(regress0)
 add_subdirectory(regress1)
 add_subdirectory(regress2)

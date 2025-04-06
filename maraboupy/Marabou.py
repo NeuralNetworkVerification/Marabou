@@ -108,7 +108,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
                   tighteningStrategy="deeppoly", milpTightening="none", milpSolverTimeout=0,
                   numSimulations=10, numBlasThreads=1, performLpTighteningAfterSplit=False,
-                  lpSolver="", produceProofs=False):
+                  lpSolver="", produceProofs=False, cdcl=False):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -135,6 +135,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
         numBlasThreads (int, optional): Number of threads to use when using OpenBLAS matrix multiplication (e.g., for DeepPoly analysis), defaults to 1
         performLpTighteningAfterSplit (bool, optional): Whether to perform a LP tightening after a case split, defaults to False
         lpSolver (string, optional): the engine for solving LP (native/gurobi).
+        produceProofs: Produce proofs of UNSAT and check them
+        cdcl: Solve the input query with CDCL as the solving procedure
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -162,4 +164,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
     options._performLpTighteningAfterSplit = performLpTighteningAfterSplit
     options._lpSolver = lpSolver
     options._produceProofs = produceProofs
+    options._cdcl = cdcl
     return options

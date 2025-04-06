@@ -42,7 +42,7 @@ public:
 
     /*
       A unique ID allocated to every state that is stored, for
-      debugging purposes. These are assigned by the SMT core.
+      debugging purposes. These are assigned by the Search Tree handler.
     */
     unsigned _stateId;
 };

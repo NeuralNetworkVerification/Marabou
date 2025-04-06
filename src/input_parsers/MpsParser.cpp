@@ -101,7 +101,7 @@ void MpsParser::parse( const String &path )
 
 void MpsParser::parseRow( const String &line )
 {
-    List<String> tokens = line.tokenize( "\t\n " );
+    List<String> tokens = line.tokenize( "\t\r\n " );
 
     if ( tokens.size() != 2 )
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
@@ -138,7 +138,7 @@ void MpsParser::parseRow( const String &line )
 
 void MpsParser::parseColumn( const String &line )
 {
-    List<String> tokens = line.tokenize( "\t\n " );
+    List<String> tokens = line.tokenize( "\t\r\n " );
 
     // Need an odd number of tokens: row name + pairs
     if ( tokens.size() % 2 == 0 )
@@ -214,7 +214,7 @@ void MpsParser::parseRhs( const String &line )
 
 void MpsParser::parseBounds( const String &line )
 {
-    List<String> tokens = line.tokenize( "\t\n " );
+    List<String> tokens = line.tokenize( "\t\r\n " );
 
     if ( tokens.size() != 4 )
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );

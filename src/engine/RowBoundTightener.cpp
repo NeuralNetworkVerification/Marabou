@@ -104,7 +104,7 @@ void RowBoundTightener::freeMemoryIfNeeded()
     }
 }
 
-void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation )
+unsigned RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation )
 {
     /*
       Roughly (the dimensions don't add up):
@@ -139,11 +139,13 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
     // The tightening procedure may throw an exception, in which case we need
     // to release the rows.
     unsigned newBoundsLearned;
+    unsigned overallBounds = 0;
     unsigned maxNumberOfIterations =
         untilSaturation ? GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverInvertedBasisRows();
+        overallBounds += newBoundsLearned;
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
@@ -152,9 +154,11 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
         --maxNumberOfIterations;
     }
     while ( ( maxNumberOfIterations != 0 ) && ( newBoundsLearned > 0 ) );
+
+    return overallBounds;
 }
 
-void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
+unsigned RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
 {
     /*
       Roughly (the dimensions don't add up):
@@ -166,6 +170,8 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
 
     const double *b = _tableau.getRightHandSide();
     const double *invB = _tableau.getInverseBasisMatrix();
+
+    unsigned overallBounds = 0;
 
     try
     {
@@ -206,6 +212,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
         do
         {
             newBoundsLearned = onePassOverInvertedBasisRows();
+            overallBounds += newBoundsLearned;
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
                 _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
@@ -222,6 +229,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
     }
 
     delete[] invB;
+    return overallBounds;
 }
 
 unsigned RowBoundTightener::onePassOverInvertedBasisRows()

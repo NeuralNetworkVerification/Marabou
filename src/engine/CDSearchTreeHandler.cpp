@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file CDSmtCore.cpp
+/*! \file CDSearchTreeHandler.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Aleksandar Zeljic, Haoze Wu, Parth Shah
@@ -9,10 +9,10 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** See the description of the class in CDSmtCore.h.
+ ** See the description of the class in CDSearchTreeHandler.h.
  **/
 
-#include "CDSmtCore.h"
+#include "CDSearchTreeHandler.h"
 
 #include "Debug.h"
 #include "DivideStrategy.h"
@@ -27,7 +27,7 @@
 
 using namespace CVC4::context;
 
-CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
+CDSearchTreeHandler::CDSearchTreeHandler( IEngine *engine, Context &ctx )
     : _statistics( NULL )
     , _context( ctx )
     , _trail( &_context )
@@ -43,11 +43,11 @@ CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
 {
 }
 
-CDSmtCore::~CDSmtCore()
+CDSearchTreeHandler::~CDSearchTreeHandler()
 {
 }
 
-void CDSmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
+void CDSearchTreeHandler::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     ASSERT( !constraint->phaseFixed() );
 
@@ -68,7 +68,7 @@ void CDSmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint 
     }
 }
 
-unsigned CDSmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
+unsigned CDSearchTreeHandler::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
 {
     if ( !_constraintToViolationCount.exists( constraint ) )
         return 0;
@@ -76,7 +76,7 @@ unsigned CDSmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) 
     return _constraintToViolationCount[constraint];
 }
 
-void CDSmtCore::initializeScoreTrackerIfNeeded(
+void CDSearchTreeHandler::initializeScoreTrackerIfNeeded(
     const List<PiecewiseLinearConstraint *> &plConstraints )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
@@ -84,11 +84,11 @@ void CDSmtCore::initializeScoreTrackerIfNeeded(
         _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
         _scoreTracker->initialize( plConstraints );
 
-        SMT_LOG( "\tTracking Pseudo Impact..." );
+        CD_SEARCH_TREE_LOG( "\tTracking Pseudo Impact..." );
     }
 }
 
-void CDSmtCore::reportRejectedPhasePatternProposal()
+void CDSearchTreeHandler::reportRejectedPhasePatternProposal()
 {
     ++_numRejectedPhasePatternProposal;
 
@@ -102,29 +102,30 @@ void CDSmtCore::reportRejectedPhasePatternProposal()
     }
 }
 
-bool CDSmtCore::needToSplit() const
+bool CDSearchTreeHandler::needToSplit() const
 {
     return _needToSplit;
 }
 
-void CDSmtCore::pushDecision( PiecewiseLinearConstraint *constraint, PhaseStatus decision )
+void CDSearchTreeHandler::pushDecision( PiecewiseLinearConstraint *constraint,
+                                        PhaseStatus decision )
 {
-    SMT_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
+    CD_SEARCH_TREE_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
     TrailEntry te( constraint, decision );
     applyTrailEntry( te, true );
-    SMT_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
+    CD_SEARCH_TREE_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
 }
 
-void CDSmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
+void CDSearchTreeHandler::pushImplication( PiecewiseLinearConstraint *constraint )
 {
     ASSERT( constraint->isImplication() );
-    SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
+    CD_SEARCH_TREE_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
     TrailEntry te( constraint, constraint->nextFeasibleCase() );
     applyTrailEntry( te, false );
-    SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
+    CD_SEARCH_TREE_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
 }
 
-void CDSmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
+void CDSearchTreeHandler::applyTrailEntry( TrailEntry &te, bool isDecision )
 {
     if ( isDecision )
     {
@@ -136,10 +137,10 @@ void CDSmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
     _engine->applySplit( te.getPiecewiseLinearCaseSplit() );
 }
 
-void CDSmtCore::decide()
+void CDSearchTreeHandler::decide()
 {
     ASSERT( _needToSplit );
-    SMT_LOG( "Performing a ReLU split" );
+    CD_SEARCH_TREE_LOG( "Performing a ReLU split" );
 
     _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
@@ -161,7 +162,7 @@ void CDSmtCore::decide()
     decideSplit( _constraintForSplitting );
 }
 
-void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
+void CDSearchTreeHandler::decideSplit( PiecewiseLinearConstraint *constraint )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -187,51 +188,51 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
-    SMT_LOG( "Performing a ReLU split - DONE" );
+    CD_SEARCH_TREE_LOG( "Performing a ReLU split - DONE" );
 }
 
 
-unsigned CDSmtCore::getDecisionLevel() const
+unsigned CDSearchTreeHandler::getDecisionLevel() const
 {
     return _decisions.size();
 }
 
-bool CDSmtCore::popDecisionLevel( TrailEntry &lastDecision )
+bool CDSearchTreeHandler::popDecisionLevel( TrailEntry &lastDecision )
 {
     // ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
     if ( _decisions.empty() )
         return false;
 
-    SMT_LOG( "Popping trail ..." );
+    CD_SEARCH_TREE_LOG( "Popping trail ..." );
     lastDecision = _decisions.back();
     _context.pop();
     _engine->postContextPopHook();
-    SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
+    CD_SEARCH_TREE_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
     return true;
 }
 
-void CDSmtCore::interruptIfCompliantWithDebugSolution()
+void CDSearchTreeHandler::interruptIfCompliantWithDebugSolution()
 {
     if ( checkSkewFromDebuggingSolution() )
     {
-        SMT_LOG( "Error! Popping from a compliant stack\n" );
+        CD_SEARCH_TREE_LOG( "Error! Popping from a compliant stack\n" );
         throw MarabouError( MarabouError::DEBUGGING_ERROR );
     }
 }
 
-PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel ) const
+PiecewiseLinearCaseSplit CDSearchTreeHandler::getDecision( unsigned decisionLevel ) const
 {
     ASSERT( decisionLevel <= getDecisionLevel() );
     ASSERT( decisionLevel > 0 );
     return _decisions[decisionLevel - 1].getPiecewiseLinearCaseSplit();
 }
 
-bool CDSmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
+bool CDSearchTreeHandler::backtrackToFeasibleDecision( TrailEntry &lastDecision )
 {
-    SMT_LOG( "Backtracking to a feasible decision..." );
+    CD_SEARCH_TREE_LOG( "Backtracking to a feasible decision..." );
 
     if ( getDecisionLevel() == 0 )
         return false;
@@ -254,7 +255,7 @@ bool CDSmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
     return true;
 }
 
-bool CDSmtCore::backtrackAndContinueSearch()
+bool CDSearchTreeHandler::backtrackAndContinueSearch()
 {
     TrailEntry feasibleDecision( nullptr, CONSTRAINT_INFEASIBLE );
     struct timespec start = TimeUtils::sampleMicro();
@@ -280,7 +281,7 @@ bool CDSmtCore::backtrackAndContinueSearch()
         if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -288,14 +289,14 @@ bool CDSmtCore::backtrackAndContinueSearch()
     return true;
 }
 
-void CDSmtCore::resetReportedViolations()
+void CDSearchTreeHandler::resetReportedViolations()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
     _needToSplit = false;
 }
 
-void CDSmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
+void CDSearchTreeHandler::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 {
     result.clear();
 
@@ -303,19 +304,19 @@ void CDSmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
         result.append( trailEntry.getPiecewiseLinearCaseSplit() );
 }
 
-void CDSmtCore::setStatistics( Statistics *statistics )
+void CDSearchTreeHandler::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
 }
 
-void CDSmtCore::storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution )
+void CDSearchTreeHandler::storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution )
 {
     _debuggingSolution = debuggingSolution;
 }
 
 // Return true if stack is currently compliant, false otherwise
 // If there is no stored solution, return false --- incompliant.
-bool CDSmtCore::checkSkewFromDebuggingSolution()
+bool CDSearchTreeHandler::checkSkewFromDebuggingSolution()
 {
     if ( _debuggingSolution.empty() )
         return false;
@@ -372,8 +373,8 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
     return true;
 }
 
-bool CDSmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
-                                           String &error ) const
+bool CDSearchTreeHandler::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
+                                                     String &error ) const
 {
     // False if the split prevents one of the values in the stored solution, true otherwise.
     error = "";
@@ -416,12 +417,12 @@ bool CDSmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split
     return true;
 }
 
-void CDSmtCore::setConstraintViolationThreshold( unsigned threshold )
+void CDSearchTreeHandler::setConstraintViolationThreshold( unsigned threshold )
 {
     _constraintViolationThreshold = threshold;
 }
 
-PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing(
+PiecewiseLinearConstraint *CDSearchTreeHandler::chooseViolatedConstraintForFixing(
     List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
 {
     ASSERT( !_violatedPlConstraints.empty() );
@@ -455,14 +456,14 @@ PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing(
     return candidate;
 }
 
-bool CDSmtCore::pickSplitPLConstraint()
+bool CDSearchTreeHandler::pickSplitPLConstraint()
 {
     if ( _needToSplit )
         _constraintForSplitting = _engine->pickSplitPLConstraint( _branchingHeuristic );
     return _constraintForSplitting != NULL;
 }
 
-void CDSmtCore::reset()
+void CDSearchTreeHandler::reset()
 {
     _context.popto( 0 );
     _engine->postContextPopHook();

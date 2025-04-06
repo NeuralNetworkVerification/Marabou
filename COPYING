@@ -46,5 +46,6 @@ Marabou links (by default) against the following libraries:
     OpenBlas     BSD license                (https://www.openblas.net) 
 
 Marabou can also be linked (however, by default it is not) against the following libraries:
-  Gurobi                                    (https://www.gurobi.com)
+    Gurobi                                    (https://www.gurobi.com)
+    CaDiCaL      MIT License                  (https://github.com/arminbiere/cadical)
 

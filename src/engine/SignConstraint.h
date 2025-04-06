@@ -226,6 +226,34 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
+#ifdef BUILD_CADICAL
+    /*
+     Creates boolean abstraction of phases and adds abstracted variables to the SAT solver
+    */
+    void
+    booleanAbstraction( Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc ) override;
+
+    /*
+     Returns a literal representing a boolean propagation
+     Returns 0 if no propagation can be deduced
+    */
+    int propagatePhaseAsLit() const override;
+
+    /*
+     Returns a phase status corresponding to a literal,
+     assuming the literal is part of the boolean abstraction
+    */
+    void propagateLitAsSplit( int lit ) override;
+
+    /*
+      Returns on which phase to decide this constraint, as a cadical var
+     */
+    int getLiteralForDecision() const override;
+
+    bool isBoundFixingPhase( unsigned var,
+                             double bound,
+                             Tightening::BoundType boundType ) const override;
+#endif
 
 private:
     unsigned _b, _f;

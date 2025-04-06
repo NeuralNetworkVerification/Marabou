@@ -14,6 +14,9 @@
 
 #include "DisjunctionConstraint.h"
 
+#ifdef BUILD_CADICAL
+#include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
 #include "MStringf.h"
@@ -25,6 +28,8 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
     : PiecewiseLinearConstraint( disjuncts.size() )
     , _disjuncts( disjuncts.begin(), disjuncts.end() )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
+    , _disjunctsToCadicalVars()
+    , _cadicalVarsToDisjuncts()
 {
     for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
@@ -623,3 +628,44 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
 
     return maxUpperBound;
 }
+
+#ifdef BUILD_CADICAL
+void DisjunctionConstraint::booleanAbstraction(
+    Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx;
+    for ( auto &disjunct : _disjuncts )
+    {
+        idx = cadicalVarToPlc.size();
+        _cdclVars.append( idx );
+        cadicalVarToPlc.insert( idx, this );
+        _disjunctsToCadicalVars.insert( &disjunct, idx );
+        _cadicalVarsToDisjuncts.insert( idx, &disjunct );
+        _cdclCore->addLiteral( (int)idx );
+    }
+    _cdclCore->addLiteral( 0 );
+}
+
+int DisjunctionConstraint::propagatePhaseAsLit() const
+{
+    if ( phaseFixed() )
+    {
+        PiecewiseLinearCaseSplit onlyDisjunct = _disjuncts.get( _feasibleDisjuncts.back() );
+        return _disjunctsToCadicalVars.at( &onlyDisjunct );
+    }
+    return 0;
+}
+
+void DisjunctionConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
+
+    setActiveConstraint( false );
+    PiecewiseLinearCaseSplit disjunct = *_cadicalVarsToDisjuncts.at( lit );
+    PhaseStatus phaseToFix = indToPhaseStatus( _disjuncts.getIndex( disjunct ) );
+
+    ASSERT( !phaseFixed() || getPhaseStatus() == phaseToFix );
+
+    setPhaseStatus( phaseToFix );
+}
+#endif

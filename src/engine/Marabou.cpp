@@ -221,12 +221,21 @@ void Marabou::solveQuery()
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
     if ( _engine->processInputQuery( _inputQuery ) )
     {
-        _engine->solve( timeoutInSeconds );
-        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
-            _engine->certifyUNSATCertificate();
+        if ( _engine->shouldSolveWithMILP() )
+            _engine->solveWithMILPEncoding( timeoutInSeconds );
+#ifdef BUILD_CADICAL
+        else if ( _engine->shouldSolveWithCDCL() )
+            _engine->solveWithCDCL( timeoutInSeconds );
+#endif
+        else
+        {
+            _engine->solve( timeoutInSeconds );
+            if ( _engine->shouldProduceProofs() && _engine->getExitCode() == ExitCode::UNSAT )
+                _engine->certifyUNSATCertificate();
+        }
     }
 
-    if ( _engine->getExitCode() == Engine::UNKNOWN )
+    if ( _engine->getExitCode() == ExitCode::UNKNOWN )
     {
         struct timespec end = TimeUtils::sampleMicro();
         unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
@@ -245,21 +254,21 @@ void Marabou::solveQuery()
 
     // TODO: update the variable assignment using NLR if possible and double-check that all the
     // constraints are indeed satisfied.
-    if ( _engine->getExitCode() == Engine::SAT )
+    if ( _engine->getExitCode() == ExitCode::SAT )
         _engine->extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    Engine::ExitCode result = _engine->getExitCode();
+    ExitCode result = _engine->getExitCode();
     String resultString;
 
-    if ( result == Engine::UNSAT )
+    if ( result == ExitCode::UNSAT )
     {
         resultString = "unsat";
         printf( "unsat\n" );
     }
-    else if ( result == Engine::SAT )
+    else if ( result == ExitCode::SAT )
     {
         resultString = "sat";
         printf( "sat\n" );
@@ -278,17 +287,17 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
                     _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
         printf( "\n" );
     }
-    else if ( result == Engine::TIMEOUT )
+    else if ( result == ExitCode::TIMEOUT )
     {
         resultString = "TIMEOUT";
         printf( "Timeout\n" );
     }
-    else if ( result == Engine::ERROR )
+    else if ( result == ExitCode::ERROR )
     {
         resultString = "ERROR";
         printf( "Error\n" );
     }
-    else if ( result == Engine::UNKNOWN )
+    else if ( result == ExitCode::UNKNOWN )
     {
         resultString = "UNKNOWN";
         printf( "UNKNOWN\n" );
