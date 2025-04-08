@@ -39,6 +39,18 @@ def test_split_onnx():
     os.remove(presplit_filename)
     os.remove(postsplit_filename)
 
+def test_slice_var():
+    filename =  "slice_test.onnx"
+    evaluateFile(filename)
+
+def test_slice_constant():
+    filename =  "constant_slice_test.onnx"
+    evaluateFile(filename)
+
+def test_sub_var():
+    filename =  "sub_var_test.onnx"
+    evaluateFile(filename)
+
 def test_sub():
     filename =  "test_sub.onnx"
     evaluateFile(filename)
