@@ -120,7 +120,7 @@ const bool GlobalConfiguration::WRITE_JSON_PROOF = false;
 const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
-const bool GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES = false;
+const bool GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES = true;
 const bool GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF = false;
 
 #ifdef ENABLE_GUROBI
