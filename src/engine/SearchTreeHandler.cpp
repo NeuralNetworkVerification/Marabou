@@ -111,8 +111,10 @@ void SearchTreeHandler::initializeScoreTrackerIfNeeded(
     {
         _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
         _scoreTracker->initialize( plConstraints );
+#ifdef BUILD_CADICAL
         if ( cdclCore )
             cdclCore->initializeScoreTracker( _scoreTracker );
+#endif
 
         SEARCH_TREE_LOG( "\tTracking Pseudo Impact..." );
     }
