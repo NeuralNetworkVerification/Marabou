@@ -3,6 +3,10 @@
 ## Next Release
   - Adding incremental infrastructure which allows pushing and popping constraints to/from the InputQuery.
   - Dropped support for parsing Tensorflow network format. Newest Marabou version that supports Tensorflow is at commit 190555573e4702.
+  - Fixed bug in the parsing of `transpose` nodes in command line C++ parser.
+  - Implemented forward-backward abstract interpretation, symbolic bound tightening, interval arithmetic and simulations for all activation functions.
+  - Added the BaBSR heuristic as a new branching strategy for ReLU Splitting
+  - Support Sub of two variables, "Mul" of two constants, Slice, and ConstantOfShape in the python onnx parser
 
 ## Version 2.0.0
 

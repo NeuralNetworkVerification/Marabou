@@ -595,6 +595,81 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
     }
 }
 
+/*
+    Initialize and fill ReLU Constraint to previous bias map
+    for BaBSR Heuristic
+*/
+void NetworkLevelReasoner::initializePreviousBiasMap()
+{
+    // Clear the previous bias map
+    _previousBiases.clear();
+
+    // Track accumulated ReLU neurons across layers
+    unsigned accumulatedNeurons = 0;
+
+    // Iterate through layers to find ReLU layers and their sources
+    for ( const auto &layerPair : _layerIndexToLayer )
+    {
+        const NLR::Layer *layer = layerPair.second;
+
+        if ( layer->getLayerType() == Layer::RELU )
+        {
+            // Get source layer info
+            const auto &sourceLayers = layer->getSourceLayers();
+            unsigned sourceLayerIndex = sourceLayers.begin()->first;
+            const NLR::Layer *sourceLayer = getLayer( sourceLayerIndex );
+
+            // Match ReLU constraints to their source layer biases
+            unsigned layerSize = layer->getSize();
+
+            // Iterate through constraints
+            auto constraintIterator = _constraintsInTopologicalOrder.begin();
+            for ( unsigned currentIndex = 0;
+                  currentIndex < accumulatedNeurons &&
+                  constraintIterator != _constraintsInTopologicalOrder.end();
+                  ++currentIndex, ++constraintIterator )
+            {
+            }
+
+            // Now at correct starting position
+            for ( unsigned i = 0;
+                  i < layerSize && constraintIterator != _constraintsInTopologicalOrder.end();
+                  ++i, ++constraintIterator )
+            {
+                if ( auto reluConstraint =
+                         dynamic_cast<const ReluConstraint *>( *constraintIterator ) )
+                {
+                    // Store bias in map
+                    _previousBiases[reluConstraint] = sourceLayer->getBias( i );
+                }
+            }
+
+            accumulatedNeurons += layerSize;
+        }
+    }
+}
+
+/*
+    Get previous layer bias of a ReLU neuron
+    for BaBSR Heuristic
+*/
+double NetworkLevelReasoner::getPreviousBias( const ReluConstraint *reluConstraint ) const
+{
+    // Initialize map if empty
+    if ( _previousBiases.empty() )
+    {
+        const_cast<NetworkLevelReasoner *>( this )->initializePreviousBiasMap();
+    }
+
+    // Look up pre-computed bias
+    if ( !_previousBiases.exists( reluConstraint ) )
+    {
+        throw NLRError( NLRError::RELU_NOT_FOUND, "ReluConstraint not found in bias map." );
+    }
+
+    return _previousBiases[reluConstraint];
+}
+
 unsigned
 NetworkLevelReasoner::mergeConsecutiveWSLayers( const Map<unsigned, double> &lowerBounds,
                                                 const Map<unsigned, double> &upperBounds,
@@ -678,6 +753,7 @@ bool NetworkLevelReasoner::suitableForMerging(
     }
     return true;
 }
+
 
 void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex,
                                           Map<unsigned, LinearExpression> &eliminatedNeurons )

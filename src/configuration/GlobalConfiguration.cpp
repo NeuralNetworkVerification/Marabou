@@ -71,6 +71,7 @@ const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
 const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000000001;
+const double GlobalConfiguration::LP_TIGHTENING_ROUNDING_CONSTANT = 0.00000001;
 
 const double GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT = 20;
 
@@ -106,6 +107,7 @@ const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
 
+const unsigned GlobalConfiguration::BABSR_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;

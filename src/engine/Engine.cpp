@@ -1579,7 +1579,11 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound
         // Tightening.
-        if ( _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE &&
+        if ( ( _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::MILP_ENCODING ||
+               _milpSolverBoundTighteningType ==
+                   MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL ||
+               _milpSolverBoundTighteningType ==
+                   MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION ) &&
              _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
@@ -2704,6 +2708,77 @@ void Engine::decideBranchingHeuristics()
     _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
+{
+    ENGINE_LOG( Stringf( "Using BaBsr heuristic with normalized scores..." ).ascii() );
+
+    if ( !_networkLevelReasoner )
+        return NULL;
+
+    // Get constraints from NLR
+    List<PiecewiseLinearConstraint *> constraints =
+        _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+    // Temporary vector to store raw scores for normalization
+    Vector<double> rawScores;
+    Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
+
+    // Filter for ReLU constraints
+    for ( auto &plConstraint : constraints )
+    {
+        if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
+             !plConstraint->phaseFixed() )
+        {
+            ReluConstraint *reluConstraint = dynamic_cast<ReluConstraint *>( plConstraint );
+            if ( reluConstraint )
+            {
+                // Set NLR if not already set
+                reluConstraint->initializeNLRForBaBSR( _networkLevelReasoner );
+
+                // Calculate heuristic score - bias calculation happens inside computeBaBsr
+                plConstraint->updateScoreBasedOnBaBsr();
+
+                // Collect raw scores
+                rawScores.append( plConstraint->getScore() );
+            }
+        }
+    }
+
+    // Normalize scores
+    if ( !rawScores.empty() )
+    {
+        double minScore = *std::min_element( rawScores.begin(), rawScores.end() );
+        double maxScore = *std::max_element( rawScores.begin(), rawScores.end() );
+        double range = maxScore - minScore;
+
+        for ( auto &plConstraint : constraints )
+        {
+            if ( plConstraint->supportBaBsr() && plConstraint->isActive() &&
+                 !plConstraint->phaseFixed() )
+            {
+                double rawScore = plConstraint->getScore();
+                double normalizedScore = range > 0 ? ( rawScore - minScore ) / range : 0;
+
+                // Store normalized score in the map
+                scoreToConstraint[normalizedScore] = plConstraint;
+                if ( scoreToConstraint.size() >= GlobalConfiguration::BABSR_CANDIDATES_THRESHOLD )
+                    break;
+            }
+        }
+    }
+
+    // Split on neuron or constraint with highest normalized score
+    if ( !scoreToConstraint.empty() )
+    {
+        ENGINE_LOG( Stringf( "Normalized score of the picked ReLU: %f",
+                             ( *scoreToConstraint.begin() ).first )
+                        .ascii() );
+        return ( *scoreToConstraint.begin() ).second;
+    }
+    else
+        return NULL;
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
@@ -2815,6 +2890,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
                 candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
         }
     }
+    else if ( strategy == DivideStrategy::BaBSR )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnBaBsrHeuristic();
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )

@@ -173,6 +173,12 @@ public:
     void generateQuery( Query &query );
 
     /*
+      Given a ReLU Constraint, get the previous layer bias
+      for the BaBSR Heuristic
+    */
+    double getPreviousBias( const ReluConstraint *reluConstraint ) const;
+
+    /*
       Finds logically consecutive WS layers and merges them, in order
       to reduce the total number of layers and variables in the
       network
@@ -235,6 +241,13 @@ private:
                              unsigned middleDimension,
                              unsigned outputDimension );
     void reduceLayerIndex( unsigned layer, unsigned startIndex );
+
+    /*
+      Store previous biases for each ReLU neuron in a map for getPreviousBias()
+      and BaBSR heuristic
+    */
+    Map<const ReluConstraint *, double> _previousBiases;
+    void initializePreviousBiasMap();
 
     /*
       If the NLR is manipulated manually in order to generate a new
