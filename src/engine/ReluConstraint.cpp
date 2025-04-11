@@ -381,7 +381,8 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
     double bValue = getAssignment( _b );
     double fValue = getAssignment( _f );
 
-    ASSERT( !FloatUtils::isNegative( fValue ) );
+    ASSERT(
+        !FloatUtils::isNegative( fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) );
 
     List<PiecewiseLinearConstraint::Fix> fixes;
 
