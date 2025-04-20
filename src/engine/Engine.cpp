@@ -4396,7 +4396,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     {
         ASSERT( entry->id < id );
         Set<int> minorClause;
-        if ( entry->clause.empty() )
+        if ( entry->clause.empty() && !entry->lemma->getToCheck() )
         {
             minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
                                                          entry->id,
@@ -4404,11 +4404,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                                                          entry->lemma->getCausingVarBound() ==
                                                              Tightening::UB );
 
-            _groundBoundManager.addClauseToGroundBoundEntry( entry->lemma->getAffectedVar(),
-                                                             entry->lemma->getAffectedVarBound(),
-                                                             id,
-                                                             minorClause );
+            _groundBoundManager.addClauseToGroundBoundEntry( entry, minorClause );
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
+            entry->lemma->setToCheck();
         }
         else
             minorClause = entry->clause;
