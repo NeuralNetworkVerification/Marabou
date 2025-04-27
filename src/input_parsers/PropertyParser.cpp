@@ -193,6 +193,7 @@ void PropertyParser::processSingleLine( const String &line, IQuery &inputQuery )
         // Normal case: add as an equation
         Equation equation( type );
         equation.setScalar( scalar );
+        bool isOuputConstraint = false;
 
         while ( it != tokens.rend() )
         {
@@ -225,6 +226,7 @@ void PropertyParser::processSingleLine( const String &line, IQuery &inputQuery )
             {
                 ASSERT( justIndex < inputQuery.getNumOutputVariables() );
                 variable = inputQuery.outputVariableByIndex( justIndex );
+                isOuputConstraint = true;
             }
 
             String coefficientString = *subTokens.begin();
@@ -241,6 +243,8 @@ void PropertyParser::processSingleLine( const String &line, IQuery &inputQuery )
         }
 
         inputQuery.addEquation( equation );
+        if ( isOuputConstraint )
+            inputQuery.addOutputConstraint( equation );
     }
 }
 

@@ -73,6 +73,8 @@ public:
 
     static void informConstraintsOfInitialBounds( Query &query );
 
+    void convertToReachabilityQuery();
+
 private:
     void freeMemoryIfNeeded();
 

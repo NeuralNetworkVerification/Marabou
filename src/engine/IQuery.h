@@ -52,12 +52,19 @@ public:
 
     virtual void markInputVariable( unsigned variable, unsigned inputIndex ) = 0;
     virtual void markOutputVariable( unsigned variable, unsigned outputIndex ) = 0;
+    virtual void unmarkOutputVariables() = 0;
     virtual unsigned inputVariableByIndex( unsigned index ) const = 0;
     virtual unsigned outputVariableByIndex( unsigned index ) const = 0;
     virtual unsigned getNumInputVariables() const = 0;
     virtual unsigned getNumOutputVariables() const = 0;
     virtual List<unsigned> getInputVariables() const = 0;
     virtual List<unsigned> getOutputVariables() const = 0;
+
+    virtual void addOutputConstraint( const Equation &equation ) = 0;
+    virtual const List<Equation> &getOutputConstraints() const = 0;
+
+    virtual bool isQueryWithDisjunction() const = 0;
+    virtual void markQueryWithDisjunction() = 0;
 
     /*
       Methods for setting and getting the solution.

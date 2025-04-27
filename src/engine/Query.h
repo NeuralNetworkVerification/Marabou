@@ -76,12 +76,19 @@ public:
     */
     void markInputVariable( unsigned variable, unsigned inputIndex );
     void markOutputVariable( unsigned variable, unsigned outputIndex );
+    void unmarkOutputVariables();
     unsigned inputVariableByIndex( unsigned index ) const;
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;
     unsigned getNumOutputVariables() const;
     List<unsigned> getInputVariables() const;
     List<unsigned> getOutputVariables() const;
+
+    void addOutputConstraint( const Equation &equation ) override;
+    const List<Equation> &getOutputConstraints() const override;
+
+    bool isQueryWithDisjunction() const override;
+    void markQueryWithDisjunction() override;
 
     /*
       Methods for setting and getting the solution.
@@ -179,6 +186,7 @@ private:
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;
     List<NonlinearConstraint *> _nlConstraints;
+    List<Equation> _outputConstraints;
 
     Map<unsigned, double> _solution;
 
@@ -188,6 +196,14 @@ private:
       source neurons in separate NLR layers.
     */
     bool _ensureSameSourceLayerInNLR;
+
+    /*
+     * true if the query contains a disjunction constraint, used to check if it is possible to
+     * convert this verification query into a reachability query.
+     * TODO: remove this after adding support for converting a query with disjunction constraints
+     *       into a reachability query
+     */
+    bool _isQueryWithDisjunction;
 
     /*
       Free any stored pl constraints.

@@ -111,6 +111,7 @@ public:
     */
     void markInputVariable( unsigned variable, unsigned inputIndex );
     void markOutputVariable( unsigned variable, unsigned outputIndex );
+    void unmarkOutputVariables();
     unsigned inputVariableByIndex( unsigned index ) const;
     unsigned outputVariableByIndex( unsigned index ) const;
     unsigned getNumInputVariables() const;
@@ -119,6 +120,12 @@ public:
     void getOutputVariables( List<unsigned> &outputVariables ) const;
     List<unsigned> getInputVariables() const;
     List<unsigned> getOutputVariables() const;
+
+    void addOutputConstraint( const Equation &equation ) override;
+    const List<Equation> &getOutputConstraints() const override;
+
+    bool isQueryWithDisjunction() const override;
+    void markQueryWithDisjunction() override;
 
     /*
       Methods for setting and getting the solution.
@@ -187,6 +194,7 @@ private:
     IndexVariableMap _inputIndexToVariable;
     VariableIndexMap _variableToOutputIndex;
     IndexVariableMap _outputIndexToVariable;
+    List<Equation> _outputConstraints;
 
     /*
       Stores the satisfying assignment.
@@ -198,6 +206,13 @@ private:
     */
     VariableValueMap _debuggingSolution;
 
+    /*
+     * true if the query contains a disjunction constraint, used to check if it is possible to
+     * convert this verification query into a reachability query.
+     * TODO: remove this after adding support for converting a query with disjunction constraints
+     *       into a reachability query
+     */
+    bool _isQueryWithDisjunction;
     /*
       Free any stored pl constraints.
     */

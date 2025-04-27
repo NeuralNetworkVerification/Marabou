@@ -236,11 +236,18 @@ int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, IQuery &
             else
             {
                 inputQuery.addEquation( eq );
+                for ( const Equation::Addend &addend : eq._addends )
+                    if ( inputQuery.getOutputVariables().exists( addend._variable ) )
+                    {
+                        inputQuery.addOutputConstraint( eq );
+                        break;
+                    }
             }
         }
     }
     else if ( op == "or" )
     {
+        inputQuery.markQueryWithDisjunction();
         List<PiecewiseLinearCaseSplit> disjunctList;
         ++index;
         while ( tokens[index] != ")" )
