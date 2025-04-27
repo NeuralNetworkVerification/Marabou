@@ -3643,21 +3643,25 @@ void Engine::explainSimplexFailure()
         _cdclCore.addDecisionBasedConflictClause();
         return;
     }
-
-    SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
-                                            leafContradictionVec.size() );
-    Set<int> clause = clauseFromContradictionVector(
-        sparseContradiction, _groundBoundManager.getCounter(), -1, true );
-
-    if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
+    if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
     {
-        // If possible, attempt to reduce the clause size
-        if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-            clause = reduceClauseSizeWithProof(
-                sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
-    }
+        SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
+                                                leafContradictionVec.size() );
+        Set<int> clause = clauseFromContradictionVector(
+            sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
-    _cdclCore.addExternalClause( clause );
+        if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
+        {
+            // If possible, attempt to reduce the clause size
+            if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
+                clause = reduceClauseSizeWithProof(
+                    sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+        }
+
+        _cdclCore.addExternalClause( clause );
+    }
+    else
+        _cdclCore.addDecisionBasedConflictClause();
 #endif
 }
 
@@ -3999,7 +4003,7 @@ void Engine::markLeafToDelegate()
         currentUnsatCertificateNode = _UNSATCertificateCurrentPointer->get();
         ASSERT( _UNSATCertificateCurrentPointer &&
                 !currentUnsatCertificateNode->getContradiction() );
-        currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_SAVE );
+        currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_DONT_SAVE );
         currentUnsatCertificateNode->deletePLCExplanations();
     }
 
@@ -4221,7 +4225,26 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         explanation, linearCombination, _tableau->getSparseA(), _tableau->getN() );
 
     if ( explainedVar >= 0 )
-        linearCombination[explainedVar]++;
+        isUpper ? linearCombination[explainedVar]++ : linearCombination[explainedVar]--;
+
+    Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>
+        contributions =
+            Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>();
+
+    Vector<std::tuple<double, unsigned, unsigned>> phaseFixingContributions =
+        Vector<std::tuple<double, unsigned, unsigned>>();
+
+    List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
+        List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>();
+
+    Vector<double> gub = Vector<double>( _tableau->getN(), 0 );
+    Vector<double> glb = Vector<double>( _tableau->getN(), 0 );
+
+    for ( unsigned i = 0; i < _tableau->getN(); ++i )
+    {
+        gub[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::UB, id );
+        glb[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::LB, id );
+    }
 
     int lit;
 
@@ -4240,14 +4263,36 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                 if ( !FloatUtils::isZero( linearCombination[var] ) )
                 {
                     Tightening::BoundType boundTypeParticipating =
-                        ( linearCombination[var] > 0 ) ^ isUpper ? Tightening::LB : Tightening::UB;
+                        ( ( linearCombination[var] > 0 ) && isUpper ) ||
+                                ( ( linearCombination[var] < 0 ) && !isUpper )
+                            ? Tightening::UB
+                            : Tightening::LB;
                     std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                         _groundBoundManager.getGroundBoundEntryUpToId(
                             var, boundTypeParticipating, id );
+
                     if ( entry->isPhaseFixing &&
                          constraint->isBoundFixingPhase( var, entry->val, boundTypeParticipating ) )
                     {
                         lit = constraint->propagatePhaseAsLit();
+                        if ( entry->lemma )
+                        {
+                            double contribution =
+                                ( entry->val - _groundBoundManager.getGroundBoundUpToId(
+                                                   var, boundTypeParticipating, 0 ) ) *
+                                linearCombination[var];
+
+                            if ( !isUpper )
+                                contribution *= -1;
+
+                            phaseFixingContributions.append( std::make_tuple(
+                                contribution,
+                                lit,
+                                _cdclCore.isLiteralFixed( lit )
+                                    ? 0
+                                    : _cdclCore.getLiteralAssignmentIndex( lit ) ) );
+                        }
+
                         break;
                     }
                 }
@@ -4261,39 +4306,107 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         }
     }
 
-    List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
-        List<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>();
-
     // Iterate through all lemmas learned, check which participated in the explanation
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
+    {
         if ( !FloatUtils::isZero( linearCombination[var] ) )
         {
-            Tightening::BoundType btype =
-                linearCombination[var] > 0 ? Tightening::UB : Tightening::LB;
+            Tightening::BoundType btype = ( ( linearCombination[var] > 0 ) && isUpper ) ||
+                                                  ( ( linearCombination[var] < 0 ) && !isUpper )
+                                            ? Tightening::UB
+                                            : Tightening::LB;
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
 
             if ( entry->lemma != nullptr && !entry->lemma->getExplanations().empty() &&
                  !entry->lemma->getExplanations().front().empty() && !entry->isPhaseFixing )
+            {
+                double contribution =
+                    ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
+                    linearCombination[var];
+
+                if ( !isUpper )
+                    contribution *= -1;
+
                 entries.append( entry );
+
+                contributions.append( std::make_tuple( contribution, entry ) );
+            }
+        }
+    }
+
+    double contradictionUpperBound =
+        isUpper ? UNSATCertificateUtils::computeCombinationUpperBound(
+                      linearCombination, gub.data(), glb.data(), _tableau->getN() )
+                : UNSATCertificateUtils::computeCombinationLowerBound(
+                      linearCombination, gub.data(), glb.data(), _tableau->getN() );
+
+    if ( explainedVar >= 0 )
+    {
+        double gb = _groundBoundManager.getGroundBoundUpToId(
+            explainedVar, isUpper ? Tightening::UB : Tightening::LB, id );
+        isUpper ? contradictionUpperBound -= gb : contradictionUpperBound += gb;
+    }
+
+    if ( contradictionUpperBound < 0 )
+    {
+        std::sort(
+            contributions.begin(),
+            contributions.end(),
+            []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
+                std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
+                return std::get<0>( a ) > std::get<0>( b );
+            } );
+
+        std::sort( phaseFixingContributions.begin(),
+                   phaseFixingContributions.end(),
+                   []( std::tuple<double, unsigned, unsigned> a,
+                       std::tuple<double, unsigned, unsigned> b ) {
+                       return std::get<2>( a ) < std::get<2>( b );
+                   } );
+
+        double overallContributions = 0;
+        bool changes = true;
+        while ( changes )
+        {
+            changes = false;
+            for ( const auto &contribution : phaseFixingContributions )
+            {
+                if ( overallContributions + std::get<0>( contribution ) > contradictionUpperBound )
+                {
+                    changes = true;
+                    overallContributions += std::get<0>( contribution );
+                    clause.erase( std::get<1>( contribution ) );
+                }
+                else
+                    continue;
+            }
         }
 
-    // Recursively repeat the process for all non phase fixing lemmas,
-    // and add their explaining literals to the clause
-    for ( std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry : entries )
+        for ( const auto &contribution : contributions )
+        {
+            overallContributions += std::get<0>( contribution );
+            if ( overallContributions > contradictionUpperBound )
+                entries.erase( std::get<1>( contribution ) );
+            else
+                break;
+        }
+    }
+    for ( const auto &entry : entries )
     {
         ASSERT( entry->id < id );
         Set<int> minorClause;
-        if ( entry->clause.empty() )
+        if ( entry->clause.empty() && !entry->lemma->getToCheck() )
         {
             minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
                                                          entry->id,
                                                          entry->lemma->getCausingVars().back(),
-                                                         entry->lemma->getCausingVarBound() );
-            _groundBoundManager.addClauseToGroundBoundEntry( entry->lemma->getAffectedVar(),
-                                                             entry->lemma->getAffectedVarBound(),
-                                                             id,
-                                                             minorClause );
+                                                         entry->lemma->getCausingVarBound() ==
+                                                             Tightening::UB );
+
+            _groundBoundManager.addClauseToGroundBoundEntry( entry, minorClause );
+            _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
+            entry->lemma->setToCheck();
         }
         else
             minorClause = entry->clause;
@@ -4322,6 +4435,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
+    _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
     Set clause = clauseFromContradictionVector( tempExpl,
                                                 phaseFixingEntry->id,
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
@@ -4347,11 +4461,11 @@ Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanatio
     // if not assigned yet then should be last
     Vector<int> toReturn = clause;
     std::sort( toReturn.begin(), toReturn.end(), [this]( int a, int b ) {
-        unsigned aVal =
-            _cdclCore.isLiteralFixed( a ) ? 0 : _cdclCore.getLiteralAssignmentIndex( a );
-        unsigned bVal =
-            _cdclCore.isLiteralFixed( b ) ? 0 : _cdclCore.getLiteralAssignmentIndex( b );
-        return aVal < bVal;
+        unsigned aVal = _cdclCore.isLiteralFixed( a ) ? _plConstraints.size()
+                                                      : _cdclCore.getLiteralAssignmentIndex( a );
+        unsigned bVal = _cdclCore.isLiteralFixed( b ) ? _plConstraints.size()
+                                                      : _cdclCore.getLiteralAssignmentIndex( b );
+        return aVal > bVal;
     } );
 
     Vector<double> explanationLinearCombination( 0 );

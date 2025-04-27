@@ -46,6 +46,9 @@ public:
     Tightening::BoundType getAffectedVarBound() const;
     const List<SparseUnsortedList> &getExplanations() const;
     PiecewiseLinearFunctionType getConstraintType() const;
+    bool getToCheck() const;
+
+    void setToCheck();
 
 private:
     const List<unsigned> _causingVars;
@@ -55,6 +58,7 @@ private:
     Tightening::BoundType _affectedVarBound;
     List<SparseUnsortedList> _explanations;
     PiecewiseLinearFunctionType _constraintType;
+    bool _toCheck;
 };
 
 #endif //__PlcExplanation_h__

@@ -45,6 +45,7 @@ Statistics::Statistics()
     _unsignedAttributes[NUM_CERTIFIED_LEAVES] = 0;
     _unsignedAttributes[NUM_DELEGATED_LEAVES] = 0;
     _unsignedAttributes[NUM_LEMMAS] = 0;
+    _unsignedAttributes[NUM_LEMMAS_USED] = 0;
     _unsignedAttributes[CERTIFIED_UNSAT] = 0;
     _unsignedAttributes[MAX_BACKJUMP] = 0;
     _unsignedAttributes[NUM_BACKJUMPS] = 0;
@@ -521,6 +522,7 @@ void Statistics::print()
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
     printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
+    printf( "\tNumber of lemmas used in proof minimization: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
 
     printf( "\t--- CDCL Statistics ---\n" );
     printf( "\tMaximal depth of the search tree: %u\n",

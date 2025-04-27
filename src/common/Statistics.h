@@ -77,6 +77,7 @@ public:
         NUM_CERTIFIED_LEAVES,
         NUM_DELEGATED_LEAVES,
         NUM_LEMMAS,
+        NUM_LEMMAS_USED,
 
         // 1 if returned UNSAT and proof was certified by proof checker, 0 otherwise.
         CERTIFIED_UNSAT,
