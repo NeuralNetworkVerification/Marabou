@@ -275,6 +275,10 @@ public:
      */
     static const bool CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF;
 
+    /* Whether to convert the input verification query into a reachability query:
+     */
+    static const bool CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns

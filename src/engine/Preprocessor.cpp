@@ -1150,7 +1150,8 @@ void Preprocessor::informConstraintsOfInitialBounds( Query &query )
 
 void Preprocessor::convertToReachabilityQuery()
 {
-    if ( _preprocessed->isQueryWithDisjunction() )
+    if ( !GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY ||
+         _preprocessed->isQueryWithDisjunction() )
         return;
 
     List<unsigned> newVariables;
@@ -1160,7 +1161,8 @@ void Preprocessor::convertToReachabilityQuery()
     // Add new variables and equations for output bounds:
     for ( unsigned outputVariable : _preprocessed->getOutputVariables() )
     {
-        if ( lowerBounds.exists( outputVariable ) )
+        if ( lowerBounds.exists( outputVariable ) &&
+             FloatUtils::isFinite( lowerBounds[outputVariable] ) )
         {
             unsigned newVariable = _preprocessed->getNewVariable();
             newVariables.append( newVariable );
@@ -1171,7 +1173,8 @@ void Preprocessor::convertToReachabilityQuery()
             _preprocessed->addEquation( newEquation );
         }
 
-        if ( upperBounds.exists( outputVariable ) )
+        if ( upperBounds.exists( outputVariable ) &&
+             FloatUtils::isFinite( upperBounds[outputVariable] ) )
         {
             unsigned newVariable = _preprocessed->getNewVariable();
             newVariables.append( newVariable );

@@ -383,6 +383,9 @@ Query *InputQuery::generateQuery() const
         query->markOutputVariable( pair.first, pair.second );
     }
 
+    for ( const auto &equation : _outputConstraints )
+        query->addOutputConstraint( equation );
+
     for ( const auto &pair : _solution )
     {
         query->setSolutionValue( pair.first, pair.second );
