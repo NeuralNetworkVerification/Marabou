@@ -4281,33 +4281,17 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                    return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
                } );
 
-    bool changed = true;
-
     double overallContributions = 0;
-    while ( changed )
+    for ( const auto &contribution : contributions )
     {
-        changed = false;
-        for ( const auto &contribution : contributions )
-        {
-            if ( !entries.exists( std::get<1>( contribution ) ) )
-                continue;
-
-            overallContributions += abs( std::get<0>( contribution ) );
-            if ( FloatUtils::lt( overallContributions,
-                                 abs( explanationBound ),
-                                 GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
-            {
-                entries.erase( std::get<1>( contribution ) );
-                changed = true;
-            }
-            else
-            {
-                overallContributions -= abs( std::get<0>( contribution ) );
-                break;
-            }
-        }
+        overallContributions += abs( std::get<0>( contribution ) );
+        if ( FloatUtils::lt( overallContributions,
+                             abs( explanationBound ),
+                             GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
+            entries.erase( std::get<1>( contribution ) );
+        else
+            break;
     }
-
 
     if ( _solveWithCDCL )
         return entries;
