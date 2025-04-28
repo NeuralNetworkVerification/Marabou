@@ -1051,6 +1051,15 @@ private:
                                const std::shared_ptr<PLCLemma> lemma ) const;
 
     void removeLiteralFromPropagations( int literal ) override;
+
+    /*
+     Analyse dependencies of an explanation vector, resulting in a list of necessary ground bounds
+    */
+    Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>
+    analyseExplanationDependencies( const SparseUnsortedList &explanation,
+                              unsigned id,
+                              int explainedVar,
+                              bool isUpper );
 #endif
 };
 

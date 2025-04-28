@@ -206,6 +206,8 @@ public:
      */
     void initializeScoreTracker( std::shared_ptr<PLConstraintScoreTracker> scoreTracker );
 
+    bool isDecision( int lit );
+
 private:
     /*
       The engine.

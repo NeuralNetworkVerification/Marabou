@@ -349,6 +349,8 @@ bool SearchTreeHandler::popSplit()
             UnsatCertificateNode *splitChild = certificateNode->getChildBySplit( *split );
             while ( !splitChild )
             {
+
+                certificateNode->deleteUnusedLemmas();
                 certificateNode = certificateNode->getParent();
                 ASSERT( certificateNode );
                 splitChild = certificateNode->getChildBySplit( *split );

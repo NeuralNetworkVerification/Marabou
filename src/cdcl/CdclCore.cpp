@@ -1070,4 +1070,10 @@ void CdclCore::initializeScoreTracker( std::shared_ptr<PLConstraintScoreTracker>
     ASSERT( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     _scoreTracker = std::move( scoreTracker );
 }
+
+bool CdclCore::isDecision( int lit )
+{
+    return _satSolverWrapper->isDecision(lit);
+}
+
 #endif
