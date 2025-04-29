@@ -30,11 +30,11 @@ public:
     typedef typename Super::iterator iterator;
     typedef typename Super::const_iterator const_iterator;
 
-    HashSet<Value>()
+    HashSet()
     {
     }
 
-    HashSet<Value>( const std::initializer_list<Value> &initializerList )
+    HashSet( const std::initializer_list<Value> &initializerList )
         : _container( initializerList )
     {
     }
@@ -44,35 +44,35 @@ public:
         _container.insert( value );
     }
 
-    void insert( const HashSet<Value> &other )
+    void insert( const HashSet &other )
     {
         for ( auto it = other.begin(); it != other.end(); ++it )
             _container.insert( *it );
     }
 
-    void operator+=( const HashSet<Value> &other )
+    void operator+=( const HashSet &other )
     {
         insert( other );
     }
 
-    HashSet<Value> operator+( const HashSet<Value> &other )
+    HashSet operator+( const HashSet &other )
     {
-        HashSet<Value> result = *this;
+        HashSet result = *this;
         result.insert( other );
         return result;
     }
 
-    bool operator==( const HashSet<Value> &other ) const
+    bool operator==( const HashSet &other ) const
     {
         return _container == other._container;
     }
 
-    bool operator!=( const HashSet<Value> &other ) const
+    bool operator!=( const HashSet &other ) const
     {
         return _container != other._container;
     }
 
-    bool operator<( const HashSet<Value> &other ) const
+    bool operator<( const HashSet &other ) const
     {
         return _container < other._container;
     }
