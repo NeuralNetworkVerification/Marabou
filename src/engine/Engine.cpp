@@ -3657,17 +3657,25 @@ void Engine::explainSimplexFailure()
     {
         SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
                                                 leafContradictionVec.size() );
-        Set<int> clause = clauseFromContradictionVector(
-            sparseContradiction, _groundBoundManager.getCounter(), -1, true );
-
-        if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
+        Set<int> clause;
+        try
         {
-            // If possible, attempt to reduce the clause size
-            if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-                clause = reduceClauseSizeWithProof(
-                    sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
-        }
+            clause = clauseFromContradictionVector(
+                sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
+            if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
+            {
+                // If possible, attempt to reduce the clause size
+                if ( clause.size() > 1 &&
+                     checkClauseWithProof( sparseContradiction, clause, NULL ) )
+                    clause = reduceClauseSizeWithProof(
+                        sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
+            }
+        }
+        catch ( Set<int> &set )
+        {
+            clause = set;
+        }
         _cdclCore.addExternalClause( clause );
     }
     else
@@ -4255,16 +4263,12 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                             : Tightening::LB;
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
-            if ( entry->isPhaseFixing )
-            {
-                double contribution =
-                    ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
-                    linearCombination[var];
+            double contribution =
+                ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
+                linearCombination[var];
 
-                entries.insert( entry );
-
-                contributions.append( std::make_tuple( contribution, entry ) );
-            }
+            contributions.append( std::make_tuple( contribution, entry ) );
+            entries.insert( entry );
         }
     }
 
@@ -4278,6 +4282,10 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                contributions.end(),
                []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
                    std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
+                   if ( std::get<1>( a )->isPhaseFixing && !std::get<1>( b )->isPhaseFixing )
+                       return true;
+                   else if ( !std::get<1>( a )->isPhaseFixing && std::get<1>( b )->isPhaseFixing )
+                       return false;
                    return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
                } );
 
@@ -4350,6 +4358,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
 
     int lit;
     int decisionCounter = 0;
+    Set<int> decisionClause = {};
 
     // Iterate through all constraints, check whether their phase was involved in the explanation
     // Propagate literals accordingly
@@ -4380,6 +4389,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                     {
                         ++decisionCounter;
                         lit = constraint->propagatePhaseAsLit();
+                        decisionClause.insert( lit );
                         break;
                     }
                 }
@@ -4391,10 +4401,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             ASSERT( constraint->phaseFixed() || !constraint->isActive() )
             clause.insert( lit );
         }
+        if ( decisionCounter >= _context.getLevel() )
+            throw decisionClause;
     }
-
-    if ( decisionCounter >= _context.getLevel() )
-        return clause;
 
     Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
         analyseExplanationDependencies( explanation, id, explainedVar, isUpper );
@@ -4406,36 +4415,52 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         if ( entry->lemma && !entry->lemma->getExplanations().empty() &&
              !entry->lemma->getExplanations().front().empty() && entry->clause.empty() )
         {
-            minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
-                                                         entry->id,
-                                                         entry->lemma->getCausingVars().back(),
-                                                         entry->lemma->getCausingVarBound() ==
-                                                             Tightening::UB );
-
-            _groundBoundManager.addClauseToGroundBoundEntry( entry, minorClause );
-            _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
+            try
+            {
+                minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
+                                                             entry->id,
+                                                             entry->lemma->getCausingVars().back(),
+                                                             entry->lemma->getCausingVarBound() ==
+                                                                 Tightening::UB );
+                _groundBoundManager.addClauseToGroundBoundEntry( entry, minorClause );
+                _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
+            }
+            catch ( Set<int> &set )
+            {
+                _groundBoundManager.addClauseToGroundBoundEntry( entry, set );
+                _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
+                throw set;
+            }
         }
         else
             minorClause = entry->clause;
 
         decisionCounter = 0;
+        decisionClause = {};
         for ( int literal : minorClause )
         {
             ASSERT( literal && !clause.exists( -literal ) );
             clause.insert( literal );
             if ( _cdclCore.isDecision( literal ) )
+            {
                 ++decisionCounter;
+                decisionClause.insert( literal );
+            }
             if ( decisionCounter >= _context.getLevel() )
-                return minorClause;
+                throw decisionClause;
         }
 
         decisionCounter = 0;
-        for ( const auto &clauseLit : clause )
+        decisionClause = {};
+        for ( int clauseLit : clause )
             if ( _cdclCore.isDecision( clauseLit ) )
+            {
                 ++decisionCounter;
+                decisionClause.insert( clauseLit );
+            }
 
         if ( decisionCounter >= _context.getLevel() )
-            return clause;
+            throw decisionClause;
     }
 
     return clause;
@@ -4456,10 +4481,18 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
-    Set clause = clauseFromContradictionVector( tempExpl,
+    Set<int> clause = {};
+    try
+    {
+        clause = clauseFromContradictionVector( tempExpl,
                                                 phaseFixingEntry->id,
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
+    }
+    catch ( Set<int> &set )
+    {
+        clause = set;
+    }
 
     if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
         if ( clause.size() > 1 &&
