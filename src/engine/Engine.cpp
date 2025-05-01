@@ -4356,18 +4356,18 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     if ( explainedVar >= 0 )
         linearCombination[explainedVar]++;
 
-    //    Vector<std::tuple<double, const PiecewiseLinearConstraint *>> contributions =
-    //        Vector<std::tuple<double, const PiecewiseLinearConstraint *>>();
-    //
-    //    Vector<double> gub = Vector<double>( _tableau->getN(), 0 );
-    //    Vector<double> glb = Vector<double>( _tableau->getN(), 0 );
-    //
-    //
-    //    for ( unsigned i = 0; i < _tableau->getN(); ++i )
-    //    {
-    //        gub[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::UB, id );
-    //        glb[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::LB, id );
-    //    }
+    Vector<std::tuple<double, const PiecewiseLinearConstraint *>> contributions =
+        Vector<std::tuple<double, const PiecewiseLinearConstraint *>>();
+
+    Vector<double> gub = Vector<double>( _tableau->getN(), 0 );
+    Vector<double> glb = Vector<double>( _tableau->getN(), 0 );
+
+
+    for ( unsigned i = 0; i < _tableau->getN(); ++i )
+    {
+        gub[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::UB, id );
+        glb[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::LB, id );
+    }
 
 
     int lit;
@@ -4420,59 +4420,59 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
             throw decisionClause;
     }
 
-    //    for ( int clauseLit : clause )
-    //    {
-    //        const PiecewiseLinearConstraint *plc = _cdclCore.getConstraintFromLit( clauseLit );
-    //        double contribution = 0;
-    //        for ( int var : plc->getParticipatingVariables() )
-    //        {
-    //            if ( !FloatUtils::isZero( linearCombination[var] ) )
-    //            {
-    //                Tightening::BoundType btype = ( ( linearCombination[var] > 0 ) && isUpper ) ||
-    //                                                      ( ( linearCombination[var] < 0 ) && !isUpper )
-    //                                                ? Tightening::UB
-    //                                                : Tightening::LB;
-    //                std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
-    //                    _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
-    //                contribution +=
-    //                    ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
-    //                    linearCombination[var];
-    //            }
-    //        }
-    //        contributions.append( std::make_tuple( contribution, plc ) );
-    //    }
-    //
-    //    double explanationBound = isUpper
-    //                                ? UNSATCertificateUtils::computeCombinationUpperBound(
-    //                                      linearCombination, gub.data(), glb.data(), _tableau->getN() )
-    //                                : UNSATCertificateUtils::computeCombinationLowerBound(
-    //                                      linearCombination, gub.data(), glb.data(), _tableau->getN() );
-    //
-    //    std::sort( contributions.begin(),
-    //               contributions.end(),
-    //               []( std::tuple<double, const PiecewiseLinearConstraint *> a,
-    //                   std::tuple<double, const PiecewiseLinearConstraint *> b ) {
-    //                   return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
-    //               } );
-    //
-    //    double overallContributions = 0;
-    //    for ( const auto &contribution : contributions )
-    //    {
-    //        overallContributions += abs( std::get<0>( contribution ) );
-    //        if ( FloatUtils::lt( overallContributions,
-    //                             abs( explanationBound ),
-    //                             GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
-    //            clause.erase( std::get<1>( contribution )->propagatePhaseAsLit() );
-    //        else
-    //            break;
-    //    }
-    //
+    for ( int clauseLit : clause )
+    {
+        const PiecewiseLinearConstraint *plc = _cdclCore.getConstraintFromLit( clauseLit );
+        double contribution = 0;
+        for ( int var : plc->getParticipatingVariables() )
+        {
+            if ( !FloatUtils::isZero( linearCombination[var] ) )
+            {
+                Tightening::BoundType btype = ( ( linearCombination[var] > 0 ) && isUpper ) ||
+                                                      ( ( linearCombination[var] < 0 ) && !isUpper )
+                                                ? Tightening::UB
+                                                : Tightening::LB;
+                std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
+                    _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
+                contribution +=
+                    ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
+                    linearCombination[var];
+            }
+        }
+        contributions.append( std::make_tuple( contribution, plc ) );
+    }
+
+    double explanationBound = isUpper
+                                ? UNSATCertificateUtils::computeCombinationUpperBound(
+                                      linearCombination, gub.data(), glb.data(), _tableau->getN() )
+                                : UNSATCertificateUtils::computeCombinationLowerBound(
+                                      linearCombination, gub.data(), glb.data(), _tableau->getN() );
+
+    std::sort( contributions.begin(),
+               contributions.end(),
+               []( std::tuple<double, const PiecewiseLinearConstraint *> a,
+                   std::tuple<double, const PiecewiseLinearConstraint *> b ) {
+                   return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
+               } );
+
+    double overallContributions = 0;
+    for ( const auto &contribution : contributions )
+    {
+        overallContributions += abs( std::get<0>( contribution ) );
+        if ( FloatUtils::lt( overallContributions,
+                             abs( explanationBound ),
+                             GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
+            clause.erase( std::get<1>( contribution )->propagatePhaseAsLit() );
+        else
+            break;
+    }
+
     Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
         Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>();
-    //
-    //    Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>
-    //        lemmaContributions =
-    //            Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>();
+
+    Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>
+        lemmaContributions =
+            Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>();
 
 
     // Iterate through all lemmas learned, check which participated in the explanation
@@ -4488,39 +4488,39 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
             if ( !entry->isPhaseFixing && entry->lemma )
             {
-                //                double contribution =
-                //                    ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
-                //                    linearCombination[var];
+                double contribution =
+                    ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
+                    linearCombination[var];
 
-                //                lemmaContributions.append( std::make_tuple( contribution, entry ) );
+                lemmaContributions.append( std::make_tuple( contribution, entry ) );
                 entries.insert( entry );
             }
         }
     }
 
-    //    if ( FloatUtils::lt( overallContributions,
-    //                         abs( explanationBound ),
-    //                         GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
-    //    {
-    //        std::sort(
-    //            lemmaContributions.begin(),
-    //            lemmaContributions.end(),
-    //            []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
-    //                std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
-    //                return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
-    //            } );
-    //
-    //        for ( const auto &contribution : lemmaContributions )
-    //        {
-    //            overallContributions += abs( std::get<0>( contribution ) );
-    //            if ( FloatUtils::lt( overallContributions,
-    //                                 abs( explanationBound ),
-    //                                 GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
-    //                entries.erase( std::get<1>( contribution ) );
-    //            else
-    //                break;
-    //        }
-    //    }
+    if ( FloatUtils::lt( overallContributions,
+                         abs( explanationBound ),
+                         GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
+    {
+        std::sort(
+            lemmaContributions.begin(),
+            lemmaContributions.end(),
+            []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
+                std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
+                return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
+            } );
+
+        for ( const auto &contribution : lemmaContributions )
+        {
+            overallContributions += abs( std::get<0>( contribution ) );
+            if ( FloatUtils::lt( overallContributions,
+                                 abs( explanationBound ),
+                                 GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
+                entries.erase( std::get<1>( contribution ) );
+            else
+                break;
+        }
+    }
 
 
     for ( const auto &entry : entries )
