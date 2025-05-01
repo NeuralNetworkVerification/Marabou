@@ -4315,8 +4315,6 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
         else
             minorDepList = entry->depList;
 
-        for ( const auto &minorEntry : minorDepList )
-            entries.insert( minorEntry );
     }
 
     return entries;
