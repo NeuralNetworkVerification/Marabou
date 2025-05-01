@@ -919,9 +919,6 @@ void CdclCore::notifySingleAssignment( int lit, bool isFixed )
     PiecewiseLinearConstraint *plc = _cadicalVarToPlc.at( (unsigned)FloatUtils::abs( lit ) );
     DEBUG( PhaseStatus originalPlcPhase = plc->getPhaseStatus() );
 
-    if ( isLiteralAssigned( lit ) )
-        return;
-
     plc->propagateLitAsSplit( lit );
     _engine->applyPlcPhaseFixingTightenings( *plc );
     plc->setActiveConstraint( false );
@@ -1076,7 +1073,7 @@ void CdclCore::initializeScoreTracker( std::shared_ptr<PLConstraintScoreTracker>
 
 bool CdclCore::isDecision( int lit )
 {
-    return _satSolverWrapper->isDecision( lit );
+    return _satSolverWrapper->isDecision(lit);
 }
 
 #endif
