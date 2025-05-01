@@ -1057,9 +1057,9 @@ private:
     */
     Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>
     analyseExplanationDependencies( const SparseUnsortedList &explanation,
-                              unsigned id,
-                              int explainedVar,
-                              bool isUpper );
+                                    unsigned id,
+                                    int explainedVar,
+                                    bool isUpper );
 #endif
 };
 
