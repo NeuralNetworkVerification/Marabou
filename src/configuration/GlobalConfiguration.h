@@ -271,9 +271,9 @@ public:
      */
     static const bool CDCL_USE_PROOF_BASED_CLAUSES;
 
-    /* While solving with CDCL, denotes if to try and reduce the conflict clause size with proof
+    /* Minimize the number of lemma dependencies when producing proofs
      */
-    static const bool CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF;
+    static const bool MINIMIZE_PROOF_DEPENDENCIES;
 
     /* Whether to convert the input verification query into a reachability query:
      */

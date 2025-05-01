@@ -3660,14 +3660,6 @@ void Engine::explainSimplexFailure()
         Set<int> clause = clauseFromContradictionVector(
             sparseContradiction, _groundBoundManager.getCounter(), -1, true );
 
-        if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
-        {
-            // If possible, attempt to reduce the clause size
-            if ( clause.size() > 1 && checkClauseWithProof( sparseContradiction, clause, NULL ) )
-                clause = reduceClauseSizeWithProof(
-                    sparseContradiction, Vector<int>( clause.begin(), clause.end() ), NULL );
-        }
-
         _cdclCore.addExternalClause( clause );
     }
     else
@@ -4237,12 +4229,12 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
     Vector<double> gub = Vector<double>( _tableau->getN(), 0 );
     Vector<double> glb = Vector<double>( _tableau->getN(), 0 );
 
-
-    for ( unsigned i = 0; i < _tableau->getN(); ++i )
-    {
-        gub[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::UB, id );
-        glb[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::LB, id );
-    }
+    if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES )
+        for ( unsigned i = 0; i < _tableau->getN(); ++i )
+        {
+            gub[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::UB, id );
+            glb[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::LB, id );
+        }
 
     // Iterate through all lemmas learned, check which participated in the explanation
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
@@ -4255,42 +4247,46 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                             : Tightening::LB;
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
-            if ( entry->isPhaseFixing )
+            if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES )
             {
                 double contribution =
                     ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
                     linearCombination[var];
 
-                entries.insert( entry );
-
                 contributions.append( std::make_tuple( contribution, entry ) );
             }
+
+            entries.insert( entry );
         }
     }
 
-    double explanationBound = isUpper
-                                ? UNSATCertificateUtils::computeCombinationUpperBound(
-                                      linearCombination, gub.data(), glb.data(), _tableau->getN() )
-                                : UNSATCertificateUtils::computeCombinationLowerBound(
-                                      linearCombination, gub.data(), glb.data(), _tableau->getN() );
-
-    std::sort( contributions.begin(),
-               contributions.end(),
-               []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
-                   std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
-                   return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
-               } );
-
-    double overallContributions = 0;
-    for ( const auto &contribution : contributions )
+    if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES )
     {
-        overallContributions += abs( std::get<0>( contribution ) );
-        if ( FloatUtils::lt( overallContributions,
-                             abs( explanationBound ),
-                             GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
-            entries.erase( std::get<1>( contribution ) );
-        else
-            break;
+        double explanationBound =
+            isUpper ? UNSATCertificateUtils::computeCombinationUpperBound(
+                          linearCombination, gub.data(), glb.data(), _tableau->getN() )
+                    : UNSATCertificateUtils::computeCombinationLowerBound(
+                          linearCombination, gub.data(), glb.data(), _tableau->getN() );
+
+        std::sort(
+            contributions.begin(),
+            contributions.end(),
+            []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
+                std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
+                return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
+            } );
+
+        double overallContributions = 0;
+        for ( const auto &contribution : contributions )
+        {
+            overallContributions += abs( std::get<0>( contribution ) );
+            if ( FloatUtils::lt( overallContributions,
+                                 abs( explanationBound ),
+                                 GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
+                entries.erase( std::get<1>( contribution ) );
+            else
+                break;
+        }
     }
 
     if ( _solveWithCDCL )
@@ -4461,188 +4457,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
 
-    if ( GlobalConfiguration::CDCL_REDUCE_CLAUSE_SIZE_WITH_PROOF )
-        if ( clause.size() > 1 &&
-             checkClauseWithProof( tempExpl, clause, phaseFixingEntry->lemma ) )
-            clause = reduceClauseSizeWithProof(
-                tempExpl, Vector<int>( clause.begin(), clause.end() ), phaseFixingEntry->lemma );
-
     return Vector<int>( clause.begin(), clause.end() );
-}
-
-Set<int> Engine::reduceClauseSizeWithProof( const SparseUnsortedList &explanation,
-                                            const Vector<int> &clause,
-                                            const std::shared_ptr<PLCLemma> lemma )
-{
-    ASSERT( _solveWithCDCL );
-    ASSERT( !clause.empty() && !explanation.empty() );
-
-    // Order clause by appearance in assigned constraints of the SearchTreeHandler
-    // if not assigned yet then should be last
-    Vector<int> toReturn = clause;
-    std::sort( toReturn.begin(), toReturn.end(), [this]( int a, int b ) {
-        unsigned aVal = _cdclCore.isLiteralFixed( a ) ? _plConstraints.size()
-                                                      : _cdclCore.getLiteralAssignmentIndex( a );
-        unsigned bVal = _cdclCore.isLiteralFixed( b ) ? _plConstraints.size()
-                                                      : _cdclCore.getLiteralAssignmentIndex( b );
-        return aVal > bVal;
-    } );
-
-    Vector<double> explanationLinearCombination( 0 );
-    UNSATCertificateUtils::getExplanationRowCombination(
-        explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
-
-    if ( lemma )
-    {
-        ASSERT( lemma->getCausingVars().size() == 1 );
-        explanationLinearCombination[lemma->getCausingVars().front()]++;
-    }
-
-    Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
-    Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
-
-    Vector<int> support( 0 );
-    toReturn = reduceClauseSizeWithLinearCombination(
-        explanationLinearCombination, gub, glb, support, toReturn, lemma );
-
-    ASSERT( !toReturn.empty() );
-    Set<int> newClause = Set<int>();
-    for ( int lit : toReturn )
-        newClause.insert( lit );
-
-    DEBUG( {
-        if ( !lemma || lemma->getConstraintType() == RELU )
-            ASSERT( checkClauseWithProof( explanation, newClause, lemma ) )
-    } );
-
-    return newClause;
-}
-
-Vector<int>
-Engine::reduceClauseSizeWithLinearCombination( const Vector<double> &linearCombination,
-                                               const Vector<double> &groundUpperBounds,
-                                               const Vector<double> &groundLowerBounds,
-                                               Vector<int> &support,
-                                               const Vector<int> &clause,
-                                               const std::shared_ptr<PLCLemma> lemma ) const
-{
-    ASSERT( _solveWithCDCL );
-    ASSERT( !clause.empty() );
-
-    if ( clause.size() == 1 )
-        return clause;
-
-    unsigned size = clause.size() / 2;
-
-    Vector<int> l = Vector<int>( clause.begin(), clause.begin() + size );
-    Vector<int> r = Vector<int>( clause.begin() + size, clause.end() );
-    ASSERT( l.size() + r.size() == clause.size() );
-
-    if ( checkLinearCombinationForClause(
-             linearCombination, groundUpperBounds, groundLowerBounds, support + l, lemma ) )
-        return reduceClauseSizeWithLinearCombination(
-            linearCombination, groundUpperBounds, groundLowerBounds, support, l, lemma );
-
-    // Try eliminating elements from the right half of the clause
-    Vector<int> can1 = support + l;
-    Vector<int> newR = reduceClauseSizeWithLinearCombination(
-        linearCombination, groundUpperBounds, groundLowerBounds, can1, r, lemma );
-
-    // Then try eliminating elements from the left half of the clause
-    Vector<int> can2 = support + newR;
-    Vector<int> newL = reduceClauseSizeWithLinearCombination(
-        linearCombination, groundUpperBounds, groundLowerBounds, can2, l, lemma );
-
-    return newL + newR;
-}
-
-bool Engine::checkLinearCombinationForClause( const Vector<double> &linearCombination,
-                                              Vector<double> groundUpperBounds,
-                                              Vector<double> groundLowerBounds,
-                                              const Vector<int> &clause,
-                                              const std::shared_ptr<PLCLemma> lemma ) const
-{
-    ASSERT( _solveWithCDCL );
-
-    const PiecewiseLinearConstraint *constraint;
-    for ( int lit : clause )
-    {
-        constraint = _cdclCore.getConstraintFromLit( lit );
-        ASSERT( constraint );
-        ASSERT( constraint->phaseFixed() || !constraint->isActive() );
-        PiecewiseLinearCaseSplit litSplit;
-        if ( lit > 0 )
-        {
-            if ( constraint->getType() == RELU || constraint->getType() == LEAKY_RELU )
-                litSplit = constraint->getCaseSplit( RELU_PHASE_ACTIVE );
-            else if ( constraint->getType() == ABSOLUTE_VALUE )
-                litSplit = constraint->getCaseSplit( ABS_PHASE_POSITIVE );
-            else if ( constraint->getType() == SIGN )
-                litSplit = constraint->getCaseSplit( SIGN_PHASE_POSITIVE );
-        }
-        else
-        {
-            if ( constraint->getType() == RELU || constraint->getType() == LEAKY_RELU )
-                litSplit = constraint->getCaseSplit( RELU_PHASE_INACTIVE );
-            else if ( constraint->getType() == ABSOLUTE_VALUE )
-                litSplit = constraint->getCaseSplit( ABS_PHASE_NEGATIVE );
-            else if ( constraint->getType() == SIGN )
-                litSplit = constraint->getCaseSplit( SIGN_PHASE_NEGATIVE );
-        }
-        ASSERT( !litSplit.getBoundTightenings().empty() )
-
-        for ( const auto tightening : litSplit.getBoundTightenings() )
-        {
-            Vector<double> &temp =
-                tightening._type == Tightening::UB ? groundUpperBounds : groundLowerBounds;
-            temp[tightening._variable] = tightening._value;
-        }
-    }
-
-    if ( !lemma )
-        return FloatUtils::isNegative(
-            UNSATCertificateUtils::computeCombinationUpperBound( linearCombination,
-                                                                 groundUpperBounds.data(),
-                                                                 groundLowerBounds.data(),
-                                                                 _tableau->getN() ) );
-
-    // Currently works for bound lemmas only
-    ASSERT( lemma->getCausingVars().size() == 1 );
-    double explainedBound =
-        lemma->getCausingVarBound() == Tightening::UB
-            ? UNSATCertificateUtils::computeCombinationUpperBound( linearCombination,
-                                                                   groundUpperBounds.data(),
-                                                                   groundLowerBounds.data(),
-                                                                   _tableau->getN() )
-            : UNSATCertificateUtils::computeCombinationLowerBound( linearCombination,
-                                                                   groundUpperBounds.data(),
-                                                                   groundLowerBounds.data(),
-                                                                   _tableau->getN() );
-
-    return lemma->getCausingVarBound() == Tightening::UB
-             ? FloatUtils::lt( explainedBound, lemma->getBound() )
-             : FloatUtils::gt( explainedBound, lemma->getBound() );
-}
-
-bool Engine::checkClauseWithProof( const SparseUnsortedList &explanation,
-                                   const Set<int> &clause,
-                                   const std::shared_ptr<PLCLemma> lemma ) const
-{
-    ASSERT( _solveWithCDCL );
-    ASSERT( !explanation.empty() && !clause.empty() );
-    Vector<double> explanationLinearCombination( 0 );
-    UNSATCertificateUtils::getExplanationRowCombination(
-        explanation, explanationLinearCombination, _tableau->getSparseA(), _tableau->getN() );
-    Vector<double> gub = _groundBoundManager.getAllInitialGroundBounds( Tightening::UB );
-    Vector<double> glb = _groundBoundManager.getAllInitialGroundBounds( Tightening::LB );
-
-    if ( lemma )
-        explanationLinearCombination[lemma->getCausingVars().front()]++;
-
-    Vector<int> clauseVec( clause.begin(), clause.end() );
-
-    return checkLinearCombinationForClause(
-        explanationLinearCombination, gub, glb, clauseVec, lemma );
 }
 
 void Engine::removeLiteralFromPropagations( int literal )
