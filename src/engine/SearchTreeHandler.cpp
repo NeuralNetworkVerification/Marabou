@@ -310,6 +310,7 @@ bool SearchTreeHandler::popSplit()
             {
                 UnsatCertificateNode *certificateNode =
                     _engine->getUNSATCertificateCurrentPointer();
+                certificateNode->deleteUnusedLemmas();
                 _engine->setUNSATCertificateCurrentPointer( certificateNode->getParent() );
             }
 
