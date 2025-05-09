@@ -75,6 +75,7 @@ public:
     void generateQuery( IQuery &query );
 
     Equation *findEquationWithOutputVariable( Variable variable );
+    virtual ~InputQueryBuilder();
 };
 
 #endif // __InputQueryBuilder_h__
