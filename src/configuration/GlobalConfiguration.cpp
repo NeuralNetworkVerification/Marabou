@@ -27,7 +27,7 @@ const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
 
 // Whether to use SoI instead of Reluplex for local search for satisfying assignments
 // to non-linear constraint.
-bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = true;
+bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
 
 const double GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI = 5;
 
@@ -120,10 +120,12 @@ const bool GlobalConfiguration::WRITE_JSON_PROOF = false;
 const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
-const bool GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES = true;
-const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = true;
+const bool GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES = false;
+const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = false;
 
-const bool GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY = false;
+const bool GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY = true;
+
+const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES = true;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;

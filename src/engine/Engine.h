@@ -391,7 +391,25 @@ public:
      Configure the engine to allow solving with CDCL, used for testing only.
     */
     void configureForCDCL();
+
+    List<unsigned> getOutputVariables() const override;
+
 #endif
+
+    /*
+      Returns the symbolic bound tightening type in use.
+     */
+    SymbolicBoundTighteningType getSymbolicBoundTighteningType() const override;
+
+    /*
+      Returns the bound manager
+     */
+    const IBoundManager *getBoundManager() const override;
+
+    /*
+      Returns the input query.
+     */
+    std::shared_ptr<Query> getInputQuery() const override;
 
 private:
     enum BasisRestorationRequired {
@@ -464,7 +482,7 @@ private:
     /*
       Preprocessed Query
     */
-    std::unique_ptr<Query> _preprocessedQuery;
+    std::shared_ptr<Query> _preprocessedQuery;
 
     /*
       Pivot selection strategies.

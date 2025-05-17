@@ -379,6 +379,26 @@ public:
         return false;
     }
 
+    List<unsigned> getOutputVariables() const override
+    {
+        return List<unsigned>();
+    }
+
+    SymbolicBoundTighteningType getSymbolicBoundTighteningType() const override
+    {
+        return SymbolicBoundTighteningType::NONE;
+    }
+
+    const IBoundManager *getBoundManager() const override
+    {
+        return nullptr;
+    }
+
+    std::shared_ptr<Query> getInputQuery() const
+    {
+        return std::shared_ptr<Query>( nullptr );
+    }
+
 #ifdef BUILD_CADICAL
     bool solveWithCDCL( double timeoutInSeconds ) override
     {

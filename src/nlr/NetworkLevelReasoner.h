@@ -198,7 +198,11 @@ public:
     */
     unsigned getMaxLayerSize() const;
 
-    const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
+    const Map<unsigned, Layer *> &getLayerIndexToLayer() const override;
+
+    void setBounds( unsigned layer, unsigned int neuron, double lower, double upper );
+
+    NeuronIndex variableToNeuron( unsigned variable ) const;
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;

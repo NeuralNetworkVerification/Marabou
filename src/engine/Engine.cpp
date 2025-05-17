@@ -4247,7 +4247,8 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                             : Tightening::LB;
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
-            if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES && entry.get() && entry->lemma && !entry->lemma->getToCheck() )
+            if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES && entry.get() && entry->lemma &&
+                 !entry->lemma->getToCheck() )
             {
                 double contribution =
                     ( entry->val - _groundBoundManager.getGroundBoundUpToId( var, btype, 0 ) ) *
@@ -4273,10 +4274,14 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
             contributions.end(),
             []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
                 std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
-//                if ( std::get<1>( a ).get() && std::get<1>( a )->lemma->getToCheck() && (std::get<1>( b ).get() && !std::get<1>( b )->lemma->getToCheck()))
-//                    return false;
-//                else if ( std::get<1>( b ).get() && std::get<1>( b )->lemma->getToCheck() && (std::get<1>( a ).get() && !std::get<1>( a )->lemma->getToCheck()))
-//                    return true;
+                //                if ( std::get<1>( a ).get() && std::get<1>( a
+                //                )->lemma->getToCheck() && (std::get<1>( b ).get() && !std::get<1>(
+                //                b )->lemma->getToCheck()))
+                //                    return false;
+                //                else if ( std::get<1>( b ).get() && std::get<1>( b
+                //                )->lemma->getToCheck() && (std::get<1>( a ).get() && !std::get<1>(
+                //                a )->lemma->getToCheck()))
+                //                    return true;
                 return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
             } );
 
@@ -4560,5 +4565,25 @@ void Engine::configureForCDCL()
 
     _UNSATCertificateCurrentPointer =
         new ( true ) CVC4::context::CDO<UnsatCertificateNode *>( &_context, NULL );
+}
+
+SymbolicBoundTighteningType Engine::getSymbolicBoundTighteningType() const
+{
+    return _symbolicBoundTighteningType;
+}
+
+const IBoundManager *Engine::getBoundManager() const
+{
+    return &_boundManager;
+}
+
+List<unsigned> Engine::getOutputVariables() const
+{
+    return _preprocessedQuery->getOutputVariables();
+}
+
+std::shared_ptr<Query> Engine::getInputQuery() const
+{
+    return _preprocessedQuery;
 }
 #endif

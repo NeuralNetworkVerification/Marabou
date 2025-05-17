@@ -130,7 +130,7 @@ public:
     /*
       Internally adds a conflict clause when learned, later to be informed to the SAT solver
     */
-    void addExternalClause( const Set<int> &clause );
+    void addExternalClause( Set<int> &clause );
 
     /*
        Returns the PiecewiseLinearConstraint abstraced by the literal lit
@@ -146,7 +146,7 @@ public:
       Adds the decision-based conflict clause (negation of all decisions), except the given literal,
       to Marabou, later to be propagated
     */
-    Set<int> addDecisionBasedConflictClause();
+    void addDecisionBasedConflictClause();
 
     /*
      Remove a literal from the propagation list
@@ -262,14 +262,17 @@ private:
     unsigned _numOfConflictClauses;
     bool _shouldRestart;
 
-    std::shared_ptr<TableauState> _tableauState;
-    TableauState _initialTableauState;
-
     HashMap<unsigned, bool> _largestAssignmentSoFar;
 
     Vector<Set<int>> _initialClauses;
 
     std::shared_ptr<PLConstraintScoreTracker> _scoreTracker;
+
+    Map<unsigned, int> _decisionLiterals;
+    Map<unsigned, double> _storedLowerBounds;
+    Map<unsigned, double> _storedUpperBounds;
+
+    Map<int, double> _decisionScores;
 
     /*
      Decision heuristics
@@ -289,6 +292,8 @@ private:
     unsigned int getVariableVSIDSScore( unsigned var ) const;
 
     unsigned luby( unsigned i );
+
+    double computeDecisionScoreForLiteral( int literal ) const;
 };
 
 #endif

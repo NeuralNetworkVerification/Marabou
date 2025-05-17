@@ -871,4 +871,29 @@ const Map<unsigned, Layer *> &NetworkLevelReasoner::getLayerIndexToLayer() const
     return _layerIndexToLayer;
 }
 
+void NetworkLevelReasoner::setBounds( unsigned layer,
+                                      unsigned int neuron,
+                                      double lower,
+                                      double upper )
+{
+    ASSERT( layer < _layerIndexToLayer.size() );
+    _layerIndexToLayer[layer]->setBounds( neuron, lower, upper );
+}
+
+NeuronIndex NetworkLevelReasoner::variableToNeuron( unsigned int variable ) const
+{
+    for (const auto pair : _layerIndexToLayer)
+    {
+        unsigned layerIdx = pair.first;
+        const Layer *layer = pair.second;
+        for (unsigned neuron = 0; neuron < layer->getSize(); ++neuron)
+        {
+            if (layer->hasMappingFromVariable(variable))
+                return {layerIdx, neuron};
+        }
+    }
+
+    return {0, 0};
+}
+
 } // namespace NLR

@@ -163,6 +163,9 @@ public:
     bool compareWeights( const Map<unsigned, double *> &map,
                          const Map<unsigned, double *> &mapOfOtherLayer ) const;
 
+    void setBounds( unsigned neuron, double lower, double upper );
+    bool hasMappingFromVariable( unsigned variable ) const;
+
 private:
     unsigned _layerIndex;
     Type _type;

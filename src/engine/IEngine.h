@@ -24,6 +24,7 @@
 #include "List.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
+#include "SymbolicBoundTighteningType.h"
 #include "TableauState.h"
 #include "TableauStateStorageLevel.h"
 #include "Vector.h"
@@ -43,6 +44,7 @@ class SearchTreeState;
 class String;
 class PiecewiseLinearConstraint;
 class PLCLemma;
+class Query;
 class UnsatCertificateNode;
 
 class IEngine
@@ -251,6 +253,25 @@ public:
     */
     virtual bool shouldSolveWithCDCL() const = 0;
 
+    /*
+      Return the output variables.
+     */
+    virtual List<unsigned> getOutputVariables() const = 0;
+
+    /*
+     Returns the symbolic bound tightening type in use.
+    */
+    virtual SymbolicBoundTighteningType getSymbolicBoundTighteningType() const = 0;
+
+    /*
+      Returns the bound manager
+     */
+    virtual const IBoundManager *getBoundManager() const = 0;
+
+    /*
+      Returns the input query.
+     */
+    virtual std::shared_ptr<Query> getInputQuery() const = 0;
 
 #ifdef BUILD_CADICAL
     /*

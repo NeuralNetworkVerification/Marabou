@@ -279,6 +279,10 @@ public:
      */
     static const bool CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY;
 
+    /* While solving with CDCL, denotes if to try and shorten clauses or not
+     */
+    static const bool CDCL_SHORTEN_CLAUSES;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns
