@@ -528,6 +528,126 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 }
             }
 
+            if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
+            {
+                for ( int literal : toAdd )
+                    if ( !_decisionScores.exists( literal ) )
+                        _decisionScores[literal] = computeDecisionScoreForLiteral( literal );
+
+                ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
+                std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
+                const IBoundManager *boundManager = _engine->getBoundManager();
+                NLR::NetworkLevelReasoner *networkLevelReasoner =
+                    _engine->getNetworkLevelReasoner();
+                networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+                List<unsigned> outputVariables = _engine->getOutputVariables();
+                ASSERT( outputVariables.size() == 1 );
+                unsigned outputVariable = outputVariables.front();
+
+                Vector<int> clauseCpy( toAdd );
+                toAdd.clear();
+
+                const PiecewiseLinearConstraint *propagatedLiteralPlc =
+                    _cadicalVarToPlc[abs( propagated_lit )];
+                for ( unsigned variable : propagatedLiteralPlc->getParticipatingVariables() )
+                {
+                    NLR::NeuronIndex neuronIndex =
+                        networkLevelReasoner->variableToNeuron( variable );
+                    if ( neuronIndex._layer != 0 )
+                    {
+                        if ( -propagated_lit < 0 )
+                            networkLevelReasoner->setBounds(
+                                neuronIndex._layer,
+                                neuronIndex._neuron,
+                                boundManager->getLowerBound( variable ),
+                                0 );
+                        else
+                            networkLevelReasoner->setBounds(
+                                neuronIndex._layer,
+                                neuronIndex._neuron,
+                                boundManager->getLowerBound( variable ),
+                                boundManager->getUpperBound( variable ) );
+
+                        break;
+                    }
+                }
+
+                while ( true )
+                {
+                    double minScore = FloatUtils::infinity();
+                    int literalWithMinScore = 0;
+                    for ( int literal : clauseCpy )
+                        if ( _decisionScores[literal] <= minScore )
+                        {
+                            minScore = _decisionScores[literal];
+                            literalWithMinScore = literal;
+                        }
+
+                    if ( literalWithMinScore == 0 )
+                        break;
+
+                    clauseCpy.erase( literalWithMinScore );
+                    toAdd.append( literalWithMinScore );
+
+                    double outputUb = FloatUtils::infinity();
+                    if ( toAdd.size() == 1 )
+                        outputUb = minScore;
+                    else
+                    {
+                        const PiecewiseLinearConstraint *plc =
+                            _cadicalVarToPlc[abs( literalWithMinScore )];
+                        bool found = false;
+                        for ( unsigned variable : plc->getParticipatingVariables() )
+                        {
+                            NLR::NeuronIndex neuronIndex =
+                                networkLevelReasoner->variableToNeuron( variable );
+                            if ( neuronIndex._layer != 0 )
+                            {
+                                found = true;
+                                if ( literalWithMinScore < 0 )
+                                    networkLevelReasoner->setBounds(
+                                        neuronIndex._layer,
+                                        neuronIndex._neuron,
+                                        boundManager->getLowerBound( variable ),
+                                        0 );
+                                else
+                                    networkLevelReasoner->setBounds(
+                                        neuronIndex._layer,
+                                        neuronIndex._neuron,
+                                        boundManager->getLowerBound( variable ),
+                                        boundManager->getUpperBound( variable ) );
+
+                                if ( _engine->getSymbolicBoundTighteningType() ==
+                                     SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+                                    networkLevelReasoner->symbolicBoundPropagation();
+                                else if ( _engine->getSymbolicBoundTighteningType() ==
+                                          SymbolicBoundTighteningType::DEEP_POLY )
+                                    networkLevelReasoner->deepPolyPropagation();
+
+                                List<Tightening> tightenings;
+                                networkLevelReasoner->getConstraintTightenings( tightenings );
+
+                                for ( Tightening tightening : tightenings )
+                                {
+                                    if ( tightening._variable == outputVariable &&
+                                         tightening._type == Tightening::UB )
+                                    {
+                                        outputUb = tightening._value;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if ( found )
+                                break;
+                        }
+                    }
+
+                    if ( outputUb < boundManager->getLowerBound( outputVariable ) )
+                        break;
+                }
+            }
+
             for ( int lit : toAdd )
             {
                 // Make sure all clause literals were fixed before the literal to explain
@@ -643,7 +763,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
         networkLevelReasoner->obtainCurrentBounds( *inputQuery );
         List<unsigned> outputVariables = _engine->getOutputVariables();
         ASSERT( outputVariables.size() == 1 );
-        unsigned  outputVariable = outputVariables.front();
+        unsigned outputVariable = outputVariables.front();
 
         Set<int> clauseCpy( clause );
         clause.clear();
