@@ -630,26 +630,20 @@ void CdclCore::addExternalClause( Set<int> &clause )
         _literalToClauses.clear();
     }
 
-    std::shared_ptr<Query> inputQuery;
-    const IBoundManager *boundManager = nullptr;
-    NLR::NetworkLevelReasoner *networkLevelReasoner = nullptr;
-    List<unsigned> outputVariables;
-    unsigned outputVariable = 0;
     if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
     {
-        _decisionScores.clear();
         for ( int literal : clause )
             if ( !_decisionScores.exists( literal ) )
                 _decisionScores[literal] = computeDecisionScoreForLiteral( literal );
 
         ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
-        inputQuery = _engine->getInputQuery();
-        boundManager = _engine->getBoundManager();
-        networkLevelReasoner = _engine->getNetworkLevelReasoner();
+        std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
+        const IBoundManager *boundManager = _engine->getBoundManager();
+        NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
         networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-        outputVariables = _engine->getOutputVariables();
+        List<unsigned> outputVariables = _engine->getOutputVariables();
         ASSERT( outputVariables.size() == 1 );
-        outputVariable = outputVariables.front();
+        unsigned  outputVariable = outputVariables.front();
 
         Set<int> clauseCpy( clause );
         clause.clear();
