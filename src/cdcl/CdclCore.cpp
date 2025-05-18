@@ -519,11 +519,11 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
             else
             {
-                for ( const auto &pair : _assignedLiterals )
+                for ( const auto &pair : _decisionLiterals )
                 {
-                    int lit = pair.first;
-                    if ( _satSolverWrapper->isDecision( lit ) && !_fixedCadicalVars.exists( lit ) &&
-                         lit != propagated_lit )
+                    int lit = pair.second;
+                    ASSERT( isDecision( lit ) && lit != propagated_lit );
+                    if ( !_fixedCadicalVars.exists( lit ) )
                         toAdd.append( lit );
                 }
             }
