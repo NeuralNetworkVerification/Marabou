@@ -18,6 +18,7 @@
 
 #include "NetworkLevelReasoner.h"
 #include "Options.h"
+#include "Query.h"
 #include "TimeUtils.h"
 #include "TimeoutException.h"
 
@@ -530,13 +531,17 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
 
             if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
             {
+                Vector<Pair<double, int>> clauseScores;
                 for ( int literal : toAdd )
+                {
                     if ( !_decisionScores.exists( literal ) )
                         _decisionScores[literal] = computeDecisionScoreForLiteral( literal );
+                    clauseScores.append( Pair<double, int>( _decisionScores[literal], literal ) );
+                }
+                clauseScores.sort();
 
                 ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
-                const IBoundManager *boundManager = _engine->getBoundManager();
                 NLR::NetworkLevelReasoner *networkLevelReasoner =
                     _engine->getNetworkLevelReasoner();
                 networkLevelReasoner->obtainCurrentBounds( *inputQuery );
@@ -557,45 +562,35 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                     {
                         if ( -propagated_lit < 0 )
                             networkLevelReasoner->setBounds(
-                                neuronIndex._layer,
-                                neuronIndex._neuron,
-                                boundManager->getLowerBound( variable ),
-                                0 );
+                                neuronIndex._layer, neuronIndex._neuron, 0, 0 );
                         else
                             networkLevelReasoner->setBounds(
                                 neuronIndex._layer,
                                 neuronIndex._neuron,
-                                boundManager->getLowerBound( variable ),
-                                boundManager->getUpperBound( variable ) );
+                                FloatUtils::max( inputQuery->getLowerBound( variable ), 0 ),
+                                inputQuery->getUpperBound( variable ) );
 
                         break;
                     }
                 }
 
-                while ( true )
+                for ( const auto &pair : clauseScores )
                 {
-                    double minScore = FloatUtils::infinity();
-                    int literalWithMinScore = 0;
-                    for ( int literal : clauseCpy )
-                        if ( _decisionScores[literal] <= minScore )
-                        {
-                            minScore = _decisionScores[literal];
-                            literalWithMinScore = literal;
-                        }
+                    double score = pair.first();
+                    int literal = pair.second();
 
-                    if ( literalWithMinScore == 0 )
+                    if ( literal == 0 )
                         break;
 
-                    clauseCpy.erase( literalWithMinScore );
-                    toAdd.append( literalWithMinScore );
+                    toAdd.append( literal );
 
                     double outputUb = FloatUtils::infinity();
                     if ( toAdd.size() == 1 )
-                        outputUb = minScore;
+                        outputUb = score;
                     else
                     {
                         const PiecewiseLinearConstraint *plc =
-                            _cadicalVarToPlc[abs( literalWithMinScore )];
+                            _cadicalVarToPlc[abs( literal )];
                         bool found = false;
                         for ( unsigned variable : plc->getParticipatingVariables() )
                         {
@@ -604,18 +599,15 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                             if ( neuronIndex._layer != 0 )
                             {
                                 found = true;
-                                if ( literalWithMinScore < 0 )
+                                if ( literal < 0 )
                                     networkLevelReasoner->setBounds(
-                                        neuronIndex._layer,
-                                        neuronIndex._neuron,
-                                        boundManager->getLowerBound( variable ),
-                                        0 );
+                                        neuronIndex._layer, neuronIndex._neuron, 0, 0 );
                                 else
                                     networkLevelReasoner->setBounds(
                                         neuronIndex._layer,
                                         neuronIndex._neuron,
-                                        boundManager->getLowerBound( variable ),
-                                        boundManager->getUpperBound( variable ) );
+                                        FloatUtils::max( inputQuery->getLowerBound( variable ), 0 ),
+                                        inputQuery->getUpperBound( variable ) );
 
                                 if ( _engine->getSymbolicBoundTighteningType() ==
                                      SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
@@ -643,7 +635,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                         }
                     }
 
-                    if ( outputUb < boundManager->getLowerBound( outputVariable ) )
+                    if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
                         break;
                 }
             }
@@ -752,13 +744,17 @@ void CdclCore::addExternalClause( Set<int> &clause )
 
     if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
     {
+        Vector<Pair<double, int>> clauseScores;
         for ( int literal : clause )
+        {
             if ( !_decisionScores.exists( literal ) )
                 _decisionScores[literal] = computeDecisionScoreForLiteral( literal );
+            clauseScores.append( Pair<double, int>( _decisionScores[literal], literal ) );
+        }
+        clauseScores.sort();
 
         ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
-        const IBoundManager *boundManager = _engine->getBoundManager();
         NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
         networkLevelReasoner->obtainCurrentBounds( *inputQuery );
         List<unsigned> outputVariables = _engine->getOutputVariables();
@@ -768,29 +764,22 @@ void CdclCore::addExternalClause( Set<int> &clause )
         Set<int> clauseCpy( clause );
         clause.clear();
 
-        while ( true )
+        for ( const auto &pair : clauseScores )
         {
-            double minScore = FloatUtils::infinity();
-            int literalWithMinScore = 0;
-            for ( int literal : clauseCpy )
-                if ( _decisionScores[literal] <= minScore )
-                {
-                    minScore = _decisionScores[literal];
-                    literalWithMinScore = literal;
-                }
+            double score = pair.first();
+            int literal = pair.second();
 
-            if ( literalWithMinScore == 0 )
+            if ( literal == 0 )
                 break;
 
-            clauseCpy.erase( literalWithMinScore );
-            clause.insert( literalWithMinScore );
+            clause.insert( literal );
 
             double outputUb = FloatUtils::infinity();
             if ( clause.size() == 1 )
-                outputUb = minScore;
+                outputUb = score;
             else
             {
-                const PiecewiseLinearConstraint *plc = _cadicalVarToPlc[abs( literalWithMinScore )];
+                const PiecewiseLinearConstraint *plc = _cadicalVarToPlc[abs( literal )];
                 bool found = false;
                 for ( unsigned variable : plc->getParticipatingVariables() )
                 {
@@ -799,18 +788,15 @@ void CdclCore::addExternalClause( Set<int> &clause )
                     if ( neuronIndex._layer != 0 )
                     {
                         found = true;
-                        if ( literalWithMinScore < 0 )
+                        if ( literal < 0 )
                             networkLevelReasoner->setBounds(
-                                neuronIndex._layer,
-                                neuronIndex._neuron,
-                                boundManager->getLowerBound( variable ),
-                                0 );
+                                neuronIndex._layer, neuronIndex._neuron, 0, 0 );
                         else
                             networkLevelReasoner->setBounds(
                                 neuronIndex._layer,
                                 neuronIndex._neuron,
-                                boundManager->getLowerBound( variable ),
-                                boundManager->getUpperBound( variable ) );
+                                FloatUtils::max( inputQuery->getLowerBound( variable ), 0 ),
+                                inputQuery->getUpperBound( variable ) );
 
                         if ( _engine->getSymbolicBoundTighteningType() ==
                              SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
@@ -838,7 +824,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
                 }
             }
 
-            if ( outputUb < boundManager->getLowerBound( outputVariable ) )
+            if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
                 break;
         }
     }
@@ -1298,7 +1284,6 @@ double CdclCore::computeDecisionScoreForLiteral( int literal ) const
     std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
     NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
     networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-    const IBoundManager *boundManager = _engine->getBoundManager();
     List<unsigned> outputVariables = _engine->getOutputVariables();
     ASSERT( outputVariables.size() == 1 );
     unsigned outputVariable = outputVariables.front();
@@ -1310,15 +1295,13 @@ double CdclCore::computeDecisionScoreForLiteral( int literal ) const
         if ( neuronIndex._layer != 0 )
         {
             if ( literal < 0 )
-                networkLevelReasoner->setBounds( neuronIndex._layer,
-                                                 neuronIndex._neuron,
-                                                 boundManager->getLowerBound( variable ),
-                                                 0 );
+                networkLevelReasoner->setBounds( neuronIndex._layer, neuronIndex._neuron, 0, 0 );
             else
-                networkLevelReasoner->setBounds( neuronIndex._layer,
-                                                 neuronIndex._neuron,
-                                                 boundManager->getLowerBound( variable ),
-                                                 boundManager->getUpperBound( variable ) );
+                networkLevelReasoner->setBounds(
+                    neuronIndex._layer,
+                    neuronIndex._neuron,
+                    FloatUtils::max( inputQuery->getLowerBound( variable ), 0 ),
+                    inputQuery->getUpperBound( variable ) );
 
             if ( _engine->getSymbolicBoundTighteningType() ==
                  SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
