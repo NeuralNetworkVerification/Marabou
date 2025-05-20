@@ -541,7 +541,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 }
                 clauseScores.sort();
 
-                if ( clauseScores[0].first() == FloatUtils::infinity() )
+                if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
                 {
                     clauseScores.clear();
                     for ( int lit : toAdd )
@@ -760,7 +760,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
         }
         clauseScores.sort();
 
-        if ( clauseScores[0].first() == FloatUtils::infinity() )
+        if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
         {
             clauseScores.clear();
             for ( int level = 1; level < _context.getLevel(); ++level )
