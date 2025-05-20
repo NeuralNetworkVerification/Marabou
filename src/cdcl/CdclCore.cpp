@@ -520,7 +520,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
             else
             {
-                for ( int level = 0; level < _context.getLevel(); ++level )
+                for ( int level = 1; level <= _context.getLevel(); ++level )
                 {
                     ASSERT( _decisionLiterals.exists( level ) );
                     int lit = _decisionLiterals[level];
@@ -763,7 +763,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
         if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
         {
             clauseScores.clear();
-            for ( int level = 1; level < _context.getLevel(); ++level )
+            for ( int level = 1; level <= _context.getLevel(); ++level )
             {
                 ASSERT( _decisionLiterals.exists( level ) &&
                         clause.exists( _decisionLiterals[level] ) );
@@ -995,7 +995,7 @@ void CdclCore::addDecisionBasedConflictClause()
     struct timespec start = TimeUtils::sampleMicro();
 
     Set<int> clause = Set<int>();
-    for ( int l = 1; l < _context.getLevel(); ++l )
+    for ( int l = 1; l <= _context.getLevel(); ++l )
     {
         ASSERT( _decisionLiterals.exists( l ) );
         int lit = _decisionLiterals[l];
