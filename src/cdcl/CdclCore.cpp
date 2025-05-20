@@ -520,9 +520,10 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
             else
             {
-                for ( const auto &pair : _decisionLiterals )
+                for ( int level = 0; level < _context.getLevel(); ++level )
                 {
-                    int lit = pair.second;
+                    ASSERT( _decisionLiterals.exists( level ) );
+                    int lit = _decisionLiterals[level];
                     ASSERT( isDecision( lit ) && lit != propagated_lit );
                     if ( !_fixedCadicalVars.exists( lit ) )
                         toAdd.append( lit );
@@ -539,6 +540,13 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                     clauseScores.append( Pair<double, int>( _decisionScores[literal], literal ) );
                 }
                 clauseScores.sort();
+
+                if ( clauseScores[0].first() == FloatUtils::infinity() )
+                {
+                    clauseScores.clear();
+                    for ( int lit : toAdd )
+                        clauseScores.append( Pair<double, int>( FloatUtils::infinity(), lit ) );
+                }
 
                 ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
@@ -589,8 +597,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                         outputUb = score;
                     else
                     {
-                        const PiecewiseLinearConstraint *plc =
-                            _cadicalVarToPlc[abs( literal )];
+                        const PiecewiseLinearConstraint *plc = _cadicalVarToPlc[abs( literal )];
                         bool found = false;
                         for ( unsigned variable : plc->getParticipatingVariables() )
                         {
@@ -752,6 +759,18 @@ void CdclCore::addExternalClause( Set<int> &clause )
             clauseScores.append( Pair<double, int>( _decisionScores[literal], literal ) );
         }
         clauseScores.sort();
+
+        if ( clauseScores[0].first() == FloatUtils::infinity() )
+        {
+            clauseScores.clear();
+            for ( int level = 1; level < _context.getLevel(); ++level )
+            {
+                ASSERT( _decisionLiterals.exists( level ) &&
+                        clause.exists( _decisionLiterals[level] ) );
+                clauseScores.append(
+                    Pair<double, int>( FloatUtils::infinity(), _decisionLiterals[level] ) );
+            }
+        }
 
         ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
@@ -976,7 +995,7 @@ void CdclCore::addDecisionBasedConflictClause()
     struct timespec start = TimeUtils::sampleMicro();
 
     Set<int> clause = Set<int>();
-    for ( unsigned l = _context.getLevel(); l > 0; --l )
+    for ( int l = 1; l < _context.getLevel(); ++l )
     {
         ASSERT( _decisionLiterals.exists( l ) );
         int lit = _decisionLiterals[l];
