@@ -541,6 +541,13 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 }
                 clauseScores.sort();
 
+                if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
+                {
+                    clauseScores.clear();
+                    for ( int lit : toAdd )
+                        clauseScores.append( Pair<double, int>( FloatUtils::infinity(), lit ) );
+                }
+
                 ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
                 NLR::NetworkLevelReasoner *networkLevelReasoner =
@@ -549,66 +556,6 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 List<unsigned> outputVariables = _engine->getOutputVariables();
                 ASSERT( outputVariables.size() == 1 );
                 unsigned outputVariable = outputVariables.front();
-
-                if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
-                {
-                    clauseScores.clear();
-                    const IBoundManager *boundManager = _engine->getBoundManager();
-                    for ( int literal : toAdd )
-                    {
-                        ASSERT( literal != 0 );
-                        double literalScore = FloatUtils::infinity();
-                        const PiecewiseLinearConstraint *plc = _cadicalVarToPlc[abs( literal )];
-                        for ( unsigned variable : plc->getParticipatingVariables() )
-                        {
-                            NLR::NeuronIndex neuronIndex =
-                                networkLevelReasoner->variableToNeuron( variable );
-                            if ( neuronIndex._layer != 0 )
-                            {
-                                if ( literal < 0 )
-                                    networkLevelReasoner->setBounds(
-                                        neuronIndex._layer, neuronIndex._neuron, 0, 0 );
-                                else
-                                    networkLevelReasoner->setBounds(
-                                        neuronIndex._layer,
-                                        neuronIndex._neuron,
-                                        FloatUtils::max( boundManager->getLowerBound( variable ),
-                                                         0 ),
-                                        boundManager->getUpperBound( variable ) );
-
-                                if ( _engine->getSymbolicBoundTighteningType() ==
-                                     SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
-                                    networkLevelReasoner->symbolicBoundPropagation();
-                                else if ( _engine->getSymbolicBoundTighteningType() ==
-                                          SymbolicBoundTighteningType::DEEP_POLY )
-                                    networkLevelReasoner->deepPolyPropagation();
-
-                                List<Tightening> tightenings;
-                                networkLevelReasoner->getConstraintTightenings( tightenings );
-                                for ( Tightening tightening : tightenings )
-                                    if ( tightening._variable == outputVariable &&
-                                         tightening._type == Tightening::UB )
-                                    {
-                                        literalScore = tightening._value;
-                                        break;
-                                    }
-                                break;
-                            }
-                        }
-
-                        clauseScores.append( Pair<double, int>( literalScore, literal ) );
-                        networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-                    }
-
-                    clauseScores.sort();
-                }
-
-                if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
-                {
-                    clauseScores.clear();
-                    for ( int lit : toAdd )
-                        clauseScores.append( Pair<double, int>( FloatUtils::infinity(), lit ) );
-                }
 
                 Vector<int> clauseCpy( toAdd );
                 toAdd.clear();
@@ -813,67 +760,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
         }
         clauseScores.sort();
 
-        ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
-        std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
-        NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
-        networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-        List<unsigned> outputVariables = _engine->getOutputVariables();
-        ASSERT( outputVariables.size() == 1 );
-        unsigned outputVariable = outputVariables.front();
-
-        if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
-        {
-            clauseScores.clear();
-            const IBoundManager *boundManager = _engine->getBoundManager();
-            for ( int literal : clause )
-            {
-                ASSERT( literal != 0 );
-                double literalScore = FloatUtils::infinity();
-                const PiecewiseLinearConstraint *plc = _cadicalVarToPlc[abs( literal )];
-                for ( unsigned variable : plc->getParticipatingVariables() )
-                {
-                    NLR::NeuronIndex neuronIndex =
-                        networkLevelReasoner->variableToNeuron( variable );
-                    if ( neuronIndex._layer != 0 )
-                    {
-                        if ( literal < 0 )
-                            networkLevelReasoner->setBounds(
-                                neuronIndex._layer, neuronIndex._neuron, 0, 0 );
-                        else
-                            networkLevelReasoner->setBounds(
-                                neuronIndex._layer,
-                                neuronIndex._neuron,
-                                FloatUtils::max( boundManager->getLowerBound( variable ), 0 ),
-                                boundManager->getUpperBound( variable ) );
-
-                        if ( _engine->getSymbolicBoundTighteningType() ==
-                             SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
-                            networkLevelReasoner->symbolicBoundPropagation();
-                        else if ( _engine->getSymbolicBoundTighteningType() ==
-                                  SymbolicBoundTighteningType::DEEP_POLY )
-                            networkLevelReasoner->deepPolyPropagation();
-
-                        List<Tightening> tightenings;
-                        networkLevelReasoner->getConstraintTightenings( tightenings );
-                        for ( Tightening tightening : tightenings )
-                            if ( tightening._variable == outputVariable &&
-                                 tightening._type == Tightening::UB )
-                            {
-                                literalScore = tightening._value;
-                                break;
-                            }
-                        break;
-                    }
-                }
-
-                clauseScores.append( Pair<double, int>( literalScore, literal ) );
-                networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-            }
-
-            clauseScores.sort();
-        }
-
-        if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
+        if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
         {
             clauseScores.clear();
             for ( int level = 1; level <= _context.getLevel(); ++level )
@@ -884,6 +771,14 @@ void CdclCore::addExternalClause( Set<int> &clause )
                     Pair<double, int>( FloatUtils::infinity(), _decisionLiterals[level] ) );
             }
         }
+
+        ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
+        std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
+        NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
+        networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+        List<unsigned> outputVariables = _engine->getOutputVariables();
+        ASSERT( outputVariables.size() == 1 );
+        unsigned outputVariable = outputVariables.front();
 
         Set<int> clauseCpy( clause );
         clause.clear();
