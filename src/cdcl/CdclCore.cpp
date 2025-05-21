@@ -520,7 +520,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 toAdd = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
             else
             {
-                for ( int level = 1; level <= _context.getLevel(); ++level )
+                for ( int level = _context.getLevel(); level > 0; --level )
                 {
                     ASSERT( _decisionLiterals.exists( level ) );
                     int lit = _decisionLiterals[level];
@@ -541,7 +541,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 }
                 clauseScores.sort();
 
-                if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
+                if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
                 {
                     clauseScores.clear();
                     for ( int lit : toAdd )
@@ -760,10 +760,10 @@ void CdclCore::addExternalClause( Set<int> &clause )
         }
         clauseScores.sort();
 
-        if ( clauseScores.size() > 0 && clauseScores[0].first() == FloatUtils::infinity() )
+        if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
         {
             clauseScores.clear();
-            for ( int level = 1; level <= _context.getLevel(); ++level )
+            for ( int level = _context.getLevel(); level > 0; --level )
             {
                 ASSERT( _decisionLiterals.exists( level ) &&
                         clause.exists( _decisionLiterals[level] ) );
