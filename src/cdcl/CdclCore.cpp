@@ -1367,9 +1367,9 @@ double CdclCore::computeDecisionScoreForLiteral( int literal ) const
                       SymbolicBoundTighteningType::DEEP_POLY )
                 networkLevelReasoner->deepPolyPropagation();
 
-            List<Tightening> tightenings;
-            networkLevelReasoner->getConstraintTightenings( tightenings );
-            for ( Tightening tightening : tightenings )
+            List<Tightening> outputTightenings;
+            networkLevelReasoner->getOutputTightenings( outputTightenings );
+            for ( Tightening tightening : outputTightenings )
                 if ( tightening._variable == outputVariable && tightening._type == Tightening::UB )
                     return tightening._value;
         }
