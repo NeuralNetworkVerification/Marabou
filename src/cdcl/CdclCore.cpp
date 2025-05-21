@@ -644,10 +644,9 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                                               SymbolicBoundTighteningType::DEEP_POLY )
                                         networkLevelReasoner->deepPolyPropagation();
 
-                                    List<Tightening> tightenings;
-                                    networkLevelReasoner->getConstraintTightenings( tightenings );
+                                    networkLevelReasoner->getOutputTightenings( outputTightenings );
 
-                                    for ( Tightening tightening : tightenings )
+                                    for ( Tightening tightening : outputTightenings )
                                     {
                                         if ( tightening._variable == outputVariable &&
                                              tightening._type == Tightening::UB )
@@ -863,10 +862,9 @@ void CdclCore::addExternalClause( Set<int> &clause )
                                       SymbolicBoundTighteningType::DEEP_POLY )
                                 networkLevelReasoner->deepPolyPropagation();
 
-                            List<Tightening> tightenings;
-                            networkLevelReasoner->getConstraintTightenings( tightenings );
+                            networkLevelReasoner->getOutputTightenings( outputTightenings );
 
-                            for ( Tightening tightening : tightenings )
+                            for ( Tightening tightening : outputTightenings )
                             {
                                 if ( tightening._variable == outputVariable &&
                                      tightening._type == Tightening::UB )
