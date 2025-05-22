@@ -905,7 +905,6 @@ void NetworkLevelReasoner::getOutputTightenings( List<Tightening> &tightenings )
 {
     tightenings = _outputBoundTightenings;
     _outputBoundTightenings.clear();
-    _boundTightenings.clear();
 }
 
 } // namespace NLR
