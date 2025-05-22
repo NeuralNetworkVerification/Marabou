@@ -793,7 +793,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
             }
         }
 
-        if ( !skipShortening )
+        if ( not skipShortening )
         {
             Vector<Pair<double, int>> clauseScores;
             for ( int literal : clause )
