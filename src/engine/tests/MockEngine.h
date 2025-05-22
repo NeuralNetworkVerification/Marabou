@@ -415,7 +415,7 @@ public:
 
     Set<int> explainPhase( const PiecewiseLinearConstraint * ) override
     {
-        return Vector<int>();
+        return Set<int>();
     }
 
     void explainGurobiFailure() override
