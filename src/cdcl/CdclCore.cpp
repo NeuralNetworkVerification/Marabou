@@ -1137,14 +1137,15 @@ double CdclCore::computeDecisionScoreForLiteral( int literal ) const
 
 void CdclCore::setInputBoundsForLiteralInNLR(
     int literal,
-    std::shared_ptr<Query> inputQuery,
+    const std::shared_ptr<Query>& inputQuery,
     NLR::NetworkLevelReasoner *networkLevelReasoner ) const
 {
+    const auto &layers = networkLevelReasoner->getLayerIndexToLayer();
     const PiecewiseLinearConstraint *plc = _cadicalVarToPlc[abs( literal )];
     for ( unsigned variable : plc->getParticipatingVariables() )
     {
         NLR::NeuronIndex neuronIndex = networkLevelReasoner->variableToNeuron( variable );
-        if ( neuronIndex._layer != 0 )
+        if ( layers[neuronIndex._layer]->getLayerType() == NLR::Layer::RELU )
         {
             if ( literal < 0 )
                 networkLevelReasoner->setBounds( neuronIndex._layer, neuronIndex._neuron, 0, 0 );

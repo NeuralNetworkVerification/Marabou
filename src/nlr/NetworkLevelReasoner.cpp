@@ -886,11 +886,8 @@ NeuronIndex NetworkLevelReasoner::variableToNeuron( unsigned int variable ) cons
     {
         unsigned layerIdx = pair.first;
         const Layer *layer = pair.second;
-        for ( unsigned neuron = 0; neuron < layer->getSize(); ++neuron )
-        {
-            if ( layer->hasMappingFromVariable( variable ) )
-                return { layerIdx, neuron };
-        }
+        if ( layer->hasMappingFromVariable( variable ) )
+            return { layerIdx, layer->variableToNeuron( variable ) };
     }
 
     return { 0, 0 };
