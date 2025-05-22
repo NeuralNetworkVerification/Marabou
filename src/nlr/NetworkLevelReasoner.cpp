@@ -882,28 +882,18 @@ void NetworkLevelReasoner::setBounds( unsigned layer,
 
 NeuronIndex NetworkLevelReasoner::variableToNeuron( unsigned int variable ) const
 {
-    for ( const auto pair : _layerIndexToLayer )
+    for (const auto pair : _layerIndexToLayer)
     {
         unsigned layerIdx = pair.first;
         const Layer *layer = pair.second;
-        for ( unsigned neuron = 0; neuron < layer->getSize(); ++neuron )
+        for (unsigned neuron = 0; neuron < layer->getSize(); ++neuron)
         {
-            if ( layer->hasMappingFromVariable( variable ) )
-                return { layerIdx, neuron };
+            if (layer->hasMappingFromVariable(variable))
+                return {layerIdx, neuron};
         }
     }
 
-    return { 0, 0 };
-}
-void NetworkLevelReasoner::receiveOutputTighterBound( Tightening tightening )
-{
-    _outputBoundTightenings.clear();
-    _outputBoundTightenings.append( tightening );
-}
-
-void NetworkLevelReasoner::getOutputTightenings( List<Tightening> &tightenings )
-{
-    tightenings = _outputBoundTightenings;
+    return {0, 0};
 }
 
 } // namespace NLR

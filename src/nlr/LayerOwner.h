@@ -35,7 +35,6 @@ public:
     virtual const ITableau *getTableau() const = 0;
     virtual unsigned getNumberOfLayers() const = 0;
     virtual void receiveTighterBound( Tightening tightening ) = 0;
-    virtual void receiveOutputTighterBound( Tightening tightening ) = 0;
 };
 
 } // namespace NLR

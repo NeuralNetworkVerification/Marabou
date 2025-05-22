@@ -130,10 +130,8 @@ public:
     void MILPTighteningForOneLayer( unsigned targetIndex );
     void iterativePropagation();
 
-    void receiveTighterBound( Tightening tightening ) override;
-    void receiveOutputTighterBound( Tightening tightening ) override;
+    void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
-    void getOutputTightenings( List<Tightening> &tightenings );
     void clearConstraintTightenings();
 
     /*
@@ -212,7 +210,7 @@ private:
 
     // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
-    List<Tightening> _outputBoundTightenings;
+
 
     std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;
 
