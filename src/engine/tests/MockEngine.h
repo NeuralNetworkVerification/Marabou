@@ -413,7 +413,7 @@ public:
         return Set<int>();
     }
 
-    Vector<int> explainPhase( const PiecewiseLinearConstraint * ) override
+    Set<int> explainPhase( const PiecewiseLinearConstraint * ) override
     {
         return Vector<int>();
     }

@@ -4443,7 +4443,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     return clause;
 }
 
-Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
+Set<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
 {
     ASSERT( _solveWithCDCL );
     ASSERT( litConstraint );
@@ -4463,7 +4463,7 @@ Vector<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
                                                 phaseFixingEntry->lemma->getCausingVarBound() );
 
-    return Vector<int>( clause.begin(), clause.end() );
+    return clause;
 }
 
 void Engine::removeLiteralFromPropagations( int literal )

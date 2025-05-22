@@ -20,9 +20,10 @@
 
 #include "CadicalWrapper.h"
 #include "IEngine.h"
+#include "InputQuery.h"
+#include "PLConstraintScoreTracker.h"
 #include "Pair.h"
 #include "PiecewiseLinearConstraint.h"
-#include "PLConstraintScoreTracker.h"
 #include "Statistics.h"
 #include "context/cdhashmap.h"
 #include "context/cdhashset.h"
@@ -294,6 +295,19 @@ private:
     unsigned luby( unsigned i );
 
     double computeDecisionScoreForLiteral( int literal ) const;
+    void setInputBoundsForLiteralInNLR( int literal,
+                                        std::shared_ptr<Query> inputQuery,
+                                        NLR::NetworkLevelReasoner *networkLevelReasoner ) const;
+    void runSymbolicBoundTightening( NLR::NetworkLevelReasoner *networkLevelReasoner ) const;
+
+    double
+    getUpperBoundForOutputVariableFromNLR( NLR::NetworkLevelReasoner *networkLevelReasoner ) const;
+
+    void computeClauseScores( const Set<int> &clause, Vector<Pair<double, int>> &clauseScores );
+    void reorderByDecisionLevelIfNecessary( Vector<Pair<double, int>> &clauseScores );
+    void computeShortedClause( Set<int> &clause,
+                               const Vector<Pair<double, int>> &clauseScores ) const;
+    bool checkIfShouldSkipClauseShortening( const Set<int> &clause );
 };
 
 #endif
