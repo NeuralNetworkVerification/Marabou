@@ -159,6 +159,9 @@ void DeepPolyAnalysis::run()
                 //                layer->setLb( j, lb );
                 _layerOwner->receiveTighterBound(
                     Tightening( layer->neuronToVariable( j ), lb, Tightening::LB ) );
+                if ( index == _layerOwner->getNumberOfLayers() - 1 )
+                    _layerOwner->receiveOutputTighterBound(
+                        Tightening( layer->neuronToVariable( j ), lb, Tightening::LB ) );
             }
             double ub = deepPolyElement->getUpperBound( j );
             if ( layer->getUb( j ) > ub )

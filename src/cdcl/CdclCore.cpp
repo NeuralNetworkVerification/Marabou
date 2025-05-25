@@ -1184,64 +1184,27 @@ double CdclCore::getUpperBoundForOutputVariableFromNLR(
     else
     {
         double outputUb = 0;
-        networkLevelReasoner->getOutputBounds( outputBounds );
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
+        const NLR::Layer *outputLayer =
+            networkLevelReasoner->getLayer( networkLevelReasoner->getNumberOfLayers() - 1 );
 
-        for ( const Equation &equation : inputQuery->getOutputConstraints() )
+        for ( unsigned neuron = 0; neuron < outputLayer->getSize(); ++neuron )
         {
-            bool isTypeEq = ( equation._type == Equation::EQ );
-            double equationUb = 0;
-            if ( equation._type == Equation::GE || isTypeEq )
-            {
-                for ( const Equation::Addend addend : equation._addends )
-                    if ( addend._coefficient >= 0 )
-                    {
-                        if ( outputBounds.exists( Pair( addend._variable, Tightening::UB ) ) )
-                            equationUb += addend._coefficient *
-                                          outputBounds[Pair( addend._variable, Tightening::UB )];
-                        else
-                            equationUb +=
-                                addend._coefficient * inputQuery->getUpperBound( addend._variable );
-                    }
-                    else
-                    {
-                        if ( outputBounds.exists( Pair( addend._variable, Tightening::LB ) ) )
-                            equationUb -= addend._coefficient *
-                                          outputBounds[Pair( addend._variable, Tightening::LB )];
-                        else
-                            equationUb -=
-                                addend._coefficient * inputQuery->getLowerBound( addend._variable );
-                    }
+            unsigned variable = outputLayer->neuronToVariable( neuron );
 
-                equationUb -= equation._scalar;
-            }
+            double lb;
+            if ( outputBounds.exists( Pair( variable, Tightening::LB ) ) )
+                lb = outputBounds[Pair( variable, Tightening::LB )];
+            else
+                lb = inputQuery->getLowerBound( variable );
+            outputUb -= FloatUtils::max( lb, 0 );
 
-            if ( equation._type == Equation::LE || isTypeEq )
-            {
-                for ( const Equation::Addend addend : equation._addends )
-                    if ( addend._coefficient >= 0 )
-                    {
-                        if ( outputBounds.exists( Pair( addend._variable, Tightening::LB ) ) )
-                            equationUb -= addend._coefficient *
-                                          outputBounds[Pair( addend._variable, Tightening::LB )];
-                        else
-                            equationUb -=
-                                addend._coefficient * inputQuery->getLowerBound( addend._variable );
-                    }
-                    else
-                    {
-                        if ( outputBounds.exists( Pair( addend._variable, Tightening::UB ) ) )
-                            equationUb += addend._coefficient *
-                                          outputBounds[Pair( addend._variable, Tightening::UB )];
-                        else
-                            equationUb +=
-                                addend._coefficient * inputQuery->getUpperBound( addend._variable );
-                    }
-
-                equationUb -= equation._scalar;
-            }
-
-            outputUb -= FloatUtils::max( -equationUb, 0 );
+            double ub;
+            if ( outputBounds.exists( Pair( variable, Tightening::UB ) ) )
+                ub = outputBounds[Pair( variable, Tightening::UB )];
+            else
+                ub = inputQuery->getUpperBound( variable );
+            outputUb -= FloatUtils::max( -ub, 0 );
         }
 
         return outputUb;
@@ -1264,14 +1227,15 @@ void CdclCore::computeClauseScores( const Set<int> &clause,
 
 void CdclCore::reorderByDecisionLevelIfNecessary( Vector<Pair<double, int>> &clauseScores )
 {
-    if ( !clauseScores.empty() && clauseScores[0].first() == FloatUtils::infinity() )
+    if ( !clauseScores.empty() &&
+         clauseScores[0].first() == clauseScores[clauseScores.size() - 1].first() )
     {
+        double score = clauseScores[0].first();
         clauseScores.clear();
         for ( int level = 1; level <= _context.getLevel(); ++level )
         {
             ASSERT( _decisionLiterals.exists( level ) );
-            clauseScores.append(
-                Pair<double, int>( FloatUtils::infinity(), _decisionLiterals[level] ) );
+            clauseScores.append( Pair<double, int>( score, _decisionLiterals[level] ) );
         }
     }
 }
@@ -1319,6 +1283,9 @@ void CdclCore::computeShortedClause( Set<int> &clause,
 
 bool CdclCore::checkIfShouldSkipClauseShortening( const Set<int> &clause )
 {
+    if ( clause.empty() )
+        return true;
+
     std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
     NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
 
