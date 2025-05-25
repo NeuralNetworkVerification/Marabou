@@ -1155,36 +1155,36 @@ void Preprocessor::convertToReachabilityQuery()
         return;
 
     List<unsigned> newVariables;
-    const Map<unsigned, double> &lowerBounds = _preprocessed->getLowerBounds();
-    const Map<unsigned, double> &upperBounds = _preprocessed->getUpperBounds();
-
-    // Add new variables and equations for output bounds:
-    for ( unsigned outputVariable : _preprocessed->getOutputVariables() )
-    {
-        if ( lowerBounds.exists( outputVariable ) &&
-             FloatUtils::isFinite( lowerBounds[outputVariable] ) )
-        {
-            unsigned newVariable = _preprocessed->getNewVariable();
-            newVariables.append( newVariable );
-            Equation newEquation;
-            newEquation.addAddend( 1, outputVariable );
-            newEquation.addAddend( 1, newVariable );
-            newEquation.setScalar( lowerBounds[outputVariable] );
-            _preprocessed->addEquation( newEquation );
-        }
-
-        if ( upperBounds.exists( outputVariable ) &&
-             FloatUtils::isFinite( upperBounds[outputVariable] ) )
-        {
-            unsigned newVariable = _preprocessed->getNewVariable();
-            newVariables.append( newVariable );
-            Equation newEquation;
-            newEquation.addAddend( -1, outputVariable );
-            newEquation.addAddend( 1, newVariable );
-            newEquation.setScalar( -upperBounds[outputVariable] );
-            _preprocessed->addEquation( newEquation );
-        }
-    }
+//    const Map<unsigned, double> &lowerBounds = _preprocessed->getLowerBounds();
+//    const Map<unsigned, double> &upperBounds = _preprocessed->getUpperBounds();
+//
+//    // Add new variables and equations for output bounds:
+//    for ( unsigned outputVariable : _preprocessed->getOutputVariables() )
+//    {
+//        if ( lowerBounds.exists( outputVariable ) &&
+//             FloatUtils::isFinite( lowerBounds[outputVariable] ) )
+//        {
+//            unsigned newVariable = _preprocessed->getNewVariable();
+//            newVariables.append( newVariable );
+//            Equation newEquation;
+//            newEquation.addAddend( 1, outputVariable );
+//            newEquation.addAddend( 1, newVariable );
+//            newEquation.setScalar( lowerBounds[outputVariable] );
+//            _preprocessed->addEquation( newEquation );
+//        }
+//
+//        if ( upperBounds.exists( outputVariable ) &&
+//             FloatUtils::isFinite( upperBounds[outputVariable] ) )
+//        {
+//            unsigned newVariable = _preprocessed->getNewVariable();
+//            newVariables.append( newVariable );
+//            Equation newEquation;
+//            newEquation.addAddend( -1, outputVariable );
+//            newEquation.addAddend( 1, newVariable );
+//            newEquation.setScalar( -upperBounds[outputVariable] );
+//            _preprocessed->addEquation( newEquation );
+//        }
+//    }
 
     // Add new variables and equations for output constraints
     for ( const Equation &equation : _preprocessed->getOutputConstraints() )

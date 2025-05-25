@@ -200,12 +200,18 @@ void NetworkLevelReasoner::clearConstraintTightenings()
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
+    _outputBounds.clear();
+    _boundTightenings.clear();
+
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
 void NetworkLevelReasoner::deepPolyPropagation()
 {
+    _outputBounds.clear();
+    _boundTightenings.clear();
+
     if ( _deepPolyAnalysis == nullptr )
         _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>( new DeepPolyAnalysis( this ) );
     _deepPolyAnalysis->run();
@@ -895,15 +901,14 @@ NeuronIndex NetworkLevelReasoner::variableToNeuron( unsigned int variable ) cons
 
 void NetworkLevelReasoner::receiveOutputTighterBound( Tightening tightening )
 {
-    _outputBoundTightenings.clear();
-    _outputBoundTightenings.append( tightening );
+    _outputBounds[Pair<unsigned, Tightening::BoundType>(
+        tightening._variable, tightening._type )] = tightening._value;
 }
 
-void NetworkLevelReasoner::getOutputTightenings( List<Tightening> &tightenings )
+void NetworkLevelReasoner::getOutputBounds(
+    Map<Pair<unsigned int, Tightening::BoundType>, double> &outputBounds )
 {
-    tightenings = _outputBoundTightenings;
-    _outputBoundTightenings.clear();
-    _boundTightenings.clear();
+    outputBounds = _outputBounds;
 }
 
 } // namespace NLR

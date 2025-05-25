@@ -532,7 +532,6 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
 
             if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
             {
-                ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
                 NLR::NetworkLevelReasoner *networkLevelReasoner =
                     _engine->getNetworkLevelReasoner();
@@ -657,7 +656,6 @@ void CdclCore::addExternalClause( Set<int> &clause )
 
     if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
     {
-        ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
         NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
         networkLevelReasoner->obtainCurrentBounds( *inputQuery );
@@ -1137,7 +1135,7 @@ double CdclCore::computeDecisionScoreForLiteral( int literal ) const
 
 void CdclCore::setInputBoundsForLiteralInNLR(
     int literal,
-    const std::shared_ptr<Query>& inputQuery,
+    const std::shared_ptr<Query> &inputQuery,
     NLR::NetworkLevelReasoner *networkLevelReasoner ) const
 {
     const auto &layers = networkLevelReasoner->getLayerIndexToLayer();
@@ -1171,16 +1169,83 @@ void CdclCore::runSymbolicBoundTightening( NLR::NetworkLevelReasoner *networkLev
 double CdclCore::getUpperBoundForOutputVariableFromNLR(
     NLR::NetworkLevelReasoner *networkLevelReasoner ) const
 {
-    ASSERT( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY );
-    List<unsigned> outputVariables = _engine->getOutputVariables();
-    ASSERT( outputVariables.size() == 1 );
-    unsigned outputVariable = outputVariables.front();
+    Map<Pair<unsigned, Tightening::BoundType>, double> outputBounds;
+    networkLevelReasoner->getOutputBounds( outputBounds );
 
-    List<Tightening> outputTightenings;
-    networkLevelReasoner->getOutputTightenings( outputTightenings );
-    for ( Tightening tightening : outputTightenings )
-        if ( tightening._variable == outputVariable && tightening._type == Tightening::UB )
-            return tightening._value;
+    if ( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY )
+    {
+        List<unsigned> outputVariables = _engine->getOutputVariables();
+        ASSERT( outputVariables.size() == 1 );
+        unsigned outputVariable = outputVariables.front();
+
+        if ( outputBounds.exists( Pair( outputVariable, Tightening::UB ) ) )
+            return outputBounds[Pair( outputVariable, Tightening::UB )];
+    }
+    else
+    {
+        double outputUb = 0;
+        networkLevelReasoner->getOutputBounds( outputBounds );
+        std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
+
+        for ( const Equation &equation : inputQuery->getOutputConstraints() )
+        {
+            bool isTypeEq = ( equation._type == Equation::EQ );
+            double equationUb = 0;
+            if ( equation._type == Equation::GE || isTypeEq )
+            {
+                for ( const Equation::Addend addend : equation._addends )
+                    if ( addend._coefficient >= 0 )
+                    {
+                        if ( outputBounds.exists( Pair( addend._variable, Tightening::UB ) ) )
+                            equationUb += addend._coefficient *
+                                          outputBounds[Pair( addend._variable, Tightening::UB )];
+                        else
+                            equationUb +=
+                                addend._coefficient * inputQuery->getUpperBound( addend._variable );
+                    }
+                    else
+                    {
+                        if ( outputBounds.exists( Pair( addend._variable, Tightening::LB ) ) )
+                            equationUb -= addend._coefficient *
+                                          outputBounds[Pair( addend._variable, Tightening::LB )];
+                        else
+                            equationUb -=
+                                addend._coefficient * inputQuery->getLowerBound( addend._variable );
+                    }
+
+                equationUb -= equation._scalar;
+            }
+
+            if ( equation._type == Equation::LE || isTypeEq )
+            {
+                for ( const Equation::Addend addend : equation._addends )
+                    if ( addend._coefficient >= 0 )
+                    {
+                        if ( outputBounds.exists( Pair( addend._variable, Tightening::LB ) ) )
+                            equationUb -= addend._coefficient *
+                                          outputBounds[Pair( addend._variable, Tightening::LB )];
+                        else
+                            equationUb -=
+                                addend._coefficient * inputQuery->getLowerBound( addend._variable );
+                    }
+                    else
+                    {
+                        if ( outputBounds.exists( Pair( addend._variable, Tightening::UB ) ) )
+                            equationUb += addend._coefficient *
+                                          outputBounds[Pair( addend._variable, Tightening::UB )];
+                        else
+                            equationUb +=
+                                addend._coefficient * inputQuery->getUpperBound( addend._variable );
+                    }
+
+                equationUb -= equation._scalar;
+            }
+
+            outputUb -= FloatUtils::max( -equationUb, 0 );
+        }
+
+        return outputUb;
+    }
 
     return FloatUtils::infinity();
 }
@@ -1216,17 +1281,13 @@ void CdclCore::computeShortedClause( Set<int> &clause,
 {
     std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
     NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
-    List<unsigned> outputVariables = _engine->getOutputVariables();
-    ASSERT( outputVariables.size() == 1 );
-    unsigned outputVariable = outputVariables.front();
 
     for ( const auto &pair : clauseScores )
     {
         double score = pair.first();
         int literal = pair.second();
 
-        if ( literal == 0 )
-            break;
+        ASSERT( literal != 0 );
 
         clause.insert( literal );
 
@@ -1240,8 +1301,19 @@ void CdclCore::computeShortedClause( Set<int> &clause,
             outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
         }
 
-        if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
-            break;
+        if ( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY )
+        {
+            List<unsigned> outputVariables = _engine->getOutputVariables();
+            ASSERT( outputVariables.size() == 1 );
+            unsigned outputVariable = outputVariables.front();
+            if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
+                break;
+        }
+        else
+        {
+            if ( outputUb < 0 )
+                break;
+        }
     }
 }
 
@@ -1249,9 +1321,6 @@ bool CdclCore::checkIfShouldSkipClauseShortening( const Set<int> &clause )
 {
     std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
     NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
-    List<unsigned> outputVariables = _engine->getOutputVariables();
-    ASSERT( outputVariables.size() == 1 );
-    unsigned outputVariable = outputVariables.front();
 
     for ( int literal : clause )
         setInputBoundsForLiteralInNLR( literal, inputQuery, networkLevelReasoner );
@@ -1259,8 +1328,19 @@ bool CdclCore::checkIfShouldSkipClauseShortening( const Set<int> &clause )
     runSymbolicBoundTightening( networkLevelReasoner );
     double outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
 
-    if ( outputUb >= inputQuery->getLowerBound( outputVariable ) )
-        return true;
+    if ( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY )
+    {
+        List<unsigned> outputVariables = _engine->getOutputVariables();
+        ASSERT( outputVariables.size() == 1 );
+        unsigned outputVariable = outputVariables.front();
+        if ( outputUb >= inputQuery->getLowerBound( outputVariable ) )
+            return true;
+    }
+    else
+    {
+        if ( outputUb >= 0 )
+            return true;
+    }
 
     return false;
 }

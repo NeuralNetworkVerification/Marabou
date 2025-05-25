@@ -133,7 +133,7 @@ public:
     void receiveTighterBound( Tightening tightening ) override;
     void receiveOutputTighterBound( Tightening tightening ) override;
     void getConstraintTightenings( List<Tightening> &tightenings );
-    void getOutputTightenings( List<Tightening> &tightenings );
+    void getOutputBounds( Map<Pair<unsigned int, Tightening::BoundType>, double> &outputBounds );
     void clearConstraintTightenings();
 
     /*
@@ -212,7 +212,7 @@ private:
 
     // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
-    List<Tightening> _outputBoundTightenings;
+    Map<Pair<unsigned, Tightening::BoundType>, double> _outputBounds;
 
     std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;
 
