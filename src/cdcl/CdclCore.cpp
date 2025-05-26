@@ -1351,8 +1351,8 @@ Set<int> CdclCore::quickXplain( const Set<int> &currentClause,
     for ( unsigned i = startIdx; i < mid; ++i )
         currentClause1.insert( clauseScores[i].second() );
 
-    Set<int> clause1 = quickXplain( currentClause1, clauseScores, mid, endIdx, 0 );
-    Set<int> clause2 = quickXplain( clause1, clauseScores, startIdx, mid, 0 );
+    Set<int> clause1 = quickXplain( currentClause1, clauseScores, mid, endIdx, propagated_lit );
+    Set<int> clause2 = quickXplain( clause1, clauseScores, startIdx, mid, propagated_lit );
 
     return clause1 + clause2;
 }
