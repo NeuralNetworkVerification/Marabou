@@ -546,9 +546,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                     reorderByDecisionLevelIfNecessary( clauseScores );
                     clause.clear();
                     networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-                    setInputBoundsForLiteralInNLR(
-                        -propagated_lit, inputQuery, networkLevelReasoner );
-                    computeShortedClause( clause, clauseScores );
+                    computeShortedClause( clause, clauseScores, propagated_lit );
                 }
             }
 
@@ -667,7 +665,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
             reorderByDecisionLevelIfNecessary( clauseScores );
             clause.clear();
             networkLevelReasoner->obtainCurrentBounds( *inputQuery );
-            computeShortedClause( clause, clauseScores );
+            computeShortedClause( clause, clauseScores, 0 );
         }
     }
 
@@ -1241,42 +1239,53 @@ void CdclCore::reorderByDecisionLevelIfNecessary( Vector<Pair<double, int>> &cla
 }
 
 void CdclCore::computeShortedClause( Set<int> &clause,
-                                     const Vector<Pair<double, int>> &clauseScores ) const
+                                     const Vector<Pair<double, int>> &clauseScores,
+                                     int propagated_lit ) const
 {
     std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
     NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
 
-    for ( const auto &pair : clauseScores )
+    if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES_WITH_QUICKXPLAIN )
     {
-        double score = pair.first();
-        int literal = pair.second();
+        clause = quickXplain( Set<int>(), clauseScores, 0, clauseScores.size(), propagated_lit );
+    }
+    else
+    {
+        if ( propagated_lit != 0 )
+            setInputBoundsForLiteralInNLR( -propagated_lit, inputQuery, networkLevelReasoner );
 
-        ASSERT( literal != 0 );
-
-        clause.insert( literal );
-
-        double outputUb = FloatUtils::infinity();
-        if ( clause.size() == 1 )
-            outputUb = score;
-        else
+        for ( const auto &pair : clauseScores )
         {
-            setInputBoundsForLiteralInNLR( literal, inputQuery, networkLevelReasoner );
-            runSymbolicBoundTightening( networkLevelReasoner );
-            outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
-        }
+            double score = pair.first();
+            int literal = pair.second();
 
-        if ( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY )
-        {
-            List<unsigned> outputVariables = _engine->getOutputVariables();
-            ASSERT( outputVariables.size() == 1 );
-            unsigned outputVariable = outputVariables.front();
-            if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
-                break;
-        }
-        else
-        {
-            if ( outputUb < 0 )
-                break;
+            ASSERT( literal != 0 );
+
+            clause.insert( literal );
+
+            double outputUb = FloatUtils::infinity();
+            if ( clause.size() == 1 )
+                outputUb = score;
+            else
+            {
+                setInputBoundsForLiteralInNLR( literal, inputQuery, networkLevelReasoner );
+                runSymbolicBoundTightening( networkLevelReasoner );
+                outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
+            }
+
+            if ( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY )
+            {
+                List<unsigned> outputVariables = _engine->getOutputVariables();
+                ASSERT( outputVariables.size() == 1 );
+                unsigned outputVariable = outputVariables.front();
+                if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
+                    break;
+            }
+            else
+            {
+                if ( outputUb < 0 )
+                    break;
+            }
         }
     }
 }
@@ -1310,6 +1319,42 @@ bool CdclCore::checkIfShouldSkipClauseShortening( const Set<int> &clause )
     }
 
     return false;
+}
+
+Set<int> CdclCore::quickXplain( const Set<int> &currentClause,
+                                const Vector<Pair<double, int>> &clauseScores,
+                                unsigned int startIdx,
+                                unsigned int endIdx,
+                                int propagated_lit ) const
+{
+    std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
+    NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
+    networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+
+    if ( propagated_lit != 0 )
+        setInputBoundsForLiteralInNLR( -propagated_lit, inputQuery, networkLevelReasoner );
+
+    for ( int lit : currentClause )
+        setInputBoundsForLiteralInNLR( lit, inputQuery, networkLevelReasoner );
+
+    runSymbolicBoundTightening( networkLevelReasoner );
+    double outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
+
+    if ( !currentClause.empty() && outputUb < 0 )
+        return Set<int>();
+
+    if ( endIdx == startIdx + 1 )
+        return Set<int>( { clauseScores[startIdx].second() } );
+
+    unsigned mid = ( startIdx + endIdx ) / 2;
+    Set<int> currentClause1;
+    for ( unsigned i = startIdx; i < mid; ++i )
+        currentClause1.insert( clauseScores[i].second() );
+
+    Set<int> clause1 = quickXplain( currentClause1, clauseScores, mid, endIdx, 0 );
+    Set<int> clause2 = quickXplain( clause1, clauseScores, startIdx, mid, 0 );
+
+    return clause1 + clause2;
 }
 
 #endif

@@ -306,8 +306,15 @@ private:
     void computeClauseScores( const Set<int> &clause, Vector<Pair<double, int>> &clauseScores );
     void reorderByDecisionLevelIfNecessary( Vector<Pair<double, int>> &clauseScores );
     void computeShortedClause( Set<int> &clause,
-                               const Vector<Pair<double, int>> &clauseScores ) const;
+                               const Vector<Pair<double, int>> &clauseScores,
+                               int propagated_lit ) const;
     bool checkIfShouldSkipClauseShortening( const Set<int> &clause );
+
+    Set<int> quickXplain( const Set<int> &currentClause,
+                          const Vector<Pair<double, int>> &clauseScores,
+                          unsigned int startIdx,
+                          unsigned int endIdx,
+                          int propagated_lit ) const;
 };
 
 #endif

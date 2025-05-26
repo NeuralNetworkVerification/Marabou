@@ -282,6 +282,7 @@ public:
     /* While solving with CDCL, denotes if to try and shorten clauses or not
      */
     static const bool CDCL_SHORTEN_CLAUSES;
+    static const bool CDCL_SHORTEN_CLAUSES_WITH_QUICKXPLAIN;
 
 #ifdef ENABLE_GUROBI
     /*
