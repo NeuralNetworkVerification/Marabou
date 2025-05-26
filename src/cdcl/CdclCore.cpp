@@ -1195,14 +1195,14 @@ double CdclCore::getUpperBoundForOutputVariableFromNLR(
                 lb = outputBounds[Pair( variable, Tightening::LB )];
             else
                 lb = inputQuery->getLowerBound( variable );
-            outputUb -= FloatUtils::max( lb, 0 );
 
             double ub;
             if ( outputBounds.exists( Pair( variable, Tightening::UB ) ) )
                 ub = outputBounds[Pair( variable, Tightening::UB )];
             else
                 ub = inputQuery->getUpperBound( variable );
-            outputUb -= FloatUtils::max( -ub, 0 );
+
+            outputUb -= FloatUtils::max( lb - ub, 0 );
         }
 
         return outputUb;
