@@ -710,11 +710,13 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
         if ( _engine->getExitCode() == ExitCode::UNSAT )
             return false;
 
-        if ( _engine->solve( 0 ) )
-        {
-            _engine->setExitCode( ExitCode::SAT );
-            return true;
-        }
+        if ( Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) == "" &&
+             Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) == "" )
+            if ( _engine->solve( 0 ) )
+            {
+                _engine->setExitCode( ExitCode::SAT );
+                return true;
+            }
 
         if ( _engine->getLpSolverType() == LPSolverType::NATIVE )
             _engine->propagateBoundManagerTightenings();
@@ -732,6 +734,18 @@ bool CdclCore::solveWithCDCL( double timeoutInSeconds )
         for ( unsigned var : _cadicalVarToPlc.keys() )
             if ( var != 0 )
                 _satSolverWrapper->addObservedVar( (int)var );
+
+        Set<int> externalClause;
+
+        externalClause = _satSolverWrapper->addExternalNAPClause(
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH ) );
+        if ( !externalClause.empty() )
+            _initialClauses.append( externalClause );
+
+        externalClause = _satSolverWrapper->addExternalNAPClause(
+            Options::get()->getString( Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2 ) );
+        if ( !externalClause.empty() )
+            _initialClauses.append( externalClause );
 
         int result = _satSolverWrapper->solve();
 

@@ -91,4 +91,29 @@ void CadicalWrapper::forceBacktrack( size_t newLevel )
 {
     _solver->force_backtrack( newLevel );
 }
+
+Set<int> CadicalWrapper::addExternalNAPClause( const String &externalNAPClauseFilename )
+{
+    Set<int> clause;
+
+    if ( externalNAPClauseFilename != "" && File::exists( externalNAPClauseFilename ) )
+    {
+        File externalNAPClauseFile( externalNAPClauseFilename );
+        externalNAPClauseFile.open( IFile::MODE_READ );
+
+        while ( true )
+        {
+            String lit = externalNAPClauseFile.readLine().trim();
+
+            if ( lit == "" )
+                break;
+
+            clause.insert( -atoi( lit.ascii() ) );
+        }
+
+        addClause( clause );
+    }
+
+    return clause;
+}
 #endif

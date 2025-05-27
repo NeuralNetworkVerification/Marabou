@@ -90,6 +90,8 @@ public:
      */
     void forceBacktrack( size_t newLevel ) override;
 
+    Set<int> addExternalNAPClause( const String &externalNAPClauseFilename ) override;
+
 private:
     std::shared_ptr<CaDiCaL::Solver> _solver;
 };
