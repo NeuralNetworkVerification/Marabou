@@ -178,7 +178,7 @@ public:
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
-    void postContextPopHook() override;
+    void postContextPopHook( bool doBasisFactorization ) override;
     void preContextPushHook() override;
 
     /*

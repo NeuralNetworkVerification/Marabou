@@ -65,7 +65,7 @@ void SearchTreeHandler::freeMemory()
 void SearchTreeHandler::reset()
 {
     _context.popto( 0 );
-    _engine->postContextPopHook();
+    _engine->postContextPopHook( true );
     freeMemory();
     _impliedValidSplitsAtRoot.clear();
     _needToSplit = false;
@@ -328,7 +328,7 @@ bool SearchTreeHandler::popSplit()
         SearchTreeStackEntry *stackEntry = _stack.back();
 
         popContext();
-        _engine->postContextPopHook();
+        _engine->postContextPopHook( true );
         // Restore the state of the engine
         SEARCH_TREE_LOG( "\tRestoring engine state..." );
         _engine->restoreState( *( stackEntry->_engineState ) );

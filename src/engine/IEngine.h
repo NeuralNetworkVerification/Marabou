@@ -72,7 +72,7 @@ public:
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
     virtual void preContextPushHook() = 0;
-    virtual void postContextPopHook() = 0;
+    virtual void postContextPopHook( bool doBasisFactorization ) = 0;
 
     /*
       Methods for storing and restoring the state of the engine.

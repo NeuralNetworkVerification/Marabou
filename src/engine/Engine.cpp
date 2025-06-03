@@ -2690,14 +2690,14 @@ void Engine::preContextPushHook()
                                   TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::postContextPopHook()
+void Engine::postContextPopHook( bool doBasisFactorization )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
     _boundManager.restoreLocalBounds();
     if ( getLpSolverType() == LPSolverType::NATIVE )
     {
-        _tableau->postContextPopHook();
+        _tableau->postContextPopHook( doBasisFactorization );
         _costFunctionManager->computeCoreCostFunction();
     }
 

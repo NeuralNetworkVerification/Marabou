@@ -100,7 +100,7 @@ public:
     }
 
 
-    void postContextPopHook() override
+    void postContextPopHook( bool doBasisFactorization ) override
     {
     }
 

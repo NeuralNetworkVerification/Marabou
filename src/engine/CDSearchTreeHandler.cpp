@@ -209,7 +209,7 @@ bool CDSearchTreeHandler::popDecisionLevel( TrailEntry &lastDecision )
     CD_SEARCH_TREE_LOG( "Popping trail ..." );
     lastDecision = _decisions.back();
     _context.pop();
-    _engine->postContextPopHook();
+    _engine->postContextPopHook( true );
     CD_SEARCH_TREE_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
     return true;
 }
@@ -466,7 +466,7 @@ bool CDSearchTreeHandler::pickSplitPLConstraint()
 void CDSearchTreeHandler::reset()
 {
     _context.popto( 0 );
-    _engine->postContextPopHook();
+    _engine->postContextPopHook( true );
     _needToSplit = false;
     _constraintForSplitting = NULL;
     _constraintToViolationCount.clear();

@@ -686,7 +686,7 @@ public:
         return 0;
     }
 
-    void postContextPopHook()
+    void postContextPopHook( bool doBasisFactorization )
     {
     }
 
