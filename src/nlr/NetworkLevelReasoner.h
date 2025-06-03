@@ -61,8 +61,8 @@ public:
                               unsigned targetLeyer,
                               unsigned targetNeuron );
 
-    unsigned getNumberOfLayers() const;
-    const Layer *getLayer( unsigned index ) const;
+    unsigned getNumberOfLayers() const override;
+    const Layer *getLayer( unsigned index ) const override;
     Layer *getLayer( unsigned index );
 
     /*
@@ -117,7 +117,7 @@ public:
     */
 
     void setTableau( const ITableau *tableau );
-    const ITableau *getTableau() const;
+    const ITableau *getTableau() const override;
 
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
@@ -198,7 +198,7 @@ public:
     /*
       Get the size of the widest layer
     */
-    unsigned getMaxLayerSize() const;
+    unsigned getMaxLayerSize() const override;
 
     const Map<unsigned, Layer *> &getLayerIndexToLayer() const override;
 

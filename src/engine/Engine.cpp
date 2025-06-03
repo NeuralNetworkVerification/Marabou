@@ -4226,15 +4226,20 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
         contributions =
             Vector<std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>>>();
 
-    Vector<double> gub = Vector<double>( _tableau->getN(), 0 );
-    Vector<double> glb = Vector<double>( _tableau->getN(), 0 );
+    Vector<double> gub;
+    Vector<double> glb;
 
     if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES )
+    {
+        gub = Vector<double>( _tableau->getN(), 0 );
+        glb = Vector<double>( _tableau->getN(), 0 );
+
         for ( unsigned i = 0; i < _tableau->getN(); ++i )
         {
             gub[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::UB, id );
             glb[i] = _groundBoundManager.getGroundBoundUpToId( i, Tightening::LB, id );
         }
+    }
 
     // Iterate through all lemmas learned, check which participated in the explanation
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
@@ -4274,14 +4279,6 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
             contributions.end(),
             []( std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> a,
                 std::tuple<double, std::shared_ptr<GroundBoundManager::GroundBoundEntry>> b ) {
-                //                if ( std::get<1>( a ).get() && std::get<1>( a
-                //                )->lemma->getToCheck() && (std::get<1>( b ).get() && !std::get<1>(
-                //                b )->lemma->getToCheck()))
-                //                    return false;
-                //                else if ( std::get<1>( b ).get() && std::get<1>( b
-                //                )->lemma->getToCheck() && (std::get<1>( a ).get() && !std::get<1>(
-                //                a )->lemma->getToCheck()))
-                //                    return true;
                 return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
             } );
 

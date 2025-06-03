@@ -121,7 +121,7 @@ const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
 const bool GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES = false;
-const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = false;
+const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = true;
 
 const bool GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY = false;
 
