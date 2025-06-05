@@ -177,10 +177,7 @@ void CdclCore::notify_backtrack( size_t new_level )
     }
 
     popContextTo( new_level );
-    if ( new_level < oldLevel - 1 )
-        _engine->postContextPopHook( true );
-    else
-        _engine->postContextPopHook( false );
+    _engine->postContextPopHook();
 
     for ( unsigned l = oldLevel; l > new_level; --l )
         _decisionLiterals.erase( l );

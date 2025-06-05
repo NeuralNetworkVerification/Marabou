@@ -2622,11 +2622,11 @@ unsigned Tableau::getVariableAfterMerging( unsigned variable ) const
     return answer;
 }
 
-void Tableau::postContextPopHook( bool doBasisFactorization )
+void Tableau::postContextPopHook()
 {
     updateVariablesToComplyWithBounds();
 #ifdef BUILD_CADICAL
-    if ( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) && doBasisFactorization )
+    if ( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
         refreshBasisFactorization();
 #endif
 }

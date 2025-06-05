@@ -98,6 +98,6 @@ PolarityBasedDivider::getPLConstraintToSplit( const PiecewiseLinearCaseSplit &sp
     PiecewiseLinearConstraint *constraintToSplit = NULL;
     constraintToSplit = _engine->pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity );
     _engine->getContext().pop();
-    _engine->postContextPopHook( true );
+    _engine->postContextPopHook();
     return constraintToSplit;
 }

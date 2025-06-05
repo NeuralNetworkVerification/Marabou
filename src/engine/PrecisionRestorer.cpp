@@ -80,7 +80,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
     // Restore engine and tableau to their original form
     restoreInitialEngineState( engine );
-    engine.postContextPopHook( true );
+    engine.postContextPopHook();
     DEBUG( tableau.verifyInvariants() );
 
     // At this point, the tableau has the appropriate dimensions. Restore the

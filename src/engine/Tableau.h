@@ -476,7 +476,7 @@ public:
        data. After backtracking assignments satisfy bounds, but the
        basic/non-basic status may be out of date, so it is recomputed.
      */
-    void postContextPopHook( bool doBasisFactorization );
+    void postContextPopHook();
 
     /*
       Tighten bounds without notifying watchers

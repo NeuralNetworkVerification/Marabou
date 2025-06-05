@@ -194,7 +194,7 @@ public:
                                        double &coefficient,
                                        double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
-    virtual void postContextPopHook( bool doBasisFactorization ) = 0;
+    virtual void postContextPopHook() = 0;
     virtual IBoundManager &getBoundManager() const = 0;
 
     bool isOptimizing() const
