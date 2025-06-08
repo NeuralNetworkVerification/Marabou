@@ -156,7 +156,7 @@ void DeepPolyAnalysis::run()
                 //                              j,
                 //                              layer->getLb( j ),
                 //                              lb ) );
-                //                layer->setLb( j, lb );
+                layer->setLb( j, lb );
                 _layerOwner->receiveTighterBound(
                     Tightening( layer->neuronToVariable( j ), lb, Tightening::LB ) );
                 if ( index == _layerOwner->getNumberOfLayers() - 1 )
