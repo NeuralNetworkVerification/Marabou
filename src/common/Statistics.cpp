@@ -522,7 +522,8 @@ void Statistics::print()
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
     printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
-    printf( "\tNumber of lemmas used in proof minimization: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
+    printf( "\tNumber of lemmas used in proof minimization: %u\n",
+            getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
 
     printf( "\t--- CDCL Statistics ---\n" );
     printf( "\tMaximal depth of the search tree: %u\n",

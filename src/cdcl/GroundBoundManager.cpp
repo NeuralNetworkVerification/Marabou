@@ -59,7 +59,12 @@ GroundBoundManager::addGroundBound( unsigned index,
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     std::shared_ptr<GroundBoundEntry> groundBoundEntry(
-        new GroundBoundEntry( _counter->get(), value, nullptr, Set<int>(), isPhaseFixing, Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>() ) );
+        new GroundBoundEntry( _counter->get(),
+                              value,
+                              nullptr,
+                              Set<int>(),
+                              isPhaseFixing,
+                              Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>() ) );
 
 
     if ( !temp[index]->empty() )
@@ -81,8 +86,13 @@ GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool
     unsigned index = lemma->getAffectedVar();
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
-    std::shared_ptr<GroundBoundEntry> groundBoundEntry( new GroundBoundEntry(
-        _counter->get(), lemma->getBound(), lemma, Set<int>(), isPhaseFixing,  Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>() ) );
+    std::shared_ptr<GroundBoundEntry> groundBoundEntry(
+        new GroundBoundEntry( _counter->get(),
+                              lemma->getBound(),
+                              lemma,
+                              Set<int>(),
+                              isPhaseFixing,
+                              Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>() ) );
 
     if ( !temp[index]->empty() )
     {
@@ -117,11 +127,10 @@ GroundBoundManager::getGroundBoundEntryUpToId( unsigned index,
                                                Tightening::BoundType boundType,
                                                unsigned id ) const
 {
-
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
 
-    if (id == 0)
+    if ( id == 0 )
         return ( *temp[index] )[0];
 
     for ( int i = temp[index]->size() - 1; i >= 0; --i )
@@ -158,8 +167,9 @@ unsigned GroundBoundManager::getCounter() const
     return _counter->get();
 }
 
-void GroundBoundManager::addClauseToGroundBoundEntry( const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
-                                                      const Set<int> &clause )
+void GroundBoundManager::addClauseToGroundBoundEntry(
+    const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
+    const Set<int> &clause )
 {
     entry->clause = clause;
 }
@@ -177,8 +187,9 @@ GroundBoundManager::getAllInitialGroundBounds( Tightening::BoundType boundType )
     return bots;
 }
 
-void GroundBoundManager::addDepListToGroundBoundEntry( const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
-                                   const Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>  &depList ) const
+void GroundBoundManager::addDepListToGroundBoundEntry(
+    const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
+    const Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> &depList ) const
 {
     entry->depList = depList;
 }

@@ -38,16 +38,16 @@ public:
       Methods for setting and getting the input part of the query
     */
     void setNumberOfVariables( unsigned numberOfVariables ) override;
-    void setLowerBound( unsigned variable, double bound )override;
-    void setUpperBound( unsigned variable, double bound )override;
-    bool tightenLowerBound( unsigned variable, double bound )override;
-    bool tightenUpperBound( unsigned variable, double bound )override;
+    void setLowerBound( unsigned variable, double bound ) override;
+    void setUpperBound( unsigned variable, double bound ) override;
+    bool tightenLowerBound( unsigned variable, double bound ) override;
+    bool tightenUpperBound( unsigned variable, double bound ) override;
 
-    void addEquation( const Equation &equation )override;
+    void addEquation( const Equation &equation ) override;
     unsigned getNumberOfEquations() const override;
 
     unsigned getNumberOfVariables() const override;
-    unsigned getNewVariable()  override;
+    unsigned getNewVariable() override;
     double getLowerBound( unsigned variable ) const override;
     double getUpperBound( unsigned variable ) const override;
     const Map<unsigned, double> &getLowerBounds() const;
@@ -59,7 +59,7 @@ public:
     void removeEquationsByIndex( const Set<unsigned> indices );
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint ) override;
-    const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const ;
+    const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
     // Encode a clip constraint using two ReLU constraints

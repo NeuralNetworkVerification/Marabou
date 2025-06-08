@@ -286,7 +286,7 @@ public:
                                                     unsigned id,
                                                     int explainedVar,
                                                     bool isUpper ) = 0;
-    virtual Set<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) = 0;
+    virtual Set<int> explainPhaseWithProof( const PiecewiseLinearConstraint *litConstraint ) = 0;
 
     /*
       Explain infeasibility of Gurobi, for CDCL conflict clauses

@@ -375,7 +375,7 @@ public:
     /*
       Creates a boolean-abstracted clause explaining a boolean-abstracted literal
     */
-    Set<int> explainPhase( const PiecewiseLinearConstraint *litConstraint ) override;
+    Set<int> explainPhaseWithProof( const PiecewiseLinearConstraint *litConstraint ) override;
 
     /*
      Explain infeasibility of gurobi

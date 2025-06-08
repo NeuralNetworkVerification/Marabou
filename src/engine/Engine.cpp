@@ -4440,9 +4440,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     return clause;
 }
 
-Set<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
+Set<int> Engine::explainPhaseWithProof( const PiecewiseLinearConstraint *litConstraint )
 {
-    ASSERT( _solveWithCDCL );
+    ASSERT( _solveWithCDCL && _produceUNSATProofs);
     ASSERT( litConstraint );
     ASSERT( litConstraint->phaseFixed() || !litConstraint->isActive() );
 
