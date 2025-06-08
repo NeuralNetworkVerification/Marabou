@@ -525,6 +525,10 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                     ASSERT( _decisionLiterals.exists( level ) );
                     int lit = _decisionLiterals[level];
                     ASSERT( isDecision( lit ) && lit != propagated_lit );
+
+                    if ( _assignedLiterals[lit] >= _assignedLiterals[propagated_lit] )
+                        break;
+
                     if ( !_fixedCadicalVars.exists( lit ) )
                         clause.insert( lit );
                 }
