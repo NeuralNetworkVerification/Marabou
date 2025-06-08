@@ -4453,6 +4453,9 @@ Set<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
 
+    if ( !phaseFixingEntry->clause.empty() )
+        return phaseFixingEntry->clause;
+
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
     Set clause = clauseFromContradictionVector( tempExpl,

@@ -530,7 +530,8 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 }
             }
 
-            if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
+            if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES &&
+                 !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
             {
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
                 NLR::NetworkLevelReasoner *networkLevelReasoner =
@@ -652,7 +653,8 @@ void CdclCore::addExternalClause( Set<int> &clause )
         _literalToClauses.clear();
     }
 
-    if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
+    if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES &&
+         !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
     {
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
         NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();
