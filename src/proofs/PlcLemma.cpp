@@ -23,7 +23,7 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     Tightening::BoundType causingVarBound,
                     Tightening::BoundType affectedVarBound,
                     const Vector<SparseUnsortedList> &explanations,
-                    PiecewiseLinearFunctionType constraintType)
+                    PiecewiseLinearFunctionType constraintType )
     : _causingVars( causingVars )
     , _affectedVar( affectedVar )
     , _bound( bound )

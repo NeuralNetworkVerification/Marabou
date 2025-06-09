@@ -296,7 +296,7 @@ private:
 
     double computeDecisionScoreForLiteral( int literal ) const;
     void setInputBoundsForLiteralInNLR( int literal,
-                                        const std::shared_ptr<Query>& inputQuery,
+                                        const std::shared_ptr<Query> &inputQuery,
                                         NLR::NetworkLevelReasoner *networkLevelReasoner ) const;
     void runSymbolicBoundTightening( NLR::NetworkLevelReasoner *networkLevelReasoner ) const;
 

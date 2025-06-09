@@ -517,7 +517,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
         {
             Set<int> clause;
             if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
-                clause = _engine->explainPhase( _cadicalVarToPlc[abs( propagated_lit )] );
+                clause = _engine->explainPhaseWithProof( _cadicalVarToPlc[abs( propagated_lit )] );
             else
             {
                 for ( int level = 1; level <= _context.getLevel(); ++level )
@@ -525,12 +525,17 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                     ASSERT( _decisionLiterals.exists( level ) );
                     int lit = _decisionLiterals[level];
                     ASSERT( isDecision( lit ) && lit != propagated_lit );
+
+                    if ( _assignedLiterals[lit] >= _assignedLiterals[propagated_lit] )
+                        break;
+
                     if ( !_fixedCadicalVars.exists( lit ) )
                         clause.insert( lit );
                 }
             }
 
-            if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
+            if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES &&
+                 !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
             {
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
                 NLR::NetworkLevelReasoner *networkLevelReasoner =
@@ -653,7 +658,8 @@ void CdclCore::addExternalClause( Set<int> &clause )
         _literalToClauses.clear();
     }
 
-    if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES )
+    if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES &&
+         !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
     {
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
         NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();

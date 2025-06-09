@@ -4440,9 +4440,9 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
     return clause;
 }
 
-Set<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
+Set<int> Engine::explainPhaseWithProof( const PiecewiseLinearConstraint *litConstraint )
 {
-    ASSERT( _solveWithCDCL );
+    ASSERT( _solveWithCDCL && _produceUNSATProofs );
     ASSERT( litConstraint );
     ASSERT( litConstraint->phaseFixed() || !litConstraint->isActive() );
 
@@ -4452,6 +4452,9 @@ Set<int> Engine::explainPhase( const PiecewiseLinearConstraint *litConstraint )
 
     // Return a clause explaining the phase-fixing GroundBound entry
     ASSERT( phaseFixingEntry && phaseFixingEntry->lemma && phaseFixingEntry->isPhaseFixing );
+
+    if ( !phaseFixingEntry->clause.empty() )
+        return phaseFixingEntry->clause;
 
     SparseUnsortedList tempExpl = phaseFixingEntry->lemma->getExplanations().back();
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );

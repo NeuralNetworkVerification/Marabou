@@ -901,8 +901,8 @@ NeuronIndex NetworkLevelReasoner::variableToNeuron( unsigned int variable ) cons
 
 void NetworkLevelReasoner::receiveOutputTighterBound( Tightening tightening )
 {
-    _outputBounds[Pair<unsigned, Tightening::BoundType>(
-        tightening._variable, tightening._type )] = tightening._value;
+    _outputBounds[Pair<unsigned, Tightening::BoundType>( tightening._variable, tightening._type )] =
+        tightening._value;
 }
 
 void NetworkLevelReasoner::getOutputBounds(
