@@ -548,8 +548,8 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 {
                     Vector<Pair<double, int>> clauseScores;
                     computeClauseScores( clause, clauseScores );
-                    //                    reorderByDecisionLevelIfNecessary( clauseScores );
                     reorderByNumberOfClausesIfNecessary( clauseScores );
+                    reorderByDecisionLevelIfNecessary( clauseScores );
                     clause.clear();
                     networkLevelReasoner->obtainCurrentBounds( *inputQuery );
                     computeShortedClause( clause, clauseScores, propagated_lit );
@@ -669,8 +669,8 @@ void CdclCore::addExternalClause( Set<int> &clause )
         {
             Vector<Pair<double, int>> clauseScores;
             computeClauseScores( clause, clauseScores );
-            //            reorderByDecisionLevelIfNecessary( clauseScores );
             reorderByNumberOfClausesIfNecessary( clauseScores );
+            reorderByDecisionLevelIfNecessary( clauseScores );
             clause.clear();
             networkLevelReasoner->obtainCurrentBounds( *inputQuery );
             computeShortedClause( clause, clauseScores, 0 );
@@ -1279,7 +1279,6 @@ void CdclCore::computeShortedClause( Set<int> &clause,
 
         for ( const auto &pair : clauseScores )
         {
-            double score = pair.first();
             int literal = pair.second();
 
             ASSERT( literal != 0 );
@@ -1287,14 +1286,9 @@ void CdclCore::computeShortedClause( Set<int> &clause,
             clause.insert( literal );
 
             double outputUb = FloatUtils::infinity();
-            if ( clause.size() == 1 )
-                outputUb = score;
-            else
-            {
-                setInputBoundsForLiteralInNLR( literal, inputQuery, networkLevelReasoner );
-                runSymbolicBoundTightening( networkLevelReasoner );
-                outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
-            }
+            setInputBoundsForLiteralInNLR( literal, inputQuery, networkLevelReasoner );
+            runSymbolicBoundTightening( networkLevelReasoner );
+            outputUb = getUpperBoundForOutputVariableFromNLR( networkLevelReasoner );
 
             if ( GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY )
             {
@@ -1385,24 +1379,18 @@ void CdclCore::reorderByNumberOfClausesIfNecessary( Vector<Pair<double, int>> &c
     if ( !clauseScores.empty() &&
          clauseScores[0].first() == clauseScores[clauseScores.size() - 1].first() )
     {
-        Vector<Pair<unsigned, int>> numberOfClausesPerLiteral;
-
+        clauseScores.clear();
         for ( int level = 1; level <= _context.getLevel(); ++level )
         {
             ASSERT( _decisionLiterals.exists( level ) );
             int decisionLiteral = _decisionLiterals[level];
             if ( _literalToClauses.exists( decisionLiteral ) )
-                numberOfClausesPerLiteral.append( Pair<unsigned, int>(
-                    _literalToClauses[decisionLiteral].size(), decisionLiteral ) );
+                clauseScores.append( Pair<double, int>( _literalToClauses[decisionLiteral].size(),
+                                                        decisionLiteral ) );
             else
-                numberOfClausesPerLiteral.append( Pair<unsigned, int>( 0, decisionLiteral ) );
+                clauseScores.append( Pair<double, int>( 0, decisionLiteral ) );
         }
-        numberOfClausesPerLiteral.sort();
-
-        double score = clauseScores[0].first();
-        clauseScores.clear();
-        for ( const auto &pair : numberOfClausesPerLiteral )
-            clauseScores.append( Pair<double, int>( score, pair.second() ) );
+        clauseScores.sort();
     }
 }
 
