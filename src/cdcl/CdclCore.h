@@ -305,7 +305,6 @@ private:
 
     void computeClauseScores( const Set<int> &clause, Vector<Pair<double, int>> &clauseScores );
     void reorderByDecisionLevelIfNecessary( Vector<Pair<double, int>> &clauseScores );
-    void reorderByNumberOfClausesIfNecessary( Vector<Pair<double, int>> &clauseScores );
     void computeShortedClause( Set<int> &clause,
                                const Vector<Pair<double, int>> &clauseScores,
                                int propagated_lit ) const;

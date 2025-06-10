@@ -548,8 +548,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 {
                     Vector<Pair<double, int>> clauseScores;
                     computeClauseScores( clause, clauseScores );
-                    //                    reorderByDecisionLevelIfNecessary( clauseScores );
-                    reorderByNumberOfClausesIfNecessary( clauseScores );
+                    reorderByDecisionLevelIfNecessary( clauseScores );
                     clause.clear();
                     networkLevelReasoner->obtainCurrentBounds( *inputQuery );
                     computeShortedClause( clause, clauseScores, propagated_lit );
@@ -669,8 +668,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
         {
             Vector<Pair<double, int>> clauseScores;
             computeClauseScores( clause, clauseScores );
-            //            reorderByDecisionLevelIfNecessary( clauseScores );
-            reorderByNumberOfClausesIfNecessary( clauseScores );
+            reorderByDecisionLevelIfNecessary( clauseScores );
             clause.clear();
             networkLevelReasoner->obtainCurrentBounds( *inputQuery );
             computeShortedClause( clause, clauseScores, 0 );
@@ -990,10 +988,9 @@ void CdclCore::notifySingleAssignment( int lit, bool isFixed )
     ASSERT( !isLiteralAssigned( lit ) )
 
     _assignedLiterals.insert( lit, _assignedLiterals.size() );
-    if ( _literalToClauses.exists( lit ) )
-        for ( unsigned clause : _literalToClauses[lit] )
-            if ( !isClauseSatisfied( clause ) )
-                _satisfiedClauses.insert( clause );
+    for ( unsigned clause : _literalToClauses[lit] )
+        if ( !isClauseSatisfied( clause ) )
+            _satisfiedClauses.insert( clause );
 
     ASSERT( originalPlcPhase == PHASE_NOT_FIXED || plc->getPhaseStatus() == originalPlcPhase )
 }
@@ -1378,32 +1375,6 @@ Set<int> CdclCore::quickXplain( const Set<int> &currentClause,
     Set<int> clause2 = quickXplain( clause1, clauseScores, startIdx, mid, propagated_lit );
 
     return clause1 + clause2;
-}
-
-void CdclCore::reorderByNumberOfClausesIfNecessary( Vector<Pair<double, int>> &clauseScores )
-{
-    if ( !clauseScores.empty() &&
-         clauseScores[0].first() == clauseScores[clauseScores.size() - 1].first() )
-    {
-        Vector<Pair<unsigned, int>> numberOfClausesPerLiteral;
-
-        for ( int level = 1; level <= _context.getLevel(); ++level )
-        {
-            ASSERT( _decisionLiterals.exists( level ) );
-            int decisionLiteral = _decisionLiterals[level];
-            if ( _literalToClauses.exists( decisionLiteral ) )
-                numberOfClausesPerLiteral.append( Pair<unsigned, int>(
-                    _literalToClauses[decisionLiteral].size(), decisionLiteral ) );
-            else
-                numberOfClausesPerLiteral.append( Pair<unsigned, int>( 0, decisionLiteral ) );
-        }
-        numberOfClausesPerLiteral.sort();
-
-        double score = clauseScores[0].first();
-        clauseScores.clear();
-        for ( const auto &pair : numberOfClausesPerLiteral )
-            clauseScores.append( Pair<double, int>( score, pair.second() ) );
-    }
 }
 
 #endif
