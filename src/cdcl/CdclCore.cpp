@@ -548,8 +548,8 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
                 {
                     Vector<Pair<double, int>> clauseScores;
                     computeClauseScores( clause, clauseScores );
-                    reorderByNumberOfClausesIfNecessary( clauseScores );
-                    reorderByDecisionLevelIfNecessary( clauseScores );
+                    reorderByVariableIndexIfNecessary( clauseScores );
+                    //                    reorderByDecisionLevelIfNecessary( clauseScores );
                     clause.clear();
                     networkLevelReasoner->obtainCurrentBounds( *inputQuery );
                     computeShortedClause( clause, clauseScores, propagated_lit );
@@ -669,8 +669,8 @@ void CdclCore::addExternalClause( Set<int> &clause )
         {
             Vector<Pair<double, int>> clauseScores;
             computeClauseScores( clause, clauseScores );
-            reorderByNumberOfClausesIfNecessary( clauseScores );
-            reorderByDecisionLevelIfNecessary( clauseScores );
+            reorderByVariableIndexIfNecessary( clauseScores );
+            //            reorderByDecisionLevelIfNecessary( clauseScores );
             clause.clear();
             networkLevelReasoner->obtainCurrentBounds( *inputQuery );
             computeShortedClause( clause, clauseScores, 0 );
@@ -1374,7 +1374,7 @@ Set<int> CdclCore::quickXplain( const Set<int> &currentClause,
     return clause1 + clause2;
 }
 
-void CdclCore::reorderByNumberOfClausesIfNecessary( Vector<Pair<double, int>> &clauseScores )
+void CdclCore::reorderByVariableIndexIfNecessary( Vector<Pair<double, int>> &clauseScores )
 {
     if ( !clauseScores.empty() &&
          clauseScores[0].first() == clauseScores[clauseScores.size() - 1].first() )
@@ -1383,13 +1383,10 @@ void CdclCore::reorderByNumberOfClausesIfNecessary( Vector<Pair<double, int>> &c
         for ( int level = 1; level <= _context.getLevel(); ++level )
         {
             ASSERT( _decisionLiterals.exists( level ) );
-            int decisionLiteral = _decisionLiterals[level];
-            if ( _literalToClauses.exists( decisionLiteral ) )
-                clauseScores.append( Pair<double, int>( _literalToClauses[decisionLiteral].size(),
-                                                        decisionLiteral ) );
-            else
-                clauseScores.append( Pair<double, int>( 0, decisionLiteral ) );
+            clauseScores.append( Pair<double, int>( FloatUtils::abs( _decisionLiterals[level] ),
+                                                    _decisionLiterals[level] ) );
         }
+
         clauseScores.sort();
     }
 }
