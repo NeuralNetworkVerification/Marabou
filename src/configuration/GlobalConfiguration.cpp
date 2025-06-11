@@ -126,7 +126,7 @@ const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = true;
 const bool GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY = false;
 
 const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES = true;
-const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES_WITH_QUICKXPLAIN = true;
+const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES_WITH_QUICKXPLAIN = false;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
