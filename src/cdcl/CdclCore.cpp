@@ -1175,7 +1175,6 @@ void CdclCore::setInputBoundsForLiteralInNLR(
 
         if ( neuronIndex._layer != 0 || neuronIndex._neuron != 0 )
             break;
-
     }
 }
 
