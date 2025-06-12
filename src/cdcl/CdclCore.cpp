@@ -1172,6 +1172,10 @@ void CdclCore::setInputBoundsForLiteralInNLR(
                     FloatUtils::max( inputQuery->getLowerBound( variable ), 0 ),
                     inputQuery->getUpperBound( variable ) );
         }
+
+        if ( neuronIndex._layer != 0 || neuronIndex._neuron != 0 )
+            break;
+
     }
 }
 
@@ -1298,12 +1302,12 @@ void CdclCore::computeShortedClause( Set<int> &clause,
                 List<unsigned> outputVariables = _engine->getOutputVariables();
                 ASSERT( outputVariables.size() == 1 );
                 unsigned outputVariable = outputVariables.front();
-                if ( outputUb < inputQuery->getLowerBound( outputVariable ) )
+                if ( FloatUtils::lt( outputUb, inputQuery->getLowerBound( outputVariable ) ) )
                     break;
             }
             else
             {
-                if ( outputUb < 0 )
+                if ( FloatUtils::isNegative( outputUb ) )
                     break;
             }
         }
