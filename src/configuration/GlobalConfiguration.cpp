@@ -27,7 +27,7 @@ const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
 
 // Whether to use SoI instead of Reluplex for local search for satisfying assignments
 // to non-linear constraint.
-bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = true;
 
 const double GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI = 5;
 
@@ -61,7 +61,7 @@ const double GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD = 0
 const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy::ReLUViolation;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY = 10;
-const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 10;
+const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 1;
 const unsigned GlobalConfiguration::BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
@@ -121,7 +121,7 @@ const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
 const bool GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES = false;
-const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = true;
+const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = false;
 
 const bool GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY = false;
 
