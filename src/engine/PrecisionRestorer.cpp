@@ -77,6 +77,10 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         lowerBoundsBackup[i] = tableau.getLowerBound( i );
         upperBoundsBackup[i] = tableau.getUpperBound( i );
     }
+  
+    // Store the case splits performed so far
+    List<PiecewiseLinearCaseSplit> targetSplits;
+    smtCore.allSplitsSoFar( targetSplits );
 
     // Restore engine and tableau to their original form
     restoreInitialEngineState( engine );
@@ -145,6 +149,13 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     // Notify all constraints for the restore bounds
     // Will fix phases if necessary
     engine.propagateBoundManagerTightenings();
+
+    // Restore constraint status
+    for ( const auto &pair : targetEngineState._plConstraintToState )
+        pair.first->setActiveConstraint( pair.second->isActive() );
+
+    engine.setNumPlConstraintsDisabledByValidSplits(
+        targetEngineState._numPlConstraintsDisabledByValidSplits );
 
     DEBUG( {
         // Same dimensions
