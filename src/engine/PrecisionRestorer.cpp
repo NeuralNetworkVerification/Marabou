@@ -36,6 +36,7 @@ void PrecisionRestorer::restoreInitialEngineState( IEngine &engine )
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
                                           ITableau &tableau,
+                                          SearchTreeHandler &searchTreeHandler,
                                           RestoreBasics restoreBasics )
 {
     Map<const PiecewiseLinearConstraint *, Pair<PhaseStatus, bool>> plcStatusBefore;
@@ -44,12 +45,16 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
             plcStatusBefore.insert(
                 plc, Pair<PhaseStatus, bool>( plc->getPhaseStatus(), plc->isActive() ) );
     } );
+
     // Store the dimensions, bounds and basic variables in the current tableau,
     // before restoring it
     unsigned targetM = tableau.getM();
     unsigned targetN = tableau.getN();
 
     Set<unsigned> shouldBeBasic = tableau.getBasicVariables();
+
+    EngineState targetEngineState;
+    engine.storeState( targetEngineState, TableauStateStorageLevel::STORE_NONE );
 
     BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
     Vector<double> groundUpperBoundsBackup;
@@ -80,7 +85,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
   
     // Store the case splits performed so far
     List<PiecewiseLinearCaseSplit> targetSplits;
-    smtCore.allSplitsSoFar( targetSplits );
+    searchTreeHandler.allSplitsSoFar( targetSplits );
 
     // Restore engine and tableau to their original form
     restoreInitialEngineState( engine );

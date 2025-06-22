@@ -2437,7 +2437,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     double before = _degradationChecker.computeDegradation( *_tableau );
     //
 
-    _precisionRestorer.restorePrecision( *this, *_tableau, restoreBasics );
+    _precisionRestorer.restorePrecision( *this, *_tableau, _searchTreeHandler, restoreBasics );
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                   TimeUtils::timePassed( start, end ) );
@@ -2458,7 +2458,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         // Try again!
         start = TimeUtils::sampleMicro();
         _precisionRestorer.restorePrecision(
-            *this, *_tableau, PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+            *this, *_tableau, _searchTreeHandler, PrecisionRestorer::DO_NOT_RESTORE_BASICS );
         end = TimeUtils::sampleMicro();
         _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                       TimeUtils::timePassed( start, end ) );
