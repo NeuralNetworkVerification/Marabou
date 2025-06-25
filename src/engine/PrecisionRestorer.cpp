@@ -82,7 +82,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         lowerBoundsBackup[i] = tableau.getLowerBound( i );
         upperBoundsBackup[i] = tableau.getUpperBound( i );
     }
-  
+
     // Store the case splits performed so far
     List<PiecewiseLinearCaseSplit> targetSplits;
     searchTreeHandler.allSplitsSoFar( targetSplits );
