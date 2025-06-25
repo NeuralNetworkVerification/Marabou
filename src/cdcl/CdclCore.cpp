@@ -1118,7 +1118,7 @@ unsigned CdclCore::decideSplitVarBasedOnPseudoImpactAndVsids() const
             double pseudoImpactScore = _scoreTracker->getScore( plc );
             double vsidsScore = getVariableVSIDSScore( var );
             double score = ( vsidsScore + 1 ) * pseudoImpactScore;
-            if ( score > maxScore )
+            if ( score >= maxScore )
             {
                 maxScore = score;
                 variableWithMaxScore = var;
