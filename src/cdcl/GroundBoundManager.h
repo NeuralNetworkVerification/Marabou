@@ -29,19 +29,16 @@ class GroundBoundManager
 public:
     struct GroundBoundEntry
     {
-        GroundBoundEntry(
-            unsigned id,
-            double val,
-            const std::shared_ptr<PLCLemma> &lemma,
-            const Set<int> &clause,
-            bool isPhaseFixing,
-            const Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> &depList )
+        GroundBoundEntry( unsigned id,
+                          double val,
+                          const std::shared_ptr<PLCLemma> &lemma,
+                          const Set<int> &clause,
+                          bool isPhaseFixing )
             : id( id )
             , val( val )
             , lemma( lemma )
             , clause( clause )
             , isPhaseFixing( isPhaseFixing )
-            , depList( depList )
         {
         }
         unsigned id;
@@ -82,10 +79,6 @@ public:
     void
     addClauseToGroundBoundEntry( const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
                                  const Set<int> &clause );
-
-    void addDepListToGroundBoundEntry(
-        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
-        const Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> &depList ) const;
 
 private:
     CVC4::context::CDO<unsigned> *_counter;

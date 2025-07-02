@@ -4304,22 +4304,25 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
 
         Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> minorDepList;
         if ( entry->lemma && !entry->lemma->getExplanations().empty() &&
-             !entry->lemma->getExplanations().front().empty() && entry->depList.empty() &&
              !entry->lemma->getToCheck() )
         {
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
+            std::_List_const_iterator<unsigned int> it = entry->lemma->getCausingVars().begin();
+            for ( const auto &expl : entry->lemma->getExplanations() )
+            {
+                if ( expl.empty() )
+                {
+                    std::advance( it, 1 );
+                    continue;
+                }
 
-            minorDepList = analyseExplanationDependencies( entry->lemma->getExplanations().back(),
-                                                           entry->id,
-                                                           entry->lemma->getCausingVars().back(),
-                                                           entry->lemma->getCausingVarBound() ==
-                                                               Tightening::UB );
+                analyseExplanationDependencies(
+                    expl, entry->id, *it, entry->lemma->getCausingVarBound() == Tightening::UB );
 
-            _groundBoundManager.addDepListToGroundBoundEntry( entry, minorDepList );
+                std::advance( it, 1 );
+            }
             entry->lemma->setToCheck();
         }
-        else
-            minorDepList = entry->depList;
     }
 
     return entries;

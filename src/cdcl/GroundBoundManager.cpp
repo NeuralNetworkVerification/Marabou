@@ -59,12 +59,7 @@ GroundBoundManager::addGroundBound( unsigned index,
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         boundType == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
     std::shared_ptr<GroundBoundEntry> groundBoundEntry(
-        new GroundBoundEntry( _counter->get(),
-                              value,
-                              nullptr,
-                              Set<int>(),
-                              isPhaseFixing,
-                              Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>() ) );
+        new GroundBoundEntry( _counter->get(), value, nullptr, Set<int>(), isPhaseFixing ) );
 
 
     if ( !temp[index]->empty() )
@@ -86,13 +81,8 @@ GroundBoundManager::addGroundBound( const std::shared_ptr<PLCLemma> &lemma, bool
     unsigned index = lemma->getAffectedVar();
     const Vector<CVC4::context::CDList<std::shared_ptr<GroundBoundEntry>> *> &temp =
         isUpper == Tightening::UB ? _upperGroundBounds : _lowerGroundBounds;
-    std::shared_ptr<GroundBoundEntry> groundBoundEntry(
-        new GroundBoundEntry( _counter->get(),
-                              lemma->getBound(),
-                              lemma,
-                              Set<int>(),
-                              isPhaseFixing,
-                              Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>() ) );
+    std::shared_ptr<GroundBoundEntry> groundBoundEntry( new GroundBoundEntry(
+        _counter->get(), lemma->getBound(), lemma, Set<int>(), isPhaseFixing ) );
 
     if ( !temp[index]->empty() )
     {
@@ -185,11 +175,4 @@ GroundBoundManager::getAllInitialGroundBounds( Tightening::BoundType boundType )
         bots.append( ( *GBList->begin() )->val );
 
     return bots;
-}
-
-void GroundBoundManager::addDepListToGroundBoundEntry(
-    const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &entry,
-    const Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> &depList ) const
-{
-    entry->depList = depList;
 }
