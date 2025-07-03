@@ -3930,7 +3930,7 @@ bool Engine::certifyUNSATCertificate()
             return false;
         }
     }
-
+    _UNSATCertificateCurrentPointer->get()->deleteUnusedLemmas();
     struct timespec certificationStart = TimeUtils::sampleMicro();
     _precisionRestorer.restoreInitialEngineState( *this );
 
@@ -4302,8 +4302,7 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
     {
         ASSERT( entry->id < id );
 
-        Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> minorDepList;
-        if ( entry->lemma && !entry->lemma->getExplanations().empty() &&
+        if ( entry->lemma && !entry->lemma->getExplanations().empty() && !entry->lemma->getExplanations().front().empty() &&
              !entry->lemma->getToCheck() )
         {
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );

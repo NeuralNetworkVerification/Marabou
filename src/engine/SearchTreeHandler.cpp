@@ -327,6 +327,9 @@ bool SearchTreeHandler::popSplit()
 
         SearchTreeStackEntry *stackEntry = _stack.back();
 
+        if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateCurrentPointer() )
+            _engine->getUNSATCertificateCurrentPointer()->deleteUnusedLemmas();
+
         popContext();
         _engine->postContextPopHook();
         // Restore the state of the engine
