@@ -24,41 +24,34 @@
 
 class String;
 
-class MockEngine : public IEngine
-{
+class MockEngine : public IEngine {
 public:
-    MockEngine()
-    {
+    MockEngine() {
         wasCreated = false;
         wasDiscarded = false;
 
         lastStoredState = NULL;
     }
 
-    ~MockEngine()
-    {
+    ~MockEngine() {
     }
 
     bool wasCreated;
     bool wasDiscarded;
 
-    void mockConstructor()
-    {
-        TS_ASSERT( !wasCreated );
+    void mockConstructor() {
+        TS_ASSERT(!wasCreated);
         wasCreated = true;
     }
 
-    void mockDestructor()
-    {
-        TS_ASSERT( wasCreated );
-        TS_ASSERT( !wasDiscarded );
+    void mockDestructor() {
+        TS_ASSERT(wasCreated);
+        TS_ASSERT(!wasDiscarded);
         wasDiscarded = true;
     }
 
-    struct Bound
-    {
-        Bound( unsigned variable, double bound )
-        {
+    struct Bound {
+        Bound(unsigned variable, double bound) {
             _variable = variable;
             _bound = bound;
         }
@@ -70,225 +63,189 @@ public:
     List<Bound> lastLowerBounds;
     List<Bound> lastUpperBounds;
     List<Equation> lastEquations;
-    void applySplit( const PiecewiseLinearCaseSplit &split )
-    {
+
+    void applySplit(const PiecewiseLinearCaseSplit &split) {
         List<Tightening> bounds = split.getBoundTightenings();
         auto equations = split.getEquations();
-        for ( auto &it : equations )
-        {
-            lastEquations.append( it );
+        for (auto &it: equations) {
+            lastEquations.append(it);
         }
 
-        for ( auto &bound : bounds )
-        {
-            if ( bound._type == Tightening::LB )
-            {
-                lastLowerBounds.append( Bound( bound._variable, bound._value ) );
-            }
-            else
-            {
-                lastUpperBounds.append( Bound( bound._variable, bound._value ) );
+        for (auto &bound: bounds) {
+            if (bound._type == Tightening::LB) {
+                lastLowerBounds.append(Bound(bound._variable, bound._value));
+            } else {
+                lastUpperBounds.append(Bound(bound._variable, bound._value));
             }
         }
     }
 
-    void postContextPopHook(){};
-    void preContextPushHook(){};
+    void postContextPopHook() {};
+
+    void preContextPushHook() {};
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
-    {
+
+    void storeState(EngineState &state, TableauStateStorageLevel /*level*/) const {
         lastStoredState = &state;
     }
 
     const EngineState *lastRestoredState;
-    void restoreState( const EngineState &state )
-    {
+
+    void restoreState(const EngineState &state) {
         lastRestoredState = &state;
     }
 
-    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
-    {
+    void setNumPlConstraintsDisabledByValidSplits(unsigned /* numConstraints */) {
     }
 
     unsigned _timeToSolve;
     IEngine::ExitCode _exitCode;
-    bool solve( double timeoutInSeconds )
-    {
-        if ( timeoutInSeconds >= _timeToSolve )
+
+    bool solve(double timeoutInSeconds) {
+        if (timeoutInSeconds >= _timeToSolve)
             _exitCode = IEngine::TIMEOUT;
         return _exitCode == IEngine::SAT;
     }
 
-    void setTimeToSolve( unsigned timeToSolve )
-    {
+    void setTimeToSolve(unsigned timeToSolve) {
         _timeToSolve = timeToSolve;
     }
 
-    void setExitCode( IEngine::ExitCode exitCode )
-    {
+    void setExitCode(IEngine::ExitCode exitCode) {
         _exitCode = exitCode;
     }
 
-    IEngine::ExitCode getExitCode() const
-    {
+    IEngine::ExitCode getExitCode() const {
         return _exitCode;
     }
 
-    void reset()
-    {
+    void reset() {
     }
 
     List<unsigned> _inputVariables;
-    void setInputVariables( List<unsigned> &inputVariables )
-    {
+
+    void setInputVariables(List<unsigned> &inputVariables) {
         _inputVariables = inputVariables;
     }
 
-    List<unsigned> getInputVariables() const
-    {
+    List<unsigned> getInputVariables() const {
         return _inputVariables;
     }
 
-    void updateScores( DivideStrategy /**/ )
-    {
+    void updateScores(DivideStrategy /**/) {
     }
 
     mutable SmtState *lastRestoredSmtState;
-    bool restoreSmtState( SmtState &smtState )
-    {
+
+    bool restoreSmtState(SmtState &smtState) {
         lastRestoredSmtState = &smtState;
         return true;
     }
 
     mutable SmtState *lastStoredSmtState;
-    void storeSmtState( SmtState &smtState )
-    {
+
+    void storeSmtState(SmtState &smtState) {
         lastStoredSmtState = &smtState;
     }
 
     List<PiecewiseLinearConstraint *> _constraintsToSplit;
-    void setSplitPLConstraint( PiecewiseLinearConstraint *constraint )
-    {
-        _constraintsToSplit.append( constraint );
+
+    void setSplitPLConstraint(PiecewiseLinearConstraint *constraint) {
+        _constraintsToSplit.append(constraint);
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
-    {
-        if ( !_constraintsToSplit.empty() )
-        {
+    PiecewiseLinearConstraint *pickSplitPLConstraint(DivideStrategy /**/) {
+        if (!_constraintsToSplit.empty()) {
             PiecewiseLinearConstraint *ptr = *_constraintsToSplit.begin();
-            _constraintsToSplit.erase( ptr );
+            _constraintsToSplit.erase(ptr);
             return ptr;
-        }
-        else
+        } else
             return NULL;
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
-    {
-        if ( !_constraintsToSplit.empty() )
-        {
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC(SnCDivideStrategy /**/) {
+        if (!_constraintsToSplit.empty()) {
             PiecewiseLinearConstraint *ptr = *_constraintsToSplit.begin();
-            _constraintsToSplit.erase( ptr );
+            _constraintsToSplit.erase(ptr);
             return ptr;
-        }
-        else
+        } else
             return NULL;
     }
 
     bool _snc;
     CVC4::context::Context _context;
 
-    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ )
-    {
+    void applySnCSplit(PiecewiseLinearCaseSplit /*split*/, String /*queryId*/) {
         _snc = true;
         _context.push();
     }
 
-    bool inSnCMode() const
-    {
+    bool inSnCMode() const {
         return _snc;
     }
 
-    void applyAllBoundTightenings(){};
+    void applyAllBoundTightenings() {};
 
-    bool applyAllValidConstraintCaseSplits()
-    {
+    bool applyAllValidConstraintCaseSplits() {
         return false;
     };
 
-    CVC4::context::Context &getContext()
-    {
+    CVC4::context::Context &getContext() {
         return _context;
     }
 
-    bool consistentBounds() const
-    {
+    bool consistentBounds() const {
         return true;
     }
 
-    double explainBound( unsigned /* var */, bool /* isUpper */ ) const
-    {
+    double explainBound(unsigned /* var */, bool /* isUpper */) const {
         return 0.0;
     }
 
-    void updateGroundUpperBound( unsigned /* var */, double /* value */ )
-    {
+    void updateGroundUpperBound(unsigned /* var */, double /* value */) {
     }
 
-    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ )
-    {
+    void updateGroundLowerBound(unsigned /*var*/, double /*value*/) {
     }
 
-    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
-    {
+    double getGroundBound(unsigned /*var*/, bool /*isUpper*/) const {
         return 0;
     }
 
-    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
-    {
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const {
         return NULL;
     }
 
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ )
-    {
+    void setUNSATCertificateCurrentPointer(UnsatCertificateNode * /* node*/ ) {
     }
 
-    const UnsatCertificateNode *getUNSATCertificateRoot() const
-    {
+    const UnsatCertificateNode *getUNSATCertificateRoot() const {
         return NULL;
     }
 
-    bool certifyUNSATCertificate()
-    {
+    bool certifyUNSATCertificate() {
         return true;
     }
 
-    void explainSimplexFailure()
-    {
+    void explainSimplexFailure() {
     }
 
-    const BoundExplainer *getBoundExplainer() const
-    {
+    const BoundExplainer *getBoundExplainer() const {
         return NULL;
     }
 
-    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )
-    {
+    void setBoundExplainerContent(BoundExplainer * /*boundExplainer */ ) {
     }
 
-    void propagateBoundManagerTightenings()
-    {
+    void propagateBoundManagerTightenings() {
     }
 
-    bool shouldProduceProofs() const
-    {
+    bool shouldProduceProofs() const {
         return true;
     }
 
-    void addPLCLemma( std::shared_ptr<PLCLemma> & /*explanation*/ )
-    {
+    void addPLCLemma(std::shared_ptr <PLCLemma> & /*explanation*/ ) {
     }
 };
 
