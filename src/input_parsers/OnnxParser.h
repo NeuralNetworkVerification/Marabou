@@ -25,23 +25,24 @@
 #include "Vector.h"
 #include "onnx.proto3.pb.h"
 
-#define ONNX_LOG(x, ...) LOG( GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x )
+#define ONNX_LOG( x, ... ) LOG( GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x )
 
 
-class OnnxParser {
+class OnnxParser
+{
 public:
-    static void parse(InputQueryBuilder &query,
-                      const String &path,
-                      const Set<String> inputNames,
-                      const Set<String> outputNames);
+    static void parse( InputQueryBuilder &query,
+                       const String &path,
+                       const Set<String> inputNames,
+                       const Set<String> outputNames );
 
 
 private:
     // Settings //
-    OnnxParser(InputQueryBuilder &query,
-               const String &path,
-               const Set<String> inputNames,
-               const Set<String> terminalNames);
+    OnnxParser( InputQueryBuilder &query,
+                const String &path,
+                const Set<String> inputNames,
+                const Set<String> terminalNames );
 
     InputQueryBuilder &_query;
     onnx::GraphProto _network;
@@ -66,79 +67,49 @@ private:
     // Methods //
 
     const Set<String> readInputNames();
-
     const Set<String> readOutputNames();
+    void validateUserInputNames( const Set<String> &inputNames );
+    void validateUserTerminalNames( const Set<String> &terminalNames );
 
-    void validateUserInputNames(const Set<String> &inputNames);
-
-    void validateUserTerminalNames(const Set<String> &terminalNames);
-
-    void readNetwork(const String &path);
-
+    void readNetwork( const String &path );
     void initializeShapeAndConstantMaps();
-
     void validateAllInputsAndOutputsFound();
 
     void processGraph();
+    void processNode( String &nodeName, bool makeEquations );
+    void makeMarabouEquations( onnx::NodeProto &node, bool makeEquations );
+    Set<String> getInputsToNode( onnx::NodeProto &node );
+    List<onnx::NodeProto> getNodesWithOutput( String &nodeName );
+    Vector<Variable> makeNodeVariables( String &nodeName, bool isInput );
 
-    void processNode(String &nodeName, bool makeEquations);
+    bool isConstantNode( String name );
 
-    void makeMarabouEquations(onnx::NodeProto &node, bool makeEquations);
+    void transferValues( String oldName, String newName );
+    void insertConstant( String name, const onnx::TensorProto &tensor, TensorShape shape );
 
-    Set<String> getInputsToNode(onnx::NodeProto &node);
-
-    List<onnx::NodeProto> getNodesWithOutput(String &nodeName);
-
-    Vector<Variable> makeNodeVariables(String &nodeName, bool isInput);
-
-    bool isConstantNode(String name);
-
-    void transferValues(String oldName, String newName);
-
-    void insertConstant(String name, const onnx::TensorProto &tensor, TensorShape shape);
-
-    void constant(onnx::NodeProto &node);
-
-    void identity(onnx::NodeProto &node);
-
-    void dropout(onnx::NodeProto &node);
-
-    void cast(onnx::NodeProto &node);
-
-    void reshape(onnx::NodeProto &node);
-
-    void squeeze(onnx::NodeProto &node);
-
-    void unsqueeze(onnx::NodeProto &node);
-
-    void flatten(onnx::NodeProto &node);
-
-    void transpose(onnx::NodeProto &node);
-
-    void batchNormEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void maxPoolEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void convEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void gemmEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void scaleAndAddEquations(onnx::NodeProto &node,
-                              bool makeEquations,
-                              double coefficient1,
-                              double coefficient2);
-
-    void matMulEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void reluEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void signEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void leakyReluEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void sigmoidEquations(onnx::NodeProto &node, bool makeEquations);
-
-    void tanhEquations(onnx::NodeProto &node, bool makeEquations);
+    void constant( onnx::NodeProto &node );
+    void identity( onnx::NodeProto &node );
+    void dropout( onnx::NodeProto &node );
+    void cast( onnx::NodeProto &node );
+    void reshape( onnx::NodeProto &node );
+    void squeeze( onnx::NodeProto &node );
+    void unsqueeze( onnx::NodeProto &node );
+    void flatten( onnx::NodeProto &node );
+    void transpose( onnx::NodeProto &node );
+    void batchNormEquations( onnx::NodeProto &node, bool makeEquations );
+    void maxPoolEquations( onnx::NodeProto &node, bool makeEquations );
+    void convEquations( onnx::NodeProto &node, bool makeEquations );
+    void gemmEquations( onnx::NodeProto &node, bool makeEquations );
+    void scaleAndAddEquations( onnx::NodeProto &node,
+                               bool makeEquations,
+                               double coefficient1,
+                               double coefficient2 );
+    void matMulEquations( onnx::NodeProto &node, bool makeEquations );
+    void reluEquations( onnx::NodeProto &node, bool makeEquations );
+    void signEquations( onnx::NodeProto &node, bool makeEquations );
+    void leakyReluEquations( onnx::NodeProto &node, bool makeEquations );
+    void sigmoidEquations( onnx::NodeProto &node, bool makeEquations );
+    void tanhEquations( onnx::NodeProto &node, bool makeEquations );
 };
 
 #endif // __OnnxParser_h__
