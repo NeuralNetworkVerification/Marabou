@@ -125,7 +125,7 @@ const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = false;
 
 const bool GlobalConfiguration::CONVERT_VERIFICATION_QUERY_INTO_REACHABILITY_QUERY = false;
 
-const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES = true;
+const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES = false;
 const bool GlobalConfiguration::CDCL_SHORTEN_CLAUSES_WITH_QUICKXPLAIN = false;
 
 #ifdef ENABLE_GUROBI

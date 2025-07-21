@@ -161,7 +161,8 @@ bool UnsatCertificateNode::isValidNonLeaf() const
 
 void UnsatCertificateNode::deleteUnusedLemmas()
 {
-    for ( auto &lemma : _PLCExplanations )
-        if ( lemma && !lemma->getToCheck() )
-            lemma = nullptr;
+    if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+        for ( auto &lemma : _PLCExplanations )
+            if ( lemma && !lemma->getToCheck() )
+                lemma = nullptr;
 }

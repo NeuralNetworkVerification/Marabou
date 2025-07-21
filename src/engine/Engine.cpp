@@ -3630,16 +3630,18 @@ void Engine::explainSimplexFailure()
         writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
 
         ( **_UNSATCertificateCurrentPointer ).makeLeaf();
-        SparseUnsortedList sparseContradictionToAnalyse = SparseUnsortedList();
 
+        if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+        {
+            SparseUnsortedList sparseContradictionToAnalyse = SparseUnsortedList();
+            leafContradictionVec.empty()
+                ? sparseContradictionToAnalyse.initializeToEmpty()
+                : sparseContradictionToAnalyse.initialize( leafContradictionVec.data(),
+                                                           leafContradictionVec.size() );
 
-        leafContradictionVec.empty()
-            ? sparseContradictionToAnalyse.initializeToEmpty()
-            : sparseContradictionToAnalyse.initialize( leafContradictionVec.data(),
-                                                       leafContradictionVec.size() );
-
-        analyseExplanationDependencies(
-            sparseContradictionToAnalyse, _groundBoundManager.getCounter(), -1, true );
+            analyseExplanationDependencies(
+                sparseContradictionToAnalyse, _groundBoundManager.getCounter(), -1, true );
+        }
 
         return;
     }
@@ -4302,8 +4304,8 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
     {
         ASSERT( entry->id < id );
 
-        if ( entry->lemma && !entry->lemma->getExplanations().empty() && !entry->lemma->getExplanations().front().empty() &&
-             !entry->lemma->getToCheck() )
+        if ( entry->lemma && !entry->lemma->getExplanations().empty() &&
+             !entry->lemma->getExplanations().front().empty() && !entry->lemma->getToCheck() )
         {
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
             std::_List_const_iterator<unsigned int> it = entry->lemma->getCausingVars().begin();
