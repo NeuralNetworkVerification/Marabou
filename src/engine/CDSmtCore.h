@@ -76,7 +76,7 @@
 #include "context/cdlist.h"
 #include "context/context.h"
 
-#define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "CDSmtCore: %s\n", x )
+#define SMT_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::SMT_CORE_LOGGING, "CDSmtCore: %s\n", x )
 
 class EngineState;
 class Engine;

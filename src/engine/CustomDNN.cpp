@@ -1,5 +1,4 @@
 #include "CustomDNN.h"
-#include "Vector.h"
 #ifdef BUILD_TORCH
 
 CustomRelu::CustomRelu( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )

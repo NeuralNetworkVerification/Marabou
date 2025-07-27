@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required (VERSION 3.16)
 project(Marabou)
 
 set(MARABOU_VERSION 2.0.0)
@@ -20,9 +20,8 @@ option(RUN_SYSTEM_TEST "Run system tests on build" OFF)
 option(RUN_MEMORY_TEST "Run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
-option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
+option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" OFF) # Not available on Windows
 option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
-option(BUILD_CADICAL "Build the CaDiCaL SAT solver for CDCL solving" ON)
 option(BUILD_TORCH "Build libtorch" ON)
 ###################
 ## Git variables ##
@@ -62,9 +61,9 @@ set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 
 if (MSVC)
     set(SCRIPT_EXTENSION bat)
-else ()
+else()
     set(SCRIPT_EXTENSION sh)
-endif ()
+endif()
 
 ##########
 ## CVC4 ##
@@ -90,17 +89,17 @@ if (MSVC)
     set(Boost_NAMESPACE libboost)
 elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
     set(BOOST_ROOT "${BOOST_DIR}/installed32")
-else ()
+else()
     set(BOOST_ROOT "${BOOST_DIR}/installed")
-endif ()
+endif()
 
 set(Boost_USE_DEBUG_RUNTIME FALSE)
 find_package(Boost ${BOOST_VERSION} COMPONENTS program_options timer chrono thread)
 # Find boost
 if (NOT ${Boost_FOUND})
     execute_process(COMMAND ${TOOLS_DIR}/download_boost.${SCRIPT_EXTENSION} ${BOOST_VERSION})
-    find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS program_options timer chrono thread regex)
-endif ()
+    find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS program_options timer chrono thread)
+endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 list(APPEND LIBS ${Boost_LIBRARIES})
 
@@ -113,17 +112,17 @@ set(PROTOBUF_VERSION 3.19.2)
 set(PROTOBUF_DEFAULT_DIR "${TOOLS_DIR}/protobuf-${PROTOBUF_VERSION}")
 if (NOT PROTOBUF_DIR)
     set(PROTOBUF_DIR ${PROTOBUF_DEFAULT_DIR})
-endif ()
+endif()
 
-if (NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
+if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
     message("Can't find protobuf, installing. If protobuf is installed please use the PROTOBUF_DIR parameter to pass the path")
     if (${PROTOBUF_DIR} STREQUAL ${PROTOBUF_DEFAULT_DIR})
         message("installing protobuf")
         execute_process(COMMAND ${TOOLS_DIR}/download_protobuf.sh ${PROTOBUF_VERSION})
-    else ()
+    else()
         message(FATAL_ERROR "Can't find protobuf in the supplied directory")
-    endif ()
-endif ()
+    endif()
+endif()
 
 set(PROTOBUF_LIB protobuf)
 add_library(${PROTOBUF_LIB} SHARED IMPORTED)
@@ -140,10 +139,10 @@ list(APPEND LIBS ${PROTOBUF_LIB})
 set(ONNX_VERSION 1.15.0)
 set(ONNX_DIR "${TOOLS_DIR}/onnx-${ONNX_VERSION}")
 
-if (NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
+if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
     message("generating ONNX protobuf file")
     execute_process(COMMAND ${TOOLS_DIR}/download_onnx.sh ${ONNX_VERSION} ${PROTOBUF_VERSION})
-endif ()
+endif()
 file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
 include_directories(SYSTEM ${ONNX_DIR})
 
@@ -156,19 +155,20 @@ if (${BUILD_TORCH})
     if (NOT DEFINED BUILD_TORCH)
         set(BUILD_TORCH $ENV{TORCH_HOME})
         add_definitions(-DBUILD_TORCH)
-    endif ()
+    endif()
     add_compile_definitions(BUILD_TORCH)
     set(PYTORCH_VERSION 2.2.1)
     find_package(Torch ${PYTORCH_VERSION} QUIET)
     if (NOT Torch_FOUND)
         set(PYTORCH_DIR "${TOOLS_DIR}/libtorch-${PYTORCH_VERSION}")
         list(APPEND CMAKE_PREFIX_PATH ${PYTORCH_DIR})
-        if (NOT EXISTS "${PYTORCH_DIR}")
+        if(NOT EXISTS "${PYTORCH_DIR}")
             execute_process(COMMAND ${TOOLS_DIR}/download_libtorch.sh ${PYTORCH_VERSION})
-        endif ()
+            set(Torch_NO_SYSTEM_PATHS ON)
+        endif()
         set(Torch_DIR ${PYTORCH_DIR}/share/cmake/Torch)
         find_package(Torch ${PYTORCH_VERSION} REQUIRED)
-    endif ()
+    endif()
     set(TORCH_CXX_FLAGS "-Wno-error=array-bounds")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
     list(APPEND LIBS ${TORCH_LIBRARIES})
@@ -181,7 +181,7 @@ if (${ENABLE_GUROBI})
     message(STATUS "Using Gurobi for LP relaxation for bound tightening")
     if (NOT DEFINED GUROBI_DIR)
         set(GUROBI_DIR $ENV{GUROBI_HOME})
-    endif ()
+    endif()
     add_compile_definitions(ENABLE_GUROBI)
 
     set(GUROBI_LIB1 "gurobi_c++")
@@ -197,13 +197,13 @@ if (${ENABLE_GUROBI})
     # MACOSx uses .dylib instead of .so for its Gurobi downloads.
     if (APPLE)
         set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi110.dylib)
-    else ()
+    else()
         set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi110.so)
     endif ()
 
     list(APPEND LIBS ${GUROBI_LIB2})
     target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
-endif ()
+endif()
 
 ##############
 ## OpenBLAS ##
@@ -216,49 +216,25 @@ if (NOT MSVC AND ${ENABLE_OPENBLAS})
     set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-${OPENBLAS_VERSION}")
     if (NOT OPENBLAS_DIR)
         set(OPENBLAS_DIR ${OPENBLAS_DEFAULT_DIR})
-    endif ()
+    endif()
 
     message(STATUS "Using OpenBLAS for matrix multiplication")
     add_compile_definitions(ENABLE_OPENBLAS)
-    if (NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
+    if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
         message("Can't find OpenBLAS, installing. If OpenBLAS is installed please use the OPENBLAS_DIR parameter to pass the path")
         if (${OPENBLAS_DIR} STREQUAL ${OPENBLAS_DEFAULT_DIR})
             message("Installing OpenBLAS")
             execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh ${OPENBLAS_VERSION})
-        else ()
+        else()
             message(FATAL_ERROR "Can't find OpenBLAS in the supplied directory")
-        endif ()
-    endif ()
+        endif()
+    endif()
 
     add_library(${OPENBLAS_LIB} SHARED IMPORTED)
     set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
     list(APPEND LIBS ${OPENBLAS_LIB})
     target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
-endif ()
-
-##########
-## CaDiCaL ##
-##########
-
-if (BUILD_CADICAL)
-    message(STATUS "Using CaDiCaL for CDCL solving")
-    if (NOT CADICAL_DIR)
-        set(CADICAL_DIR "${TOOLS_DIR}/cadical")
-    endif ()
-    add_compile_definitions(BUILD_CADICAL)
-
-    if (NOT EXISTS "${CADICAL_DIR}")
-        message(STATUS "Building CaDiCaL SAT Solver")
-        execute_process(COMMAND ${TOOLS_DIR}/download_cadical.sh)
-    endif ()
-
-    set(CADICAL_LIB cadical)
-    add_library(${CADICAL_LIB} SHARED IMPORTED)
-    set_property(TARGET ${CADICAL_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
-    set_target_properties(${CADICAL_LIB} PROPERTIES IMPORTED_LOCATION ${CADICAL_DIR}/build/libcadical.a)
-    target_include_directories(${CADICAL_LIB} INTERFACE ${CADICAL_DIR}/src)
-    list(APPEND LIBS ${CADICAL_LIB})
-endif ()
+endif()
 
 ###########
 ## Build ##
@@ -289,30 +265,30 @@ set(INPUT_PARSERS_DIR input_parsers)
 
 include(ProcessorCount)
 ProcessorCount(CTEST_NTHREADS)
-if (CTEST_NTHREADS EQUAL 0)
+if(CTEST_NTHREADS EQUAL 0)
     set(CTEST_NTHREADS 1)
-endif ()
+endif()
 
 # --------------- set build type ----------------------------
 set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
 
 # Set the default build type to Production
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE
             Release CACHE STRING "Options are: Release Debug MinSizeRel RelWithDebInfo" FORCE)
     # Provide drop down menu options in cmake-gui
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${BUILD_TYPES})
-endif ()
+endif()
 message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
 
 #-------------------------set code coverage----------------------------------#
 # Allow coverage only in debug mode only in gcc
-if (CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
+if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
     message(STATUS "Building with code coverage")
     set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage" CACHE INTERNAL "")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-endif ()
+endif()
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
@@ -324,40 +300,40 @@ set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
 set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
 add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH})
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH} )
 
 set(MPS_PARSER_PATH "${BIN_DIR}/${MPS_PARSER}")
 
 if (NOT MSVC)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations -Wno-unused-but-set-variable)
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations -Wno-unused-but-set-variable )
     elseif (CMAKE_BUILD_TYPE MATCHES "Release")
-        set(COMPILE_FLAGS -Wall)
-    else ()
-        set(COMPILE_FLAGS -Wall -Wextra -Werror -MMD) #-Wno-deprecated
-    endif ()
+        set(COMPILE_FLAGS  -Wall )
+    else()
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD ) #-Wno-deprecated
+    endif()
     set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
-endif ()
+endif()
 
 if (RUN_MEMORY_TEST)
-    if (NOT MSVC)
+    if(NOT MSVC)
         set(MEMORY_FLAGS -fsanitize=address -fno-omit-frame-pointer -O1)
-    endif ()
-endif ()
+    endif()
+endif()
 
 add_definitions(-DRESOURCES_DIR="${RESOURCES_DIR}")
 
 if (NOT MSVC)
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS} -g)
-    set(CXXTEST_FLAGS ${DEBUG_FLAGS} -Wno-ignored-qualifiers)
-else ()
+    set(CXXTEST_FLAGS ${DEBUG_FLAGS}  -Wno-ignored-qualifiers)
+else()
     set(DEBUG_FLAGS ${COMPILE_FLAGS} ${MEMORY_FLAGS})
     add_definitions(-DNOMINMAX) # remove min max macros
-endif ()
+endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
-endif ()
+endif()
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -367,9 +343,9 @@ list(APPEND LIBS Threads::Threads)
 if (BUILD_STATIC_MARABOU)
     # build a static library
     target_link_libraries(${MARABOU_LIB} ${LIBS} -static)
-else ()
+else()
     target_link_libraries(${MARABOU_LIB} ${LIBS})
-endif ()
+endif()
 
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
@@ -385,18 +361,18 @@ target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
 set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
 set(PYTHON_VERSIONS_SUPPORTED 2 3)
 list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
-if (index EQUAL -1)
+if(index EQUAL -1)
     message(FATAL_ERROR "Python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
-endif ()
+endif()
 
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
 if (NOT PYTHON_LIBRARY_OUTPUT_DIRECTORY)
     set(PYTHON_LIBRARY_OUTPUT_DIRECTORY "${PYTHON_API_DIR}")
-endif ()
+endif()
 
 # Determine if we should build Python
 set(PYTHON32 FALSE)
-if (${BUILD_PYTHON})
+if(${BUILD_PYTHON})
     execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
             "import struct; print(struct.calcsize('@P'));"
             RESULT_VARIABLE _PYTHON_SUCCESS
@@ -407,17 +383,17 @@ if (${BUILD_PYTHON})
         set(PYTHON32 TRUE)
         message(WARNING "Python version is 32-bit, please use build_python.sh in
         maraboupy folder")
-    endif ()
-endif ()
+    endif()
+endif()
 if (${FORCE_PYTHON_BUILD})
     set(BUILD_PYTHON ON)
-else ()
+else()
     if (${BUILD_PYTHON} AND NOT ${PYTHON32})
         set(BUILD_PYTHON ON)
-    else ()
+    else()
         set(BUILD_PYTHON OFF)
-    endif ()
-endif ()
+    endif()
+endif()
 
 # Actually build Python
 if (${BUILD_PYTHON})
@@ -430,12 +406,12 @@ if (${BUILD_PYTHON})
     if (NOT EXISTS ${PYTHON_EXECUTABLE})
         # If the default didn't work just find any python version
         find_package(PythonInterp REQUIRED)
-    endif ()
+    endif()
 
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
         execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.${SCRIPT_EXTENSION} ${PYBIND11_VERSION})
-    endif ()
+    endif()
     add_subdirectory(${PYBIND11_DIR})
 
     set(MARABOU_PY MarabouCore)
@@ -446,10 +422,10 @@ if (${BUILD_PYTHON})
 
     set_target_properties(${MARABOU_PY} PROPERTIES
             LIBRARY_OUTPUT_DIRECTORY ${PYTHON_LIBRARY_OUTPUT_DIRECTORY})
-    if (NOT MSVC)
+    if(NOT MSVC)
         target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS})
-    endif ()
-endif ()
+    endif()
+endif()
 
 #################
 ## Build tests ##
@@ -458,19 +434,19 @@ endif ()
 set(MARABOU_TEST_LIB MarabouHelperTest)
 
 add_library(${MARABOU_TEST_LIB})
-set(TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
+set (TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
 file(MAKE_DIRECTORY ${TEST_DIR})
 
 set(CMAKE_PREFIX_PATH "${TOOLS_DIR}/cxxtest")
 set(CXXTEST_USE_PYTHON FALSE)
 find_package(CxxTest)
-if (CXXTEST_FOUND)
+if(CXXTEST_FOUND)
     include_directories(${CXXTEST_INCLUDE_DIR})
     enable_testing()
-endif ()
+endif()
 
 target_link_libraries(${MARABOU_TEST_LIB} ${MARABOU_LIB} ${LIBS})
-target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES})
+target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES} )
 target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 
 add_custom_target(build-tests ALL)
@@ -485,29 +461,29 @@ set(TESTS_TO_RUN "")
 macro(append_tests_to_run new_val)
     if ("${TESTS_TO_RUN}" STREQUAL "")
         set(TESTS_TO_RUN ${new_val})
-    else ()
+    else()
         set(TESTS_TO_RUN "${TESTS_TO_RUN}|${new_val}")
-    endif ()
+    endif()
 endmacro()
 
 if (${RUN_UNIT_TEST})
     append_tests_to_run("unit")
-endif ()
+endif()
 if (${RUN_REGRESS_TEST})
     append_tests_to_run("regress[0-5]")
-endif ()
+endif()
 if (${RUN_SYSTEM_TEST})
     append_tests_to_run("system")
-endif ()
+endif()
 if (NOT ${TESTS_TO_RUN} STREQUAL "")
     # make ctest verbose
     set(CTEST_OUTPUT_ON_FAILURE 1)
     add_custom_command(
             TARGET build-tests
             POST_BUILD
-            COMMAND ctest --output-on-failure -L "\"(${TESTS_TO_RUN})\"" -j${CTEST_NTHREADS} $$ARGS
+            COMMAND ctest --output-on-failure  -L "\"(${TESTS_TO_RUN})\"" -j${CTEST_NTHREADS} $$ARGS
     )
-endif ()
+endif()
 
 if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
     if (MSVC)
@@ -516,14 +492,14 @@ if (${BUILD_PYTHON} AND ${RUN_PYTHON_TEST})
                 POST_BUILD
                 COMMAND cp ${PYTHON_API_DIR}/Release/* ${PYTHON_API_DIR}
         )
-    endif ()
+    endif()
 
     add_custom_command(
             TARGET build-tests
             POST_BUILD
             COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PYTHON_API_DIR}/test
     )
-endif ()
+endif()
 
 # Add the input parsers
 add_custom_target(build_input_parsers)

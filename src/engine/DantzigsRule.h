@@ -19,7 +19,7 @@
 #include "EntrySelectionStrategy.h"
 
 #define DANTZIG_LOG( x, ... )                                                                      \
-    LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
 
 class String;
 

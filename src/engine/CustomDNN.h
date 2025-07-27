@@ -1,3 +1,4 @@
+#ifdef BUILD_TORCH
 #ifndef __CustomDNN_h__
 #define __CustomDNN_h__
 
@@ -99,3 +100,4 @@ private:
 
 
 #endif // __CustomDNN_h__
+#endif

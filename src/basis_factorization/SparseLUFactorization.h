@@ -22,7 +22,7 @@
 #include "SparseLUFactors.h"
 
 #define BASIS_FACTORIZATION_LOG( x, ... )                                                          \
-    LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseLUFactorization: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "SparseLUFactorization: %s\n", x )
 
 class EtaMatrix;
 class LPElement;
