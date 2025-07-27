@@ -292,6 +292,7 @@ public:
     static const bool SOI_LOGGING;
     static const bool SCORE_TRACKER_LOGGING;
     static const bool CEGAR_LOGGING;
+    static const bool CUSTOM_DNN_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

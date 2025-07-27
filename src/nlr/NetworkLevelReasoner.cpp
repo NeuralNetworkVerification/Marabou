@@ -211,6 +211,15 @@ void NetworkLevelReasoner::deepPolyPropagation()
     _deepPolyAnalysis->run();
 }
 
+void NetworkLevelReasoner::alphaCrown()
+{
+#ifdef BUILD_TORCH
+    if ( _alphaCrown == nullptr )
+        _alphaCrown = std::unique_ptr<AlphaCrown>( new AlphaCrown( this ) );
+    _alphaCrown->run();
+#endif
+}
+
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );

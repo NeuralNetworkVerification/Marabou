@@ -2,11 +2,11 @@
 #ifndef __CustomDNN_h__
 #define __CustomDNN_h__
 
+#include <vector>
+#include "NetworkLevelReasoner.h"
+
 #undef Warning
 #include <torch/torch.h>
-
-#include "NetworkLevelReasoner.h"
-#include <vector>
 
 #define CUSTOM_DNN_LOG( x, ... )                                                                   \
     MARABOU_LOG( GlobalConfiguration::CUSTOM_DNN_LOGGING, "customDNN: %s\n", x )
@@ -78,11 +78,11 @@ public:
                                      unsigned outputSize );
     void weightedSum( unsigned i, const NLR::Layer *layer );
     explicit CustomDNN( const NLR::NetworkLevelReasoner *networkLevelReasoner );
-    torch::Tensor getLayerWeights(unsigned layerIndex) const;
-    torch::Tensor getLayerBias(unsigned layerIndex) const;
+    torch::Tensor getLayerWeights( unsigned layerIndex ) const;
+    torch::Tensor getLayerBias( unsigned layerIndex ) const;
     torch::Tensor forward( torch::Tensor x );
     const Vector<unsigned> &getLayerSizes() const;
-    void getInputBounds(torch::Tensor &lbTensor, torch::Tensor &ubTensor)const;
+    void getInputBounds( torch::Tensor &lbTensor, torch::Tensor &ubTensor ) const;
     Vector<torch::nn::Linear> getLinearLayers()
     {
         return _linearLayers;

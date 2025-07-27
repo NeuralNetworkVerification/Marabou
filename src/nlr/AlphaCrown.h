@@ -18,9 +18,10 @@ public:
 
     void findBounds();
     void optimizeBounds( int loops = 50 );
-    void run(){
+    void run()
+    {
         findBounds();
-        optimizeBounds(2);
+        optimizeBounds( 2 );
     }
 
 private:
