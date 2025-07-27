@@ -16,6 +16,7 @@
 #ifndef __NetworkLevelReasoner_h__
 #define __NetworkLevelReasoner_h__
 
+#include "AlphaCrown.h"
 #include "DeepPolyAnalysis.h"
 #include "ITableau.h"
 #include "Layer.h"
@@ -209,6 +210,7 @@ private:
 
 
     std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;
+    std::unique_ptr<AlphaCrown> _alphaCrown;
 
     void freeMemoryIfNeeded();
 
@@ -255,6 +257,7 @@ private:
       to all neurons in the network
     */
     void reindexNeurons();
+    void alphaCrown();
 };
 
 } // namespace NLR
