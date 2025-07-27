@@ -199,7 +199,7 @@ void AlphaCrown::GDloop( int loops,
         optimizer.zero_grad();
 
         auto [max_val, min_val] = AlphaCrown::computeBounds( alphaSlopes );
-        auto loss = ( val_to_opt == "max" ) ? max_val : -min_val;
+        auto loss = ( val_to_opt == "max" ) ? max_val.sum( ) : -min_val.sum(  );
         loss.backward();
         optimizer.step();
 
