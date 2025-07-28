@@ -2,8 +2,10 @@
 #ifndef __CustomDNN_h__
 #define __CustomDNN_h__
 
+#include "Layer.h"
+#include "Vector.h"
+
 #include <vector>
-#include "NetworkLevelReasoner.h"
 
 #undef Warning
 #include <torch/torch.h>
@@ -15,12 +17,13 @@
   Custom differentiation function for ReLU, implementing the forward and backward propagation
   for the ReLU operation according to each variable's source layer as defined in the nlr.
 */
+namespace NLR {
 class CustomReluFunction : public torch::autograd::Function<CustomReluFunction>
 {
 public:
     static torch::Tensor forward( torch::autograd::AutogradContext *ctx,
                                   torch::Tensor x,
-                                  const NLR::NetworkLevelReasoner *nlr,
+                                  const NetworkLevelReasoner *nlr,
                                   unsigned layerIndex );
 
     static std::vector<torch::Tensor> backward( torch::autograd::AutogradContext *ctx,
@@ -30,11 +33,11 @@ public:
 class CustomRelu : public torch::nn::Module
 {
 public:
-    CustomRelu( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex );
+    CustomRelu( const NetworkLevelReasoner *nlr, unsigned layerIndex );
     torch::Tensor forward( torch::Tensor x ) const;
 
 private:
-    const NLR::NetworkLevelReasoner *_networkLevelReasoner;
+    const NetworkLevelReasoner *_networkLevelReasoner;
     unsigned _reluLayerIndex;
 };
 
@@ -47,7 +50,7 @@ class CustomMaxPoolFunction : public torch::autograd::Function<CustomMaxPoolFunc
 public:
     static torch::Tensor forward( torch::autograd::AutogradContext *ctx,
                                   torch::Tensor x,
-                                  const NLR::NetworkLevelReasoner *nlr,
+                                  const NetworkLevelReasoner *nlr,
                                   unsigned layerIndex );
 
     static std::vector<torch::Tensor> backward( torch::autograd::AutogradContext *ctx,
@@ -57,11 +60,11 @@ public:
 class CustomMaxPool : public torch::nn::Module
 {
 public:
-    CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex );
+    CustomMaxPool( const NetworkLevelReasoner *nlr, unsigned layerIndex );
     torch::Tensor forward( torch::Tensor x ) const;
 
 private:
-    const NLR::NetworkLevelReasoner *_networkLevelReasoner;
+    const NetworkLevelReasoner *_networkLevelReasoner;
     unsigned _maxLayerIndex;
 };
 
@@ -72,12 +75,12 @@ class CustomDNN : public torch::nn::Module
 {
 public:
     static void setWeightsAndBiases( torch::nn::Linear &linearLayer,
-                                     const NLR::Layer *layer,
+                                     const Layer *layer,
                                      unsigned sourceLayer,
                                      unsigned inputSize,
                                      unsigned outputSize );
-    void weightedSum( unsigned i, const NLR::Layer *layer );
-    explicit CustomDNN( const NLR::NetworkLevelReasoner *networkLevelReasoner );
+    void weightedSum( unsigned i, const Layer *layer );
+    explicit CustomDNN( const NetworkLevelReasoner *networkLevelReasoner );
     torch::Tensor getLayerWeights( unsigned layerIndex ) const;
     torch::Tensor getLayerBias( unsigned layerIndex ) const;
     torch::Tensor forward( torch::Tensor x );
@@ -89,15 +92,14 @@ public:
     }
 
 private:
-    const NLR::NetworkLevelReasoner *_networkLevelReasoner;
+    const NetworkLevelReasoner *_networkLevelReasoner;
     Vector<unsigned> _layerSizes;
     Vector<std::shared_ptr<CustomRelu>> _reluLayers;
     Vector<std::shared_ptr<CustomMaxPool>> _maxPoolLayers;
     Vector<torch::nn::Linear> _linearLayers;
-    Vector<NLR::Layer::Type> _layersOrder;
+    Vector<Layer::Type> _layersOrder;
     unsigned _numberOfLayers;
 };
-
-
+} // namespace NLR
 #endif // __CustomDNN_h__
 #endif

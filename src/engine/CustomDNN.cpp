@@ -1,7 +1,8 @@
+#include "NetworkLevelReasoner.h"
 #include "CustomDNN.h"
 #ifdef BUILD_TORCH
-
-CustomRelu::CustomRelu( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
+namespace NLR {
+CustomRelu::CustomRelu( const NetworkLevelReasoner *nlr, unsigned layerIndex )
     : _networkLevelReasoner( nlr )
     , _reluLayerIndex( layerIndex )
 {
@@ -12,7 +13,7 @@ torch::Tensor CustomRelu::forward( torch::Tensor x ) const
     return CustomReluFunction::apply( x, _networkLevelReasoner, _reluLayerIndex );
 }
 
-CustomMaxPool::CustomMaxPool( const NLR::NetworkLevelReasoner *nlr, unsigned layerIndex )
+CustomMaxPool::CustomMaxPool( const NetworkLevelReasoner *nlr, unsigned layerIndex )
     : _networkLevelReasoner( nlr )
     , _maxLayerIndex( layerIndex )
 {
@@ -24,7 +25,7 @@ torch::Tensor CustomMaxPool::forward( torch::Tensor x ) const
 }
 
 void CustomDNN::setWeightsAndBiases( torch::nn::Linear &linearLayer,
-                                     const NLR::Layer *layer,
+                                     const Layer *layer,
                                      unsigned sourceLayer,
                                      unsigned inputSize,
                                      unsigned outputSize )
@@ -62,10 +63,10 @@ void CustomDNN::setWeightsAndBiases( torch::nn::Linear &linearLayer,
     linearLayer->bias.set_( biasTensor );
 }
 
-void CustomDNN::weightedSum( unsigned i, const NLR::Layer *layer )
+void CustomDNN::weightedSum( unsigned i, const Layer *layer )
 {
     unsigned sourceLayer = i - 1;
-    const NLR::Layer *prevLayer = _networkLevelReasoner->getLayer( sourceLayer );
+    const Layer *prevLayer = _networkLevelReasoner->getLayer( sourceLayer );
     unsigned inputSize = prevLayer->getSize();
     unsigned outputSize = layer->getSize();
 
@@ -81,32 +82,32 @@ void CustomDNN::weightedSum( unsigned i, const NLR::Layer *layer )
 }
 
 
-CustomDNN::CustomDNN( const NLR::NetworkLevelReasoner *nlr )
+CustomDNN::CustomDNN( const NetworkLevelReasoner *nlr )
 {
     CUSTOM_DNN_LOG( "----- Construct Custom Network -----" );
     _networkLevelReasoner = nlr;
     _numberOfLayers = _networkLevelReasoner->getNumberOfLayers();
     for ( unsigned i = 0; i < _numberOfLayers; i++ )
     {
-        const NLR::Layer *layer = _networkLevelReasoner->getLayer( i );
+        const Layer *layer = _networkLevelReasoner->getLayer( i );
         _layerSizes.append( layer->getSize() );
-        NLR::Layer::Type layerType = layer->getLayerType();
+        Layer::Type layerType = layer->getLayerType();
         _layersOrder.append( layerType );
         switch ( layerType )
         {
-        case NLR::Layer::INPUT:
+        case Layer::INPUT:
             break;
-        case NLR::Layer::WEIGHTED_SUM:
+        case Layer::WEIGHTED_SUM:
             weightedSum( i, layer );
             break;
-        case NLR::Layer::RELU:
+        case Layer::RELU:
         {
             auto reluLayer = std::make_shared<CustomRelu>( _networkLevelReasoner, i );
             _reluLayers.append( reluLayer );
             register_module( "ReLU" + std::to_string( i ), reluLayer );
             break;
         }
-        case NLR::Layer::MAX:
+        case Layer::MAX:
         {
             auto maxPoolLayer = std::make_shared<CustomMaxPool>( _networkLevelReasoner, i );
             _maxPoolLayers.append( maxPoolLayer );
@@ -127,20 +128,20 @@ torch::Tensor CustomDNN::forward( torch::Tensor x )
     unsigned maxPoolIndex = 0;
     for ( unsigned i = 0; i < _numberOfLayers; i++ )
     {
-        const NLR::Layer::Type layerType = _layersOrder[i];
+        const Layer::Type layerType = _layersOrder[i];
         switch ( layerType )
         {
-        case NLR::Layer::INPUT:
+        case Layer::INPUT:
             break;
-        case NLR::Layer::WEIGHTED_SUM:
+        case Layer::WEIGHTED_SUM:
             x = _linearLayers[linearIndex]->forward( x );
             linearIndex++;
             break;
-        case NLR::Layer::RELU:
+        case Layer::RELU:
             x = _reluLayers[reluIndex]->forward( x );
             reluIndex++;
             break;
-        case NLR::Layer::MAX:
+        case Layer::MAX:
             x = _maxPoolLayers[maxPoolIndex]->forward( x );
             maxPoolIndex++;
             break;
@@ -155,12 +156,12 @@ torch::Tensor CustomDNN::forward( torch::Tensor x )
 
 torch::Tensor CustomReluFunction::forward( torch::autograd::AutogradContext *ctx,
                                            torch::Tensor x,
-                                           const NLR::NetworkLevelReasoner *nlr,
+                                           const NetworkLevelReasoner *nlr,
                                            unsigned int layerIndex )
 {
     ctx->save_for_backward( { x } );
 
-    const NLR::Layer *layer = nlr->getLayer( layerIndex );
+    const Layer *layer = nlr->getLayer( layerIndex );
     torch::Tensor reluOutputs = torch::zeros( { 1, layer->getSize() } );
     torch::Tensor reluGradients = torch::zeros( { 1, layer->getSize() } );
 
@@ -168,7 +169,7 @@ torch::Tensor CustomReluFunction::forward( torch::autograd::AutogradContext *ctx
     {
         auto sources = layer->getActivationSources( neuron );
         ASSERT( sources.size() == 1 );
-        const NLR::NeuronIndex &sourceNeuron = sources.back();
+        const NeuronIndex &sourceNeuron = sources.back();
         int index = static_cast<int>( sourceNeuron._neuron );
         reluOutputs.index_put_( { 0, static_cast<int>( neuron ) },
                                 torch::clamp_min( x.index( { 0, index } ), 0 ) );
@@ -194,12 +195,12 @@ std::vector<torch::Tensor> CustomReluFunction::backward( torch::autograd::Autogr
 
 torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *ctx,
                                               torch::Tensor x,
-                                              const NLR::NetworkLevelReasoner *nlr,
+                                              const NetworkLevelReasoner *nlr,
                                               unsigned int layerIndex )
 {
     ctx->save_for_backward( { x } );
 
-    const NLR::Layer *layer = nlr->getLayer( layerIndex );
+    const Layer *layer = nlr->getLayer( layerIndex );
     torch::Tensor maxOutputs = torch::zeros( { 1, layer->getSize() } );
     torch::Tensor argMaxOutputs = torch::zeros( { 1, layer->getSize() }, torch::kInt64 );
 
@@ -211,7 +212,7 @@ torch::Tensor CustomMaxPoolFunction::forward( torch::autograd::AutogradContext *
 
         for ( int i = sources.size() - 1; i >= 0; --i )
         {
-            const NLR::NeuronIndex &activationNeuron = sources.back();
+            const NeuronIndex &activationNeuron = sources.back();
             int index = static_cast<int>( activationNeuron._neuron );
             sources.popBack();
             sourceValues.index_put_( { i }, x.index( { 0, index } ) );
@@ -249,7 +250,7 @@ const Vector<unsigned> &CustomDNN::getLayerSizes() const
 }
 
 torch::Tensor CustomDNN::getLayerWeights(unsigned layerIndex) const {
-    if (_layersOrder[layerIndex] == NLR::Layer::WEIGHTED_SUM) {
+    if (_layersOrder[layerIndex] == Layer::WEIGHTED_SUM) {
         auto linearLayer = _linearLayers[layerIndex];
         return linearLayer->weight; // Returning weights of the corresponding linear layer
     }
@@ -257,7 +258,7 @@ torch::Tensor CustomDNN::getLayerWeights(unsigned layerIndex) const {
 }
 
 torch::Tensor CustomDNN::getLayerBias(unsigned layerIndex) const {
-    if (_layersOrder[layerIndex] == NLR::Layer::WEIGHTED_SUM) {
+    if (_layersOrder[layerIndex] == Layer::WEIGHTED_SUM) {
         auto linearLayer = _linearLayers[layerIndex];
         return linearLayer->bias; // Returning bias of the corresponding linear layer
     }
@@ -266,7 +267,7 @@ torch::Tensor CustomDNN::getLayerBias(unsigned layerIndex) const {
 
 void CustomDNN::getInputBounds(torch::Tensor &lbTensor, torch::Tensor &ubTensor) const
 {
-    const NLR::Layer *layer = _networkLevelReasoner->getLayer(0);
+    const Layer *layer = _networkLevelReasoner->getLayer(0);
     unsigned size = layer->getSize();
 
     std::vector<double> lowerBounds;
@@ -282,6 +283,7 @@ void CustomDNN::getInputBounds(torch::Tensor &lbTensor, torch::Tensor &ubTensor)
 
     lbTensor = torch::tensor(lowerBounds, torch::kDouble);
     ubTensor = torch::tensor(upperBounds, torch::kDouble);
+}
 }
 
 #endif

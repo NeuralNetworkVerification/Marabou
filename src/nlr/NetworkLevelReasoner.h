@@ -125,6 +125,7 @@ public:
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
     void deepPolyPropagation();
+    void alphaCrown();
     void lpRelaxationPropagation();
     void LPTighteningForOneLayer( unsigned targetIndex );
     void MILPPropagation();
@@ -257,7 +258,6 @@ private:
       to all neurons in the network
     */
     void reindexNeurons();
-    void alphaCrown();
 };
 
 } // namespace NLR

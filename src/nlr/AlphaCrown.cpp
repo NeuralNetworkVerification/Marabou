@@ -5,12 +5,13 @@
 #include "AlphaCrown.h"
 
 #include "MStringf.h"
+#include "NetworkLevelReasoner.h"
 
 namespace NLR {
 AlphaCrown::AlphaCrown( LayerOwner *layerOwner )
     : _layerOwner( layerOwner )
 {
-    _network = new CustomDNN( static_cast<NetworkLevelReasoner *>(_layerOwner) );
+    _network = new CustomDNN( dynamic_cast<NetworkLevelReasoner *>( _layerOwner ) );
     _network->getInputBounds( _lbInput, _ubInput );
     _inputSize = _lbInput.size( 0 ); // TODO it that length of tensor?
 
@@ -199,7 +200,7 @@ void AlphaCrown::GDloop( int loops,
         optimizer.zero_grad();
 
         auto [max_val, min_val] = AlphaCrown::computeBounds( alphaSlopes );
-        auto loss = ( val_to_opt == "max" ) ? max_val.sum( ) : -min_val.sum(  );
+        auto loss = ( val_to_opt == "max" ) ? max_val.sum() : -min_val.sum();
         loss.backward();
         optimizer.step();
 
