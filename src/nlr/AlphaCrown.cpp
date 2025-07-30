@@ -14,24 +14,29 @@ AlphaCrown::AlphaCrown( LayerOwner *layerOwner )
     _network = new CustomDNN( dynamic_cast<NetworkLevelReasoner *>( _layerOwner ) );
     _network->getInputBounds( _lbInput, _ubInput );
     _inputSize = _lbInput.size( 0 ); // TODO it that length of tensor?
-
-    _linearLayers = std::vector<torch::nn::Linear>( _network->getLinearLayers().begin(),
-                                                    _network->getLinearLayers().end() );
+    _network->getLinearLayers().end() ;
+    _linearLayers = _network->getLinearLayers().getContainer();
     for ( const auto &linearLayer : _linearLayers )
     {
         _positiveWeights.push_back( torch::where( linearLayer->weight >= 0,
                                                   linearLayer->weight,
-                                                  torch::zeros_like( linearLayer->weight ) ) );
+                                                  torch::zeros_like( linearLayer->weight ) ).to(torch::kFloat32) );
         _negativeWeights.push_back( torch::where( linearLayer->weight <= 0,
                                                   linearLayer->weight,
-                                                  torch::zeros_like( linearLayer->weight ) ) );
-        _biases.push_back( linearLayer->bias );
+                                                  torch::zeros_like( linearLayer->weight ) ).to
+                                    (torch::kFloat32) );
+        _biases.push_back( linearLayer->bias.to(torch::kFloat32) );
     }
 }
 
 torch::Tensor AlphaCrown::createSymbolicVariablesMatrix()
 {
-    return torch::cat( { torch::eye( _inputSize ), torch::zeros( { _inputSize, 1 } ) }, 1 );
+    // Create the identity matrix and the zero matrix
+    auto eye_tensor = torch::eye(_inputSize, torch::kFloat32);   // Ensure float32
+    auto zero_tensor = torch::zeros({_inputSize, 1}, torch::kFloat32); // Ensure float32
+
+    // Concatenate the two tensors horizontally (along dim=1)
+    return torch::cat({eye_tensor, zero_tensor}, 1);  // Will be of type float32
 }
 
 torch::Tensor AlphaCrown::lower_ReLU_relaxation( const torch::Tensor &u, const torch::Tensor &l )
@@ -40,7 +45,7 @@ torch::Tensor AlphaCrown::lower_ReLU_relaxation( const torch::Tensor &u, const t
     mult = torch::where( u - l == 0, torch::tensor( 1.0 ), u / ( u - l ) );
     mult = torch::where( l >= 0, torch::tensor( 1.0 ), mult );
     mult = torch::where( u <= 0, torch::tensor( 0.0 ), mult );
-    return mult;
+    return mult.to(torch::kFloat32);
 }
 
 std::tuple<torch::Tensor, torch::Tensor> AlphaCrown::upper_ReLU_relaxation( const torch::Tensor &u,
@@ -53,7 +58,7 @@ std::tuple<torch::Tensor, torch::Tensor> AlphaCrown::upper_ReLU_relaxation( cons
     torch::Tensor add = torch::where( u - l == 0, torch::tensor( 0.0 ), -l * mult );
     add = torch::where( l >= 0, torch::tensor( 0.0 ), add );
 
-    return std::make_tuple( mult, add );
+    return std::make_tuple( mult.to(torch::kFloat32), add.to(torch::kFloat32) );
 }
 torch::Tensor AlphaCrown::getMaxOfSymbolicVariables( const torch::Tensor &matrix )
 {
@@ -182,11 +187,12 @@ void AlphaCrown::optimizeBounds( int loops )
     std::vector<torch::Tensor> alphaSlopesForLowBound;
     for ( auto &tensor : _alphaSlopes )
     {
-        alphaSlopesForUpBound.push_back( tensor.copy_( tensor.detach().requires_grad_( true ) ) );
-        alphaSlopesForLowBound.push_back( tensor.copy_( tensor.detach().requires_grad_( true ) ) );
+        alphaSlopesForUpBound.push_back( tensor.detach().clone().requires_grad_(true) );
+        alphaSlopesForLowBound.push_back( tensor.detach().clone().requires_grad_(true) );
     }
     AlphaCrown::GDloop( loops, "max", alphaSlopesForUpBound );
     AlphaCrown::GDloop( loops, "min", alphaSlopesForLowBound );
+    std::cout << "AlphaCrown run completed." << std::endl;
 }
 
 
@@ -201,15 +207,17 @@ void AlphaCrown::GDloop( int loops,
 
         auto [max_val, min_val] = AlphaCrown::computeBounds( alphaSlopes );
         auto loss = ( val_to_opt == "max" ) ? max_val.sum() : -min_val.sum();
-        loss.backward();
+        loss.backward(torch::Tensor(), /*retain_graph=*/true);
+
         optimizer.step();
 
         for ( auto &tensor : alphaSlopes )
         {
-            tensor.clamp_( 0, 1 );
+            tensor.clamp( 0, 1 );
         }
 
         log( Stringf( "Optimization loop %d completed", i + 1 ) );
+        std::cout << "std Optimization loop completed " << i+1 << std::endl;
     }
 }
 
