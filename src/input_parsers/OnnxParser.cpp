@@ -957,6 +957,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         tanhEquations( node, makeEquations );
     }
+    else if ( strcmp( nodeType, "Sign" ) == 0 )
+    {
+        signEquations( node, makeEquations );
+    }
     else
     {
         unsupportedError( node );
@@ -1815,6 +1819,37 @@ void OnnxParser::reluEquations( onnx::NodeProto &node, bool makeEquations )
         _query.addRelu( inputVar, outputVar );
     }
 }
+
+/**
+ * @brief Function to generate equations corresponding to pointwise Sign
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Sign, up to value at 0
+ *
+ * @param node ONNX node representing the Sign operation
+ * @param makeEquations True if we need to create new variables and add new Relus
+ */
+void OnnxParser::signEquations( onnx::NodeProto &node, bool makeEquations )
+{
+    String outputNodeName = node.output()[0];
+    String inputNodeName = node.input()[0];
+
+    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+    if ( !makeEquations )
+        return;
+
+    // Get variables
+    Vector<Variable> inputVars = _varMap[inputNodeName];
+    Vector<Variable> outputVars = makeNodeVariables( outputNodeName, false );
+    ASSERT( inputVars.size() == outputVars.size() );
+
+    // Generate equations
+    for ( PackedTensorIndices i = 0; i < inputVars.size(); i++ )
+    {
+        int inputVar = inputVars[i];
+        int outputVar = outputVars[i];
+        _query.addSignConstraint( inputVar, outputVar );
+    }
+}
+
 
 /**
  * @brief Function to generate equations corresponding to leaky pointwise Relu
