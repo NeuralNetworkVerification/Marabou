@@ -90,6 +90,14 @@ public:
     {
         return _linearLayers;
     }
+    Vector<Layer::Type> getLayersOrder() const
+    {
+        return _layersOrder;
+    }
+    Vector<Layer::Type> getLayersOrder()
+    {
+        return _layersOrder;
+    }
 
 private:
     const NetworkLevelReasoner *_networkLevelReasoner;

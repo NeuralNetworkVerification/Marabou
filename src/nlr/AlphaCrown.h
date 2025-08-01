@@ -1,6 +1,5 @@
-
-#ifndef _ALPHACROWN_H_
-#define _ALPHACROWN_H_
+#ifndef ALPHACROWN_H
+#define ALPHACROWN_H
 
 #include "CustomDNN.h"
 #include "LayerOwner.h"
@@ -18,9 +17,12 @@ public:
     void findBounds();
     void optimizeBounds( int loops = 50 );
     void run()
+
     {
         findBounds();
+        updateBounds(_initialAlphaSlopes);
         optimizeBounds( 2 );
+
     }
 
 private:
@@ -34,16 +36,25 @@ private:
     torch::Tensor _ubInput;
 
     std::vector<torch::nn::Linear> _linearLayers;
-    std::vector<torch::Tensor> _positiveWeights;
-    std::vector<torch::Tensor> _negativeWeights;
-    std::vector<torch::Tensor> _biases;
+    std::vector<Layer::Type> _layersOrder;
+    std::map<unsigned, torch::Tensor> _positiveWeights;
+    std::map<unsigned, torch::Tensor> _negativeWeights;
+    std::map<unsigned, torch::Tensor> _biases;
+    std::map<unsigned, unsigned> _indexAlphaSlopeMap;
+    std::map<unsigned, unsigned> _linearIndexMap;
 
-    std::vector<torch::Tensor> _upperRelaxationSlopes;
-    std::vector<torch::Tensor> _upperRelaxationIntercepts;
+    std::map<unsigned, torch::Tensor> _upperRelaxationSlopes;
+    std::map<unsigned, torch::Tensor> _upperRelaxationIntercepts;
 
-    std::vector<torch::Tensor> _alphaSlopes;
+    std::vector<torch::Tensor> _initialAlphaSlopes;
 
     torch::Tensor createSymbolicVariablesMatrix();
+    void relaxReluLayer(unsigned layerNumber, torch::Tensor &EQ_up, torch::Tensor &EQ_low);
+    void computeWeightedSumLayer(unsigned i, torch::Tensor &EQ_up, torch::Tensor &EQ_low);
+    void computeReluLayer(unsigned i, torch::Tensor &EQ_up, torch::Tensor &EQ_low, std::vector<torch::Tensor> &alphaSlopes);
+
+    void updateBounds(std::vector<torch::Tensor> &alphaSlopes);
+    void updateBoundsOfLayer(unsigned layerIndex, torch::Tensor &upBounds, torch::Tensor &lowBounds);
 
     static torch::Tensor addVecToLastColumnValue( const torch::Tensor &matrix,
                                                   const torch::Tensor &vec )
@@ -66,4 +77,4 @@ private:
 } // namespace NLR
 
 
-#endif //_ALPHACROWN_H_
+#endif //ALPHACROWN_H

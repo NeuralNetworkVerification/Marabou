@@ -3,9 +3,9 @@
 //
 
 #include "AlphaCrown.h"
-
 #include "MStringf.h"
 #include "NetworkLevelReasoner.h"
+#include "Layer.h"
 
 namespace NLR {
 AlphaCrown::AlphaCrown( LayerOwner *layerOwner )
@@ -13,19 +13,27 @@ AlphaCrown::AlphaCrown( LayerOwner *layerOwner )
 {
     _network = new CustomDNN( dynamic_cast<NetworkLevelReasoner *>( _layerOwner ) );
     _network->getInputBounds( _lbInput, _ubInput );
-    _inputSize = _lbInput.size( 0 ); // TODO it that length of tensor?
+    _inputSize = _lbInput.size( 0 );
     _network->getLinearLayers().end() ;
     _linearLayers = _network->getLinearLayers().getContainer();
-    for ( const auto &linearLayer : _linearLayers )
+    _layersOrder = _network->getLayersOrder().getContainer();
+
+    unsigned linearIndex = 0;
+    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ )
     {
-        _positiveWeights.push_back( torch::where( linearLayer->weight >= 0,
-                                                  linearLayer->weight,
-                                                  torch::zeros_like( linearLayer->weight ) ).to(torch::kFloat32) );
-        _negativeWeights.push_back( torch::where( linearLayer->weight <= 0,
-                                                  linearLayer->weight,
-                                                  torch::zeros_like( linearLayer->weight ) ).to
-                                    (torch::kFloat32) );
-        _biases.push_back( linearLayer->bias.to(torch::kFloat32) );
+        if (_layersOrder[i] != Layer::WEIGHTED_SUM) continue;
+        //const Layer *layer = _layerOwner->getLayer( i );
+        auto linearLayer = _linearLayers[linearIndex];
+        auto whights = linearLayer->weight;
+        auto bias = linearLayer->bias;
+        _positiveWeights.insert( {i,torch::where( whights >= 0,whights,
+                                                    torch::zeros_like(
+                                                        whights ) ).to(torch::kFloat32)} );
+        _negativeWeights.insert( {i,torch::where( whights <= 0,whights,
+                                                    torch::zeros_like(
+                                                        whights ) ).to(torch::kFloat32)} );
+        _biases.insert( {i,bias.to(torch::kFloat32)} );
+        linearIndex += 1;
     }
 }
 
@@ -92,106 +100,209 @@ torch::Tensor AlphaCrown::getMinOfSymbolicVariables( const torch::Tensor &matrix
     return l_values;
 }
 
+void AlphaCrown::relaxReluLayer(unsigned layerNumber, torch::Tensor
+                                                           &EQ_up, torch::Tensor &EQ_low){
+
+    auto u_values_EQ_up = AlphaCrown::getMaxOfSymbolicVariables(EQ_up);
+    auto l_values_EQ_up = AlphaCrown::getMinOfSymbolicVariables(EQ_low);
+    auto [upperRelaxationSlope, upperRelaxationIntercept] =
+        AlphaCrown::upper_ReLU_relaxation(l_values_EQ_up, u_values_EQ_up);
+
+    auto u_values_EQ_low = AlphaCrown::getMaxOfSymbolicVariables(EQ_up);
+    auto l_values_EQ_low = AlphaCrown::getMinOfSymbolicVariables(EQ_low);
+    auto alphaSlope = AlphaCrown::lower_ReLU_relaxation(l_values_EQ_low,
+                                                         u_values_EQ_low);
+
+    EQ_up = EQ_up * upperRelaxationSlope.unsqueeze( 1 );
+    EQ_up = AlphaCrown::addVecToLastColumnValue( EQ_up, upperRelaxationIntercept );
+    EQ_low = EQ_low * alphaSlope.unsqueeze( 1 );
+
+    _upperRelaxationSlopes.insert({layerNumber, upperRelaxationSlope} );
+    // back but insert to dict
+    _upperRelaxationIntercepts.insert({layerNumber, upperRelaxationIntercept}  );
+    _indexAlphaSlopeMap.insert( {layerNumber, _initialAlphaSlopes.size()} );
+    _initialAlphaSlopes.push_back( alphaSlope );
+
+}
+
+
 
 void AlphaCrown::findBounds()
 {
     torch::Tensor EQ_up = createSymbolicVariablesMatrix();
     torch::Tensor EQ_low = createSymbolicVariablesMatrix();
 
-    for ( size_t i = 0; i < _linearLayers.size(); i++ )
-    {
-        auto Wi_positive = _positiveWeights[i];
-        auto Wi_negative = _negativeWeights[i];
-        auto Bi = _biases[i];
-
-        auto EQ_up_before_activation = Wi_positive.mm( EQ_up ) + Wi_negative.mm( EQ_low );
-        EQ_up_before_activation =
-            AlphaCrown::addVecToLastColumnValue( EQ_up_before_activation, Bi );
-
-        auto EQ_low_before_activation = Wi_positive.mm( EQ_low ) + Wi_negative.mm( EQ_up );
-        EQ_low_before_activation =
-            AlphaCrown::addVecToLastColumnValue( EQ_low_before_activation, Bi );
-
-        if ( i == _linearLayers.size() - 1 )
+    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ ){
+        Layer::Type layerType = _layersOrder[i];
+        switch (layerType)
         {
-            // TODO how can we know what layer it is in nlr? in order to update bounds there?
-            // we should get it from cDNN
-
-            EQ_up = EQ_up_before_activation;
-            EQ_low = EQ_low_before_activation;
+        case Layer::INPUT:
             break;
-        } // TODO we can skip it???
-
-
-        // TODO we can use u_values and l_values of EQ_up to compute upper relaxation?
-
-        auto u_values = AlphaCrown::getMaxOfSymbolicVariables( EQ_up_before_activation );
-        auto l_values = AlphaCrown::getMinOfSymbolicVariables( EQ_low_before_activation );
-        auto [upperRelaxationSlope, upperRelaxationIntercept] =
-            AlphaCrown::upper_ReLU_relaxation( l_values, u_values );
-        auto alphaSlope = AlphaCrown::lower_ReLU_relaxation( l_values, u_values );
-
-        EQ_up = EQ_up_before_activation * upperRelaxationSlope.unsqueeze( 1 );
-        EQ_up = AlphaCrown::addVecToLastColumnValue( EQ_up, upperRelaxationIntercept );
-        EQ_low = EQ_low_before_activation * alphaSlope.unsqueeze( 1 );
-
-        _upperRelaxationSlopes.push_back( upperRelaxationSlope );
-        _upperRelaxationIntercepts.push_back( upperRelaxationIntercept );
-        _alphaSlopes.push_back( alphaSlope );
+        case Layer::WEIGHTED_SUM:
+            computeWeightedSumLayer(i, EQ_up, EQ_low);
+            break;
+        case Layer::RELU:
+            relaxReluLayer(i, EQ_up, EQ_low);
+            break;
+        default:
+            AlphaCrown::log ( "Unsupported layer type\n");
+            throw MarabouError( MarabouError::DEBUGGING_ERROR );
+        }
     }
 }
 
-std::tuple<torch::Tensor, torch::Tensor>
-AlphaCrown::computeBounds( std::vector<torch::Tensor> &alphaSlopes )
+
+std::tuple<torch::Tensor, torch::Tensor> AlphaCrown::computeBounds
+    (std::vector<torch::Tensor> &alphaSlopes)
 {
     torch::Tensor EQ_up = createSymbolicVariablesMatrix();
     torch::Tensor EQ_low = createSymbolicVariablesMatrix();
-
-    for ( size_t i = 0; i < _linearLayers.size(); i++ )
+    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ )
     {
-        auto Wi_positive = _positiveWeights[i];
-        auto Wi_negative = _negativeWeights[i];
-        auto Bi = _biases[i];
-
-        auto EQ_up_before_activation = Wi_positive.mm( EQ_up ) + Wi_negative.mm( EQ_low );
-        EQ_up_before_activation =
-            AlphaCrown::addVecToLastColumnValue( EQ_up_before_activation, Bi );
-
-        auto EQ_low_before_activation = Wi_positive.mm( EQ_low ) + Wi_negative.mm( EQ_up );
-        EQ_low_before_activation =
-            AlphaCrown::addVecToLastColumnValue( EQ_low_before_activation, Bi );
-
-        if ( i == _linearLayers.size() - 1 )
+        auto layerType = _layersOrder[i];
+        switch (layerType)
         {
-            EQ_up = EQ_up_before_activation;
-            EQ_low = EQ_low_before_activation;
+        case Layer::INPUT:
             break;
+        case Layer::WEIGHTED_SUM:
+            computeWeightedSumLayer (i, EQ_up, EQ_low);
+            break;
+        case Layer::RELU:
+            computeReluLayer (i, EQ_up, EQ_low, alphaSlopes);
+            break;
+        default:
+            log ("Unsupported layer type\n");
+            throw MarabouError (MarabouError::DEBUGGING_ERROR);
+        }
+    }
+    auto outputUpBound = getMaxOfSymbolicVariables(EQ_up);
+    auto outputLowBound = getMinOfSymbolicVariables(EQ_low);
+    return std::make_tuple(outputUpBound, outputLowBound);
+
+}
+
+
+void AlphaCrown::computeWeightedSumLayer(unsigned i, torch::Tensor &EQ_up, torch::Tensor &EQ_low){
+    //auto linearLayer = _linearLayers[i];
+    auto Wi_positive = _positiveWeights[i];
+    auto Wi_negative = _negativeWeights[i];
+    auto Bi = _biases[i];
+
+    auto EQ_up_afterLayer = Wi_positive.mm( EQ_up ) + Wi_negative.mm( EQ_low );
+    EQ_up_afterLayer =
+        AlphaCrown::addVecToLastColumnValue( EQ_up_afterLayer, Bi );
+
+
+    auto EQ_low_afterLayer = Wi_positive.mm( EQ_low ) + Wi_negative.mm( EQ_up );
+    EQ_low_afterLayer =
+        AlphaCrown::addVecToLastColumnValue(EQ_low_afterLayer, Bi );
+
+    EQ_up = EQ_up_afterLayer;
+    EQ_low = EQ_low_afterLayer;
+
+}
+
+
+void AlphaCrown::computeReluLayer(unsigned layerNumber, torch::Tensor
+                                                             &EQ_up, torch::Tensor &EQ_low, std::vector<torch::Tensor> &alphaSlopes){
+    EQ_up = EQ_up * _upperRelaxationSlopes[layerNumber].unsqueeze( 1 ); //
+    EQ_up = AlphaCrown::addVecToLastColumnValue( EQ_up, _upperRelaxationIntercepts[layerNumber] );
+    unsigned indexInAlpha = _indexAlphaSlopeMap[layerNumber];
+    EQ_low = EQ_low * alphaSlopes[indexInAlpha].unsqueeze( 1 );
+}
+
+
+
+
+void AlphaCrown::updateBounds(std::vector<torch::Tensor> &alphaSlopes){
+    torch::Tensor EQ_up = createSymbolicVariablesMatrix();
+    torch::Tensor EQ_low = createSymbolicVariablesMatrix();
+
+
+    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ )
+    {
+        auto layerType = _layersOrder[i];
+        switch (layerType)
+        {
+        case Layer::INPUT:
+            break;
+        case Layer::WEIGHTED_SUM:
+            computeWeightedSumLayer (i, EQ_up, EQ_low);
+            break;
+        case Layer::RELU:
+            computeReluLayer (i, EQ_up, EQ_low, alphaSlopes);
+            break;
+        default:
+            log ("Unsupported layer type\n");
+            throw MarabouError (MarabouError::DEBUGGING_ERROR);
+        }
+        auto upBound = getMaxOfSymbolicVariables(EQ_up);
+        auto lowBound = getMinOfSymbolicVariables(EQ_low);
+        updateBoundsOfLayer(i, upBound, lowBound);
+    }
+}
+
+void AlphaCrown::updateBoundsOfLayer(unsigned layerIndex, torch::Tensor &upBounds, torch::Tensor &lowBounds)
+{
+
+    Layer * layer = _layerOwner->getLayerIndexToLayer()[layerIndex];
+    //TODO it should be: Layer *layer = _layerOwner->getLayer(layerIndex); if we added non const getter
+
+    for (int j = 0; j < upBounds.size(0); j++)
+    {
+        if ( layer->neuronEliminated( j ) ) continue;
+        double lb_val = lowBounds[j].item<double>();
+        if ( layer->getLb( j ) < lb_val )
+        {
+            log( Stringf( "Neuron %u_%u lower-bound updated from  %f to %f",
+                          layerIndex,
+                          j,
+                          layer->getLb( j ),
+                          lb_val ) );
+
+            std::cout << "Neuron " << layerIndex << "_" << j
+                      << " lower-bound updated from " << layer->getLb(j)
+                      << " to " << lb_val << std::endl;
+            layer->setLb( j, lb_val );
+            _layerOwner->receiveTighterBound(
+                Tightening( layer->neuronToVariable( j ), lb_val, Tightening::LB ) );
         }
 
-        // TODO we can improve _upperRelaxationSlopes becouse we have better bound on each  neuron
-        //  in hidden layer. if so we need to use it as an argument on each iteration becose it
-        //  not constant
 
-        EQ_up = EQ_up_before_activation * _upperRelaxationSlopes[i].unsqueeze( 1 ); //
-        EQ_up = AlphaCrown::addVecToLastColumnValue( EQ_up, _upperRelaxationIntercepts[i] );
-        EQ_low = EQ_low_before_activation * alphaSlopes[i].unsqueeze( 1 );
+        auto ub_val = upBounds[j].item<double>();
+        if ( layer->getUb( j ) > ub_val )
+        {
+            log( Stringf( "Neuron %u_%u upper-bound updated from  %f to %f",
+                          layerIndex,
+                          j,
+                          layer->getUb( j ),
+                          ub_val ) );
+            std::cout << "Neuron " << layerIndex << "_" << j
+                      << " upper-bound updated from " << layer->getUb(j)
+                      << " to " << ub_val << std::endl;
+
+            layer->setUb( j, ub_val );
+            _layerOwner->receiveTighterBound(
+                Tightening( layer->neuronToVariable( j ), ub_val, Tightening::UB ) );
+        }
+
     }
-    auto up_bound = getMaxOfSymbolicVariables( EQ_up );
-    auto low_bound = getMinOfSymbolicVariables( EQ_low );
-    return std::make_tuple( up_bound, low_bound );
 }
+
 
 void AlphaCrown::optimizeBounds( int loops )
 {
     std::vector<torch::Tensor> alphaSlopesForUpBound;
     std::vector<torch::Tensor> alphaSlopesForLowBound;
-    for ( auto &tensor : _alphaSlopes )
+    for ( auto &tensor : _initialAlphaSlopes )
     {
         alphaSlopesForUpBound.push_back( tensor.detach().clone().requires_grad_(true) );
         alphaSlopesForLowBound.push_back( tensor.detach().clone().requires_grad_(true) );
     }
     AlphaCrown::GDloop( loops, "max", alphaSlopesForUpBound );
     AlphaCrown::GDloop( loops, "min", alphaSlopesForLowBound );
+    updateBounds( alphaSlopesForUpBound );
+    updateBounds( alphaSlopesForLowBound);
     std::cout << "AlphaCrown run completed." << std::endl;
 }
 
@@ -207,7 +318,7 @@ void AlphaCrown::GDloop( int loops,
 
         auto [max_val, min_val] = AlphaCrown::computeBounds( alphaSlopes );
         auto loss = ( val_to_opt == "max" ) ? max_val.sum() : -min_val.sum();
-        loss.backward(torch::Tensor(), /*retain_graph=*/true);
+        loss.backward(torch::Tensor(), /retain_graph=/true);
 
         optimizer.step();
 
@@ -227,4 +338,6 @@ void AlphaCrown::log( const String &message )
     if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "DeepPolyAnalysis: %s\n", message.ascii() );
 }
+
+
 } // namespace NLR
