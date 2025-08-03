@@ -99,6 +99,11 @@ public:
         return _layersOrder;
     }
 
+    unsigned getNumberOfLayers() const
+    {
+        return _numberOfLayers;
+    }
+
 private:
     const NetworkLevelReasoner *_networkLevelReasoner;
     Vector<unsigned> _layerSizes;

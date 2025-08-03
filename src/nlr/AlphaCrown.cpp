@@ -19,7 +19,7 @@ AlphaCrown::AlphaCrown( LayerOwner *layerOwner )
     _layersOrder = _network->getLayersOrder().getContainer();
 
     unsigned linearIndex = 0;
-    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ )
+    for ( unsigned i = 0; i < _network->getNumberOfLayers(); i++ )
     {
         if (_layersOrder[i] != Layer::WEIGHTED_SUM) continue;
         //const Layer *layer = _layerOwner->getLayer( i );
@@ -132,7 +132,7 @@ void AlphaCrown::findBounds()
     torch::Tensor EQ_up = createSymbolicVariablesMatrix();
     torch::Tensor EQ_low = createSymbolicVariablesMatrix();
 
-    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ ){
+    for ( unsigned i = 0; i < _network->getNumberOfLayers(); i++ ){
         Layer::Type layerType = _layersOrder[i];
         switch (layerType)
         {
@@ -157,7 +157,7 @@ std::tuple<torch::Tensor, torch::Tensor> AlphaCrown::computeBounds
 {
     torch::Tensor EQ_up = createSymbolicVariablesMatrix();
     torch::Tensor EQ_low = createSymbolicVariablesMatrix();
-    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ )
+    for ( unsigned i = 0; i < _network->getNumberOfLayers(); i++ )
     {
         auto layerType = _layersOrder[i];
         switch (layerType)
@@ -219,7 +219,7 @@ void AlphaCrown::updateBounds(std::vector<torch::Tensor> &alphaSlopes){
     torch::Tensor EQ_low = createSymbolicVariablesMatrix();
 
 
-    for ( unsigned i = 0; i < _network->_numberOfLayers; i++ )
+    for ( unsigned i = 0; i < _network->getNumberOfLayers(); i++ )
     {
         auto layerType = _layersOrder[i];
         switch (layerType)
@@ -318,7 +318,7 @@ void AlphaCrown::GDloop( int loops,
 
         auto [max_val, min_val] = AlphaCrown::computeBounds( alphaSlopes );
         auto loss = ( val_to_opt == "max" ) ? max_val.sum() : -min_val.sum();
-        loss.backward(torch::Tensor(), /retain_graph=/true);
+        loss.backward(torch::Tensor(), true);
 
         optimizer.step();
 
