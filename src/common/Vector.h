@@ -33,29 +33,29 @@ public:
 
     typedef typename Super::const_reverse_iterator const_reverse_iterator;
 
-    Vector<T>()
+    Vector()
     {
     }
 
-    Vector<T>( const Vector<T> &rhs ) = default;
+    Vector( const Vector &rhs ) = default;
 
-    Vector<T>( const std::initializer_list<T> &initializerList )
+    Vector( const std::initializer_list<T> &initializerList )
         : _container( initializerList )
     {
     }
 
-    Vector<T>( unsigned size )
+    Vector( unsigned size )
         : _container( size )
     {
     }
 
-    Vector<T>( unsigned size, T value )
+    Vector( unsigned size, T value )
         : _container( size, value )
     {
     }
 
     template <class InputIt>
-    Vector<T>( InputIt begin, InputIt end )
+    Vector( InputIt begin, InputIt end )
         : _container( begin, end )
     {
     }
@@ -238,9 +238,9 @@ public:
         std::shuffle( _container.begin(), _container.end(), g );
     }
 
-    Vector<T> operator+( const Vector<T> &other )
+    Vector operator+( const Vector &other )
     {
-        Vector<T> output;
+        Vector output;
 
         for ( unsigned i = 0; i < this->size(); ++i )
             output.append( ( *this )[i] );
@@ -251,7 +251,7 @@ public:
         return output;
     }
 
-    Vector<T> &operator+=( const Vector<T> &other )
+    Vector &operator+=( const Vector &other )
     {
         ( *this ) = ( *this ) + other;
         return *this;
@@ -293,12 +293,12 @@ public:
         return value;
     }
 
-    bool operator==( const Vector<T> &other ) const
+    bool operator==( const Vector &other ) const
     {
         if ( size() != other.size() )
             return false;
 
-        Vector<T> copyOfOther = other;
+        Vector copyOfOther = other;
 
         for ( unsigned i = 0; i < size(); ++i )
         {
@@ -311,12 +311,12 @@ public:
         return true;
     }
 
-    bool operator!=( const Vector<T> &other ) const
+    bool operator!=( const Vector &other ) const
     {
         return !( *this == other );
     }
 
-    Vector &operator=( const Vector<T> &other )
+    Vector &operator=( const Vector &other )
     {
         _container = other._container;
         return *this;
