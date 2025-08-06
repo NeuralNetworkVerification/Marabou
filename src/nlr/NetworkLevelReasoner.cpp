@@ -34,13 +34,15 @@
 
 #include <cstring>
 
-#define NLR_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
+#define NLR_LOG( x, ... )                                                                          \
+    MARABOU_LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
 
 namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _tableau( NULL )
     , _deepPolyAnalysis( nullptr )
+    , _alphaCrown( nullptr )
 {
 }
 
@@ -200,20 +202,28 @@ void NetworkLevelReasoner::clearConstraintTightenings()
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
+    _outputBounds.clear();
+    _boundTightenings.clear();
+
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
 void NetworkLevelReasoner::deepPolyPropagation()
 {
+    _outputBounds.clear();
+    _boundTightenings.clear();
+
     if ( _deepPolyAnalysis == nullptr )
         _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>( new DeepPolyAnalysis( this ) );
     _deepPolyAnalysis->run();
 }
 
-void NetworkLevelReasoner::alphaCrown()
+void NetworkLevelReasoner::alphaCrownPropagation()
 {
 #ifdef BUILD_TORCH
+    _outputBounds.clear();
+    _boundTightenings.clear();
     if ( _alphaCrown == nullptr )
         _alphaCrown = std::unique_ptr<AlphaCrown>( new AlphaCrown( this ) );
     _alphaCrown->run();

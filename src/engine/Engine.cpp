@@ -2444,6 +2444,8 @@ unsigned Engine::performSymbolicBoundTightening( Query *inputQuery )
         _networkLevelReasoner->symbolicBoundPropagation();
     else if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::DEEP_POLY )
         _networkLevelReasoner->alphaCrown();
+    else if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::ALPHA_CROWN )
+        _networkLevelReasoner->alphaCrownPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
