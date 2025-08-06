@@ -204,6 +204,17 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
+void NetworkLevelReasoner::parameterisedSymbolicBoundPropagation( const Vector<double> &coeffs )
+{
+    Map<unsigned, Vector<double>> layerIndicesToParameters =
+        _layerIndexToLayer[0]->getParametersForLayers( _layerIndexToLayer, coeffs );
+    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
+    {
+        const Vector<double> &currentLayerCoeffs = layerIndicesToParameters[i];
+        _layerIndexToLayer[i]->computeParameterisedSymbolicBounds( currentLayerCoeffs );
+    }
+}
+
 void NetworkLevelReasoner::deepPolyPropagation()
 {
     if ( _deepPolyAnalysis == nullptr )
@@ -221,6 +232,9 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
          Options::get()->getMILPSolverBoundTighteningType() ==
              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer, true );
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX )
+        lpFormulator.optimizeBoundsWithPreimageApproximation( _layerIndexToLayer );
     else if ( Options::get()->getMILPSolverBoundTighteningType() ==
               MILPSolverBoundTighteningType::LP_RELAXATION )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );

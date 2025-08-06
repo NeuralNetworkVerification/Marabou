@@ -67,6 +67,13 @@ const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
 const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
+const unsigned GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED = 1;
+const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED = 1;
+const unsigned GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS = 25000;
+const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS = 25;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE = 0.025;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE = 0.25;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY = 0;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 

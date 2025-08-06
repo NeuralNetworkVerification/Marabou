@@ -136,8 +136,24 @@ public:
 
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
-    void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
+    void computeSymbolicBounds();
+    void computeParameterisedSymbolicBounds( const Vector<double> &coeffs, bool receive = false );
+
+
+    // Get number of optimizable parameters for parameterised SBT relaxation per layer type.
+    unsigned getNumberOfParametersPerType( Type t ) const;
+
+    // Get total number of optimizable parameters for parameterised SBT relaxation.
+    unsigned getNumberOfParameters( const Map<unsigned, Layer *> &layers ) const;
+
+    // Get map containing vector of optimizable parameters for parameterised SBT relaxation for
+    // every layer index.
+    Map<unsigned, Vector<double>> getParametersForLayers( const Map<unsigned, Layer *> &layers,
+                                                          const Vector<double> &coeffs ) const;
+
+    // Return optimizable parameters which minimize parameterised SBT bounds' volume.
+    const Vector<double> OptimalParameterisedSymbolicBoundTightening();
 
     /*
       Preprocessing functionality: variable elimination and reindexing
@@ -291,6 +307,24 @@ private:
     void computeSymbolicBoundsForSoftmax();
     void computeSymbolicBoundsForBilinear();
     void computeSymbolicBoundsDefault();
+
+
+    /*
+      Helper functions for parameterised symbolic bound tightening
+    */
+    void computeParameterisedSymbolicBoundsForRelu( const Vector<double> &coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForSign( const Vector<double> &coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForLeakyRelu( const Vector<double> &coeffs,
+                                                         bool receive );
+    void computeParameterisedSymbolicBoundsForBilinear( const Vector<double> &coeffs,
+                                                        bool receive );
+
+    // Estimate Volume of parameterised symbolic bound tightening.
+    double EstimateVolume( const Vector<double> &coeffs );
+
+    // Return difference between given point and upper and lower bounds determined by parameterised
+    // SBT relaxation.
+    double calculateDifferenceFromSymbolic( Map<unsigned, double> &point, unsigned i ) const;
 
     /*
       Helper functions for interval bound tightening
