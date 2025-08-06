@@ -34,10 +34,10 @@ public:
 #ifdef BUILD_TORCH
         // todo set property to unast property (1.1) ?
         // todo create nlr
-        auto networkFilePath = "resources/onnx/acasxu/ACASXU_experimental_v2a_1_1.onnx";
-        auto propertyFilePath = "resources/properties/acas_property_4.txt"; // todo check UNSAT
+        auto networkFilePath =  "resources/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet";
+        auto propertyFilePath =  String("resources/properties/acas_property_4.txt"); // todo check UNSAT
         // property
-        AcasParser *_acasParser = new AcasParser( networkFilePath );
+        auto *_acasParser = new AcasParser( networkFilePath );
         InputQuery _inputQuery;
         _acasParser->generateQuery( _inputQuery );
         PropertyParser().parse( propertyFilePath, _inputQuery );
