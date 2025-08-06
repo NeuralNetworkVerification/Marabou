@@ -15,6 +15,7 @@ macro(network_level_reasoner_add_unit_test name)
 endmacro()
 
 network_level_reasoner_add_unit_test(DeepPolyAnalysis)
+network_level_reasoner_add_unit_test(AlphaCrown)
 network_level_reasoner_add_unit_test(NetworkLevelReasoner)
 network_level_reasoner_add_unit_test(WsLayerElimination)
 network_level_reasoner_add_unit_test(ParallelSolver)
