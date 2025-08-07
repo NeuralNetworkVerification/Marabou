@@ -51,7 +51,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( _networkLevelReasoner->obtainCurrentBounds() );
         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( _networkLevelReasoner );
         auto attackResultAfterBoundTightening = cwAttack->runAttack();
-        TS_ASSERT( !attackResultAfterBoundTightening )
+        TS_ASSERT( !attackResultAfterBoundTightening );
+        delete _acasParser;
 #endif
     }
 };
