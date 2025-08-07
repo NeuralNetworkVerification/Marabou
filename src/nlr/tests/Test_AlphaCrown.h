@@ -33,10 +33,10 @@ public:
     {
 #ifdef BUILD_TORCH
 
-        auto networkFilePath = "/home/maya-swisa/Documents/rigora/Marabou/resources/nnet/acasxu/"
+        auto networkFilePath = "../../../resources/nnet/acasxu/"
                                "ACASXU_experimental_v2a_1_1.nnet";
-        auto propertyFilePath = "/home/maya-swisa/Documents/rigora/Marabou/resources/properties/"
-                                "acas_property_4.txt"; // todo check UNSAT
+        auto propertyFilePath = "../../../resources/properties/"
+                                "acas_property_4.txt";
 
         auto *_acasParser = new AcasParser( networkFilePath );
         InputQuery _inputQuery;
