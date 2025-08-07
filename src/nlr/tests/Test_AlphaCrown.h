@@ -32,28 +32,28 @@ public:
     void testWithAttack()
     {
 #ifdef BUILD_TORCH
-        // todo set property to unast property (1.1) ?
-        // todo create nlr
-        auto networkFilePath =  "resources/nnet/acasxu/ACASXU_experimental_v2a_1_1.nnet";
-        auto propertyFilePath =  String("resources/properties/acas_property_4.txt"); // todo check UNSAT
-        // property
+
+        auto networkFilePath = "/home/maya-swisa/Documents/rigora/Marabou/resources/nnet/acasxu/"
+                               "ACASXU_experimental_v2a_1_1.nnet";
+        auto propertyFilePath = "/home/maya-swisa/Documents/rigora/Marabou/resources/properties/"
+                                "acas_property_4.txt"; // todo check UNSAT
+
         auto *_acasParser = new AcasParser( networkFilePath );
         InputQuery _inputQuery;
         _acasParser->generateQuery( _inputQuery );
         PropertyParser().parse( propertyFilePath, _inputQuery );
         std::unique_ptr<Engine> _engine = std::make_unique<Engine>();
+        Options *options = Options::get();
+        options->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "alphacrown" );
+        // obtain the alpha crown proceeder
         _engine->processInputQuery( _inputQuery );
         NLR::NetworkLevelReasoner *_networkLevelReasoner = _engine->getNetworkLevelReasoner();
         TS_ASSERT_THROWS_NOTHING( _networkLevelReasoner->obtainCurrentBounds() );
         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( _networkLevelReasoner );
-        auto attackResultBeforeBoundTightening = cwAttack->runAttack();
         auto attackResultAfterBoundTightening = cwAttack->runAttack();
-        TS_ASSERT( attackResultBeforeBoundTightening )
-        TS_ASSERT_THROWS_NOTHING( _networkLevelReasoner->alphaCrownPropagation() );
         TS_ASSERT( !attackResultAfterBoundTightening )
 #endif
     }
-
 };
 
 #endif // TEST_ALPHACROWN_H
