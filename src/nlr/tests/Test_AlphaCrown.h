@@ -29,30 +29,30 @@ public:
     {
     }
 
-//     void testWithAttack()
-//     {
-// #ifdef BUILD_TORCH
-//
-//         auto networkFilePath = "../../../resources/nnet/acasxu/"
-//                                "ACASXU_experimental_v2a_1_1.nnet";
-//         auto propertyFilePath = "../../../resources/properties/"
-//                                 "acas_property_4.txt";
-//
-//         auto *_acasParser = new AcasParser( networkFilePath );
-//         InputQuery _inputQuery;
-//         _acasParser->generateQuery( _inputQuery );
-//         PropertyParser().parse( propertyFilePath, _inputQuery );
-//         std::unique_ptr<Engine> _engine = std::make_unique<Engine>();
-//         Options *options = Options::get();
-//         options->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "alphacrown" );
-//         // obtain the alpha crown proceeder
-//         _engine->processInputQuery( _inputQuery );
-//         NLR::NetworkLevelReasoner *_networkLevelReasoner = _engine->getNetworkLevelReasoner();
-//         TS_ASSERT_THROWS_NOTHING( _networkLevelReasoner->obtainCurrentBounds() );
-//         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( _networkLevelReasoner );
-//         auto attackResultAfterBoundTightening = cwAttack->runAttack();
-//         TS_ASSERT( !attackResultAfterBoundTightening );
-//         delete _acasParser;
+    //     void testWithAttack()
+    //     {
+    // #ifdef BUILD_TORCH
+    //
+    //         auto networkFilePath = "../../../resources/nnet/acasxu/"
+    //                                "ACASXU_experimental_v2a_1_1.nnet";
+    //         auto propertyFilePath = "../../../resources/properties/"
+    //                                 "acas_property_4.txt";
+    //
+    //         auto *_acasParser = new AcasParser( networkFilePath );
+    //         InputQuery _inputQuery;
+    //         _acasParser->generateQuery( _inputQuery );
+    //         PropertyParser().parse( propertyFilePath, _inputQuery );
+    //         std::unique_ptr<Engine> _engine = std::make_unique<Engine>();
+    //         Options *options = Options::get();
+    //         options->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, "alphacrown" );
+    //         // obtain the alpha crown proceeder
+    //         _engine->processInputQuery( _inputQuery );
+    //         NLR::NetworkLevelReasoner *_networkLevelReasoner =
+    //         _engine->getNetworkLevelReasoner(); TS_ASSERT_THROWS_NOTHING(
+    //         _networkLevelReasoner->obtainCurrentBounds() ); std::unique_ptr<CWAttack> cwAttack =
+    //         std::make_unique<CWAttack>( _networkLevelReasoner ); auto
+    //         attackResultAfterBoundTightening = cwAttack->runAttack(); TS_ASSERT(
+    //         !attackResultAfterBoundTightening ); delete _acasParser;
 
     void populateNetwork( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
     {
@@ -216,21 +216,20 @@ public:
                 printf( "upper:\n" );
             std::cout << "var : " << bound._variable << " bound : " << bound._value << std::endl;
         }
-        double large = 1000000;
-        tableau.setLowerBound( 1, 2 );
-        tableau.setUpperBound( 1, large );
 
+        double large = 1000000;
+        tableau.setLowerBound( 2, 2 );
+        tableau.setUpperBound( 2, large );
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( &nlr );
         auto attackResultAfterBoundTightening = cwAttack->runAttack();
         TS_ASSERT( !attackResultAfterBoundTightening );
 
-        tableau.setLowerBound( 1, -2 );
-        tableau.setUpperBound( 1, 2 );
-        tableau.setLowerBound( 2, 2 );
-        tableau.setUpperBound( 1, large );
-
+        tableau.setLowerBound( 2, -2 );
+        tableau.setUpperBound( 2, 2 );
+        tableau.setLowerBound( 3, 2 );
+        tableau.setUpperBound( 3, large );
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
         cwAttack = std::make_unique<CWAttack>( &nlr );
@@ -238,22 +237,18 @@ public:
         TS_ASSERT( !attackResultAfterBoundTightening );
 
 
-        tableau.setLowerBound( 1, -large );
-        tableau.setUpperBound( 1, -2 );
-        tableau.setLowerBound( 2, 2 );
-        tableau.setUpperBound( 1, large );
+        tableau.setLowerBound( 2, -large );
+        tableau.setUpperBound( 2, -2 );
+        tableau.setLowerBound( 3, -2 );
+        tableau.setUpperBound( 3, 2 );
 
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
         cwAttack = std::make_unique<CWAttack>( &nlr );
         attackResultAfterBoundTightening = cwAttack->runAttack();
         TS_ASSERT( !attackResultAfterBoundTightening );
-
-
 
     }
-
-}
-;
+};
 
 #endif // TEST_ALPHACROWN_H
