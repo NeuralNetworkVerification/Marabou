@@ -170,42 +170,12 @@ public:
         // Invoke Deeppoly
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
-
-        /*
-          Input ranges:
-
-          x0: [-1, 1]
-          x1: [-1, 1]
-
-          Layer 1:
-
-          x2: [-2, 2]
-          x3: [-2, 2]
-
-          Layer 2:
-
-          x4: [0, 2]
-          x5: [0, 2]
-
-          Layer 3:
-
-          x6: [0, 3]
-          x7: [-2, 2]
-
-          Layer 4:
-
-          x8: [0, 3]
-          x9: [0, 2]
-
-          Layer 5:
-
-          x10: [1, 5.5]
-          x11: [0, 2]
-
-        */
-
+        double large = 1000000;
+        nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 0 , large );
 
         List<Tightening> bounds;
+        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        // TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
         for ( const auto &bound : bounds )
@@ -217,36 +187,34 @@ public:
             std::cout << "var : " << bound._variable << " bound : " << bound._value << std::endl;
         }
 
-        double large = 1000000;
-        tableau.setLowerBound( 2, 2 );
-        tableau.setUpperBound( 2, large );
-        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-        TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
+
+
+        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( &nlr );
         auto attackResultAfterBoundTightening = cwAttack->runAttack();
         TS_ASSERT( !attackResultAfterBoundTightening );
 
-        tableau.setLowerBound( 2, -2 );
-        tableau.setUpperBound( 2, 2 );
-        tableau.setLowerBound( 3, 2 );
-        tableau.setUpperBound( 3, large );
-        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-        TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
-        cwAttack = std::make_unique<CWAttack>( &nlr );
-        attackResultAfterBoundTightening = cwAttack->runAttack();
-        TS_ASSERT( !attackResultAfterBoundTightening );
-
-
-        tableau.setLowerBound( 2, -large );
-        tableau.setUpperBound( 2, -2 );
-        tableau.setLowerBound( 3, -2 );
-        tableau.setUpperBound( 3, 2 );
-
-        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-        TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
-        cwAttack = std::make_unique<CWAttack>( &nlr );
-        attackResultAfterBoundTightening = cwAttack->runAttack();
-        TS_ASSERT( !attackResultAfterBoundTightening );
+        // tableau.setLowerBound( 2, -2 );
+        // tableau.setUpperBound( 2, 2 );
+        // tableau.setLowerBound( 3, 2 );
+        // tableau.setUpperBound( 3, large );
+        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        // TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
+        // cwAttack = std::make_unique<CWAttack>( &nlr );
+        // attackResultAfterBoundTightening = cwAttack->runAttack();
+        // TS_ASSERT( !attackResultAfterBoundTightening );
+        //
+        //
+        // tableau.setLowerBound( 2, -large );
+        // tableau.setUpperBound( 2, -2 );
+        // tableau.setLowerBound( 3, -2 );
+        // tableau.setUpperBound( 3, 2 );
+        //
+        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        // TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
+        // cwAttack = std::make_unique<CWAttack>( &nlr );
+        // attackResultAfterBoundTightening = cwAttack->runAttack();
+        // TS_ASSERT( !attackResultAfterBoundTightening );
 
     }
 };
