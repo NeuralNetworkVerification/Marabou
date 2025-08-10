@@ -202,7 +202,6 @@ void NetworkLevelReasoner::clearConstraintTightenings()
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
-    _outputBounds.clear();
     _boundTightenings.clear();
 
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
