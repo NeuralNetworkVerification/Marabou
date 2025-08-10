@@ -170,8 +170,8 @@ public:
         // Invoke Deeppoly
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
         TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
-        double large = 1000000;
-        nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 0 , large );
+        // double large = 1000000;
+        // nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 0 , large );
 
         List<Tightening> bounds;
         // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
@@ -187,34 +187,12 @@ public:
             std::cout << "var : " << bound._variable << " bound : " << bound._value << std::endl;
         }
 
-
-
-        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        double large = 1000000;
+        nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 0 , large );
         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( &nlr );
         auto attackResultAfterBoundTightening = cwAttack->runAttack();
         TS_ASSERT( !attackResultAfterBoundTightening );
 
-        // tableau.setLowerBound( 2, -2 );
-        // tableau.setUpperBound( 2, 2 );
-        // tableau.setLowerBound( 3, 2 );
-        // tableau.setUpperBound( 3, large );
-        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-        // TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
-        // cwAttack = std::make_unique<CWAttack>( &nlr );
-        // attackResultAfterBoundTightening = cwAttack->runAttack();
-        // TS_ASSERT( !attackResultAfterBoundTightening );
-        //
-        //
-        // tableau.setLowerBound( 2, -large );
-        // tableau.setUpperBound( 2, -2 );
-        // tableau.setLowerBound( 3, -2 );
-        // tableau.setUpperBound( 3, 2 );
-        //
-        // TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-        // TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
-        // cwAttack = std::make_unique<CWAttack>( &nlr );
-        // attackResultAfterBoundTightening = cwAttack->runAttack();
-        // TS_ASSERT( !attackResultAfterBoundTightening );
 
     }
 };
