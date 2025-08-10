@@ -211,19 +211,14 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 
 void NetworkLevelReasoner::deepPolyPropagation()
 {
-    _outputBounds.clear();
-    _boundTightenings.clear();
-
     if ( _deepPolyAnalysis == nullptr )
         _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>( new DeepPolyAnalysis( this ) );
     _deepPolyAnalysis->run();
 }
 
-void NetworkLevelReasoner::alphaCrownPropagation()
+void NetworkLevelReasoner::alphaCrown()
 {
 #ifdef BUILD_TORCH
-    _outputBounds.clear();
-    _boundTightenings.clear();
     if ( _alphaCrown == nullptr )
         _alphaCrown = std::unique_ptr<AlphaCrown>( new AlphaCrown( this ) );
     _alphaCrown->run();

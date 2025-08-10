@@ -169,7 +169,7 @@ public:
 
         // Invoke Deeppoly
         TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
-        TS_ASSERT_THROWS_NOTHING( nlr.alphaCrownPropagation() );
+        TS_ASSERT_THROWS_NOTHING( nlr.alphaCrown() );
         // double large = 1000000;
         // nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 0 , large );
 
