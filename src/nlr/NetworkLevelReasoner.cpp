@@ -129,6 +129,14 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
     const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
     memcpy( output, outputLayer->getAssignment(), sizeof( double ) * outputLayer->getSize() );
 }
+void NetworkLevelReasoner::setBounds( unsigned layer,
+                                      unsigned int neuron,
+                                      double lower,
+                                      double upper )
+{
+    ASSERT( layer < _layerIndexToLayer.size() );
+    _layerIndexToLayer[layer]->setBounds( neuron, lower, upper );
+}
 
 void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &assignment,
                                                       const double *pgdAdversarialInput )

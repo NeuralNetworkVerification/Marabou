@@ -75,6 +75,7 @@ public:
       Perform an evaluation of the network for a specific input.
     */
     void evaluate( double *input, double *output );
+    void setBounds( unsigned layer, unsigned int neuron, double lower, double upper );
 
     /*
       Perform an evaluation of the network for the current input variable
