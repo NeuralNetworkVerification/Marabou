@@ -263,6 +263,19 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
+    enum PdgBoundType {
+        ATTACK_INPUT = 0,
+        ATTACK_OUTPUT = 1
+    };
+    static const PdgBoundType PGD_BOUND_TYPE;
+    static const unsigned PGD_DEFAULT_NUM_ITER;
+    static const unsigned PGD_NUM_RESTARTS;
+    static const double ATTACK_INPUT_RANGE;
+
+    static const unsigned CW_DEFAULT_ITERS;
+    static const unsigned CW_NUM_RESTARTS;
+    static const double CW_LR;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns
@@ -293,6 +306,7 @@ public:
     static const bool SCORE_TRACKER_LOGGING;
     static const bool CEGAR_LOGGING;
     static const bool CUSTOM_DNN_LOGGING;
+    static const bool CW_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

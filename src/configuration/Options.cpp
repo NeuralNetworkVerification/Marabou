@@ -71,6 +71,7 @@ void Options::initializeDefaultValues()
     _intOptions[SEED] = 1;
     _intOptions[NUM_BLAS_THREADS] = 1;
     _intOptions[NUM_CONSTRAINTS_TO_REFINE_INC_LIN] = 30;
+    _intOptions[ATTACK_TIMEOUT] = 60;
 
     /*
       Float options
