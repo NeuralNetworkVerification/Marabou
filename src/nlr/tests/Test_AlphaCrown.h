@@ -188,7 +188,7 @@ public:
         }
 
         double large = 1000000;
-        nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 0 , large );
+        nlr.setBounds( nlr.getNumberOfLayers() -1 , 1, 1 , large );
         std::unique_ptr<CWAttack> cwAttack = std::make_unique<CWAttack>( &nlr );
         auto attackResultAfterBoundTightening = cwAttack->runAttack();
         TS_ASSERT( !attackResultAfterBoundTightening );
