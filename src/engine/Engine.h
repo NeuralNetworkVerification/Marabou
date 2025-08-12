@@ -1030,7 +1030,8 @@ private:
     analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                     unsigned id,
                                     int explainedVar,
-                                    bool isUpper );
+                                    bool isUpper,
+                                    double targetBound );
 #ifdef BUILD_CADICAL
     /*
      Creates a boolean-abstracted clause from an explanation
@@ -1038,7 +1039,8 @@ private:
     Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                             unsigned id,
                                             int explainedVar,
-                                            bool isUpper ) override;
+                                            bool isUpper,
+                                            double targetBound ) override;
 
     void removeLiteralFromPropagations( int literal ) override;
 

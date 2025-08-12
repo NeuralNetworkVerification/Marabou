@@ -3640,7 +3640,7 @@ void Engine::explainSimplexFailure()
                                                            leafContradictionVec.size() );
 
             analyseExplanationDependencies(
-                sparseContradictionToAnalyse, _groundBoundManager.getCounter(), -1, true );
+                sparseContradictionToAnalyse, _groundBoundManager.getCounter(), -1, true, 0 );
         }
 
         return;
@@ -3660,7 +3660,7 @@ void Engine::explainSimplexFailure()
         SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
                                                 leafContradictionVec.size() );
         Set<int> clause = clauseFromContradictionVector(
-            sparseContradiction, _groundBoundManager.getCounter(), -1, true );
+            sparseContradiction, _groundBoundManager.getCounter(), -1, true, 0 );
 
         _cdclCore.addExternalClause( clause );
     }
@@ -4212,7 +4212,8 @@ Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>
 Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                         unsigned id,
                                         int explainedVar,
-                                        bool isUpper )
+                                        bool isUpper,
+                                        double targetBound )
 {
     Vector<double> linearCombination( 0 );
     UNSATCertificateUtils::getExplanationRowCombination(
@@ -4254,6 +4255,9 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                             : Tightening::LB;
             std::shared_ptr<GroundBoundManager::GroundBoundEntry> entry =
                 _groundBoundManager.getGroundBoundEntryUpToId( var, btype, id );
+
+            entries.insert( entry );
+
             if ( GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES && entry.get() && entry->lemma &&
                  !entry->lemma->getToCheck() )
             {
@@ -4263,8 +4267,6 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
 
                 contributions.append( std::make_tuple( contribution, entry ) );
             }
-
-            entries.insert( entry );
         }
     }
 
@@ -4284,16 +4286,21 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                 return abs( std::get<0>( a ) ) < abs( std::get<0>( b ) );
             } );
 
-        double overallContributions = 0;
-        for ( const auto &contribution : contributions )
+        if ( explainedVar < 0 || ( isUpper && explanationBound <= targetBound ) ||
+             ( !isUpper && explanationBound >= targetBound ) )
         {
-            overallContributions += abs( std::get<0>( contribution ) );
-            if ( FloatUtils::lt( overallContributions,
-                                 abs( explanationBound ),
-                                 GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
-                entries.erase( std::get<1>( contribution ) );
-            else
-                break;
+            double overallContributions = 0;
+
+            for ( const auto &contribution : contributions )
+            {
+                overallContributions += abs( std::get<0>( contribution ) );
+                if ( FloatUtils::lt( overallContributions,
+                                     abs( explanationBound - targetBound ),
+                                     GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
+                    entries.erase( std::get<1>( contribution ) );
+                else
+                    break;
+            }
         }
     }
 
@@ -4307,6 +4314,8 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
         if ( entry->lemma && !entry->lemma->getExplanations().empty() &&
              !entry->lemma->getExplanations().front().empty() && !entry->lemma->getToCheck() )
         {
+            entry->lemma->setToCheck();
+
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
             std::_List_const_iterator<unsigned int> it = entry->lemma->getCausingVars().begin();
             for ( const auto &expl : entry->lemma->getExplanations() )
@@ -4317,12 +4326,15 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                     continue;
                 }
 
-                analyseExplanationDependencies(
-                    expl, entry->id, *it, entry->lemma->getCausingVarBound() == Tightening::UB );
+                analyseExplanationDependencies( expl,
+                                                entry->id,
+                                                *it,
+                                                entry->lemma->getCausingVarBound() ==
+                                                    Tightening::UB,
+                                                entry->lemma->getBound() );
 
                 std::advance( it, 1 );
             }
-            entry->lemma->setToCheck();
         }
     }
 
@@ -4338,7 +4350,8 @@ bool Engine::solveWithCDCL( double timeoutInSeconds )
 Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explanation,
                                                 unsigned id,
                                                 int explainedVar,
-                                                bool isUpper )
+                                                bool isUpper,
+                                                double targetBound )
 {
     ASSERT( _solveWithCDCL );
     ASSERT( _nlConstraints.empty() && !explanation.empty() );
@@ -4400,7 +4413,7 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         return clause;
 
     Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> entries =
-        analyseExplanationDependencies( explanation, id, explainedVar, isUpper );
+        analyseExplanationDependencies( explanation, id, explainedVar, isUpper, targetBound );
 
     for ( const auto &entry : entries )
     {
@@ -4409,11 +4422,12 @@ Set<int> Engine::clauseFromContradictionVector( const SparseUnsortedList &explan
         if ( entry->lemma && !entry->lemma->getExplanations().empty() &&
              !entry->lemma->getExplanations().front().empty() && entry->clause.empty() )
         {
-            minorClause = clauseFromContradictionVector( entry->lemma->getExplanations().back(),
-                                                         entry->id,
-                                                         entry->lemma->getCausingVars().back(),
-                                                         entry->lemma->getCausingVarBound() ==
-                                                             Tightening::UB );
+            minorClause =
+                clauseFromContradictionVector( entry->lemma->getExplanations().back(),
+                                               entry->id,
+                                               entry->lemma->getCausingVars().back(),
+                                               entry->lemma->getCausingVarBound() == Tightening::UB,
+                                               entry->lemma->getBound() );
 
             _groundBoundManager.addClauseToGroundBoundEntry( entry, minorClause );
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
@@ -4465,7 +4479,8 @@ Set<int> Engine::explainPhaseWithProof( const PiecewiseLinearConstraint *litCons
     Set clause = clauseFromContradictionVector( tempExpl,
                                                 phaseFixingEntry->id,
                                                 phaseFixingEntry->lemma->getCausingVars().back(),
-                                                phaseFixingEntry->lemma->getCausingVarBound() );
+                                                phaseFixingEntry->lemma->getCausingVarBound(),
+                                                phaseFixingEntry->lemma->getBound() );
 
     return clause;
 }

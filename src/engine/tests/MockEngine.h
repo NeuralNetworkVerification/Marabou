@@ -407,8 +407,11 @@ public:
         return _exitCode == ExitCode::SAT;
     }
 
-    Set<int>
-    clauseFromContradictionVector( const SparseUnsortedList &, unsigned, int, bool ) override
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList &,
+                                            unsigned,
+                                            int,
+                                            bool,
+                                            double targetBound ) override
     {
         return Set<int>();
     }
