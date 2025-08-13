@@ -857,8 +857,14 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, *this, true, getUpperBound( _b ) );
+            _boundManager->addLemmaExplanationAndTightenBound( _negAux,
+                                                               0,
+                                                               Tightening::UB,
+                                                               { _b, _f },
+                                                               Tightening::UB,
+                                                               *this,
+                                                               true,
+                                                               getUpperBound( _b ) );
         return;
     }
 
@@ -868,8 +874,14 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, *this, true, -getLowerBound( _b ) );
+            _boundManager->addLemmaExplanationAndTightenBound( _posAux,
+                                                               0,
+                                                               Tightening::UB,
+                                                               { _b, _f },
+                                                               Tightening::LB,
+                                                               *this,
+                                                               true,
+                                                               -getLowerBound( _b ) );
         return;
     }
 

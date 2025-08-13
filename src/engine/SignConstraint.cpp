@@ -425,7 +425,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
             {
                 if ( _boundManager->shouldProduceProofs() )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true, bound);
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true, bound );
                 else
                     _boundManager->tightenLowerBound( _f, 1 );
             }

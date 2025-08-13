@@ -31,7 +31,7 @@ public:
         , _lowerBounds( nullptr )
         , _upperBounds( nullptr )
         , _tightenedLower( nullptr )
-        , _tightenedUpper( nullptr ){};
+        , _tightenedUpper( nullptr ) {};
 
     ~MockBoundManager()
     {
@@ -270,7 +270,7 @@ private:
                                              Tightening::BoundType /* causingVarBound */,
                                              PiecewiseLinearConstraint /* constraintType */ &,
                                              bool /* isPhaseFixing*/,
-                                             double /* minTargetBound */)
+                                             double /* minTargetBound */ )
     {
         return true;
     }
