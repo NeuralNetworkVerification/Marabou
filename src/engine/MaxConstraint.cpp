@@ -786,7 +786,9 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings )
                                                                        Tightening::UB,
                                                                        getElements(),
                                                                        Tightening::UB,
-                                                                       *this );
+                                                                       *this,
+                                                                       false,
+                                                                       tightening._value );
                 else
                 {
                     ASSERT( _elements.exists( tightening._variable ) );

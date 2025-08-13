@@ -269,7 +269,8 @@ private:
                                              const List<unsigned> & /* causingVar */,
                                              Tightening::BoundType /* causingVarBound */,
                                              PiecewiseLinearConstraint /* constraintType */ &,
-                                             bool /* isPhaseFixing*/ )
+                                             bool /* isPhaseFixing*/,
+                                             double /* minTargetBound */)
     {
         return true;
     }

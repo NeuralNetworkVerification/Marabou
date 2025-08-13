@@ -133,7 +133,8 @@ public:
                                                      const List<unsigned> &causingVars,
                                                      Tightening::BoundType causingVarBound,
                                                      PiecewiseLinearConstraint &constraint,
-                                                     bool isPhaseFixing = false ) = 0;
+                                                     bool isPhaseFixing = false,
+                                                     double minTargetBound = 0 ) = 0;
 
     /*
       Return the content of the object containing all explanations for variable bounds in the

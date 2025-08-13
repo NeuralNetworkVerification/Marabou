@@ -407,9 +407,9 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                         throw InfeasibleQueryException();
 
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true, bound );
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _b, 0, Tightening::LB, { variable }, Tightening::LB, *this, false );
+                        _b, 0, Tightening::LB, { variable }, Tightening::LB, *this, false, bound );
                 }
                 else
                 {
@@ -425,7 +425,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
             {
                 if ( _boundManager->shouldProduceProofs() )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true );
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true, bound);
                 else
                     _boundManager->tightenLowerBound( _f, 1 );
             }
@@ -464,9 +464,9 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
                         throw InfeasibleQueryException();
 
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
+                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true, bound );
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _b, 0, Tightening::UB, { variable }, Tightening::UB, *this, false );
+                        _b, 0, Tightening::UB, { variable }, Tightening::UB, *this, false, bound );
                 }
                 else
                 {
@@ -482,7 +482,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
             {
                 if ( _boundManager->shouldProduceProofs() )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true );
+                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true, bound );
                 else
                     _boundManager->tightenUpperBound( _f, -1 );
             }

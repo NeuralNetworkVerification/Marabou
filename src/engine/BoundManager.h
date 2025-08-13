@@ -261,7 +261,8 @@ private:
                                              const List<unsigned> &causingVars,
                                              Tightening::BoundType causingVarBound,
                                              PiecewiseLinearConstraint &constraint,
-                                             bool isPhaseFixing );
+                                             bool isPhaseFixing,
+                                             double minTargetBound );
 
     /*
       Explainer of all bounds

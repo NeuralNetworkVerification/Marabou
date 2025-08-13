@@ -417,7 +417,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        const List<unsigned> &causingVars,
                                                        Tightening::BoundType causingVarBound,
                                                        PiecewiseLinearConstraint &constraint,
-                                                       bool isPhaseFixing )
+                                                       bool isPhaseFixing,
+                                                       double minTargetBound )
 {
     if ( !shouldProduceProofs() )
         return false;
@@ -469,7 +470,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         causingVarBound,
                                                                         affectedVarBound,
                                                                         allExplanations,
-                                                                        constraint.getType() );
+                                                                        constraint.getType(),
+                                                                        minTargetBound );
 
         if ( !_engine->shouldSolveWithCDCL() )
             _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );

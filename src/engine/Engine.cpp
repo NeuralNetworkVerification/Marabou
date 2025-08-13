@@ -4331,7 +4331,7 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                                 *it,
                                                 entry->lemma->getCausingVarBound() ==
                                                     Tightening::UB,
-                                                entry->lemma->getBound() );
+                                                entry->lemma->getMinTargetBound() );
 
                 std::advance( it, 1 );
             }
