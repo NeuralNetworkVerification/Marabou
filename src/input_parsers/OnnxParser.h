@@ -106,6 +106,7 @@ private:
                                double coefficient2 );
     void matMulEquations( onnx::NodeProto &node, bool makeEquations );
     void reluEquations( onnx::NodeProto &node, bool makeEquations );
+    void signEquations( onnx::NodeProto &node, bool makeEquations );
     void leakyReluEquations( onnx::NodeProto &node, bool makeEquations );
     void sigmoidEquations( onnx::NodeProto &node, bool makeEquations );
     void tanhEquations( onnx::NodeProto &node, bool makeEquations );
