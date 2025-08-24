@@ -59,6 +59,19 @@ def test_solve_round_and_clip_unsat():
     assert(exitCode == "unsat")
 
 
+def test_unsolvable_elimination():
+    """ Test that unsatisfiable variables are not eliminated """
+    ipq = MarabouCore.InputQuery()
+    ipq.setNumberOfVariables(1)
+
+    ipq.setLowerBound(0, 1.0)
+    ipq.setUpperBound(0, -1.0)
+
+    exitCode, variables, stats = MarabouCore.solve(ipq, OPT)
+    print(variables)
+    assert(exitCode == "unsat")
+
+
 def test_solve_round_and_clip_sat():
     """
     -1 <= x0 <= 0
