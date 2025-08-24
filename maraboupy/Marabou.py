@@ -3,6 +3,7 @@ Top contributors (to current version):
     - Christopher Lazarus
     - Kyle Julian
     - Andrew Wu
+    - Teruhiro Tagomori
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
@@ -25,6 +26,7 @@ try:
     from maraboupy.MarabouNetworkONNX import *
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
+from maraboupy.MarabouNetworkComposition import MarabouNetworkComposition
 
 def read_nnet(filename, normalize=False):
     """Constructs a MarabouNetworkNnet object from a .nnet file
@@ -51,6 +53,23 @@ def read_onnx(filename, inputNames=None, outputNames=None):
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
     return MarabouNetworkONNX(filename, inputNames, outputNames)
+
+def read_onnx_with_threshold(filename, inputNames=None, outputNames=None, maxNumberOfLinearEquations=None):
+    """Constructs a MarabouNetworkComposition object from an ONNX file
+
+    Args:
+        filename (str): Path to the ONNX file
+        inputNames (list of str, optional): List of node names corresponding to inputs
+        outputNames (list of str, optional): List of node names corresponding to outputs
+        maxNumberOfLinearEquations (int, optional): Threshold for the number of linear equations.
+                                                    If the number of linear equations is greater than this threshold,
+                                                    the network will be split into two networks. Defaults to None.
+
+    Returns:
+        :class:`~maraboupy.MarabouNetworkComposition.MarabouNetworkComposition`
+    """
+    return MarabouNetworkComposition(filename, inputNames, outputNames,
+                                     maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
