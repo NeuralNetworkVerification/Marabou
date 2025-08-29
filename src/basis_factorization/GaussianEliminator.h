@@ -19,7 +19,7 @@
 #include "LUFactors.h"
 
 #define GAUSSIAN_LOG( x, ... )                                                                     \
-    LOG( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING, "GaussianEliminator: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING, "GaussianEliminator: %s\n", x )
 
 class GaussianEliminator
 {
