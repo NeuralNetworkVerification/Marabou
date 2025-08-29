@@ -284,6 +284,19 @@ void CustomDNN::getInputBounds(torch::Tensor &lbTensor, torch::Tensor &ubTensor)
     lbTensor = torch::tensor(lowerBounds, torch::kDouble);
     ubTensor = torch::tensor(upperBounds, torch::kDouble);
 }
+
+
+
+std::vector<List<NeuronIndex>> CustomDNN::getMaxPoolSources(const Layer* maxPoolLayer) {
+    std::vector<List<NeuronIndex>> sources;
+    unsigned size = maxPoolLayer->getSize();
+    for (unsigned neuron = 0; neuron < size; ++neuron) {
+
+        sources.push_back(maxPoolLayer->getActivationSources(neuron));
+    }
+    return sources;
+}
+
 }
 
 #endif

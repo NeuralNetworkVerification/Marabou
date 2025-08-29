@@ -1,6 +1,6 @@
 #ifdef BUILD_TORCH
-#ifndef __CustomDNN_h__
-#define __CustomDNN_h__
+#ifndef _CustomDNN_h_
+#define _CustomDNN_h_
 
 #include "Layer.h"
 #include "Vector.h"
@@ -86,6 +86,7 @@ public:
     torch::Tensor forward( torch::Tensor x );
     const Vector<unsigned> &getLayerSizes() const;
     void getInputBounds( torch::Tensor &lbTensor, torch::Tensor &ubTensor ) const;
+    std::vector<List<NeuronIndex>> getMaxPoolSources(const Layer* maxPoolLayer);
     Vector<torch::nn::Linear> getLinearLayers()
     {
         return _linearLayers;
@@ -114,5 +115,5 @@ private:
     unsigned _numberOfLayers;
 };
 } // namespace NLR
-#endif // __CustomDNN_h__
+#endif // _CustomDNN_h_
 #endif

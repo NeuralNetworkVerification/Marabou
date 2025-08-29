@@ -27,6 +27,7 @@ public:
 
 private:
     LayerOwner *_layerOwner;
+    NetworkLevelReasoner *_nlr;
     CustomDNN *_network;
     void GDloop( int loops, const std::string val_to_opt, std::vector<torch::Tensor> &alphaSlopes );
     std::tuple<torch::Tensor, torch::Tensor>
@@ -43,6 +44,25 @@ private:
     std::map<unsigned, unsigned> _indexAlphaSlopeMap;
     std::map<unsigned, unsigned> _linearIndexMap;
 
+    std::map<unsigned, std::vector<List<NeuronIndex>>> _maxPoolSources;
+    std::map<unsigned, torch::Tensor> _maxUpperChoice; // int64 [m]: absolute row index for upper bound
+    std::map<unsigned, torch::Tensor> _maxLowerChoice; // int64 [m]: absolute row index for lower bound
+    void relaxMaxPoolLayer(unsigned layerNumber, torch::Tensor &EQ_up, torch::Tensor &EQ_low);
+    void computeMaxPoolLayer(unsigned layerNumber, torch::Tensor &EQ_up, torch::Tensor &EQ_low);
+
+    std::pair<torch::Tensor, torch::Tensor> boundsFromEQ(const torch::Tensor &EQ, const std::vector<long> &rows);
+    struct MaxRelaxResult {
+        long idx_up;      // absolute row in previous EQ for the upper bound
+        long idx_low;     // absolute row in previous EQ for the lower bound
+        float slope;      // upper slope a
+        float intercept;  // upper intercept (b - a*l_i)
+    };
+
+    MaxRelaxResult relaxMaxNeuron(const std::vector<List<NeuronIndex>> &groups,
+                                   size_t k,
+                                   const torch::Tensor &EQ_up,
+                                   const torch::Tensor &EQ_low);
+
     std::map<unsigned, torch::Tensor> _upperRelaxationSlopes;
     std::map<unsigned, torch::Tensor> _upperRelaxationIntercepts;
 
@@ -56,13 +76,13 @@ private:
     void updateBounds(std::vector<torch::Tensor> &alphaSlopes);
     void updateBoundsOfLayer(unsigned layerIndex, torch::Tensor &upBounds, torch::Tensor &lowBounds);
 
-    static torch::Tensor addVecToLastColumnValue( const torch::Tensor &matrix,
-                                                  const torch::Tensor &vec )
-    {
-        auto result = matrix.clone();
-        result.slice( 1, result.size( 1 ) - 1, result.size( 1 ) ) += vec.unsqueeze( 1 );
-        return result;
-    }
+    torch::Tensor addVecToLastColumnValue( const torch::Tensor &matrix,
+                                           const torch::Tensor &vec );
+    // {
+    //     auto result = matrix.clone();
+    //     result.slice( 1, result.size( 1 ) - 1, result.size( 1 ) ) += vec.unsqueeze( 1 );
+    //     return result;
+    // }
     static torch::Tensor lower_ReLU_relaxation( const torch::Tensor &u, const torch::Tensor &l );
 
     static std::tuple<torch::Tensor, torch::Tensor> upper_ReLU_relaxation( const torch::Tensor &u,
