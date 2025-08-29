@@ -34,15 +34,13 @@
 
 #include <cstring>
 
-#define NLR_LOG( x, ... )                                                                          \
-    MARABOU_LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
+#define NLR_LOG( x, ... ) LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
 
 namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _tableau( NULL )
     , _deepPolyAnalysis( nullptr )
-    , _alphaCrown( nullptr )
 {
 }
 
@@ -129,17 +127,8 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
     const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
     memcpy( output, outputLayer->getAssignment(), sizeof( double ) * outputLayer->getSize() );
 }
-void NetworkLevelReasoner::setBounds( unsigned layer,
-                                      unsigned int neuron,
-                                      double lower,
-                                      double upper )
-{
-    ASSERT( layer < _layerIndexToLayer.size() );
-    _layerIndexToLayer[layer]->setBounds( neuron, lower, upper );
-}
 
-void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &assignment,
-                                                      const double *pgdAdversarialInput )
+void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &assignment )
 {
     Layer *inputLayer = _layerIndexToLayer[0];
     ASSERT( inputLayer->getLayerType() == Layer::INPUT );
@@ -156,8 +145,6 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &ass
         {
             unsigned variable = inputLayer->neuronToVariable( index );
             double value = _tableau->getValue( variable );
-            if ( pgdAdversarialInput )
-                value = pgdAdversarialInput[index];
             input[index] = value;
             assignment[variable] = value;
         }
@@ -213,8 +200,6 @@ void NetworkLevelReasoner::clearConstraintTightenings()
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
-    _boundTightenings.clear();
-
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
@@ -224,15 +209,6 @@ void NetworkLevelReasoner::deepPolyPropagation()
     if ( _deepPolyAnalysis == nullptr )
         _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>( new DeepPolyAnalysis( this ) );
     _deepPolyAnalysis->run();
-}
-
-void NetworkLevelReasoner::alphaCrown()
-{
-#ifdef BUILD_TORCH
-    if ( _alphaCrown == nullptr )
-        _alphaCrown = std::unique_ptr<AlphaCrown>( new AlphaCrown( this ) );
-    _alphaCrown->run();
-#endif
 }
 
 void NetworkLevelReasoner::lpRelaxationPropagation()

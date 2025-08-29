@@ -27,13 +27,6 @@ Layer::~Layer()
     freeMemoryIfNeeded();
 }
 
-void Layer::setBounds( unsigned int neuron, double lower, double upper )
-{
-    ASSERT( neuron < _size );
-    _lb[neuron] = lower;
-    _ub[neuron] = upper;
-}
-
 void Layer::setLayerOwner( LayerOwner *layerOwner )
 {
     _layerOwner = layerOwner;

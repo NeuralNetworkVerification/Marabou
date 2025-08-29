@@ -29,7 +29,7 @@
 #include "SoftmaxConstraint.h"
 
 #define INPUT_QUERY_LOG( x, ... )                                                                  \
-    MARABOU_LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Marabou Query: %s\n", x )
+    LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Marabou Query: %s\n", x )
 
 using namespace CVC4::context;
 

@@ -20,7 +20,7 @@
 #include "Query.h"
 
 #define INCREMENTAL_LINEARIZATION_LOG( x, ... )                                                    \
-    MARABOU_LOG( GlobalConfiguration::CEGAR_LOGGING, "IncrementalLinearization: %s\n", x )
+    LOG( GlobalConfiguration::CEGAR_LOGGING, "IncrementalLinearization: %s\n", x )
 
 class Engine;
 class IQuery;
