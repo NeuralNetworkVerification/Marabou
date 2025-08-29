@@ -22,8 +22,7 @@
 enum class SymbolicBoundTighteningType {
     SYMBOLIC_BOUND_TIGHTENING = 0,
     DEEP_POLY = 1,
-    ALPHA_CROWN = 2,
-    NONE = 3,
+    NONE = 2,
 };
 
 #endif // __SymbolicBoundTighteningType_h__

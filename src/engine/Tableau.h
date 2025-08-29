@@ -29,7 +29,7 @@
 #include "SparseUnsortedList.h"
 #include "Statistics.h"
 
-#define TABLEAU_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::TABLEAU_LOGGING, "Tableau: %s\n", x )
+#define TABLEAU_LOG( x, ... ) LOG( GlobalConfiguration::TABLEAU_LOGGING, "Tableau: %s\n", x )
 
 class Equation;
 class ICostFunctionManager;

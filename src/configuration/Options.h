@@ -154,8 +154,6 @@ public:
         // The strategy used for initializing the soi
         SOI_INITIALIZATION_STRATEGY,
 
-        // Adversarial attack timeout in seconds
-        ATTACK_TIMEOUT,
         // The procedure/solver for solving the LP
         LP_SOLVER
     };
