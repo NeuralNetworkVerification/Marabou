@@ -31,7 +31,7 @@
 namespace NLR {
 
 #define LPFormulator_LOG( x, ... )                                                                 \
-    LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x )
 
 class LPFormulator : public ParallelSolver
 {

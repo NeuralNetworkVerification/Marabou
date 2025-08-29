@@ -7610,7 +7610,7 @@ public:
 
         Map<unsigned, double> assignment;
 
-        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment, TODO ) );
 
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 4 ) );
@@ -7623,7 +7623,7 @@ public:
         tableau.nextValues[0] = 1;
         tableau.nextValues[1] = 1;
 
-        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment, TODO ) );
 
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 1 ) );
@@ -7635,7 +7635,7 @@ public:
         tableau.nextValues[0] = 1;
         tableau.nextValues[1] = 2;
 
-        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment, TODO ) );
 
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 0 ) );
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 0 ) );
