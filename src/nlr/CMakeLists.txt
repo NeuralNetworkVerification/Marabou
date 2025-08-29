@@ -7,7 +7,7 @@ target_include_directories(${MARABOU_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_sources(${MARABOU_TEST_LIB} PRIVATE ${SRCS})
 target_include_directories(${MARABOU_TEST_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-set (NETWORK_LEVEL_REASONER_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+set(NETWORK_LEVEL_REASONER_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 macro(network_level_reasoner_add_unit_test name)
     set(USE_MOCK_COMMON TRUE)
     set(USE_MOCK_ENGINE TRUE)
@@ -15,15 +15,16 @@ macro(network_level_reasoner_add_unit_test name)
 endmacro()
 
 network_level_reasoner_add_unit_test(DeepPolyAnalysis)
+network_level_reasoner_add_unit_test(AlphaCrown)
 network_level_reasoner_add_unit_test(NetworkLevelReasoner)
 network_level_reasoner_add_unit_test(WsLayerElimination)
 network_level_reasoner_add_unit_test(ParallelSolver)
 
 if (${ENABLE_GUROBI})
     network_level_reasoner_add_unit_test(LPRelaxation)
-endif()
+endif ()
 
 if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
+endif ()
 

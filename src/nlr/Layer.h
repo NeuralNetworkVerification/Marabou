@@ -58,6 +58,7 @@ public:
     Layer( const Layer *other );
     Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner );
     ~Layer();
+    void setBounds( unsigned int neuron, double lower, double upper );
 
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );

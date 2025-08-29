@@ -24,7 +24,7 @@
 #include <set>
 
 #define SCORE_TRACKER_LOG( x, ... )                                                                \
-    LOG( GlobalConfiguration::SCORE_TRACKER_LOGGING, "PLConstraintScoreTracker: %s\n", x )
+    MARABOU_LOG( GlobalConfiguration::SCORE_TRACKER_LOGGING, "PLConstraintScoreTracker: %s\n", x )
 
 struct ScoreEntry
 {
