@@ -269,7 +269,7 @@ public:
 
     /* While solving with CDCL, denotes if to use proof-based clauses or not
      */
-    static const bool CDCL_USE_PROOF_BASED_CLAUSES;
+    static const bool ANALYZE_PROOF_DEPENDENCIES;
 
     /* Minimize the number of lemma dependencies when producing proofs
      */

@@ -213,7 +213,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
     {
         if ( !plcLemma )
             continue;
-        DEBUG( ASSERT( !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES ||
+        DEBUG( ASSERT( !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES ||
                        plcLemma->getToCheck() ) );
 
         PiecewiseLinearConstraint *matchedConstraint = NULL;

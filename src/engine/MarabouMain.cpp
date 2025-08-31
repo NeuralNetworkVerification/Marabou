@@ -81,7 +81,7 @@ int marabouMain( int argc, char **argv )
 #ifdef BUILD_CADICAL
         if ( options->getBool( Options::SOLVE_WITH_CDCL ) )
         {
-            if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+            if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
             {
                 if ( !options->getBool( Options::PRODUCE_PROOFS ) )
                 {

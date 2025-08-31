@@ -322,7 +322,7 @@ int CdclCore::cb_propagate()
     unsigned long long total = 0;
 
     if ( _engine->getLpSolverType() == LPSolverType::GUROBI &&
-         GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+         GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
     {
         if ( _engine->solve( 0 ) )
         {
@@ -460,7 +460,7 @@ int CdclCore::cb_propagate()
         {
             if ( _externalClauseToAdd.empty() )
             {
-                if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+                if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
                     _engine->explainSimplexFailure();
                 else
                     addDecisionBasedConflictClause();
@@ -514,7 +514,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
         if ( !_fixedCadicalVars.exists( propagated_lit ) )
         {
             Set<int> clause;
-            if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+            if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
                 clause = _engine->explainPhaseWithProof( _cadicalVarToPlc[abs( propagated_lit )] );
             else
             {
@@ -533,7 +533,7 @@ int CdclCore::cb_add_reason_clause_lit( int propagated_lit )
             }
 
             if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES &&
-                 !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+                 !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
             {
                 std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
                 NLR::NetworkLevelReasoner *networkLevelReasoner =
@@ -656,7 +656,7 @@ void CdclCore::addExternalClause( Set<int> &clause )
     }
 
     if ( GlobalConfiguration::CDCL_SHORTEN_CLAUSES &&
-         !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+         !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
     {
         std::shared_ptr<Query> inputQuery = _engine->getInputQuery();
         NLR::NetworkLevelReasoner *networkLevelReasoner = _engine->getNetworkLevelReasoner();

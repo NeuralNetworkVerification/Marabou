@@ -502,7 +502,7 @@ bool Engine::solve( double timeoutInSeconds )
             else
             {
 #ifdef BUILD_CADICAL
-                if ( !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+                if ( !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
                     _cdclCore.addDecisionBasedConflictClause();
 #endif
                 return false;
@@ -3151,7 +3151,7 @@ bool Engine::restoreSearchTreeState( SearchTreeState &searchTreeState )
         }
 
 #ifdef BUILD_CADICAL
-        if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+        if ( _solveWithCDCL && !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
             _cdclCore.addDecisionBasedConflictClause();
 #endif
 
@@ -3631,7 +3631,7 @@ void Engine::explainSimplexFailure()
 
         ( **_UNSATCertificateCurrentPointer ).makeLeaf();
 
-        if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+        if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
         {
             SparseUnsortedList sparseContradictionToAnalyse = SparseUnsortedList();
             leafContradictionVec.empty()
@@ -3655,7 +3655,7 @@ void Engine::explainSimplexFailure()
         _cdclCore.addDecisionBasedConflictClause();
         return;
     }
-    if ( GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+    if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
     {
         SparseUnsortedList sparseContradiction( leafContradictionVec.data(),
                                                 leafContradictionVec.size() );
@@ -4078,7 +4078,7 @@ bool Engine::propagateBoundManagerTightenings()
             if ( _produceUNSATProofs )
                 explainSimplexFailure();
 #ifdef BUILD_CADICAL
-            else if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+            else if ( _solveWithCDCL && !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
                 _cdclCore.addDecisionBasedConflictClause();
 #endif
         }
@@ -4090,7 +4090,7 @@ bool Engine::propagateBoundManagerTightenings()
         if ( _produceUNSATProofs )
             explainSimplexFailure();
 #ifdef BUILD_CADICAL
-        else if ( _solveWithCDCL && !GlobalConfiguration::CDCL_USE_PROOF_BASED_CLAUSES )
+        else if ( _solveWithCDCL && !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
             _cdclCore.addDecisionBasedConflictClause();
 #endif
         return false;
