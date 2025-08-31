@@ -4249,4 +4249,16 @@ void Layer::dumpBounds() const
     printf( "\n" );
 }
 
+void Layer::setBounds( unsigned int neuron, double lower, double upper )
+{
+    ASSERT( neuron < _size );
+    _lb[neuron] = lower;
+    _ub[neuron] = upper;
+}
+
+bool Layer::hasMappingFromVariable( unsigned int variable ) const
+{
+    return _variableToNeuron.exists( variable );
+}
+
 } // namespace NLR

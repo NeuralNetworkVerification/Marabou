@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SmtCore.cpp
+/*! \file SearchTreeHandler.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Parth Shah, Duligur Ibeling
@@ -13,22 +13,24 @@
 
  **/
 
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 
 #include "Debug.h"
-#include "DivideStrategy.h"
+#include "Engine.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Options.h"
+#include "PiecewiseLinearConstraint.h"
 #include "PseudoImpactTracker.h"
-#include "ReluConstraint.h"
+#include "TimeUtils.h"
 #include "UnsatCertificateNode.h"
 
-SmtCore::SmtCore( IEngine *engine )
+SearchTreeHandler::SearchTreeHandler( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
     , _context( _engine->getContext() )
@@ -44,12 +46,12 @@ SmtCore::SmtCore( IEngine *engine )
 {
 }
 
-SmtCore::~SmtCore()
+SearchTreeHandler::~SearchTreeHandler()
 {
     freeMemory();
 }
 
-void SmtCore::freeMemory()
+void SearchTreeHandler::freeMemory()
 {
     for ( const auto &stackEntry : _stack )
     {
@@ -60,7 +62,7 @@ void SmtCore::freeMemory()
     _stack.clear();
 }
 
-void SmtCore::reset()
+void SearchTreeHandler::reset()
 {
     _context.popto( 0 );
     _engine->postContextPopHook();
@@ -73,7 +75,7 @@ void SmtCore::reset()
     _numRejectedPhasePatternProposal = 0;
 }
 
-void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
+void SearchTreeHandler::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     if ( !_constraintToViolationCount.exists( constraint ) )
         _constraintToViolationCount[constraint] = 0;
@@ -83,14 +85,17 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
     if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
     {
         _needToSplit = true;
-        if ( !pickSplitPLConstraint() )
+        if ( _engine->shouldSolveWithCDCL() )
+            ASSERT( !constraint->phaseFixed() );
+        if ( !_engine->shouldSolveWithCDCL() && !pickSplitPLConstraint() )
+
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
     }
 }
 
-unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
+unsigned SearchTreeHandler::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
 {
     if ( !_constraintToViolationCount.exists( constraint ) )
         return 0;
@@ -98,19 +103,24 @@ unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) co
     return _constraintToViolationCount[constraint];
 }
 
-void SmtCore::initializeScoreTrackerIfNeeded(
-    const List<PiecewiseLinearConstraint *> &plConstraints )
+void SearchTreeHandler::initializeScoreTrackerIfNeeded(
+    const List<PiecewiseLinearConstraint *> &plConstraints,
+    CdclCore *cdclCore )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {
         _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
         _scoreTracker->initialize( plConstraints );
+#ifdef BUILD_CADICAL
+        if ( cdclCore )
+            cdclCore->initializeScoreTracker( _scoreTracker );
+#endif
 
-        SMT_LOG( "\tTracking Pseudo Impact..." );
+        SEARCH_TREE_LOG( "\tTracking Pseudo Impact..." );
     }
 }
 
-void SmtCore::reportRejectedPhasePatternProposal()
+void SearchTreeHandler::reportRejectedPhasePatternProposal()
 {
     ++_numRejectedPhasePatternProposal;
 
@@ -126,12 +136,12 @@ void SmtCore::reportRejectedPhasePatternProposal()
     }
 }
 
-bool SmtCore::needToSplit() const
+bool SearchTreeHandler::needToSplit() const
 {
     return _needToSplit;
 }
 
-void SmtCore::performSplit()
+void SearchTreeHandler::performSplit()
 {
     ASSERT( _needToSplit );
 
@@ -182,7 +192,7 @@ void SmtCore::performSplit()
             new UnsatCertificateNode( certificateNode, childSplit );
     }
 
-    SmtStackEntry *stackEntry = new SmtStackEntry;
+    SearchTreeStackEntry *stackEntry = new SearchTreeStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     ASSERT( split->getEquations().size() == 0 );
@@ -218,21 +228,21 @@ void SmtCore::performSplit()
         if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
     _constraintForSplitting = NULL;
 }
 
-unsigned SmtCore::getStackDepth() const
+unsigned SearchTreeHandler::getStackDepth() const
 {
     ASSERT(
         ( _engine->inSnCMode() || _stack.size() == static_cast<unsigned>( _context.getLevel() ) ) );
     return _stack.size();
 }
 
-void SmtCore::popContext()
+void SearchTreeHandler::popContext()
 {
     struct timespec start = TimeUtils::sampleMicro();
     _context.pop();
@@ -246,7 +256,7 @@ void SmtCore::popContext()
     }
 }
 
-void SmtCore::pushContext()
+void SearchTreeHandler::pushContext()
 {
     struct timespec start = TimeUtils::sampleMicro();
     _context.push();
@@ -260,9 +270,9 @@ void SmtCore::pushContext()
     }
 }
 
-bool SmtCore::popSplit()
+bool SearchTreeHandler::popSplit()
 {
-    SMT_LOG( "Performing a pop" );
+    SEARCH_TREE_LOG( "Performing a pop" );
 
     if ( _stack.empty() )
         return false;
@@ -300,6 +310,7 @@ bool SmtCore::popSplit()
             {
                 UnsatCertificateNode *certificateNode =
                     _engine->getUNSATCertificateCurrentPointer();
+                certificateNode->deleteUnusedLemmas();
                 _engine->setUNSATCertificateCurrentPointer( certificateNode->getParent() );
             }
 
@@ -314,14 +325,17 @@ bool SmtCore::popSplit()
             throw MarabouError( MarabouError::DEBUGGING_ERROR );
         }
 
-        SmtStackEntry *stackEntry = _stack.back();
+        SearchTreeStackEntry *stackEntry = _stack.back();
+
+        if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateCurrentPointer() )
+            _engine->getUNSATCertificateCurrentPointer()->deleteUnusedLemmas();
 
         popContext();
         _engine->postContextPopHook();
         // Restore the state of the engine
-        SMT_LOG( "\tRestoring engine state..." );
+        SEARCH_TREE_LOG( "\tRestoring engine state..." );
         _engine->restoreState( *( stackEntry->_engineState ) );
-        SMT_LOG( "\tRestoring engine state - DONE" );
+        SEARCH_TREE_LOG( "\tRestoring engine state - DONE" );
 
         // Apply the new split and erase it from the list
         auto split = stackEntry->_alternativeSplits.begin();
@@ -339,6 +353,7 @@ bool SmtCore::popSplit()
             UnsatCertificateNode *splitChild = certificateNode->getChildBySplit( *split );
             while ( !splitChild )
             {
+                certificateNode->deleteUnusedLemmas();
                 certificateNode = certificateNode->getParent();
                 ASSERT( certificateNode );
                 splitChild = certificateNode->getChildBySplit( *split );
@@ -348,12 +363,12 @@ bool SmtCore::popSplit()
             ASSERT( _engine->getUNSATCertificateCurrentPointer()->getSplit() == *split );
         }
 
-        SMT_LOG( "\tApplying new split..." );
+        SEARCH_TREE_LOG( "\tApplying new split..." );
         ASSERT( split->getEquations().size() == 0 );
         _engine->preContextPushHook();
         pushContext();
         _engine->applySplit( *split );
-        SMT_LOG( "\tApplying new split - DONE" );
+        SEARCH_TREE_LOG( "\tApplying new split - DONE" );
 
         stackEntry->_activeSplit = *split;
         stackEntry->_alternativeSplits.erase( split );
@@ -371,7 +386,7 @@ bool SmtCore::popSplit()
         if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 
@@ -380,14 +395,18 @@ bool SmtCore::popSplit()
     return true;
 }
 
-void SmtCore::resetSplitConditions()
+void SearchTreeHandler::resetSplitConditions()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
+#ifdef BUILD_CADICAL
+    if ( _engine->shouldSolveWithCDCL() )
+        _constraintForSplitting = NULL;
+#endif
     _needToSplit = false;
 }
 
-void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
+void SearchTreeHandler::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
 {
     if ( _stack.empty() )
         _impliedValidSplitsAtRoot.append( validSplit );
@@ -397,7 +416,7 @@ void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
     checkSkewFromDebuggingSolution();
 }
 
-void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
+void SearchTreeHandler::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 {
     result.clear();
 
@@ -412,19 +431,19 @@ void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
     }
 }
 
-void SmtCore::setStatistics( Statistics *statistics )
+void SearchTreeHandler::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
 }
 
-void SmtCore::storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution )
+void SearchTreeHandler::storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution )
 {
     _debuggingSolution = debuggingSolution;
 }
 
 // Return true if stack is currently compliant, false otherwise
 // If there is no stored solution, return false --- incompliant.
-bool SmtCore::checkSkewFromDebuggingSolution()
+bool SearchTreeHandler::checkSkewFromDebuggingSolution()
 {
     if ( _debuggingSolution.empty() )
         return false;
@@ -476,8 +495,8 @@ bool SmtCore::checkSkewFromDebuggingSolution()
     return true;
 }
 
-bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
-                                         String &error ) const
+bool SearchTreeHandler::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
+                                                   String &error ) const
 {
     // False if the split prevents one of the values in the stored solution, true otherwise.
     error = "";
@@ -520,7 +539,7 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
     return true;
 }
 
-PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing(
+PiecewiseLinearConstraint *SearchTreeHandler::chooseViolatedConstraintForFixing(
     List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
 {
     ASSERT( !_violatedPlConstraints.empty() );
@@ -554,7 +573,7 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing(
     return candidate;
 }
 
-void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
+void SearchTreeHandler::replaySearchTreeStackEntry( SearchTreeStackEntry *stackEntry )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -585,26 +604,31 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
         if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
                                        TimeUtils::timePassed( start, end ) );
     }
 }
 
-void SmtCore::storeSmtState( SmtState &smtState )
+void SearchTreeHandler::storeSearchTreeState( SearchTreeState &searchTreeState )
 {
-    smtState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
+    searchTreeState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
 
     for ( auto &stackEntry : _stack )
-        smtState._stack.append( stackEntry->duplicateSmtStackEntry() );
+        searchTreeState._stack.append( stackEntry->duplicateSearchTreeStackEntry() );
 
-    smtState._stateId = _stateId;
+    searchTreeState._stateId = _stateId;
 }
 
-bool SmtCore::pickSplitPLConstraint()
+bool SearchTreeHandler::pickSplitPLConstraint()
 {
     if ( _needToSplit )
     {
         _constraintForSplitting = _engine->pickSplitPLConstraint( _branchingHeuristic );
     }
     return _constraintForSplitting != NULL;
+}
+
+void SearchTreeHandler::setNeedToSplit( bool value )
+{
+    _needToSplit = value;
 }

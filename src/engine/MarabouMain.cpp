@@ -76,7 +76,29 @@ int marabouMain( int argc, char **argv )
         {
             printVersion();
             return 0;
-        };
+        }
+
+#ifdef BUILD_CADICAL
+        if ( options->getBool( Options::SOLVE_WITH_CDCL ) )
+        {
+            if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
+            {
+                if ( !options->getBool( Options::PRODUCE_PROOFS ) )
+                {
+                    options->setBool( Options::PRODUCE_PROOFS, true );
+                    printf( "Turning --prove-unsat on to allow proof-based conflict clauses.\n" );
+                }
+                printf( "Please note that producing complete UNSAT proofs while --cdcl is on is "
+                        "not yet supported.\n" );
+            }
+
+            if ( options->getBool( Options::DNC_MODE ) )
+            {
+                options->setBool( Options::DNC_MODE, false );
+                printf( "CDCL is not yet supported with snc mode, turning --snc off.\n" );
+            }
+        }
+#endif
 
         if ( options->getBool( Options::PRODUCE_PROOFS ) )
         {
@@ -98,14 +120,6 @@ int marabouMain( int argc, char **argv )
             options->setBool( Options::SOLVE_WITH_MILP, false );
             printf(
                 "Proof production is not yet supported with MILP solvers, turning --milp off.\n" );
-        }
-
-        if ( options->getBool( Options::PRODUCE_PROOFS ) &&
-             ( options->getLPSolverType() == LPSolverType::GUROBI ) )
-        {
-            options->setString( Options::LP_SOLVER, "native" );
-            printf( "Proof production is not yet supported with MILP solvers, using native simplex "
-                    "engine.\n" );
         }
 
         if ( options->getBool( Options::DNC_MODE ) &&

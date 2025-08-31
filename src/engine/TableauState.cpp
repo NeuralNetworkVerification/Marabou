@@ -212,6 +212,39 @@ void TableauState::setDimensions( unsigned m,
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
 }
 
+void TableauState::setDimensionsForBasics( unsigned m,
+                                           unsigned n,
+                                           const IBasisFactorization::BasisColumnOracle &oracle )
+{
+    _m = m;
+    _n = n;
+
+    _basicAssignment = new double[m];
+    if ( !_basicAssignment )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::assignment" );
+
+    _nonBasicAssignment = new double[n - m];
+    if ( !_nonBasicAssignment )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicAssignment" );
+
+    _basicIndexToVariable = new unsigned[m];
+    if ( !_basicIndexToVariable )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basicIndexToVariable" );
+
+    _nonBasicIndexToVariable = new unsigned[n - m];
+    if ( !_nonBasicIndexToVariable )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED,
+                            "TableauState::nonBasicIndexToVariable" );
+
+    _variableToIndex = new unsigned[n];
+    if ( !_variableToIndex )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
+
+    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m, oracle );
+    if ( !_basisFactorization )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
+}
+
 void TableauState::initializeBounds( unsigned n )
 {
     _lowerBounds = new double[n];

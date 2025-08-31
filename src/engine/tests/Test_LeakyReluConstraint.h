@@ -213,8 +213,12 @@ public:
     {
         unsigned b = 1;
         unsigned f = 4;
+        unsigned activeAux = 10;
 
-        LeakyReluConstraint lrelu( b, f, slope );
+        Context context;
+        BoundManager boundManager( context );
+
+        LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
 
         List<PiecewiseLinearCaseSplit> splits = lrelu.getCaseSplits();
 
@@ -226,11 +230,16 @@ public:
         List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
         ++split2;
 
-        TS_ASSERT( isActiveSplit( b, f, split1 ) || isActiveSplit( b, f, split2 ) );
-        TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
+        TS_ASSERT( isActiveSplit( b, f, activeAux, split1 ) ||
+                   isActiveSplit( b, f, activeAux, split2 ) );
+        TS_ASSERT( isInactiveSplit( b, f, activeAux + 1, split1 ) ||
+                   isInactiveSplit( b, f, activeAux + 1, split2 ) );
     }
 
-    bool isActiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isActiveSplit( unsigned b,
+                        unsigned f,
+                        unsigned activeAux,
+                        List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -243,7 +252,7 @@ public:
         if ( bound1._type != Tightening::LB )
             return false;
 
-        TS_ASSERT_EQUALS( bounds.size(), 2U );
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
 
         ++bound;
         Tightening bound2 = *bound;
@@ -252,27 +261,24 @@ public:
         TS_ASSERT_EQUALS( bound2._value, 0.0 );
         TS_ASSERT_EQUALS( bound2._type, Tightening::LB );
 
+        ++bound;
+        Tightening bound3 = *bound;
+
+        TS_ASSERT_EQUALS( bound3._variable, activeAux );
+        TS_ASSERT_EQUALS( bound3._value, 0.0 );
+        TS_ASSERT_EQUALS( bound3._type, Tightening::UB );
+
         Equation activeEquation;
         auto equations = split->getEquations();
-        TS_ASSERT_EQUALS( equations.size(), 1U );
-        activeEquation = split->getEquations().front();
-        TS_ASSERT_EQUALS( activeEquation._addends.size(), 2U );
-        TS_ASSERT_EQUALS( activeEquation._scalar, 0.0 );
-
-        auto addend = activeEquation._addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, b );
-
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, f );
-
-        TS_ASSERT_EQUALS( activeEquation._type, Equation::EQ );
+        TS_ASSERT_EQUALS( equations.size(), 0U );
 
         return true;
     }
 
-    bool isInactiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isInactiveSplit( unsigned b,
+                          unsigned f,
+                          unsigned inactiveAux,
+                          List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -285,7 +291,7 @@ public:
         if ( bound1._type != Tightening::UB )
             return false;
 
-        TS_ASSERT_EQUALS( bounds.size(), 2U );
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
 
         ++bound;
         Tightening bound2 = *bound;
@@ -294,22 +300,16 @@ public:
         TS_ASSERT_EQUALS( bound2._value, 0.0 );
         TS_ASSERT_EQUALS( bound2._type, Tightening::UB );
 
+        ++bound;
+        Tightening bound3 = *bound;
+
+        TS_ASSERT_EQUALS( bound3._variable, inactiveAux );
+        TS_ASSERT_EQUALS( bound3._value, 0.0 );
+        TS_ASSERT_EQUALS( bound3._type, Tightening::UB );
+
         Equation inactiveEquation;
         auto equations = split->getEquations();
-        TS_ASSERT_EQUALS( equations.size(), 1U );
-        inactiveEquation = split->getEquations().front();
-        TS_ASSERT_EQUALS( inactiveEquation._addends.size(), 2U );
-        TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
-
-        auto addend = inactiveEquation._addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, slope );
-        TS_ASSERT_EQUALS( addend->_variable, b );
-
-        ++addend;
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, f );
-
-        TS_ASSERT_EQUALS( inactiveEquation._type, Equation::EQ );
+        TS_ASSERT_EQUALS( equations.size(), 0U );
 
         return true;
     }
@@ -472,8 +472,12 @@ public:
     {
         unsigned b = 1;
         unsigned f = 4;
+        unsigned activeAux = 10;
 
-        LeakyReluConstraint lrelu( b, f, slope );
+        Context context;
+        BoundManager boundManager( context );
+
+        LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
 
         TS_ASSERT( !lrelu.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( lrelu.notifyLowerBound( b, 5 ) );
@@ -486,15 +490,19 @@ public:
         dummy.append( split );
         List<PiecewiseLinearCaseSplit>::iterator split1 = dummy.begin();
 
-        TS_ASSERT( isActiveSplit( b, f, split1 ) );
+        TS_ASSERT( isActiveSplit( b, f, activeAux, split1 ) );
     }
 
     void test_valid_split_relu_phase_fixed_to_inactive()
     {
         unsigned b = 1;
         unsigned f = 4;
+        unsigned activeAux = 10;
 
-        LeakyReluConstraint lrelu( b, f, slope );
+        Context context;
+        BoundManager boundManager( context );
+
+        LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
 
         TS_ASSERT( !lrelu.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( lrelu.notifyUpperBound( b, -2 ) );
@@ -507,7 +515,7 @@ public:
         dummy.append( split );
         List<PiecewiseLinearCaseSplit>::iterator split1 = dummy.begin();
 
-        TS_ASSERT( isInactiveSplit( b, f, split1 ) );
+        TS_ASSERT( isInactiveSplit( b, f, activeAux + 1, split1 ) );
     }
 
     void test_leaky_relu_entailed_tightenings()
@@ -867,11 +875,13 @@ public:
         Context context;
         unsigned b = 1;
         unsigned f = 4;
+        unsigned activeAux = 10;
 
-        TestLeakyReluConstraint lrelu( b, f, slope );
+        BoundManager boundManager( context );
+
+        LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
 
         lrelu.initializeCDOs( &context );
-
 
         TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), PHASE_NOT_FIXED );
 

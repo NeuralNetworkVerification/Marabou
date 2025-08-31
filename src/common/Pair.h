@@ -33,6 +33,11 @@ public:
     {
     }
 
+    Pair( const Pair<L, R> &other )
+        : _container( other._container )
+    {
+    }
+
     L &first()
     {
         return _container.first;

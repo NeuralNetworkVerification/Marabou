@@ -52,12 +52,12 @@ private:
     /*
       Convert the exitCode to string
     */
-    static String exitCodeToString( IEngine::ExitCode result );
+    static String exitCodeToString( ExitCode result );
 
     /*
       Print the current progress
     */
-    void printProgress( String queryId, IEngine::ExitCode result ) const;
+    void printProgress( String queryId, ExitCode result ) const;
 
     /*
       The queue of subqueries (shared across threads)

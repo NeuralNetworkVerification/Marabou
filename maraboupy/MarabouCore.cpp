@@ -311,7 +311,11 @@ struct MarabouOptions
         , _milpTighteningString(
               Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
-        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) ){};
+        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
+#ifdef BUILD_CADICAL
+        , _cdcl( Options::get()->getBool( Options::SOLVE_WITH_CDCL ) )
+#endif
+              {};
 
     void setOptions()
     {
@@ -323,6 +327,9 @@ struct MarabouOptions
         Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT,
                                  _performLpTighteningAfterSplit );
         Options::get()->setBool( Options::PRODUCE_PROOFS, _produceProofs );
+#ifdef BUILD_CADICAL
+        Options::get()->setBool( Options::SOLVE_WITH_CDCL, _cdcl );
+#endif
 
         // int options
         Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -356,6 +363,7 @@ struct MarabouOptions
     bool _dumpBounds;
     bool _performLpTighteningAfterSplit;
     bool _produceProofs;
+    bool _cdcl;
     unsigned _numWorkers;
     unsigned _numBlasThreads;
     unsigned _initialTimeout;
@@ -376,21 +384,21 @@ struct MarabouOptions
 };
 
 
-std::string exitCodeToString( IEngine::ExitCode code )
+std::string exitCodeToString( ExitCode code )
 {
     switch ( code )
     {
-    case IEngine::UNSAT:
+    case ExitCode::UNSAT:
         return "unsat";
-    case IEngine::SAT:
+    case ExitCode::SAT:
         return "sat";
-    case IEngine::ERROR:
+    case ExitCode::ERROR:
         return "ERROR";
-    case IEngine::UNKNOWN:
+    case ExitCode::UNKNOWN:
         return "UNKNOWN";
-    case IEngine::TIMEOUT:
+    case ExitCode::TIMEOUT:
         return "TIMEOUT";
-    case IEngine::QUIT_REQUESTED:
+    case ExitCode::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
         return "UNKNOWN";
@@ -412,6 +420,38 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
         output = redirectOutputToFile( redirect );
     try
     {
+        if ( options._cdcl )
+        {
+            if ( !options._produceProofs )
+            {
+                options._produceProofs = true;
+                printf( "Turning produceProofs on to allow proof-based conflict clauses.\n" );
+            }
+            printf( "Please note that producing complete UNSAT proofs while cdcl is on is not yet "
+                    "supported.\n" );
+        }
+
+        if ( options._produceProofs )
+        {
+            GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+            printf( "Proof production is not yet supported with DEEPSOI search, turning search "
+                    "off.\n" );
+        }
+
+        if ( options._produceProofs && options._snc )
+        {
+            options._snc = false;
+            printf( "Proof production is not yet supported with snc mode, turning snc off.\n" );
+        }
+
+        if ( options._produceProofs && options._solveWithMILP )
+        {
+            options._solveWithMILP = false;
+            printf(
+                "Proof production is not yet supported with MILP solvers, turning solveWithMILP "
+                "off.\n" );
+        }
+
         options.setOptions();
 
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
@@ -429,13 +469,13 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
             resultString = dncManager->getResultString().ascii();
             switch ( dncManager->getExitCode() )
             {
-            case DnCManager::SAT:
+            case ExitCode::SAT:
             {
                 retStats = Statistics();
                 dncManager->getSolution( ret, inputQuery );
                 break;
             }
-            case DnCManager::TIMEOUT:
+            case ExitCode::TIMEOUT:
             {
                 retStats = Statistics();
                 retStats.timeout();
@@ -449,11 +489,22 @@ solve( InputQuery &inputQuery, MarabouOptions &options, std::string redirect = "
         else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            engine.solve( timeoutInSeconds );
+            if ( engine.shouldSolveWithMILP() )
+                engine.solveWithMILPEncoding( timeoutInSeconds );
+#ifdef BUILD_CADICAL
+            else if ( engine.shouldSolveWithCDCL() )
+                engine.solveWithCDCL( timeoutInSeconds );
+#endif
+            else
+            {
+                engine.solve( timeoutInSeconds );
+                if ( engine.shouldProduceProofs() && engine.getExitCode() == ExitCode::UNSAT )
+                    engine.certifyUNSATCertificate();
+            }
 
             resultString = exitCodeToString( engine.getExitCode() );
 
-            if ( engine.getExitCode() == Engine::SAT )
+            if ( engine.getExitCode() == ExitCode::SAT )
             {
                 engine.extractSolution( inputQuery );
                 for ( unsigned int i = 0; i < inputQuery.getNumberOfVariables(); ++i )
@@ -566,7 +617,8 @@ PYBIND11_MODULE( MarabouCore, m )
         .def_readwrite( "_numSimulations", &MarabouOptions::_numSimulations )
         .def_readwrite( "_performLpTighteningAfterSplit",
                         &MarabouOptions::_performLpTighteningAfterSplit )
-        .def_readwrite( "_produceProofs", &MarabouOptions::_produceProofs );
+        .def_readwrite( "_produceProofs", &MarabouOptions::_produceProofs )
+        .def_readwrite( "_cdcl", &MarabouOptions::_cdcl );
     m.def( "maraboupyMain", &maraboupyMain, "Run the Marabou command-line interface" );
     m.def( "loadProperty", &loadProperty, "Load a property file into a input query" );
     m.def( "createInputQuery",
@@ -833,8 +885,8 @@ PYBIND11_MODULE( MarabouCore, m )
         .value( "NUM_POPS", Statistics::StatisticsUnsignedAttribute::NUM_POPS )
         .value( "CURRENT_DECISION_LEVEL",
                 Statistics::StatisticsUnsignedAttribute::CURRENT_DECISION_LEVEL )
-        .value( "NUM_PL_SMT_ORIGINATED_SPLITS",
-                Statistics::StatisticsUnsignedAttribute::NUM_PL_SMT_ORIGINATED_SPLITS )
+        .value( "NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS",
+                Statistics::StatisticsUnsignedAttribute::NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS )
         .value( "NUM_VISITED_TREE_STATES",
                 Statistics::StatisticsUnsignedAttribute::NUM_VISITED_TREE_STATES )
         .value( "PP_NUM_TIGHTENING_ITERATIONS",
@@ -862,8 +914,8 @@ PYBIND11_MODULE( MarabouCore, m )
     py::enum_<Statistics::StatisticsLongAttribute>( m, "StatisticsLongAttribute" )
         .value( "NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS",
                 Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS )
-        .value( "TOTAL_TIME_SMT_CORE_MICRO",
-                Statistics::StatisticsLongAttribute::TOTAL_TIME_SMT_CORE_MICRO )
+        .value( "TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO",
+                Statistics::StatisticsLongAttribute::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO )
         .value( "TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO",
                 Statistics::StatisticsLongAttribute::TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO )
         .value( "PREPROCESSING_TIME_MICRO",

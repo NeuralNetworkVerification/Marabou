@@ -55,6 +55,9 @@ void Options::initializeDefaultValues()
     _boolOptions[DEBUG_ASSIGNMENT] = false;
     _boolOptions[PRODUCE_PROOFS] = false;
     _boolOptions[DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] = false;
+#ifdef BUILD_CADICAL
+    _boolOptions[SOLVE_WITH_CDCL] = false;
+#endif
 
     /*
       Int options
@@ -63,9 +66,10 @@ void Options::initializeDefaultValues()
     _intOptions[NUM_INITIAL_DIVIDES] = 0;
     _intOptions[NUM_ONLINE_DIVIDES] = 2;
     _intOptions[INITIAL_TIMEOUT] = 5;
-    _intOptions[VERBOSITY] = 2;
+    _intOptions[VERBOSITY] = 0;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
+    _intOptions[VSIDS_DECAY_THRESHOLD] = 100000;
     _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 2;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
     _intOptions[SEED] = 1;
@@ -100,6 +104,8 @@ void Options::initializeDefaultValues()
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
     _stringOptions[SOFTMAX_BOUND_TYPE] = "lse";
+    _stringOptions[NAP_EXTERNAL_CLAUSE_FILE_PATH] = "";
+    _stringOptions[NAP_EXTERNAL_CLAUSE_FILE_PATH2] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -253,11 +259,6 @@ LPSolverType Options::getLPSolverType() const
     String solverString = String( _stringOptions.get( Options::LP_SOLVER ) );
     if ( solverString == "native" )
         return LPSolverType::NATIVE;
-    else if ( _boolOptions.get( Options::PRODUCE_PROOFS ) )
-    {
-        printf( "Proof-producing mode on, using native LP engine..." );
-        return LPSolverType::NATIVE;
-    }
     else if ( solverString == "gurobi" )
         return LPSolverType::GUROBI;
     else

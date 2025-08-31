@@ -200,12 +200,18 @@ void NetworkLevelReasoner::clearConstraintTightenings()
 
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
+    _outputBounds.clear();
+    _boundTightenings.clear();
+
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
 void NetworkLevelReasoner::deepPolyPropagation()
 {
+    _outputBounds.clear();
+    _boundTightenings.clear();
+
     if ( _deepPolyAnalysis == nullptr )
         _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>( new DeepPolyAnalysis( this ) );
     _deepPolyAnalysis->run();
@@ -869,6 +875,40 @@ unsigned NetworkLevelReasoner::getMaxLayerSize() const
 const Map<unsigned, Layer *> &NetworkLevelReasoner::getLayerIndexToLayer() const
 {
     return _layerIndexToLayer;
+}
+
+void NetworkLevelReasoner::setBounds( unsigned layer,
+                                      unsigned int neuron,
+                                      double lower,
+                                      double upper )
+{
+    ASSERT( layer < _layerIndexToLayer.size() );
+    _layerIndexToLayer[layer]->setBounds( neuron, lower, upper );
+}
+
+NeuronIndex NetworkLevelReasoner::variableToNeuron( unsigned int variable ) const
+{
+    for ( const auto pair : _layerIndexToLayer )
+    {
+        unsigned layerIdx = pair.first;
+        const Layer *layer = pair.second;
+        if ( layer->hasMappingFromVariable( variable ) )
+            return { layerIdx, layer->variableToNeuron( variable ) };
+    }
+
+    return { 0, 0 };
+}
+
+void NetworkLevelReasoner::receiveOutputTighterBound( Tightening tightening )
+{
+    _outputBounds[Pair<unsigned, Tightening::BoundType>( tightening._variable, tightening._type )] =
+        tightening._value;
+}
+
+void NetworkLevelReasoner::getOutputBounds(
+    Map<Pair<unsigned int, Tightening::BoundType>, double> &outputBounds )
+{
+    outputBounds = _outputBounds;
 }
 
 } // namespace NLR

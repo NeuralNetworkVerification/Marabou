@@ -14,6 +14,9 @@
 
 #include "SignConstraint.h"
 
+#ifdef BUILD_CADICAL
+#include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -23,7 +26,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
-#include "SignConstraint.h"
+#include "SearchTreeHandler.h"
 #include "Statistics.h"
 
 #ifdef _WIN32
@@ -123,7 +126,7 @@ bool SignConstraint::satisfied() const
 
 List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( getPhaseStatus() != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
@@ -168,7 +171,7 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
 
 List<PhaseStatus> SignConstraint::getAllCases() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( getPhaseStatus() != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     if ( _direction == SIGN_PHASE_NEGATIVE )
@@ -220,7 +223,7 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const
 
 bool SignConstraint::phaseFixed() const
 {
-    return _phaseStatus != PHASE_NOT_FIXED;
+    return getPhaseStatus() != PHASE_NOT_FIXED;
 }
 
 void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( Query &inputQuery )
@@ -276,9 +279,9 @@ void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( Query &inputQuery 
 
 PiecewiseLinearCaseSplit SignConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == PhaseStatus::SIGN_PHASE_POSITIVE )
+    if ( getPhaseStatus() == PhaseStatus::SIGN_PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
@@ -389,42 +392,49 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
 
     // Otherwise - update bound
     setLowerBound( variable, bound );
-
-    if ( variable == _f && FloatUtils::gt( bound, -1 ) )
+    if ( !phaseFixed() )
     {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-
-        if ( _boundManager != nullptr )
+        if ( variable == _f && FloatUtils::gt( bound, -1 ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
-            {
-                // If lb of f is > 1, we have a contradiction
-                if ( FloatUtils::gt( bound, 1 ) )
-                    throw InfeasibleQueryException();
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
 
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, getType() );
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::LB, { variable }, Tightening::LB, getType() );
-            }
-            else
+            if ( _boundManager != nullptr )
             {
-                _boundManager->tightenLowerBound( _f, 1 );
-                _boundManager->tightenLowerBound( _b, 0 );
+                if ( _boundManager->shouldProduceProofs() )
+                {
+                    // If lb of f is > 1, we have a contradiction
+                    if ( FloatUtils::gt( bound, 1 ) )
+                        throw InfeasibleQueryException();
+
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true, bound );
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _b, 0, Tightening::LB, { variable }, Tightening::LB, *this, false, bound );
+                }
+                else
+                {
+                    _boundManager->tightenLowerBound( _f, 1 );
+                    _boundManager->tightenLowerBound( _b, 0 );
+                }
             }
         }
-    }
-    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-    {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-        if ( _boundManager != nullptr )
+        else if ( variable == _b && !FloatUtils::isNegative( bound ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, 1, Tightening::LB, { variable }, Tightening::LB, getType() );
-            else
-                _boundManager->tightenLowerBound( _f, 1 );
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
+            if ( _boundManager != nullptr )
+            {
+                if ( _boundManager->shouldProduceProofs() )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, 1, Tightening::LB, { variable }, Tightening::LB, *this, true, bound );
+                else
+                    _boundManager->tightenLowerBound( _f, 1 );
+            }
         }
+
+#ifdef BUILD_CADICAL
+        if ( !_cdclVars.empty() && phaseFixed() && isActive() )
+            _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
     }
 }
 
@@ -440,41 +450,48 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
 
     // Otherwise - update bound
     setUpperBound( variable, bound );
-
-    if ( variable == _f && FloatUtils::lt( bound, 1 ) )
+    if ( !phaseFixed() )
     {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _boundManager != nullptr )
+        if ( variable == _f && FloatUtils::lt( bound, 1 ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
+            if ( _boundManager != nullptr )
             {
-                // If ub of f is < -1, we have a contradiction
-                if ( FloatUtils::lt( bound, -1 ) )
-                    throw InfeasibleQueryException();
+                if ( _boundManager->shouldProduceProofs() )
+                {
+                    // If ub of f is < -1, we have a contradiction
+                    if ( FloatUtils::lt( bound, -1 ) )
+                        throw InfeasibleQueryException();
 
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, getType() );
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _b, 0, Tightening::UB, { variable }, Tightening::UB, getType() );
-            }
-            else
-            {
-                _boundManager->tightenUpperBound( _f, -1 );
-                _boundManager->tightenUpperBound( _b, 0 );
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true, bound );
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _b, 0, Tightening::UB, { variable }, Tightening::UB, *this, false, bound );
+                }
+                else
+                {
+                    _boundManager->tightenUpperBound( _f, -1 );
+                    _boundManager->tightenUpperBound( _b, 0 );
+                }
             }
         }
-    }
-    else if ( variable == _b && FloatUtils::isNegative( bound ) )
-    {
-        setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _boundManager != nullptr )
+        else if ( variable == _b && FloatUtils::isNegative( bound ) )
         {
-            if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound(
-                    _f, -1, Tightening::UB, { variable }, Tightening::UB, getType() );
-            else
-                _boundManager->tightenUpperBound( _f, -1 );
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
+            if ( _boundManager != nullptr )
+            {
+                if ( _boundManager->shouldProduceProofs() )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _f, -1, Tightening::UB, { variable }, Tightening::UB, *this, true, bound );
+                else
+                    _boundManager->tightenUpperBound( _f, -1 );
+            }
         }
+
+#ifdef BUILD_CADICAL
+        if ( !_cdclVars.empty() && phaseFixed() && isActive() )
+            _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
     }
 }
 
@@ -572,22 +589,22 @@ void SignConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned var
 
             if ( FloatUtils::areEqual( fixedValue, 1 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_NEGATIVE );
             }
             else if ( FloatUtils::areEqual( fixedValue, -1 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_POSITIVE );
             }
         }
         else if ( variable == _b )
         {
             if ( FloatUtils::gte( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_NEGATIVE );
             }
             else if ( FloatUtils::lt( fixedValue, 0 ) )
             {
-                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+                ASSERT( getPhaseStatus() != SIGN_PHASE_POSITIVE );
             }
         }
     } );
@@ -612,8 +629,8 @@ void SignConstraint::dump( String &output ) const
                       _f,
                       _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus,
-                      phaseToString( _phaseStatus ).ascii() );
+                      getPhaseStatus(),
+                      phaseToString( getPhaseStatus() ).ascii() );
 
     output +=
         Stringf( "b in [%s, %s], ",
@@ -665,3 +682,78 @@ void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
                                        unsigned /* constraintAuxVar */ )
 {
 }
+
+#ifdef BUILD_CADICAL
+void SignConstraint::booleanAbstraction(
+    Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx = cadicalVarToPlc.size();
+    _cdclVars.append( idx );
+    cadicalVarToPlc.insert( idx, this );
+}
+
+int SignConstraint::propagatePhaseAsLit() const
+{
+    ASSERT( _cdclVars.size() == 1 )
+    if ( getPhaseStatus() == SIGN_PHASE_POSITIVE )
+        return (int)_cdclVars.back();
+    else if ( getPhaseStatus() == SIGN_PHASE_NEGATIVE )
+        return -(int)_cdclVars.back();
+    else
+        return 0;
+}
+
+void SignConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) );
+
+    setActiveConstraint( false );
+
+    if ( lit > 0 )
+        setPhaseStatus( SIGN_PHASE_POSITIVE );
+    else
+        setPhaseStatus( SIGN_PHASE_NEGATIVE );
+}
+
+int SignConstraint::getLiteralForDecision() const
+{
+    ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
+
+    if ( _direction == SIGN_PHASE_NEGATIVE )
+        return -(int)_cdclVars.front();
+    if ( _direction == SIGN_PHASE_POSITIVE )
+        return (int)_cdclVars.front();
+
+    if ( existsAssignment( _f ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
+            return (int)_cdclVars.front();
+        else
+            return -(int)_cdclVars.front();
+    else
+        return -(int)_cdclVars.front();
+}
+
+bool SignConstraint::isBoundFixingPhase( unsigned int var,
+                                         double bound,
+                                         Tightening::BoundType boundType ) const
+{
+    if ( getPhaseStatus() == SIGN_PHASE_POSITIVE )
+    {
+        if ( var == _b && boundType == Tightening::LB && !FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( var == _f && boundType == Tightening::LB && FloatUtils::gt( bound, -1 ) )
+            return true;
+    }
+    else if ( getPhaseStatus() == SIGN_PHASE_NEGATIVE )
+    {
+        if ( var == _b && boundType == Tightening::UB && FloatUtils::isNegative( bound ) )
+            return true;
+
+        if ( var == _f && boundType == Tightening::UB && FloatUtils::lt( bound, 1 ) )
+            return true;
+    }
+
+    return false;
+}
+#endif

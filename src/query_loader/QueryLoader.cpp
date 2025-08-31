@@ -71,6 +71,7 @@ void QueryLoader::loadQuery( const String &fileName, IQuery &inputQuery )
         inputQuery.markInputVariable( variable, inputIndex );
     }
 
+    Set<unsigned> outputVariables;
     // Output Variables
     unsigned numOutputVars = atoi( input->readLine().trim().ascii() );
     for ( unsigned i = 0; i < numOutputVars; ++i )
@@ -83,6 +84,7 @@ void QueryLoader::loadQuery( const String &fileName, IQuery &inputQuery )
         unsigned variable = atoi( it->ascii() );
         it++;
         inputQuery.markOutputVariable( variable, outputIndex );
+        outputVariables.insert( variable );
     }
 
     // Lower Bounds
@@ -171,6 +173,7 @@ void QueryLoader::loadQuery( const String &fileName, IQuery &inputQuery )
 
         Equation equation( type );
         equation.setScalar( eqScalar );
+        bool isOutputConstraint = false;
 
         while ( ++it != tokens.end() )
         {
@@ -182,9 +185,13 @@ void QueryLoader::loadQuery( const String &fileName, IQuery &inputQuery )
             QL_LOG( Stringf( "\tVar_no: %i, Coeff: %f\n", varNo, coeff ).ascii() );
 
             equation.addAddend( coeff, varNo );
+            if ( outputVariables.exists( varNo ) )
+                isOutputConstraint = true;
         }
 
         inputQuery.addEquation( equation );
+        if ( isOutputConstraint )
+            inputQuery.addOutputConstraint( equation );
     }
 
     // Non-Linear(Piecewise and Nonlinear) Constraints
@@ -235,6 +242,7 @@ void QueryLoader::loadQuery( const String &fileName, IQuery &inputQuery )
         {
             inputQuery.addPiecewiseLinearConstraint(
                 new DisjunctionConstraint( serializeConstraint ) );
+            inputQuery.markQueryWithDisjunction();
         }
         else if ( coType == "sigmoid" )
         {

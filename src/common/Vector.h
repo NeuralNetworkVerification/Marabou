@@ -146,6 +146,17 @@ public:
         return false;
     }
 
+    int getIndex( const T &value ) const
+    {
+        for ( unsigned i = 0; i < size(); ++i )
+        {
+            if ( get( i ) == value )
+                return i;
+        }
+
+        return -1;
+    }
+
     void erase( const T &value )
     {
         for ( iterator it = _container.begin(); it != _container.end(); ++it )

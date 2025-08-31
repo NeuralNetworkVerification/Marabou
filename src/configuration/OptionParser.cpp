@@ -137,6 +137,13 @@ void OptionParser::initialize()
         boost::program_options::bool_switch( &( ( *_boolOptions )[Options::PRODUCE_PROOFS] ) )
             ->default_value( ( *_boolOptions )[Options::PRODUCE_PROOFS] ),
         "Produce proofs of UNSAT and check them" )
+#ifdef BUILD_CADICAL
+        ( "cdcl",
+          boost::program_options::bool_switch( &( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ) )
+              ->default_value( ( *_boolOptions )[Options::SOLVE_WITH_CDCL] ),
+          "Solve the input query with CDCL as the solving procedure" )
+#endif
+
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
         ;
@@ -210,11 +217,17 @@ void OptionParser::initialize()
             &( ( *_intOptions )[Options::CONSTRAINT_VIOLATION_THRESHOLD] ) )
             ->default_value( ( *_intOptions )[Options::CONSTRAINT_VIOLATION_THRESHOLD] ),
         "Max number of tries to repair a relu before splitting when the Reluplex procedure is "
-        "used." )( "preprocessor-bound-tolerance",
-                   boost::program_options::value<float>(
-                       &( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ) )
-                       ->default_value( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
-                   "epsilon for preprocessor bound tightening comparisons." )(
+        "used." )(
+        "vsids-decay-threshold",
+        boost::program_options::value<int>( &( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ) )
+            ->default_value( ( *_intOptions )[Options::VSIDS_DECAY_THRESHOLD] ),
+        "(CDCL) The number of clauses on which the literal to decide will be chosen according to "
+        "the VSIDS branching huristic." )(
+        "preprocessor-bound-tolerance",
+        boost::program_options::value<float>(
+            &( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ) )
+            ->default_value( ( *_floatOptions )[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
+        "epsilon for preprocessor bound tightening comparisons." )(
         "softmax-bound-type",
         boost::program_options::value<std::string>(
             &( *_stringOptions )[Options::SOFTMAX_BOUND_TYPE] )
@@ -241,7 +254,17 @@ void OptionParser::initialize()
             &( *_boolOptions )[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] )
             ->default_value(
                 ( *_boolOptions )[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] ),
-        "Do no merge consecutive weighted-sum layers." )
+        "Do no merge consecutive weighted-sum layers." )(
+        "nap-external-clause",
+        boost::program_options::value<std::string>(
+            &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH] )
+            ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH] ),
+        "Filename of external NAP clause" )(
+        "nap-external-clause2",
+        boost::program_options::value<std::string>(
+            &( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2] )
+            ->default_value( ( *_stringOptions )[Options::NAP_EXTERNAL_CLAUSE_FILE_PATH2] ),
+        "Filename of external NAP clause" )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
           boost::program_options::value<std::string>( &( ( *_stringOptions )[Options::LP_SOLVER] ) )

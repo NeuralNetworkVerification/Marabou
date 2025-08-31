@@ -85,7 +85,9 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( Query & /* inputQuery */ ){};
+    virtual void addAuxiliaryEquationsAfterPreprocessing( Query & /* inputQuery */ )
+    {
+    }
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -162,7 +164,8 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+    ITableau *_tableau;          // Pointer to tableau which simulates CBT until we switch to
+                                 // CDSearchTreeHandler
 
     /*
       Statistics collection

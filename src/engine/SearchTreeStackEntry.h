@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SmtStackEntry.h
+/*! \file SearchTreeStackEntry.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Guy Katz, Haoze Wu
@@ -13,8 +13,8 @@
 
 **/
 
-#ifndef __SmtStackEntry_h__
-#define __SmtStackEntry_h__
+#ifndef __SearchTreeStackEntry_h__
+#define __SearchTreeStackEntry_h__
 
 #include "EngineState.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -24,7 +24,7 @@
   the active split, the alternative splits (in case of backtrack),
   and also any implied splits that were discovered subsequently.
 */
-struct SmtStackEntry
+struct SearchTreeStackEntry
 {
 public:
     PiecewiseLinearCaseSplit _activeSplit;
@@ -33,14 +33,14 @@ public:
     EngineState *_engineState;
 
     /*
-      Create a copy of the SmtStackEntry on the stack and returns a pointer to
+      Create a copy of the SearchTreeStackEntry on the stack and returns a pointer to
       the copy.
       We do not copy the engineState for now, since where this method is called,
       we recreate the engineState by replaying the caseSplits.
     */
-    SmtStackEntry *duplicateSmtStackEntry()
+    SearchTreeStackEntry *duplicateSearchTreeStackEntry()
     {
-        SmtStackEntry *copy = new SmtStackEntry();
+        SearchTreeStackEntry *copy = new SearchTreeStackEntry();
 
         copy->_activeSplit = _activeSplit;
         copy->_impliedValidSplits = _impliedValidSplits;
@@ -51,7 +51,7 @@ public:
     }
 };
 
-#endif // __SmtStackEntry_h__
+#endif // __SearchTreeStackEntry_h__
 
 //
 // Local Variables:

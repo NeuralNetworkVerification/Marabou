@@ -69,9 +69,9 @@ public:
     InputQuery();
     ~InputQuery();
 
-    void setNumberOfVariables( unsigned numberOfVariables );
-    unsigned getNumberOfVariables() const;
-    unsigned getNewVariable();
+    void setNumberOfVariables( unsigned numberOfVariables ) override;
+    unsigned getNumberOfVariables() const override;
+    unsigned getNewVariable() override;
 
     /*
       The set*Bound methods will overwrite the currently stored bound of the variable.
@@ -82,65 +82,72 @@ public:
       variable if and only if the new bound is tighter. The methods return true if and
       if only the bound is tightened.
     */
-    void setLowerBound( unsigned variable, double bound );
-    void setUpperBound( unsigned variable, double bound );
-    bool tightenLowerBound( unsigned variable, double bound );
-    bool tightenUpperBound( unsigned variable, double bound );
+    void setLowerBound( unsigned variable, double bound ) override;
+    void setUpperBound( unsigned variable, double bound ) override;
+    bool tightenLowerBound( unsigned variable, double bound ) override;
+    bool tightenUpperBound( unsigned variable, double bound ) override;
 
-    double getLowerBound( unsigned variable ) const;
-    double getUpperBound( unsigned variable ) const;
+    double getLowerBound( unsigned variable ) const override;
+    double getUpperBound( unsigned variable ) const override;
 
     /*
       Note: currently there is no API call for removing equations, PLConstraints or NLConstraints,
       becaues CDList does not support removal.
     */
-    void addEquation( const Equation &equation );
-    unsigned getNumberOfEquations() const;
+    void addEquation( const Equation &equation ) override;
+    unsigned getNumberOfEquations() const override;
     ;
     void getEquations( List<Equation> &equations ) const;
 
-    void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
+    void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint ) override;
     void getPiecewiseLinearConstraints( List<PiecewiseLinearConstraint *> &constraints ) const;
-    void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling );
+    void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling ) override;
 
-    void addNonlinearConstraint( NonlinearConstraint *constraint );
-    void getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const;
+    void addNonlinearConstraint( NonlinearConstraint *constraint ) override;
+    void getNonlinearConstraints( Vector<NonlinearConstraint *> &constraints ) const override;
 
     /*
       Methods for handling input and output variables
     */
-    void markInputVariable( unsigned variable, unsigned inputIndex );
-    void markOutputVariable( unsigned variable, unsigned outputIndex );
-    unsigned inputVariableByIndex( unsigned index ) const;
-    unsigned outputVariableByIndex( unsigned index ) const;
-    unsigned getNumInputVariables() const;
-    unsigned getNumOutputVariables() const;
+    void markInputVariable( unsigned variable, unsigned inputIndex ) override;
+    void markOutputVariable( unsigned variable, unsigned outputIndex ) override;
+    void unmarkOutputVariables() override;
+    unsigned inputVariableByIndex( unsigned index ) const override;
+    unsigned outputVariableByIndex( unsigned index ) const override;
+    unsigned getNumInputVariables() const override;
+    unsigned getNumOutputVariables() const override;
     void getInputVariables( List<unsigned> &inputVariables ) const;
     void getOutputVariables( List<unsigned> &outputVariables ) const;
-    List<unsigned> getInputVariables() const;
-    List<unsigned> getOutputVariables() const;
+    List<unsigned> getInputVariables() const override;
+    List<unsigned> getOutputVariables() const override;
+
+    void addOutputConstraint( const Equation &equation ) override;
+    const List<Equation> &getOutputConstraints() const override;
+
+    bool isQueryWithDisjunction() const override;
+    void markQueryWithDisjunction() override;
 
     /*
       Methods for setting and getting the solution.
     */
-    void setSolutionValue( unsigned variable, double value );
-    double getSolutionValue( unsigned variable ) const;
+    void setSolutionValue( unsigned variable, double value ) override;
+    double getSolutionValue( unsigned variable ) const override;
 
     /*
       Store a correct possible solution
     */
-    void storeDebuggingSolution( unsigned variable, double value );
+    void storeDebuggingSolution( unsigned variable, double value ) override;
 
     /*
       Serializes the query to a file which can then be loaded using QueryLoader.
     */
-    void saveQuery( const String &fileName );
+    void saveQuery( const String &fileName ) override;
     void saveQueryAsSmtLib( const String &filename ) const;
 
     /*
       Generate a non-context-dependent version of the Query
     */
-    Query *generateQuery() const;
+    Query *generateQuery() const override;
 
     void dump() const;
 
@@ -187,6 +194,7 @@ private:
     IndexVariableMap _inputIndexToVariable;
     VariableIndexMap _variableToOutputIndex;
     IndexVariableMap _outputIndexToVariable;
+    List<Equation> _outputConstraints;
 
     /*
       Stores the satisfying assignment.
@@ -198,6 +206,13 @@ private:
     */
     VariableValueMap _debuggingSolution;
 
+    /*
+     * true if the query contains a disjunction constraint, used to check if it is possible to
+     * convert this verification query into a reachability query.
+     * TODO: remove this after adding support for converting a query with disjunction constraints
+     *       into a reachability query
+     */
+    bool _isQueryWithDisjunction;
     /*
       Free any stored pl constraints.
     */

@@ -85,9 +85,9 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         String queryId = subQuery->_queryId;
         unsigned depth = subQuery->_depth;
         auto split = std::move( subQuery->_split );
-        std::unique_ptr<SmtState> smtState = nullptr;
-        if ( restoreTreeStates && subQuery->_smtState )
-            smtState = std::move( subQuery->_smtState );
+        std::unique_ptr<SearchTreeState> searchTreeState = nullptr;
+        if ( restoreTreeStates && subQuery->_searchTreeState )
+            searchTreeState = std::move( subQuery->_searchTreeState );
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
         // Reset the engine state
@@ -102,9 +102,9 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         _engine->applySnCSplit( *split, queryId );
 
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery
-        if ( restoreTreeStates && smtState )
-            fullSolveNeeded = _engine->restoreSmtState( *smtState );
-        IEngine::ExitCode result = IEngine::NOT_DONE;
+        if ( restoreTreeStates && searchTreeState )
+            fullSolveNeeded = _engine->restoreSearchTreeState( *searchTreeState );
+        ExitCode result = ExitCode::NOT_DONE;
         if ( fullSolveNeeded )
         {
             _engine->solve( timeoutInSeconds );
@@ -113,13 +113,13 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         else
         {
             // UNSAT is proven when replaying stack-entries
-            result = IEngine::UNSAT;
+            result = ExitCode::UNSAT;
         }
 
         if ( _verbosity > 0 )
             printProgress( queryId, result );
         // Switch on the result
-        if ( result == IEngine::UNSAT )
+        if ( result == ExitCode::UNSAT )
         {
             // If UNSAT, continue to solve
             *_numUnsolvedSubQueries -= 1;
@@ -127,7 +127,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 *_shouldQuitSolving = true;
             delete subQuery;
         }
-        else if ( result == IEngine::TIMEOUT )
+        else if ( result == ExitCode::TIMEOUT )
         {
             // If TIMEOUT, split the current input region and add the
             // new subQueries to the current queue
@@ -136,14 +136,15 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                                         ? 0
                                         : (unsigned)timeoutInSeconds * _timeoutFactor );
             unsigned numNewSubQueries = pow( 2, _onlineDivides );
-            std::vector<std::unique_ptr<SmtState>> newSmtStates;
+            std::vector<std::unique_ptr<SearchTreeState>> newSearchTreeStates;
             if ( restoreTreeStates )
             {
-                // create |numNewSubQueries| copies of the current SmtState
+                // create |numNewSubQueries| copies of the current SearchTreeState
                 for ( unsigned i = 0; i < numNewSubQueries; ++i )
                 {
-                    newSmtStates.push_back( std::unique_ptr<SmtState>( new SmtState() ) );
-                    _engine->storeSmtState( *( newSmtStates[i] ) );
+                    newSearchTreeStates.push_back(
+                        std::unique_ptr<SearchTreeState>( new SearchTreeState() ) );
+                    _engine->storeSearchTreeState( *( newSearchTreeStates[i] ) );
                 }
             }
 
@@ -153,10 +154,10 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             unsigned i = 0;
             for ( auto &newSubQuery : subQueries )
             {
-                // Store the SmtCore state
+                // Store the SearchTreeHandler state
                 if ( restoreTreeStates )
                 {
-                    newSubQuery->_smtState = std::move( newSmtStates[i++] );
+                    newSubQuery->_searchTreeState = std::move( newSearchTreeStates[i++] );
                 }
 
                 if ( !_workload->push( std::move( newSubQuery ) ) )
@@ -169,7 +170,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             *_numUnsolvedSubQueries -= 1;
             delete subQuery;
         }
-        else if ( result == IEngine::QUIT_REQUESTED )
+        else if ( result == ExitCode::QUIT_REQUESTED )
         {
             // If engine was asked to quit, quit
             std::cout << "Quit requested by manager!" << std::endl;
@@ -182,13 +183,13 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             // TIMEOUT. This way, the DnCManager will kill all the DnCWorkers.
 
             *_shouldQuitSolving = true;
-            if ( result == IEngine::SAT )
+            if ( result == ExitCode::SAT )
             {
                 // case SAT
                 *_numUnsolvedSubQueries -= 1;
                 delete subQuery;
             }
-            else if ( result == IEngine::ERROR )
+            else if ( result == ExitCode::ERROR )
             {
                 // case ERROR
                 std::cout << "Error!" << std::endl;
@@ -210,7 +211,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
     }
 }
 
-void DnCWorker::printProgress( String queryId, IEngine::ExitCode result ) const
+void DnCWorker::printProgress( String queryId, ExitCode result ) const
 {
     printf( "Worker %d: Query %s %s, %d tasks remaining\n",
             _threadId,
@@ -219,19 +220,19 @@ void DnCWorker::printProgress( String queryId, IEngine::ExitCode result ) const
             _numUnsolvedSubQueries->load() );
 }
 
-String DnCWorker::exitCodeToString( IEngine::ExitCode result )
+String DnCWorker::exitCodeToString( ExitCode result )
 {
     switch ( result )
     {
-    case IEngine::UNSAT:
+    case ExitCode::UNSAT:
         return "unsat";
-    case IEngine::SAT:
+    case ExitCode::SAT:
         return "sat";
-    case IEngine::ERROR:
+    case ExitCode::ERROR:
         return "ERROR";
-    case IEngine::TIMEOUT:
+    case ExitCode::TIMEOUT:
         return "TIMEOUT";
-    case IEngine::QUIT_REQUESTED:
+    case ExitCode::QUIT_REQUESTED:
         return "QUIT_REQUESTED";
     default:
         ASSERT( false );

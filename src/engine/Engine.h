@@ -22,11 +22,15 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "BoundManager.h"
+#ifdef BUILD_CADICAL
+#include "CdclCore.h"
+#endif
 #include "Checker.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
 #include "GlobalConfiguration.h"
+#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "IQuery.h"
@@ -39,8 +43,8 @@
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "Query.h"
+#include "SearchTreeHandler.h"
 #include "SignalHandler.h"
-#include "SmtCore.h"
 #include "SmtLibWriter.h"
 #include "SnCDivideStrategy.h"
 #include "SparseUnsortedList.h"
@@ -80,10 +84,15 @@ public:
     ~Engine();
 
     /*
+      Required initialization before starting the solving loop.
+     */
+    void initializeSolver() override;
+
+    /*
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( double timeoutInSeconds = 0 );
+    bool solve( double timeoutInSeconds = 0 ) override;
 
     /*
       Minimize the cost function with respect to the current set of linear constraints.
@@ -104,7 +113,7 @@ public:
     bool processInputQuery( const IQuery &inputQuery, bool preprocess );
 
     Query prepareSnCQuery();
-    void exportQueryWithError( String errorMessage );
+    void exportQueryWithError( String errorMessage ) override;
 
     /*
       Methods for calculating bounds.
@@ -125,9 +134,9 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    void storeState( EngineState &state, TableauStateStorageLevel level ) const;
-    void restoreState( const EngineState &state );
-    void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
+    void storeState( EngineState &state, TableauStateStorageLevel level ) const override;
+    void restoreState( const EngineState &state ) override;
+    void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) override;
 
     /*
       Preprocessor access.
@@ -138,18 +147,13 @@ public:
     /*
       A request from the user to terminate
     */
-    void quitSignal();
+    void quitSignal() override;
 
     const Statistics *getStatistics() const;
 
     Query *getQuery();
 
     Query buildQueryFromCurrentState() const;
-
-    /*
-      Get the exit code
-    */
-    Engine::ExitCode getExitCode() const;
 
     /*
       Get the quitRequested flag
@@ -159,24 +163,29 @@ public:
     /*
       Get the list of input variables
     */
-    List<unsigned> getInputVariables() const;
+    List<unsigned> getInputVariables() const override;
 
     /*
       Add equations and tightenings from a split.
     */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
+    void applySplit( const PiecewiseLinearCaseSplit &split ) override;
+
+    /*
+      Apply tightenings implied from phase fixing of the given piecewise linear constraint;
+     */
+    void applyPlcPhaseFixingTightenings( PiecewiseLinearConstraint &constraint ) override;
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
-    void postContextPopHook();
-    void preContextPushHook();
+    void postContextPopHook() override;
+    void preContextPushHook() override;
 
     /*
       Reset the state of the engine, before solving a new query
       (as part of DnC mode).
     */
-    void reset();
+    void reset() override;
 
     /*
       Reset the statistics object
@@ -194,41 +203,40 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      Apply the stack to the newly created SearchTreeHandler, returns false if UNSAT is
       found in this process.
     */
-    bool restoreSmtState( SmtState &smtState );
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState ) override;
 
     /*
-      Store the current stack of the smtCore into smtState
+      Store the current stack of the searchTreeHandler into searchTreeState
     */
-    void storeSmtState( SmtState &smtState );
+    void storeSearchTreeState( SearchTreeState &searchTreeState ) override;
 
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy ) override;
 
     /*
       Call-back from QueryDividers
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy ) override;
 
     /*
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
-    void resetSmtCore();
-    void resetExitCode();
+    void resetSearchTreeHandler();
     void resetBoundTighteners();
 
     /*
        Register initial split when in SnC mode
      */
-    void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
+    void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId ) override;
 
-    bool inSnCMode() const;
+    bool inSnCMode() const override;
 
     /*
        Apply bound tightenings stored in the bound manager.
@@ -239,71 +247,169 @@ public:
       Apply all bound tightenings (row and matrix-based) in
       the queue.
     */
-    void applyAllBoundTightenings();
+    void applyAllBoundTightenings() override;
 
     /*
       Apply all valid case splits proposed by the constraints.
       Return true if a valid case split has been applied.
     */
-    bool applyAllValidConstraintCaseSplits();
+    bool applyAllValidConstraintCaseSplits() override;
 
     void setRandomSeed( unsigned seed );
 
     /*
       Returns true iff the engine is in proof production mode
     */
-    bool shouldProduceProofs() const;
-
-    /*
-      Update the ground bounds
-    */
-    void updateGroundUpperBound( unsigned var, double value );
-    void updateGroundLowerBound( unsigned var, double value );
+    bool shouldProduceProofs() const override;
 
     /*
       Return all ground bounds as a vector
     */
-    double getGroundBound( unsigned var, bool isUpper ) const;
+    double getGroundBound( unsigned var, bool isUpper ) const override;
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    getGroundBoundEntry( unsigned var, bool isUpper ) const override;
+
 
     /*
       Get the current pointer of the UNSAT certificate
     */
-    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const;
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const override;
 
     /*
      Set the current pointer of the UNSAT certificate
     */
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode *node );
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode *node ) override;
 
     /*
       Get the pointer to the root of the UNSAT certificate
     */
-    const UnsatCertificateNode *getUNSATCertificateRoot() const;
+    const UnsatCertificateNode *getUNSATCertificateRoot() const override;
 
     /*
       Certify the UNSAT certificate
     */
-    bool certifyUNSATCertificate();
+    bool certifyUNSATCertificate() override;
 
     /*
       Get the boundExplainer
     */
-    const BoundExplainer *getBoundExplainer() const;
+    const BoundExplainer *getBoundExplainer() const override;
 
     /*
       Set the boundExplainer
     */
-    void setBoundExplainerContent( BoundExplainer *boundExplainer );
+    void setBoundExplainerContent( BoundExplainer *boundExplainer ) override;
 
     /*
       Propagate bound tightenings stored in the BoundManager
     */
-    void propagateBoundManagerTightenings();
+    bool propagateBoundManagerTightenings() override;
+
+    /*
+      Returns true if the query should be solved using MILP
+     */
+    bool shouldSolveWithMILP() const override;
+
+    /*
+      Check whether a timeout value has been provided and exceeded.
+    */
+    bool shouldExitDueToTimeout( double timeout ) const override;
+
+    /*
+      Returns the verbosity level.
+    */
+    unsigned getVerbosity() const override;
+
+    /*
+      Returns the exit code from the SearchTreeHandler
+    */
+    ExitCode getExitCode() const override;
+
+    /*
+      Sets the exit code inside the SmyCore
+    */
+    void setExitCode( ExitCode exitCode ) override;
+
+    /*
+      Return the piecewise linear constraints list of the engine
+    */
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override;
+
+    /*
+      Returns the type of the LP Solver in use.
+     */
+    LPSolverType getLpSolverType() const override;
+
+    /*
+      Returns a pointer to the internal NLR object.
+     */
+    NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const override;
+
+    /*
+     Solve the input query with a MILP solver (Gurobi)
+    */
+    bool solveWithMILPEncoding( double timeoutInSeconds ) override;
 
     /*
       Add lemma to the UNSAT Certificate
     */
-    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation );
+    void incNumOfLemmas() override;
+
+    /*
+     Add ground bound entry using a lemma
+    */
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) override;
+
+    /*
+     Should solve the input query with CDCL?
+    */
+    bool shouldSolveWithCDCL() const override;
+
+#ifdef BUILD_CADICAL
+    /*
+      Solve the input query with CDCL
+    */
+    bool solveWithCDCL( double timeoutInSeconds = 0 ) override;
+
+    /*
+      Creates a boolean-abstracted clause explaining a boolean-abstracted literal
+    */
+    Set<int> explainPhaseWithProof( const PiecewiseLinearConstraint *litConstraint ) override;
+
+    /*
+     Explain infeasibility of gurobi
+    */
+    void explainGurobiFailure() override;
+
+    /*
+      Returns true if the current assignment complies with the given clause (CDCL).
+     */
+    bool checkAssignmentComplianceWithClause( const Set<int> &clause ) const override;
+
+    /*
+     Configure the engine to allow solving with CDCL, used for testing only.
+    */
+    void configureForCDCL();
+
+    List<unsigned> getOutputVariables() const override;
+
+#endif
+
+    /*
+      Returns the symbolic bound tightening type in use.
+     */
+    SymbolicBoundTighteningType getSymbolicBoundTighteningType() const override;
+
+    /*
+      Returns the bound manager
+     */
+    const IBoundManager *getBoundManager() const override;
+
+    /*
+      Returns the input query.
+     */
+    std::shared_ptr<Query> getInputQuery() const override;
 
 private:
     enum BasisRestorationRequired {
@@ -326,8 +432,13 @@ private:
     void explicitBasisBoundTightening();
 
     /*
+      A code indicating how the run terminated.
+    */
+    ExitCode _exitCode;
+
+    /*
        Context is the central object that manages memory and back-tracking
-       across context-dependent components - SMTCore,
+       across context-dependent components - SearchTreeHandler,
        PiecewiseLinearConstraints, BoundManager, etc.
      */
     Context _context;
@@ -371,7 +482,7 @@ private:
     /*
       Preprocessed Query
     */
-    std::unique_ptr<Query> _preprocessedQuery;
+    std::shared_ptr<Query> _preprocessedQuery;
 
     /*
       Pivot selection strategies.
@@ -387,9 +498,16 @@ private:
     AutoRowBoundTightener _rowBoundTightener;
 
     /*
-      The SMT engine is in charge of case splitting.
+      The Search Tree engine is in charge of case splitting.
     */
-    SmtCore _smtCore;
+    SearchTreeHandler _searchTreeHandler;
+
+#ifdef BUILD_CADICAL
+    /*
+      The CDCL core in charge of communicating with the SAT solver.
+     */
+    CdclCore _cdclCore;
+#endif
 
     /*
       Number of pl constraints disabled by valid splits.
@@ -441,11 +559,6 @@ private:
       Indicates a user/DnCManager request to quit
     */
     std::atomic_bool _quitRequested;
-
-    /*
-      A code indicating how the run terminated.
-    */
-    ExitCode _exitCode;
 
     /*
       The number of visited states when we performed the previous
@@ -543,6 +656,24 @@ private:
     LinearExpression _heuristicCost;
 
     /*
+      Proof Production data structures
+    */
+    bool _produceUNSATProofs;
+    GroundBoundManager _groundBoundManager;
+    UnsatCertificateNode *_UNSATCertificate;
+    CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
+
+    /*
+      Solve the query with CDCL
+     */
+    bool _solveWithCDCL;
+
+    /*
+      Is this engine solver initialized
+     */
+    bool _initialized;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
       Return true only if the current assignment is optimal
@@ -592,7 +723,7 @@ private:
     void selectViolatedPlConstraint();
 
     /*
-      Report the violated PL constraint to the SMT engine.
+      Report the violated PL constraint to the Search Tree engine.
     */
     void reportPlViolation();
 
@@ -664,6 +795,7 @@ private:
       Restore the tableau from the original version.
     */
     void storeInitialEngineState();
+    void restoreInitialEngineState() override;
     void performPrecisionRestoration( PrecisionRestorer::RestoreBasics restoreBasics );
     bool basisRestorationNeeded() const;
 
@@ -695,11 +827,6 @@ private:
       randomly generated input values.
     */
     void performSimulation();
-
-    /*
-      Check whether a timeout value has been provided and exceeded.
-    */
-    bool shouldExitDueToTimeout( double timeout ) const;
 
     /*
       Evaluate the network on legal inputs; obtain the assignment
@@ -773,11 +900,6 @@ private:
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
 
     /*
-      Solve the input query with a MILP solver (Gurobi)
-    */
-    bool solveWithMILPEncoding( double timeoutInSeconds );
-
-    /*
       Perform SoI-based stochastic local search
     */
     bool performDeepSoILocalSearch();
@@ -817,30 +939,21 @@ private:
     /*
       Get Context reference
     */
-    Context &getContext()
+    Context &getContext() override
     {
         return _context;
     }
 
     /*
-       Checks whether the current bounds are consistent. Exposed for the SmtCore.
+       Checks whether the current bounds are consistent. Exposed for the SearchTreeHandler.
      */
-    bool consistentBounds() const;
+    bool consistentBounds() const override;
 
     /*
       DEBUG only
       Check that the variable bounds in Gurobi is up-to-date.
     */
     void checkGurobiBoundConsistency() const;
-
-    /*
-      Proof Production data structes
-     */
-
-    bool _produceUNSATProofs;
-    BoundManager _groundBoundManager;
-    UnsatCertificateNode *_UNSATCertificate;
-    CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
 
     /*
       Returns true iff there is a variable with bounds that can explain infeasibility of the tableau
@@ -850,7 +963,7 @@ private:
     /*
       Returns the value of a variable bound, as explained by the BoundExplainer
     */
-    double explainBound( unsigned var, bool isUpper ) const;
+    double explainBound( unsigned var, bool isUpper ) const override;
 
     /*
      Returns true iff both bounds are epsilon close to their explained bounds
@@ -865,7 +978,7 @@ private:
     /*
       Finds the variable causing failure and updates its bounds explanations
     */
-    void explainSimplexFailure();
+    void explainSimplexFailure() override;
 
     /*
       Sanity check for ground bounds, returns true iff all bounds are at least as tight as their
@@ -904,7 +1017,35 @@ private:
     /*
       Writes the details of a contradiction to the UNSAT certificate node
     */
-    void writeContradictionToCertificate( unsigned infeasibleVar ) const;
+    void writeContradictionToCertificate( const Vector<double> &contradiction,
+                                          unsigned infeasibleVar ) const;
+
+
+    void assertEngineBoundsForSplit( const PiecewiseLinearCaseSplit &split ) override;
+
+    /*
+    Analyse dependencies of an explanation vector, resulting in a list of necessary ground bounds
+   */
+    Set<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>
+    analyseExplanationDependencies( const SparseUnsortedList &explanation,
+                                    unsigned id,
+                                    int explainedVar,
+                                    bool isUpper,
+                                    double targetBound );
+#ifdef BUILD_CADICAL
+    /*
+     Creates a boolean-abstracted clause from an explanation
+    */
+    Set<int> clauseFromContradictionVector( const SparseUnsortedList &explanation,
+                                            unsigned id,
+                                            int explainedVar,
+                                            bool isUpper,
+                                            double targetBound ) override;
+
+    void removeLiteralFromPropagations( int literal ) override;
+
+
+#endif
 };
 
 #endif // __Engine_h__

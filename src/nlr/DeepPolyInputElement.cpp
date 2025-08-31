@@ -35,7 +35,7 @@ DeepPolyInputElement::~DeepPolyInputElement()
 
 void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *> & )
 {
-    log( "Executing..." );
+    //    log( "Executing..." );
     if ( hasPredecessor() )
     {
         throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
@@ -44,7 +44,7 @@ void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *> & )
     freeMemoryIfNeeded();
     allocateMemory();
     getConcreteBounds();
-    log( "Executing - done" );
+    //    log( "Executing - done" );
 }
 
 void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor( const double *,

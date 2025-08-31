@@ -61,7 +61,7 @@ public:
             TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
             TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
-            TS_ASSERT_EQUALS( engine.getExitCode(), IEngine::SAT );
+            TS_ASSERT_EQUALS( engine.getExitCode(), ExitCode::SAT );
             TS_ASSERT_THROWS_NOTHING( engine.extractSolution( inputQuery ) );
             inputQuery.push();
         }
@@ -71,7 +71,7 @@ public:
             Engine engine;
             inputQuery.setLowerBound( 2, 2 );
             TS_ASSERT( !engine.processInputQuery( inputQuery ) );
-            TS_ASSERT_EQUALS( engine.getExitCode(), IEngine::UNSAT );
+            TS_ASSERT_EQUALS( engine.getExitCode(), ExitCode::UNSAT );
             inputQuery.pop();
         }
 
@@ -82,7 +82,7 @@ public:
             TS_ASSERT( engine.processInputQuery( inputQuery ) );
             TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
-            TS_ASSERT_EQUALS( engine.getExitCode(), IEngine::SAT );
+            TS_ASSERT_EQUALS( engine.getExitCode(), ExitCode::SAT );
             TS_ASSERT_THROWS_NOTHING( engine.extractSolution( inputQuery ) );
             inputQuery.push();
         }

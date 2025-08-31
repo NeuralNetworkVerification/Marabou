@@ -14,6 +14,9 @@
 
 #include "AbsoluteValueConstraint.h"
 
+#ifdef BUILD_CADICAL
+#include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -21,6 +24,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
+#include "SearchTreeHandler.h"
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
@@ -146,13 +150,15 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
                 double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) );
                 // If phase is not fixed, both bounds are stored and checker should check the max of
                 // the two
-                if ( proofs && !phaseFixed() )
+                if ( proofs && !phaseFixed() ) // TODO modify explain phase
                     _boundManager->addLemmaExplanationAndTightenBound( _f,
                                                                        fUpperBound,
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this,
+                                                                       false,
+                                                                       fUpperBound );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -226,13 +232,15 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
                 double fUpperBound = FloatUtils::max( bound, -getLowerBound( _b ) );
                 // If phase is not fixed, both bonds are stored and checker should check the max of
                 // the two
-                if ( proofs && !phaseFixed() )
+                if ( proofs && !phaseFixed() ) // TODO modify explain phase
                     _boundManager->addLemmaExplanationAndTightenBound( _f,
                                                                        fUpperBound,
                                                                        Tightening::UB,
                                                                        { variable, variable },
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this,
+                                                                       false,
+                                                                       fUpperBound );
                 else if ( proofs && phaseFixed() )
                 {
                     std::shared_ptr<TableauRow> tighteningRow =
@@ -406,7 +414,7 @@ AbsoluteValueConstraint::getSmartFixes( ITableau * /* tableau */ ) const
 
 List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 {
-    ASSERT( _phaseStatus == PhaseStatus::PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() == PhaseStatus::PHASE_NOT_FIXED );
 
     List<PiecewiseLinearCaseSplit> splits;
     splits.append( getNegativeSplit() );
@@ -476,14 +484,14 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const
 
 bool AbsoluteValueConstraint::phaseFixed() const
 {
-    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
+    return getPhaseStatus() != PhaseStatus::PHASE_NOT_FIXED;
 }
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+    ASSERT( getPhaseStatus() != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == ABS_PHASE_POSITIVE )
+    if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
@@ -512,8 +520,8 @@ void AbsoluteValueConstraint::dump( String &output ) const
                  _f,
                  _b,
                  _constraintActive ? "Yes" : "No",
-                 _phaseStatus,
-                 phaseToString( _phaseStatus ).ascii() );
+                 getPhaseStatus(),
+                 phaseToString( getPhaseStatus() ).ascii() );
 
     output +=
         Stringf( "b in [%s, %s], ",
@@ -826,7 +834,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b }, Tightening::LB, getType() );
+                _posAux, 0, Tightening::UB, { _b }, Tightening::LB, *this, true, 0 );
         return;
     }
 
@@ -836,7 +844,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
             _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b }, Tightening::UB, getType() );
+                _negAux, 0, Tightening::UB, { _b }, Tightening::UB, *this, true, 0 );
         return;
     }
 
@@ -849,8 +857,14 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanationAndTightenBound(
-                _negAux, 0, Tightening::UB, { _b, _f }, Tightening::UB, getType() );
+            _boundManager->addLemmaExplanationAndTightenBound( _negAux,
+                                                               0,
+                                                               Tightening::UB,
+                                                               { _b, _f },
+                                                               Tightening::UB,
+                                                               *this,
+                                                               true,
+                                                               getUpperBound( _b ) );
         return;
     }
 
@@ -860,8 +874,14 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanationAndTightenBound(
-                _posAux, 0, Tightening::UB, { _b, _f }, Tightening::LB, getType() );
+            _boundManager->addLemmaExplanationAndTightenBound( _posAux,
+                                                               0,
+                                                               Tightening::UB,
+                                                               { _b, _f },
+                                                               Tightening::LB,
+                                                               *this,
+                                                               true,
+                                                               -getLowerBound( _b ) );
         return;
     }
 
@@ -871,6 +891,9 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _posAux, 0, Tightening::UB, { _posAux }, Tightening::UB, *this, true, 0 );
             return;
         }
 
@@ -878,9 +901,10 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         if ( existsLowerBound( _posAux ) && FloatUtils::isPositive( getLowerBound( _posAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_NEGATIVE );
+            // TODO modify code to accept phase fixings without a lemma
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, getType() );
+                    _negAux, 0, Tightening::UB, { _posAux }, Tightening::LB, *this, true, 0 );
             return;
         }
 
@@ -888,6 +912,9 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         if ( existsUpperBound( _negAux ) && FloatUtils::isZero( getUpperBound( _negAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_NEGATIVE );
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _negAux, 0, Tightening::UB, { _negAux }, Tightening::UB, *this, true, 0 );
             return;
         }
 
@@ -895,12 +922,18 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         if ( existsLowerBound( _negAux ) && FloatUtils::isPositive( getLowerBound( _negAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
+            // TODO modify code to accept phase fixings without a lemma
             if ( proofs )
                 _boundManager->addLemmaExplanationAndTightenBound(
-                    _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, getType() );
+                    _posAux, 0, Tightening::UB, { _negAux }, Tightening::LB, *this, true, 0 );
             return;
         }
     }
+
+#ifdef BUILD_CADICAL
+    if ( !_cdclVars.empty() && phaseFixed() && isActive() )
+        _cdclCore->addLiteralToPropagate( propagatePhaseAsLit() );
+#endif
 }
 
 String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
@@ -978,3 +1011,79 @@ void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned
         ASSERT( _tableauAuxVars.front() == tableauAuxVar );
     }
 }
+
+#ifdef BUILD_CADICAL
+void AbsoluteValueConstraint::booleanAbstraction(
+    Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx = cadicalVarToPlc.size();
+    _cdclVars.append( idx );
+    cadicalVarToPlc.insert( idx, this );
+}
+
+int AbsoluteValueConstraint::propagatePhaseAsLit() const
+{
+    ASSERT( _cdclVars.size() == 1 )
+    if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
+        return _cdclVars.back();
+    else if ( getPhaseStatus() == ABS_PHASE_NEGATIVE )
+        return -_cdclVars.back();
+    else
+        return 0;
+}
+
+void AbsoluteValueConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) );
+
+    setActiveConstraint( false );
+
+    if ( lit > 0 )
+        setPhaseStatus( ABS_PHASE_POSITIVE );
+    else
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
+}
+
+int AbsoluteValueConstraint::getLiteralForDecision() const
+{
+    ASSERT( getPhaseStatus() == PhaseStatus::PHASE_NOT_FIXED );
+
+    return -(int)_cdclVars.front();
+}
+
+bool AbsoluteValueConstraint::isBoundFixingPhase( unsigned int var,
+                                                  double bound,
+                                                  Tightening::BoundType boundType ) const
+{
+    if ( getPhaseStatus() == ABS_PHASE_POSITIVE )
+    {
+        if ( var == _b && boundType == Tightening::LB && bound >= 0 )
+            return true;
+        if ( var == _f && boundType == Tightening::LB && bound > -getLowerBound( _b ) )
+            return true;
+        if ( _auxVarsInUse )
+        {
+            if ( var == _posAux && boundType == Tightening::UB && FloatUtils::isZero( bound ) )
+                return true;
+            if ( var == _negAux && boundType == Tightening::LB && FloatUtils::isPositive( bound ) )
+                return true;
+        }
+    }
+    else if ( getPhaseStatus() == ABS_PHASE_NEGATIVE )
+    {
+        if ( var == _b && boundType == Tightening::UB && bound <= 0 )
+            return true;
+        if ( var == _f && boundType == Tightening::LB && bound > getUpperBound( _b ) )
+            return true;
+        if ( _auxVarsInUse )
+        {
+            if ( var == _posAux && boundType == Tightening::LB && FloatUtils::isPositive( bound ) )
+                return true;
+            if ( var == _negAux && boundType == Tightening::UB && FloatUtils::isZero( bound ) )
+                return true;
+        }
+    }
+
+    return false;
+}
+#endif

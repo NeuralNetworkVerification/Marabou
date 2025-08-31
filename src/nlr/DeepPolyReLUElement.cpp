@@ -33,7 +33,7 @@ DeepPolyReLUElement::~DeepPolyReLUElement()
 
 void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
-    log( "Executing..." );
+    //    log( "Executing..." );
     ASSERT( hasPredecessor() );
     allocateMemory();
 
@@ -106,15 +106,15 @@ void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *> &deepP
                 _lb[i] = 0;
             }
         }
-        log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
-                      i,
-                      _symbolicLb[i],
-                      _symbolicLowerBias[i],
-                      _symbolicUb[i],
-                      _symbolicUpperBias[i] ) );
-        log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
+        //        log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
+        //                      i,
+        //                      _symbolicLb[i],
+        //                      _symbolicLowerBias[i],
+        //                      _symbolicUb[i],
+        //                      _symbolicUpperBias[i] ) );
+        //        log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
-    log( "Executing - done" );
+    //    log( "Executing - done" );
 }
 
 void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor( const double *symbolicLb,
@@ -126,8 +126,8 @@ void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor( const double *symbo
                                                              unsigned targetLayerSize,
                                                              DeepPolyElement *predecessor )
 {
-    log( Stringf( "Computing symbolic bounds with respect to layer %u...",
-                  predecessor->getLayerIndex() ) );
+    //    log( Stringf( "Computing symbolic bounds with respect to layer %u...",
+    //                  predecessor->getLayerIndex() ) );
 
     /*
       We have the symbolic bound of the target layer in terms of the

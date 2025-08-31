@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SmtCore.h
+/*! \file SearchTreeHandler.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Parth Shah
@@ -13,22 +13,27 @@
 
 **/
 
-#ifndef __SmtCore_h__
-#define __SmtCore_h__
+#ifndef __SearchTreeHandler_h__
+#define __SearchTreeHandler_h__
 
 #include "DivideStrategy.h"
+#include "HashMap.h"
 #include "PLConstraintScoreTracker.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SmtStackEntry.h"
-#include "SmtState.h"
+#include "SearchTreeStackEntry.h"
+#include "SearchTreeState.h"
 #include "Stack.h"
 #include "Statistics.h"
+#include "TimeoutException.h"
+#include "context/cdhashmap.h"
+#include "context/cdhashset.h"
 #include "context/context.h"
 
 #include <memory>
 
-#define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
+#define SEARCH_TREE_LOG( x, ... )                                                                  \
+    LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "SearchTreeHandler: %s\n", x )
 
 class EngineState;
 class IEngine;
@@ -36,11 +41,11 @@ class String;
 
 using CVC4::context::Context;
 
-class SmtCore
+class SearchTreeHandler
 {
 public:
-    SmtCore( IEngine *engine );
-    ~SmtCore();
+    explicit SearchTreeHandler( IEngine *engine );
+    ~SearchTreeHandler();
 
     /*
       Clear the stack.
@@ -48,17 +53,18 @@ public:
     void freeMemory();
 
     /*
-      Reset the SmtCore
+      Reset the SearchTreeHandler
     */
     void reset();
 
     /*
       Initialize the score tracker with the given list of pl constraints.
     */
-    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints );
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints,
+                                         CdclCore *cdclCore = nullptr );
 
     /*
-      Inform the SMT core that a SoI phase pattern proposal is rejected.
+      Inform the Search Tree handler that a SoI phase pattern proposal is rejected.
     */
     void reportRejectedPhasePatternProposal();
 
@@ -67,7 +73,7 @@ public:
     */
     inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint, double score )
     {
-        ASSERT( _scoreTracker != nullptr );
+        ASSERT( _scoreTracker != nullptr )
         _scoreTracker->updateScore( constraint, score );
     }
 
@@ -80,7 +86,7 @@ public:
     }
 
     /*
-      Inform the SMT core that a PL constraint is violated.
+      Inform the Search Tree handler that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
@@ -97,7 +103,7 @@ public:
     void resetSplitConditions();
 
     /*
-      Returns true iff the SMT core wants to perform a case split.
+      Returns true iff the Search Tree handler wants to perform a case split.
     */
     bool needToSplit() const;
 
@@ -123,30 +129,29 @@ public:
      */
     void pushContext();
 
-
     /*
       The current stack depth.
     */
     unsigned getStackDepth() const;
 
     /*
-      Let the smt core know of an implied valid case split that was discovered.
+      Let the search tree handler know of an implied valid case split that was discovered.
     */
     void recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
 
     /*
-      Return a list of all splits performed so far, both SMT-originating and valid ones,
+      Return a list of all splits performed so far, both Search Tree-originating and valid ones,
       in the correct order.
     */
     void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const;
 
     /*
-      Have the SMT core start reporting statistics.
+      Have the Search Tree handler start reporting statistics.
     */
     void setStatistics( Statistics *statistics );
 
     /*
-      Have the SMT core choose, among a set of violated PL constraints, which
+      Have the Search Tree handler choose, among a set of violated PL constraints, which
       constraint should be repaired (without splitting)
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing(
@@ -160,12 +165,12 @@ public:
     /*
       Replay a stackEntry
     */
-    void replaySmtStackEntry( SmtStackEntry *stackEntry );
+    void replaySearchTreeStackEntry( SearchTreeStackEntry *stackEntry );
 
     /*
-      Store the current state of the SmtCore into smtState
+      Store the current state of the SearchTreeHandler into searchTreeState
     */
-    void storeSmtState( SmtState &smtState );
+    void storeSearchTreeState( SearchTreeState &searchTreeState );
 
     /*
       Pick the piecewise linear constraint for splitting, returns true
@@ -179,6 +184,11 @@ public:
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
+
+    /*
+      Set the needToSplit flag with the given value;
+     */
+    void setNeedToSplit( bool value );
 
 private:
     /*
@@ -194,7 +204,7 @@ private:
     /*
       The case-split stack.
     */
-    List<SmtStackEntry *> _stack;
+    List<SearchTreeStackEntry *> _stack;
 
     /*
       The engine.
@@ -205,6 +215,7 @@ private:
       Context for synchronizing the search.
      */
     Context &_context;
+
     /*
       Do we need to perform a split and on which constraint.
     */
@@ -247,7 +258,7 @@ private:
     /*
       Heap to store the scores of each PLConstraint.
     */
-    std::unique_ptr<PLConstraintScoreTracker> _scoreTracker;
+    std::shared_ptr<PLConstraintScoreTracker> _scoreTracker;
 
     /*
       Number of times the phase pattern proposal has been rejected at the
@@ -256,7 +267,7 @@ private:
     unsigned _numRejectedPhasePatternProposal;
 };
 
-#endif // __SmtCore_h__
+#endif // __SearchTreeHandler_h__
 
 //
 // Local Variables:

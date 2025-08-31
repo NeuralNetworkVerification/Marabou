@@ -896,6 +896,7 @@ public:
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
                 tightenings.clear();
+                sign.setPhaseStatus( PHASE_NOT_FIXED );
 
                 sign.notifyUpperBound( f, -0.5 );
                 boundManager.getTightenings( tightenings );

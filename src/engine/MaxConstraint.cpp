@@ -14,6 +14,9 @@
 
 #include "MaxConstraint.h"
 
+#ifdef BUILD_CADICAL
+#include "CdclCore.h"
+#endif
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -40,6 +43,8 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _haveFeasibleEliminatedPhases( false )
     , _maxValueOfEliminatedPhases( FloatUtils::negativeInfinity() )
+    , _elementsToCadicalVars()
+    , _cadicalVarsToElements()
 {
 }
 
@@ -186,8 +191,8 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                        : variableToPhase( *_elements.begin() ) ) );
 
     if ( isActive() && _boundManager )
     {
@@ -247,8 +252,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                        : variableToPhase( *_elements.begin() ) ) );
 
     // There is no need to recompute the max lower bound and max index here.
 
@@ -481,8 +486,8 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _elementToAux[newIndex] = auxVar;
         _auxToElement[auxVar] = newIndex;
 
-        if ( _phaseStatus == variableToPhase( oldIndex ) )
-            _phaseStatus = variableToPhase( newIndex );
+        if ( getPhaseStatus() == variableToPhase( oldIndex ) )
+            setPhaseStatus( variableToPhase( newIndex ) );
     }
     else
     {
@@ -533,8 +538,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                      : variableToPhase( *_elements.begin() ) );
 
     if ( _elements.size() == 0 )
         _obsolete = true;
@@ -739,7 +744,7 @@ void MaxConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrain
     _elementToTighteningRow[element] = nullptr;
 }
 
-void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) const
+void MaxConstraint::applyTightenings( const List<Tightening> &tightenings )
 {
     bool proofs = _boundManager && _boundManager->shouldProduceProofs();
 
@@ -781,7 +786,9 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
                                                                        Tightening::UB,
                                                                        getElements(),
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this,
+                                                                       false,
+                                                                       tightening._value );
                 else
                 {
                     ASSERT( _elements.exists( tightening._variable ) );
@@ -797,3 +804,45 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
         }
     }
 }
+
+#ifdef BUILD_CADICAL
+void MaxConstraint::booleanAbstraction(
+    Map<unsigned int, PiecewiseLinearConstraint *> &cadicalVarToPlc )
+{
+    unsigned int idx;
+    for ( auto &element : _elements )
+    {
+        idx = cadicalVarToPlc.size();
+        _cdclVars.append( idx );
+        cadicalVarToPlc.insert( idx, this );
+        _elementsToCadicalVars.insert( element, idx );
+        _cadicalVarsToElements.insert( idx, element );
+        _cdclCore->addLiteral( (int)idx );
+    }
+    _cdclCore->addLiteral( 0 );
+
+    // TODO add additional clauses
+}
+
+int MaxConstraint::propagatePhaseAsLit() const
+{
+    if ( phaseFixed() && !_elements.empty() )
+        return _elementsToCadicalVars.at( *_elements.begin() );
+    // If no elements exist, then constraint is constant and abstraction is irrelevant
+    // Assumption - phases are not eliminated in CDCL
+
+    return 0;
+}
+
+void MaxConstraint::propagateLitAsSplit( int lit )
+{
+    ASSERT( _cdclVars.exists( FloatUtils::abs( lit ) ) && lit > 0 );
+
+    setActiveConstraint( false );
+    PhaseStatus phaseToFix = variableToPhase( _cadicalVarsToElements.at( lit ) );
+
+    ASSERT( !phaseFixed() || getPhaseStatus() == phaseToFix );
+
+    setPhaseStatus( phaseToFix );
+}
+#endif

@@ -24,10 +24,12 @@ Statistics::Statistics()
     _unsignedAttributes[NUM_PL_CONSTRAINTS] = 0;
     _unsignedAttributes[NUM_ACTIVE_PL_CONSTRAINTS] = 0;
     _unsignedAttributes[NUM_PL_VALID_SPLITS] = 0;
-    _unsignedAttributes[NUM_PL_SMT_ORIGINATED_SPLITS] = 0;
+    _unsignedAttributes[NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS] = 0;
     _unsignedAttributes[NUM_PRECISION_RESTORATIONS] = 0;
     _unsignedAttributes[CURRENT_DECISION_LEVEL] = 0;
     _unsignedAttributes[MAX_DECISION_LEVEL] = 0;
+    _unsignedAttributes[NUM_DECISION_LEVELS] = 1;
+    _unsignedAttributes[SUM_DECISION_LEVELS] = 0;
     _unsignedAttributes[NUM_SPLITS] = 0;
     _unsignedAttributes[NUM_POPS] = 0;
     _unsignedAttributes[NUM_CONTEXT_PUSHES] = 0;
@@ -43,7 +45,14 @@ Statistics::Statistics()
     _unsignedAttributes[NUM_CERTIFIED_LEAVES] = 0;
     _unsignedAttributes[NUM_DELEGATED_LEAVES] = 0;
     _unsignedAttributes[NUM_LEMMAS] = 0;
+    _unsignedAttributes[NUM_LEMMAS_USED] = 0;
     _unsignedAttributes[CERTIFIED_UNSAT] = 0;
+    _unsignedAttributes[MAX_BACKJUMP] = 0;
+    _unsignedAttributes[NUM_BACKJUMPS] = 0;
+    _unsignedAttributes[SUM_BACKJUMPS] = 0;
+    _unsignedAttributes[NUM_SAT_SOLVER_DECISIONS] = 0;
+    _unsignedAttributes[NUM_MARABOU_DECISIONS] = 0;
+    _unsignedAttributes[NUM_RESTARTS] = 0;
 
     _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
     _longAttributes[NUM_SIMPLEX_STEPS] = 0;
@@ -82,7 +91,17 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_PRECISION_RESTORATION] = 0;
     _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
     _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
-    _longAttributes[TOTAL_TIME_SMT_CORE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_NOTIFY_ASSIGNMENT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_NOTIFY_BACKTRACK_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_CB_DECIDE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_CDCL_CORE_MAIN_LOOP_MICRO] = 0;
     _longAttributes[TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO] = 0;
     _longAttributes[NUM_PROPOSED_PHASE_PATTERN_UPDATE] = 0;
     _longAttributes[NUM_ACCEPTED_PHASE_PATTERN_UPDATE] = 0;
@@ -130,7 +149,8 @@ void Statistics::print()
     seconds = timeMainLoopMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tMain loop: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] Main loop: %llu milli (%02u:%02u:%02u)\n",
+            printPercents( timeMainLoopMicro, totalElapsed ),
             timeMainLoopMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -141,18 +161,33 @@ void Statistics::print()
     seconds = preprocessingTimeMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tPreprocessing time: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] Preprocessing time: %llu milli (%02u:%02u:%02u)\n",
+            printPercents( preprocessingTimeMicro, totalElapsed ),
             preprocessingTimeMicro / 1000,
             hours,
             minutes - ( hours * 60 ),
             seconds - ( minutes * 60 ) );
 
-    unsigned long long totalUnknown = totalElapsed - timeMainLoopMicro - preprocessingTimeMicro;
+    unsigned long long timeSearchTreeHandlerMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CALLBACKS_MICRO );
+    seconds = timeSearchTreeHandlerMicro / 1000000;
+    minutes = seconds / 60;
+    hours = minutes / 60;
+    printf( "\t\t[%.2lf%%] CDCL Core callbacks time: %llu milli (%02u:%02u:%02u)\n",
+            printPercents( timeSearchTreeHandlerMicro, totalElapsed ),
+            timeSearchTreeHandlerMicro / 1000,
+            hours,
+            minutes - ( hours * 60 ),
+            seconds - ( minutes * 60 ) );
+
+    unsigned long long totalUnknown =
+        totalElapsed - timeMainLoopMicro - preprocessingTimeMicro - timeSearchTreeHandlerMicro;
 
     seconds = totalUnknown / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
-    printf( "\t\tUnknown: %llu milli (%02u:%02u:%02u)\n",
+    printf( "\t\t[%.2lf%%] Unknown: %llu milli (%02u:%02u:%02u)\n",
+            printPercents( totalUnknown, totalElapsed ),
             totalUnknown / 1000,
             hours,
             minutes - ( hours * 60 ),
@@ -208,11 +243,16 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n",
             printPercents( totalTimeApplyingStoredTighteningsMicro, timeMainLoopMicro ),
             totalTimeApplyingStoredTighteningsMicro / 1000 );
-    unsigned long long totalTimeSmtCoreMicro =
-        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO );
-    printf( "\t\t[%.2lf%%] SMT core: %llu milli\n",
-            printPercents( totalTimeSmtCoreMicro, timeMainLoopMicro ),
-            totalTimeSmtCoreMicro / 1000 );
+    unsigned long long totalTimeSearchTreeHandlerMainLoopMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO );
+    printf( "\t\t[%.2lf%%] Search Tree Handler: %llu milli\n",
+            printPercents( totalTimeSearchTreeHandlerMainLoopMicro, timeMainLoopMicro ),
+            totalTimeSearchTreeHandlerMainLoopMicro / 1000 );
+    unsigned long long totalTimeCdclCoreMainLoopMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_MAIN_LOOP_MICRO );
+    printf( "\t\t[%.2lf%%] CDCL Core: %llu milli\n",
+            printPercents( totalTimeCdclCoreMainLoopMicro, timeMainLoopMicro ),
+            totalTimeCdclCoreMainLoopMicro / 1000 );
     unsigned long long totalTimePerformingSymbolicBoundTightening =
         getLongAttribute( Statistics::TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING );
     printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n",
@@ -234,12 +274,66 @@ void Statistics::print()
         totalTimePerformingValidCaseSplitsMicro + totalTimeHandlingStatisticsMicro +
         totalTimeExplicitBasisBoundTighteningMicro + totalTimeDegradationChecking +
         totalTimePrecisionRestoration + totalTimeConstraintMatrixBoundTighteningMicro +
-        totalTimeApplyingStoredTighteningsMicro + totalTimeSmtCoreMicro +
-        totalTimePerformingSymbolicBoundTightening;
+        totalTimeSearchTreeHandlerMainLoopMicro + totalTimeApplyingStoredTighteningsMicro +
+        totalTimeCdclCoreMainLoopMicro + totalTimePerformingSymbolicBoundTightening;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
             printPercents( timeMainLoopMicro - total, timeMainLoopMicro ),
             timeMainLoopMicro > total ? ( timeMainLoopMicro - total ) / 1000 : 0 );
+
+    printf( "\tBreakdown for CDCL Core callbacks:\n" );
+    unsigned long long timeNotifyAssignmentMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_NOTIFY_ASSIGNMENT_MICRO );
+    printf( "\t\t[%.2lf%%] notify_assignment: %llu milli\n",
+            printPercents( timeNotifyAssignmentMicro, timeSearchTreeHandlerMicro ),
+            timeNotifyAssignmentMicro / 1000 );
+    unsigned long long timeNotifyNewDecisionLevelMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_NOTIFY_NEW_DECISION_LEVEL_MICRO );
+    printf( "\t\t[%.2lf%%] notify_new_decision_level: %llu milli\n",
+            printPercents( timeNotifyNewDecisionLevelMicro, timeSearchTreeHandlerMicro ),
+            timeNotifyNewDecisionLevelMicro / 1000 );
+    unsigned long long timeNotifyBacktrackMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_NOTIFY_BACKTRACK_MICRO );
+    printf( "\t\t[%.2lf%%] notify_backtrack: %llu milli\n",
+            printPercents( timeNotifyBacktrackMicro, timeSearchTreeHandlerMicro ),
+            timeNotifyBacktrackMicro / 1000 );
+    unsigned long long timeNotifyFixedAssignmentMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_NOTIFY_FIXED_ASSIGNMENT_MICRO );
+    printf( "\t\t[%.2lf%%] notify_fixed_assignment: %llu milli\n",
+            printPercents( timeNotifyFixedAssignmentMicro, timeSearchTreeHandlerMicro ),
+            timeNotifyFixedAssignmentMicro / 1000 );
+    unsigned long long timeCbDecideMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_DECIDE_MICRO );
+    printf( "\t\t[%.2lf%%] cb_decide: %llu milli\n",
+            printPercents( timeCbDecideMicro, timeSearchTreeHandlerMicro ),
+            timeCbDecideMicro / 1000 );
+    unsigned long long timeCbPropagateMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_PROPAGATE_MICRO );
+    printf( "\t\t[%.2lf%%] cb_propagate: %llu milli\n",
+            printPercents( timeCbPropagateMicro, timeSearchTreeHandlerMicro ),
+            timeCbPropagateMicro / 1000 );
+    unsigned long long timeCbAddReasonClauseLitMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_ADD_REASON_CLAUSE_LIT_MICRO );
+    printf( "\t\t[%.2lf%%] cb_add_reason_clause_lit: %llu milli\n",
+            printPercents( timeCbAddReasonClauseLitMicro, timeSearchTreeHandlerMicro ),
+            timeCbAddReasonClauseLitMicro / 1000 );
+    unsigned long long timeCbAddExternalClauseLitMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_CDCL_CORE_CB_ADD_EXTERNAL_CLAUSE_LIT_MICRO );
+    printf( "\t\t[%.2lf%%] cb_add_external_clause_lit: %llu milli\n",
+            printPercents( timeCbAddExternalClauseLitMicro, timeSearchTreeHandlerMicro ),
+            timeCbAddExternalClauseLitMicro / 1000 );
+
+    unsigned long long totalCdclCoreCallbacks =
+        timeNotifyAssignmentMicro + timeNotifyNewDecisionLevelMicro + timeNotifyBacktrackMicro +
+        timeNotifyFixedAssignmentMicro + timeCbDecideMicro + timeCbPropagateMicro +
+        timeCbAddReasonClauseLitMicro + timeCbAddExternalClauseLitMicro;
+
+    printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
+            printPercents( timeSearchTreeHandlerMicro - totalCdclCoreCallbacks,
+                           timeSearchTreeHandlerMicro ),
+            timeSearchTreeHandlerMicro > totalCdclCoreCallbacks
+                ? ( timeSearchTreeHandlerMicro - totalCdclCoreCallbacks ) / 1000
+                : 0 );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
     printf( "\tNumber of preprocessor bound-tightening loop iterations: %u\n",
@@ -270,11 +364,11 @@ void Statistics::print()
         printAverage( timeConstraintFixingStepsMicro / 1000, numConstraintFixingSteps ) );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
-            "By SMT-originated splits: %u\n",
+            "By Search Tree-originated splits: %u\n",
             getUnsignedAttribute( Statistics::NUM_ACTIVE_PL_CONSTRAINTS ),
             getUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS ),
             getUnsignedAttribute( Statistics::NUM_PL_VALID_SPLITS ),
-            getUnsignedAttribute( Statistics::NUM_PL_SMT_ORIGINATED_SPLITS ) );
+            getUnsignedAttribute( Statistics::NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS ) );
     printf( "\tLast reported degradation: %.10lf. Max degradation so far: %.10lf. "
             "Restorations so far: %u\n",
             getDoubleAttribute( Statistics::CURRENT_DEGRADATION ),
@@ -314,7 +408,7 @@ void Statistics::print()
             getUnsignedAttribute( Statistics::CURRENT_TABLEAU_M ),
             getUnsignedAttribute( Statistics::CURRENT_TABLEAU_N ) );
 
-    printf( "\t--- SMT Core Statistics ---\n" );
+    printf( "\t--- Search Tree Handler Statistics ---\n" );
     printf(
         "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n",
         getUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL ),
@@ -428,6 +522,27 @@ void Statistics::print()
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
     printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
+    printf( "\tNumber of lemmas used in proof minimization: %u\n",
+            getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
+
+    printf( "\t--- CDCL Statistics ---\n" );
+    printf( "\tMaximal depth of the search tree: %u\n",
+            getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) );
+    printf( "\tAverage depth of the search tree: %.10lf\n",
+            getUnsignedAttribute( Statistics::SUM_DECISION_LEVELS ) /
+                (double)getUnsignedAttribute( Statistics::NUM_DECISION_LEVELS ) );
+    printf( "\tNumber of backjumps: %u\n", getUnsignedAttribute( Statistics::NUM_BACKJUMPS ) );
+    printf( "\tMaximal jump size across all backjumps: %u\n",
+            getUnsignedAttribute( Statistics::MAX_BACKJUMP ) );
+    printf( "\tAverage jump size across all backjumps: %.10lf\n",
+            getUnsignedAttribute( Statistics::SUM_BACKJUMPS ) /
+                (double)getUnsignedAttribute( Statistics::NUM_BACKJUMPS ) );
+    printf( "\tNumber of decisions performed by the SAT solver: %u\n",
+            getUnsignedAttribute( Statistics::NUM_SAT_SOLVER_DECISIONS ) );
+    printf( "\tNumber of decisions performed by Marabou: %u\n",
+            getUnsignedAttribute( Statistics::NUM_MARABOU_DECISIONS ) );
+    printf( "\tNumber of restarts of the SAT solver: %u\n",
+            getUnsignedAttribute( Statistics::NUM_RESTARTS ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
