@@ -213,8 +213,8 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
     {
         if ( !plcLemma )
             continue;
-        DEBUG( ASSERT( !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES ||
-                       plcLemma->getToCheck() ) );
+        DEBUG(
+            ASSERT( !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES || plcLemma->getToCheck() ) );
 
         PiecewiseLinearConstraint *matchedConstraint = NULL;
         Tightening::BoundType affectedVarBound = plcLemma->getAffectedVarBound();

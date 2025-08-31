@@ -31,7 +31,7 @@ public:
         , _lowerBounds( nullptr )
         , _upperBounds( nullptr )
         , _tightenedLower( nullptr )
-        , _tightenedUpper( nullptr ) {};
+        , _tightenedUpper( nullptr ){};
 
     ~MockBoundManager()
     {
