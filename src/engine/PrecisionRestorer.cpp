@@ -141,9 +141,10 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     {
         tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
         tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
-    }
 
-    engine.propagateBoundManagerTightenings();
+        engine.updateGroundUpperBound( i, groundUpperBoundsBackup[i] );
+        engine.updateGroundLowerBound( i, groundLowerBoundsBackup[i] );
+    }
 
     // Restore constraint status
     for ( const auto &pair : targetEngineState._plConstraintToState )
