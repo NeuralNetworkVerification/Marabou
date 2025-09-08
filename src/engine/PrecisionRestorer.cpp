@@ -134,16 +134,22 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         }
     }
 
-    if ( engine.shouldProduceProofs() )
-        engine.setBoundExplainerContent( &boundExplainerBackup );
-
     for ( unsigned i = 0; i < targetN; ++i )
     {
+        if ( engine.shouldProduceProofs() )
+        {
+            engine.updateGroundUpperBound( i, groundUpperBoundsBackup[i] );
+            engine.updateGroundLowerBound( i, groundLowerBoundsBackup[i] );
+        }
+
         tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
         tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
     }
 
-    engine.propagateBoundManagerTightenings();
+    if ( engine.shouldProduceProofs() )
+        engine.setBoundExplainerContent( &boundExplainerBackup );
+
+    tableau.updateVariablesToComplyWithBounds();
 
     // Restore constraint status
     for ( const auto &pair : targetEngineState._plConstraintToState )
