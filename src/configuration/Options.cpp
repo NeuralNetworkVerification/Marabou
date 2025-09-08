@@ -71,6 +71,7 @@ void Options::initializeDefaultValues()
     _intOptions[SEED] = 1;
     _intOptions[NUM_BLAS_THREADS] = 1;
     _intOptions[NUM_CONSTRAINTS_TO_REFINE_INC_LIN] = 30;
+    _intOptions[ATTACK_TIMEOUT] = 60;
 
     /*
       Float options
@@ -91,7 +92,7 @@ void Options::initializeDefaultValues()
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[SPLITTING_STRATEGY] = "auto";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "auto";
-    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "deeppoly";
+    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "alphacrown";
     _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "none";
     _stringOptions[QUERY_DUMP_FILE] = "";
     _stringOptions[IMPORT_ASSIGNMENT_FILE_PATH] = "assignment.txt";
@@ -189,10 +190,12 @@ SymbolicBoundTighteningType Options::getSymbolicBoundTighteningType() const
         return SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
     else if ( strategyString == "deeppoly" )
         return SymbolicBoundTighteningType::DEEP_POLY;
+    else if (strategyString == "alphacrown")
+        return SymbolicBoundTighteningType::ALPHA_CROWN;
     else if ( strategyString == "none" )
         return SymbolicBoundTighteningType::NONE;
     else
-        return SymbolicBoundTighteningType::DEEP_POLY;
+        return SymbolicBoundTighteningType::ALPHA_CROWN;
 }
 
 MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const

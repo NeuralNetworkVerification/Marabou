@@ -66,6 +66,8 @@ public:
 
         FEATURE_NOT_YET_SUPPORTED = 900,
 
+        TIMEOUT = 32,
+
         DEBUGGING_ERROR = 999,
     };
 

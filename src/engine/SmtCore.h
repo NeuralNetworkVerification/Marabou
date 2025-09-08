@@ -28,7 +28,7 @@
 
 #include <memory>
 
-#define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
+#define SMT_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
 
 class EngineState;
 class IEngine;

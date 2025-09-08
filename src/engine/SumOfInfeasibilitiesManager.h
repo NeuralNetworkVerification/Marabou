@@ -29,7 +29,7 @@
 #include "T/stdlib.h"
 #include "Vector.h"
 
-#define SOI_LOG( x, ... ) LOG( GlobalConfiguration::SOI_LOGGING, "SoIManager: %s\n", x )
+#define SOI_LOG( x, ... ) MARABOU_LOG( GlobalConfiguration::SOI_LOGGING, "SoIManager: %s\n", x )
 
 class SumOfInfeasibilitiesManager
 {
