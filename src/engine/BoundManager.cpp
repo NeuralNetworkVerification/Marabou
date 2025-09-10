@@ -417,7 +417,7 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        const List<unsigned> &causingVars,
                                                        Tightening::BoundType causingVarBound,
                                                        PiecewiseLinearConstraint &constraint,
-                                                       bool isPhaseFixing,
+                                                       bool /*isPhaseFixing*/,
                                                        double minTargetBound )
 {
     if ( !shouldProduceProofs() )
@@ -475,6 +475,10 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
 
 
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
+        affectedVarBound == Tightening::UB ? _engine->updateGroundUpperBound( var, value )
+                                           : _engine->updateGroundLowerBound( var, value );
+
+        PLCExpl->setToCheck();
 
         // Add ground bound entry to the GroundBoundManager
         resetExplanation( var, affectedVarBound );

@@ -3890,6 +3890,7 @@ void Engine::incNumOfLemmas()
 
     ASSERT( _UNSATCertificate && _UNSATCertificateCurrentPointer )
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
+    _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
 }
 
 const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints() const

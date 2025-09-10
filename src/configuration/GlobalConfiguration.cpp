@@ -119,8 +119,8 @@ const bool GlobalConfiguration::WRITE_JSON_PROOF = false;
 const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
 
-const bool GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES = true;
-const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = true;
+const bool GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES = false;
+const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = false;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;

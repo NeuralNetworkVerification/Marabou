@@ -76,7 +76,8 @@
 #include "context/cdlist.h"
 #include "context/context.h"
 
-#define CD_SEARCH_TREE_LOG( x, ... ) LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "CDSearchTreeHandler: %s\n", x )
+#define CD_SEARCH_TREE_LOG( x, ... )                                                               \
+    LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "CDSearchTreeHandler: %s\n", x )
 
 class EngineState;
 class Engine;
