@@ -822,7 +822,7 @@ private:
     /*
       Get Context reference
     */
-    Context &getContext()
+    Context &getContext() override
     {
         return _context;
     }
