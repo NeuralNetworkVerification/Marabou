@@ -32,10 +32,10 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
-class PLCLemma;
-class SmtState;
+class SearchTreeState;
 class String;
 class PiecewiseLinearConstraint;
+class PLCLemma;
 class UnsatCertificateNode;
 
 class IEngine
@@ -79,15 +79,15 @@ public:
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
-      Store the current stack of the smtCore into smtState
+      Store the current stack of the searchTreeHandler into searchTreeState
     */
-    virtual void storeSmtState( SmtState &smtState ) = 0;
+    virtual void storeSearchTreeState( SearchTreeState &searchTreeState ) = 0;
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      Apply the stack to the newly created SearchTreeHandler, returns false if UNSAT is
       found in this process.
     */
-    virtual bool restoreSmtState( SmtState &smtState ) = 0;
+    virtual bool restoreSearchTreeState( SearchTreeState &searchTreeState ) = 0;
 
     /*
       Solve the encoded query.
@@ -122,8 +122,8 @@ public:
     virtual double explainBound( unsigned var, bool isUpper ) const = 0;
 
     /*
-     * Update the ground bounds
-     */
+      Update the ground bounds
+      */
     virtual void updateGroundUpperBound( unsigned var, double value ) = 0;
     virtual void updateGroundLowerBound( unsigned var, double value ) = 0;
 
@@ -190,7 +190,9 @@ public:
     /*
       Add lemma to the UNSAT Certificate
     */
-    virtual void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) = 0;
+    virtual void incNumOfLemmas() = 0;
+
+    virtual const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const = 0;
 };
 
 #endif // __IEngine_h__

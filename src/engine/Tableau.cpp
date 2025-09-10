@@ -2538,7 +2538,28 @@ void Tableau::getColumnOfBasis( unsigned column, SparseUnsortedList *result ) co
 
 void Tableau::refreshBasisFactorization()
 {
-    _basisFactorization->obtainFreshBasis();
+    try
+    {
+        _basisFactorization->obtainFreshBasis();
+    }
+    catch ( const MalformedBasisException & )
+    {
+        ConstraintMatrixAnalyzer analyzer;
+        analyzer.analyze( (const SparseUnsortedList **)_sparseRowsOfA, _m, _n );
+        List<unsigned> independentColumns = analyzer.getIndependentColumns();
+
+        try
+        {
+            initializeTableau( independentColumns );
+        }
+        catch ( MalformedBasisException & )
+        {
+            TABLEAU_LOG( "refreshBasisFactorization failed - could not refactorize basis" );
+            throw MarabouError( MarabouError::FAILURE_TO_ADD_NEW_EQUATION );
+        }
+
+        computeCostFunction();
+    }
 }
 
 unsigned Tableau::getVariableAfterMerging( unsigned variable ) const

@@ -186,8 +186,8 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                        : variableToPhase( *_elements.begin() ) ) );
 
     if ( isActive() && _boundManager )
     {
@@ -247,8 +247,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                        : variableToPhase( *_elements.begin() ) ) );
 
     // There is no need to recompute the max lower bound and max index here.
 
@@ -481,8 +481,8 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _elementToAux[newIndex] = auxVar;
         _auxToElement[auxVar] = newIndex;
 
-        if ( _phaseStatus == variableToPhase( oldIndex ) )
-            _phaseStatus = variableToPhase( newIndex );
+        if ( getPhaseStatus() == variableToPhase( oldIndex ) )
+            setPhaseStatus( variableToPhase( newIndex ) );
     }
     else
     {
@@ -533,8 +533,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        setPhaseStatus( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
+                                                      : variableToPhase( *_elements.begin() ) );
 
     if ( _elements.size() == 0 )
         _obsolete = true;
@@ -739,7 +739,7 @@ void MaxConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrain
     _elementToTighteningRow[element] = nullptr;
 }
 
-void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) const
+void MaxConstraint::applyTightenings( const List<Tightening> &tightenings )
 {
     bool proofs = _boundManager && _boundManager->shouldProduceProofs();
 
@@ -781,7 +781,9 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
                                                                        Tightening::UB,
                                                                        getElements(),
                                                                        Tightening::UB,
-                                                                       getType() );
+                                                                       *this,
+                                                                       false,
+                                                                       tightening._value );
                 else
                 {
                     ASSERT( _elements.exists( tightening._variable ) );

@@ -37,6 +37,13 @@ public:
                                 unsigned numberOfVariables );
 
     /*
+      Given a tableau and a column vector, create a linear combination based on the vector
+    */
+    static void getExplanationRowCombination( const SparseUnsortedList &explanation,
+                                              Vector<double> &explanationRowCombination,
+                                              const SparseMatrix *initialTableau,
+                                              unsigned numberOfVariables );
+    /*
       Given a var, a tableau and a column vector, create a linear combination used to explain a
       bound
     */
@@ -48,6 +55,16 @@ public:
 
     static double computeCombinationUpperBound( const SparseUnsortedList &explanation,
                                                 const SparseMatrix *initialTableau,
+                                                const double *groundUpperBounds,
+                                                const double *groundLowerBounds,
+                                                unsigned numberOfVariables );
+
+    static double computeCombinationUpperBound( const Vector<double> &combination,
+                                                const double *groundUpperBounds,
+                                                const double *groundLowerBounds,
+                                                unsigned numberOfVariables );
+
+    static double computeCombinationLowerBound( const Vector<double> &combination,
                                                 const double *groundUpperBounds,
                                                 const double *groundLowerBounds,
                                                 unsigned numberOfVariables );

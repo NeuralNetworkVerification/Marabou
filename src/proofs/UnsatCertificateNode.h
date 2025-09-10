@@ -128,6 +128,11 @@ public:
     */
     bool isValidNonLeaf() const;
 
+    /*
+     Deletes all unused lemmas
+    */
+    void deleteUnusedLemmas();
+
 private:
     List<UnsatCertificateNode *> _children;
     UnsatCertificateNode *_parent;

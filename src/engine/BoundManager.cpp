@@ -17,7 +17,6 @@
 
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "InfeasibleQueryException.h"
 #include "MarabouError.h"
 #include "Tableau.h"
 #include "Tightening.h"
@@ -417,7 +416,9 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        Tightening::BoundType affectedVarBound,
                                                        const List<unsigned> &causingVars,
                                                        Tightening::BoundType causingVarBound,
-                                                       PiecewiseLinearFunctionType constraintType )
+                                                       PiecewiseLinearConstraint &constraint,
+                                                       bool /*isPhaseFixing*/,
+                                                       double minTargetBound )
 {
     if ( !shouldProduceProofs() )
         return false;
@@ -432,12 +433,13 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
 
     if ( tightened )
     {
-        if ( constraintType == RELU || constraintType == SIGN || constraintType == LEAKY_RELU )
+        if ( constraint.getType() == RELU || constraint.getType() == SIGN ||
+             constraint.getType() == LEAKY_RELU )
         {
             ASSERT( causingVars.size() == 1 );
             allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
         }
-        else if ( constraintType == ABSOLUTE_VALUE )
+        else if ( constraint.getType() == ABSOLUTE_VALUE )
         {
             if ( causingVars.size() == 1 )
                 allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
@@ -456,7 +458,7 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                 allExplanations.append( getExplanation( causingVars.back(), Tightening::LB ) );
             }
         }
-        else if ( constraintType == MAX )
+        else if ( constraint.getType() == MAX )
             for ( const auto &element : causingVars )
                 allExplanations.append( getExplanation( element, Tightening::UB ) );
         else
@@ -468,12 +470,22 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         causingVarBound,
                                                                         affectedVarBound,
                                                                         allExplanations,
-                                                                        constraintType );
-        _engine->addPLCLemma( PLCExpl );
+                                                                        constraint.getType(),
+                                                                        minTargetBound );
+
+
+        _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
         affectedVarBound == Tightening::UB ? _engine->updateGroundUpperBound( var, value )
                                            : _engine->updateGroundLowerBound( var, value );
+
+        PLCExpl->setToCheck();
+
+        // Add ground bound entry to the GroundBoundManager
         resetExplanation( var, affectedVarBound );
+
+        _engine->incNumOfLemmas();
     }
+
     return true;
 }
 

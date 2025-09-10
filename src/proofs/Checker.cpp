@@ -211,6 +211,12 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
     // NOTE, this will change as PLCLemma will
     for ( const auto &plcLemma : node->getPLCLemmas() )
     {
+        if ( !plcLemma )
+            continue;
+
+        DEBUG(
+            ASSERT( !GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES || plcLemma->getToCheck() ) );
+
         PiecewiseLinearConstraint *matchedConstraint = NULL;
         Tightening::BoundType affectedVarBound = plcLemma->getAffectedVarBound();
         double explainedBound = affectedVarBound == Tightening::UB ? FloatUtils::infinity()

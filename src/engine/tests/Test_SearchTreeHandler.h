@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_SmtCore.h
+/*! \file Test_SearchTreeHandler.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Duligur Ibeling, Derek Huang
@@ -11,7 +11,7 @@
  **
  ** [[ Add lengthier description here ]]
 
- **/
+**/
 
 #include "MockEngine.h"
 #include "MockErrno.h"
@@ -19,20 +19,20 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Query.h"
 #include "ReluConstraint.h"
-#include "SmtCore.h"
+#include "SearchTreeHandler.h"
 
 #include <cxxtest/TestSuite.h>
 #include <string.h>
 
-class MockForSmtCore
+class MockForSearchTreeHandler
 {
 public:
 };
 
-class SmtCoreTestSuite : public CxxTest::TestSuite
+class SearchTreeHandlerTestSuite : public CxxTest::TestSuite
 {
 public:
-    MockForSmtCore *mock;
+    MockForSearchTreeHandler *mock;
     MockEngine *engine;
 
     class MockConstraint : public PiecewiseLinearConstraint
@@ -180,7 +180,7 @@ public:
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForSmtCore );
+        TS_ASSERT( mock = new MockForSearchTreeHandler );
         TS_ASSERT( engine = new MockEngine );
     }
 
@@ -195,25 +195,25 @@ public:
         ReluConstraint constraint1( 1, 2 );
         ReluConstraint constraint2( 3, 4 );
 
-        SmtCore smtCore( engine );
+        SearchTreeHandler searchTreeHandler( engine );
 
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) - 1;
               ++i )
         {
-            smtCore.reportViolatedConstraint( &constraint1 );
-            TS_ASSERT( !smtCore.needToSplit() );
-            smtCore.reportViolatedConstraint( &constraint2 );
-            TS_ASSERT( !smtCore.needToSplit() );
+            searchTreeHandler.reportViolatedConstraint( &constraint1 );
+            TS_ASSERT( !searchTreeHandler.needToSplit() );
+            searchTreeHandler.reportViolatedConstraint( &constraint2 );
+            TS_ASSERT( !searchTreeHandler.needToSplit() );
         }
 
-        smtCore.reportViolatedConstraint( &constraint2 );
-        TS_ASSERT( smtCore.needToSplit() );
+        searchTreeHandler.reportViolatedConstraint( &constraint2 );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
     }
 
     void test_perform_split()
     {
-        SmtCore smtCore( engine );
+        SearchTreeHandler searchTreeHandler( engine );
 
         MockConstraint constraint;
 
@@ -247,18 +247,18 @@ public:
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
               ++i )
-            smtCore.reportViolatedConstraint( &constraint );
+            searchTreeHandler.reportViolatedConstraint( &constraint );
 
         engine->lastStoredState = NULL;
         engine->lastRestoredState = NULL;
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
+        TS_ASSERT_EQUALS( searchTreeHandler.getStackDepth(), 0U );
         TS_ASSERT( !constraint.setActiveWasCalled );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.performSplit() );
         TS_ASSERT( constraint.setActiveWasCalled );
-        TS_ASSERT( !smtCore.needToSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+        TS_ASSERT( !searchTreeHandler.needToSplit() );
+        TS_ASSERT_EQUALS( searchTreeHandler.getStackDepth(), 1U );
 
         // Check that Split1 was performed and tableau state was stored
         TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
@@ -280,8 +280,8 @@ public:
 
         // Pop Split1, check that the tableau was restored and that
         // a Split2 was performed
-        TS_ASSERT( smtCore.popSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+        TS_ASSERT( searchTreeHandler.popSplit() );
+        TS_ASSERT_EQUALS( searchTreeHandler.getStackDepth(), 1U );
 
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
         TS_ASSERT( !engine->lastStoredState );
@@ -304,8 +304,8 @@ public:
 
         // Pop Split2, check that the tableau was restored and that
         // a Split3 was performed
-        TS_ASSERT( smtCore.popSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+        TS_ASSERT( searchTreeHandler.popSplit() );
+        TS_ASSERT_EQUALS( searchTreeHandler.getStackDepth(), 1U );
 
         TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
         TS_ASSERT( !engine->lastStoredState );
@@ -324,14 +324,14 @@ public:
         engine->lastEquations.clear();
 
         // Final pop
-        TS_ASSERT( !smtCore.popSplit() );
+        TS_ASSERT( !searchTreeHandler.popSplit() );
         TS_ASSERT( !engine->lastRestoredState );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT_EQUALS( searchTreeHandler.getStackDepth(), 0U );
     }
 
     void test_perform_split__inactive_constraint()
     {
-        SmtCore smtCore( engine );
+        SearchTreeHandler searchTreeHandler( engine );
 
         MockConstraint constraint;
 
@@ -365,13 +365,13 @@ public:
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
               ++i )
-            smtCore.reportViolatedConstraint( &constraint );
+            searchTreeHandler.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = false;
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.performSplit() );
+        TS_ASSERT( !searchTreeHandler.needToSplit() );
 
         // Check that no split was performed
 
@@ -383,7 +383,7 @@ public:
 
     void test_all_splits_so_far()
     {
-        SmtCore smtCore( engine );
+        SearchTreeHandler searchTreeHandler( engine );
 
         MockConstraint constraint;
 
@@ -410,13 +410,13 @@ public:
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
               ++i )
-            smtCore.reportViolatedConstraint( &constraint );
+            searchTreeHandler.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = true;
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.performSplit() );
+        TS_ASSERT( !searchTreeHandler.needToSplit() );
 
         // Register a valid split
 
@@ -424,7 +424,7 @@ public:
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split3 ) );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.recordImpliedValidSplit( split3 ) );
 
         // Do another real split
 
@@ -445,17 +445,17 @@ public:
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
               ++i )
-            smtCore.reportViolatedConstraint( &constraint2 );
+            searchTreeHandler.reportViolatedConstraint( &constraint2 );
 
         constraint2.nextIsActive = true;
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.performSplit() );
+        TS_ASSERT( !searchTreeHandler.needToSplit() );
 
         // Check that everything is received in the correct order
         List<PiecewiseLinearCaseSplit> allSplitsSoFar;
-        TS_ASSERT_THROWS_NOTHING( smtCore.allSplitsSoFar( allSplitsSoFar ) );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.allSplitsSoFar( allSplitsSoFar ) );
 
         TS_ASSERT_EQUALS( allSplitsSoFar.size(), 3U );
 
@@ -469,7 +469,7 @@ public:
         TS_ASSERT_EQUALS( *it, split4 );
     }
 
-    void test_store_smt_state()
+    void test_store_search_tree_state()
     {
         // ReLU(x0, x1)
         // ReLU(x2, x3)
@@ -484,89 +484,89 @@ public:
         relu1.transformToUseAuxVariables( inputQuery );
         relu2.transformToUseAuxVariables( inputQuery );
 
-        SmtCore smtCore( engine );
+        SearchTreeHandler searchTreeHandler( engine );
 
         PiecewiseLinearCaseSplit split1;
         Tightening bound1( 1, 0.5, Tightening::LB );
         split1.storeBoundTightening( bound1 );
-        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split1 ) );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.recordImpliedValidSplit( split1 ) );
 
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
               ++i )
-            smtCore.reportViolatedConstraint( &relu1 );
+            searchTreeHandler.reportViolatedConstraint( &relu1 );
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.performSplit() );
+        TS_ASSERT( !searchTreeHandler.needToSplit() );
 
         PiecewiseLinearCaseSplit split2;
         Tightening bound2( 3, 2.3, Tightening::UB );
         split2.storeBoundTightening( bound2 );
-        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split2 ) );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.recordImpliedValidSplit( split2 ) );
 
         for ( unsigned i = 0;
               i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
               ++i )
-            smtCore.reportViolatedConstraint( &relu2 );
+            searchTreeHandler.reportViolatedConstraint( &relu2 );
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+        TS_ASSERT( searchTreeHandler.needToSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.performSplit() );
+        TS_ASSERT( !searchTreeHandler.needToSplit() );
 
-        SmtState smtState;
-        smtCore.storeSmtState( smtState );
-        TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 );
-        TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 );
+        SearchTreeState searchTreeState;
+        searchTreeHandler.storeSearchTreeState( searchTreeState );
+        TS_ASSERT( searchTreeState._impliedValidSplitsAtRoot.size() == 1 );
+        TS_ASSERT( *searchTreeState._impliedValidSplitsAtRoot.begin() == split1 );
 
-        TS_ASSERT( smtState._stack.size() == 2 );
+        TS_ASSERT( searchTreeState._stack.size() == 2 );
         // Examine the first stackEntry
-        SmtStackEntry *stackEntry = *( smtState._stack.begin() );
+        SearchTreeStackEntry *stackEntry = *( searchTreeState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
         TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) ==
                    *( ++relu1.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
         TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
         // Examine the second stackEntry
-        stackEntry = *( ++smtState._stack.begin() );
+        stackEntry = *( ++searchTreeState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) );
         TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) ==
                    *( ++relu2.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
 
-        clearSmtState( smtState );
+        clearSearchTreeState( searchTreeState );
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.popSplit() );
 
-        smtCore.storeSmtState( smtState );
-        TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 );
-        TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 );
+        searchTreeHandler.storeSearchTreeState( searchTreeState );
+        TS_ASSERT( searchTreeState._impliedValidSplitsAtRoot.size() == 1 );
+        TS_ASSERT( *searchTreeState._impliedValidSplitsAtRoot.begin() == split1 );
 
-        TS_ASSERT( smtState._stack.size() == 2 );
+        TS_ASSERT( searchTreeState._stack.size() == 2 );
         // Examine the first stackEntry
-        stackEntry = *( smtState._stack.begin() );
+        stackEntry = *( searchTreeState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
         TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) ==
                    *( ++relu1.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
         TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
         // Examine the second stackEntry
-        stackEntry = *( ++smtState._stack.begin() );
+        stackEntry = *( ++searchTreeState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( ++relu2.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_alternativeSplits.empty() );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
 
-        clearSmtState( smtState );
+        clearSearchTreeState( searchTreeState );
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
+        TS_ASSERT_THROWS_NOTHING( searchTreeHandler.popSplit() );
     }
 
-    void clearSmtState( SmtState &smtState )
+    void clearSearchTreeState( SearchTreeState &searchTreeState )
     {
-        for ( const auto &stackEntry : smtState._stack )
+        for ( const auto &stackEntry : searchTreeState._stack )
             delete stackEntry;
-        smtState._stack = List<SmtStackEntry *>();
-        smtState._impliedValidSplitsAtRoot = List<PiecewiseLinearCaseSplit>();
+        searchTreeState._stack = List<SearchTreeStackEntry *>();
+        searchTreeState._impliedValidSplitsAtRoot = List<PiecewiseLinearCaseSplit>();
     }
 
     void test_todo()

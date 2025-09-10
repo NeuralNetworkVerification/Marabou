@@ -22,6 +22,8 @@
 #include "PiecewiseLinearConstraint.h"
 #include "context/context.h"
 
+#include <cxxtest/TestSuite.h>
+
 class String;
 
 class MockEngine : public IEngine
@@ -93,6 +95,7 @@ public:
     }
 
     void postContextPopHook(){};
+
     void preContextPushHook(){};
 
     mutable EngineState *lastStoredState;
@@ -154,17 +157,17 @@ public:
     {
     }
 
-    mutable SmtState *lastRestoredSmtState;
-    bool restoreSmtState( SmtState &smtState )
+    mutable SearchTreeState *lastRestoredSearchTreeState;
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState )
     {
-        lastRestoredSmtState = &smtState;
+        lastRestoredSearchTreeState = &searchTreeState;
         return true;
     }
 
-    mutable SmtState *lastStoredSmtState;
-    void storeSmtState( SmtState &smtState )
+    mutable SearchTreeState *lastStoredSearchTreeState;
+    void storeSearchTreeState( SearchTreeState &searchTreeState )
     {
-        lastStoredSmtState = &smtState;
+        lastStoredSearchTreeState = &searchTreeState;
     }
 
     List<PiecewiseLinearConstraint *> _constraintsToSplit;
@@ -233,13 +236,9 @@ public:
         return 0.0;
     }
 
-    void updateGroundUpperBound( unsigned /* var */, double /* value */ )
-    {
-    }
+    void updateGroundUpperBound( unsigned /* var */, double /* value */ ){};
 
-    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ )
-    {
-    }
+    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ ){};
 
     double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
     {
@@ -251,9 +250,7 @@ public:
         return NULL;
     }
 
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ )
-    {
-    }
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ ){};
 
     const UnsatCertificateNode *getUNSATCertificateRoot() const
     {
@@ -265,18 +262,14 @@ public:
         return true;
     }
 
-    void explainSimplexFailure()
-    {
-    }
+    void explainSimplexFailure(){};
 
     const BoundExplainer *getBoundExplainer() const
     {
         return NULL;
     }
 
-    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )
-    {
-    }
+    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ ){};
 
     void propagateBoundManagerTightenings()
     {
@@ -287,9 +280,12 @@ public:
         return true;
     }
 
-    void addPLCLemma( std::shared_ptr<PLCLemma> & /*explanation*/ )
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const
     {
+        return NULL;
     }
+
+    void incNumOfLemmas(){};
 };
 
 #endif // __MockEngine_h__

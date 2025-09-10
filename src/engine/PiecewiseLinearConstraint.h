@@ -204,7 +204,7 @@ public:
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
       Transitioning from Valid to Implied with integration of
-      context-dependentSMTCore.
+      context-dependent SearchTreeHandler.
     */
     virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
@@ -363,6 +363,7 @@ public:
     {
         _tableau = tableau;
     }
+
     /*
       Method to set PhaseStatus of the constraint. Encapsulates both context
       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
@@ -509,7 +510,8 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+    ITableau *_tableau;           // Pointer to tableau which simulates CBT until we switch to
+                                  // CDSearchTreeHandler
 
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;

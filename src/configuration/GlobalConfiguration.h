@@ -139,7 +139,7 @@ public:
     static const unsigned INTERVAL_SPLITTING_THRESHOLD;
 
     // How often should we perform full bound tightening, on the entire contraints matrix A.
-    static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
+    static const unsigned BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY;
 
     // When the row bound tightener is asked to run until saturation, it can enter an infinite loop
     // due to tiny increments in bounds. This number limits the number of iterations it can perform.
@@ -263,6 +263,15 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
+    /* Analyze lemma dependencies when producing proofs
+     */
+    static const bool ANALYZE_PROOF_DEPENDENCIES;
+
+    /* Minimize the number of lemma dependencies when producing proofs
+     */
+    static const bool MINIMIZE_PROOF_DEPENDENCIES;
+
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns
@@ -277,7 +286,7 @@ public:
     static const bool DNC_MANAGER_LOGGING;
     static const bool ENGINE_LOGGING;
     static const bool TABLEAU_LOGGING;
-    static const bool SMT_CORE_LOGGING;
+    static const bool SEARCH_TREE_HANDLER_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
     static const bool PREPROCESSOR_LOGGING;

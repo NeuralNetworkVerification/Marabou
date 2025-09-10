@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file CDSmtCore.h
+/*! \file CDSearchTreeHandler.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, AleksandarZeljic, Haoze Wu, Parth Shah
@@ -9,8 +9,8 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** The CDSmtCore class implements a context-dependent SmtCore class.
- ** The CDSmtCore distinguishes between: **decisions** and **implications**.
+ ** The CDSearchTreeHandler class implements a context-dependent CDSearchTreeHandler class.
+ ** The CDSearchTreeHandler distinguishes between: **decisions** and **implications**.
  **
  ** Decision is a case of PiecewiseLinearConstraint asserted on the trail.
  ** A decision is a choice between multiple feasible cases of a
@@ -24,7 +24,7 @@
  ** by exhausting all other cases) performs an implication.
  **
  ** The overall search state is stored in a distributed way:
- ** - CDSmtCore::_trail is the current search state in a chronological order
+ ** - CDSearchTreeHandler::_trail is the current search state in a chronological order
  ** - PiecewiseLinearConstraints' infeasible cases enumerate all the explored
  ** states w.r.t to the chronological order on the _trail.
  **
@@ -34,7 +34,7 @@
  ** _trail and _decisions are both context dependent and will synchronize in
  ** unison with the _context object.
  **
- ** When a search state is found to be infeasible, CDSmtCore backtracks to the
+ ** When a search state is found to be infeasible, CDSearchTreeHandler backtracks to the
  ** last decision and continues the search.
  **
  ** PushDecision advances the decision level and context level.
@@ -63,8 +63,8 @@
  ** - Using BoundManager class to store bounds in a context-dependent manner
  **/
 
-#ifndef __CDSmtCore_h__
-#define __CDSmtCore_h__
+#ifndef __CDSearchTreeHandler_h__
+#define __CDSearchTreeHandler_h__
 
 #include "Options.h"
 #include "PLConstraintScoreTracker.h"
@@ -76,17 +76,18 @@
 #include "context/cdlist.h"
 #include "context/context.h"
 
-#define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "CDSmtCore: %s\n", x )
+#define CD_SEARCH_TREE_LOG( x, ... )                                                               \
+    LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "CDSearchTreeHandler: %s\n", x )
 
 class EngineState;
 class Engine;
 class String;
 
-class CDSmtCore
+class CDSearchTreeHandler
 {
 public:
-    CDSmtCore( IEngine *engine, CVC4::context::Context &context );
-    ~CDSmtCore();
+    CDSearchTreeHandler( IEngine *engine, CVC4::context::Context &context );
+    ~CDSearchTreeHandler();
 
     /*
       Clear the stack.
@@ -99,7 +100,7 @@ public:
     void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints );
 
     /*
-      Inform the SMT core that a SoI phase pattern proposal is rejected.
+      Inform the Search Tree Handler  that a SoI phase pattern proposal is rejected.
     */
     void reportRejectedPhasePatternProposal();
 
@@ -121,7 +122,7 @@ public:
     }
 
     /*
-      Inform the SMT core that a PL constraint is violated.
+      Inform the Search Tree Handler that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
@@ -137,7 +138,7 @@ public:
     void resetReportedViolations();
 
     /*
-      Returns true iff the SMT core wants to perform a case split.
+      Returns true iff the Search Tree Handler wants to perform a case split.
     */
     bool needToSplit() const;
 
@@ -147,7 +148,7 @@ public:
     void pushDecision( PiecewiseLinearConstraint *constraint, PhaseStatus decision );
 
     /*
-      Inform SmtCore of an implied (formerly valid) case split that was discovered.
+      Inform Search Tree Handler of an implied (formerly valid) case split that was discovered.
     */
     void pushImplication( PiecewiseLinearConstraint *constraint );
 
@@ -196,7 +197,7 @@ public:
     unsigned getDecisionLevel() const;
 
     /*
-      Return a list of all splits performed so far, both SMT-originating and
+      Return a list of all splits performed so far, both Search Tree Handler-originating and
       valid ones, in the correct order.
     */
     void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const;
@@ -218,12 +219,12 @@ public:
     };
 
     /*
-      Have the SMT core start reporting statistics.
+      Have the Search Tree Handler start reporting statistics.
     */
     void setStatistics( Statistics *statistics );
 
     /*
-      Have the SMT core choose, among a set of violated PL constraints, which
+      Have the Search Tree Handler choose, among a set of violated PL constraints, which
       constraint should be repaired (without splitting)
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing(
@@ -329,4 +330,4 @@ private:
     unsigned _numRejectedPhasePatternProposal;
 };
 
-#endif // __CDSmtCore_h__
+#endif // __CDSearchTreeHandler_h__

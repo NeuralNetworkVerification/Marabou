@@ -158,3 +158,11 @@ bool UnsatCertificateNode::isValidNonLeaf() const
 {
     return !_contradiction && !_children.empty();
 }
+
+void UnsatCertificateNode::deleteUnusedLemmas()
+{
+    if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
+        for ( auto &lemma : _PLCExplanations )
+            if ( lemma && !lemma->getToCheck() )
+                lemma = nullptr;
+}

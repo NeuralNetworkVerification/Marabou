@@ -31,12 +31,12 @@ public:
         NUM_PL_CONSTRAINTS,
         NUM_ACTIVE_PL_CONSTRAINTS,
         NUM_PL_VALID_SPLITS,
-        NUM_PL_SMT_ORIGINATED_SPLITS,
+        NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS,
 
         // Precision restoration
         NUM_PRECISION_RESTORATIONS,
 
-        // Current and max stack depth in the SMT core
+        // Current and max stack depth in the Search Tree Handler
         CURRENT_DECISION_LEVEL,
         MAX_DECISION_LEVEL,
 
@@ -71,6 +71,7 @@ public:
         NUM_CERTIFIED_LEAVES,
         NUM_DELEGATED_LEAVES,
         NUM_LEMMAS,
+        NUM_LEMMAS_USED,
 
         // 1 if returned UNSAT and proof was certified by proof checker, 0 otherwise.
         CERTIFIED_UNSAT,
@@ -188,8 +189,8 @@ public:
         // Total amount of time spent applying previously stored bound tightenings
         TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO,
 
-        // Total amount of time spent within the SMT core
-        TOTAL_TIME_SMT_CORE_MICRO,
+        // Total amount of time spent within the search tree core
+        TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO,
 
         // Total time heuristically updating the SoI phase pattern
         TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO,

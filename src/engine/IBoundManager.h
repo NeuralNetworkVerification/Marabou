@@ -27,7 +27,6 @@
 #define __IBoundManager_h__
 
 #include "List.h"
-#include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
 #include "Vector.h"
 
@@ -38,6 +37,7 @@ class SparseUnsortedList;
 class TableauRow;
 class ITableau;
 class IRowBoundTightener;
+class PiecewiseLinearConstraint;
 class IBoundManager
 {
 public:
@@ -127,13 +127,14 @@ public:
       Add a lemma to the UNSATCertificateNode object
       Return true iff adding the lemma was successful
     */
-    virtual bool
-    addLemmaExplanationAndTightenBound( unsigned var,
-                                        double value,
-                                        Tightening::BoundType affectedVarBound,
-                                        const List<unsigned> &causingVars,
-                                        Tightening::BoundType causingVarBound,
-                                        PiecewiseLinearFunctionType constraintType ) = 0;
+    virtual bool addLemmaExplanationAndTightenBound( unsigned var,
+                                                     double value,
+                                                     Tightening::BoundType affectedVarBound,
+                                                     const List<unsigned> &causingVars,
+                                                     Tightening::BoundType causingVarBound,
+                                                     PiecewiseLinearConstraint &constraint,
+                                                     bool isPhaseFixing = false,
+                                                     double minTargetBound = 0 ) = 0;
 
     /*
       Return the content of the object containing all explanations for variable bounds in the

@@ -301,7 +301,7 @@ private:
     /*
       Apply tightenings in the list, discovered by getEntailedTightenings
     */
-    void applyTightenings( const List<Tightening> &tightenings ) const;
+    void applyTightenings( const List<Tightening> &tightenings );
 };
 
 #endif // __MaxConstraint_h__

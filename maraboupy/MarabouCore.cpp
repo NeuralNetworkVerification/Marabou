@@ -833,8 +833,8 @@ PYBIND11_MODULE( MarabouCore, m )
         .value( "NUM_POPS", Statistics::StatisticsUnsignedAttribute::NUM_POPS )
         .value( "CURRENT_DECISION_LEVEL",
                 Statistics::StatisticsUnsignedAttribute::CURRENT_DECISION_LEVEL )
-        .value( "NUM_PL_SMT_ORIGINATED_SPLITS",
-                Statistics::StatisticsUnsignedAttribute::NUM_PL_SMT_ORIGINATED_SPLITS )
+        .value( "NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS",
+                Statistics::StatisticsUnsignedAttribute::NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS )
         .value( "NUM_VISITED_TREE_STATES",
                 Statistics::StatisticsUnsignedAttribute::NUM_VISITED_TREE_STATES )
         .value( "PP_NUM_TIGHTENING_ITERATIONS",
@@ -862,8 +862,8 @@ PYBIND11_MODULE( MarabouCore, m )
     py::enum_<Statistics::StatisticsLongAttribute>( m, "StatisticsLongAttribute" )
         .value( "NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS",
                 Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS )
-        .value( "TOTAL_TIME_SMT_CORE_MICRO",
-                Statistics::StatisticsLongAttribute::TOTAL_TIME_SMT_CORE_MICRO )
+        .value( "TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO",
+                Statistics::StatisticsLongAttribute::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO )
         .value( "TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO",
                 Statistics::StatisticsLongAttribute::TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO )
         .value( "PREPROCESSING_TIME_MICRO",
