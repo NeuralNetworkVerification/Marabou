@@ -15,7 +15,6 @@
 
 #ifndef __MockEngine_h__
 #define __MockEngine_h__
-#define __MockEngine_h__
 
 #include "IEngine.h"
 #include "List.h"
@@ -73,7 +72,7 @@ public:
     List<Bound> lastLowerBounds;
     List<Bound> lastUpperBounds;
     List<Equation> lastEquations;
-    void applySplit( const PiecewiseLinearCaseSplit &split ) override
+    void applySplit( const PiecewiseLinearCaseSplit &split )
     {
         List<Tightening> bounds = split.getBoundTightenings();
         auto equations = split.getEquations();
@@ -116,9 +115,8 @@ public:
     }
 
     unsigned _timeToSolve;
-    ExitCode _exitCode;
-
-    bool solve( double timeoutInSeconds ) override
+    IEngine::ExitCode _exitCode;
+    bool solve( double timeoutInSeconds )
     {
         if ( timeoutInSeconds >= _timeToSolve )
             _exitCode = IEngine::TIMEOUT;

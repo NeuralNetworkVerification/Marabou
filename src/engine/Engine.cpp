@@ -3037,19 +3037,19 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     {
         if ( allNonlinearConstraintsHold() )
         {
-            _exitCode = Engine::SAT;
+            _exitCode = IEngine::SAT;
             return true;
         }
         else
         {
-            _exitCode = Engine::UNKNOWN;
+            _exitCode = IEngine::UNKNOWN;
             return false;
         }
     }
     else if ( _gurobi->infeasible() )
-        _exitCode = Engine::UNSAT;
+        _exitCode = IEngine::UNSAT;
     else if ( _gurobi->timeout() )
-        _exitCode = Engine::TIMEOUT;
+        _exitCode = IEngine::TIMEOUT;
     else
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
     return false;

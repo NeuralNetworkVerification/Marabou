@@ -248,9 +248,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( Query & )
-    {
-    }
+    virtual void transformToUseAuxVariables( Query & ) {};
 
     void setStatistics( Statistics *statistics );
 
