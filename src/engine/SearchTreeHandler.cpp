@@ -23,7 +23,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Options.h"
-#include "PiecewiseLinearConstraint.h"
 #include "PseudoImpactTracker.h"
 #include "UnsatCertificateNode.h"
 

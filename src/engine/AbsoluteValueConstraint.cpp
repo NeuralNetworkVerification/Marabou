@@ -21,7 +21,6 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
-#include "SearchTreeHandler.h"
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )

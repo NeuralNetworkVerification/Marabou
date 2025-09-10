@@ -21,7 +21,6 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SearchTreeHandler.h"
 #include "context/context.h"
 
 #include <cxxtest/TestSuite.h>

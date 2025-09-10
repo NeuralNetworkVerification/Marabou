@@ -263,7 +263,7 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
-    /* Analyze the number of lemma dependencies when producing proofs
+    /* Analyze lemma dependencies when producing proofs
      */
     static const bool ANALYZE_PROOF_DEPENDENCIES;
 

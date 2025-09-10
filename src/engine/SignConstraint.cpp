@@ -23,7 +23,6 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Query.h"
-#include "SearchTreeHandler.h"
 #include "Statistics.h"
 
 #ifdef _WIN32
