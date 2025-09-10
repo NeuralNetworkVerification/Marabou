@@ -28,7 +28,6 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "Query.h"
-#include "SearchTreeHandler.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 #include "VariableOutOfBoundDuringOptimizationException.h"
@@ -85,6 +84,7 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
+    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -343,7 +343,6 @@ bool Engine::solve( double timeoutInSeconds )
                             ASSERT( _UNSATCertificateCurrentPointer );
                             ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
                         }
-
                         _exitCode = Engine::SAT;
                         return true;
                     }
@@ -961,9 +960,9 @@ bool Engine::calculateBounds( const IQuery &inputQuery )
         _statistics.setLongAttribute( Statistics::CALCULATE_BOUNDS_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
+        _exitCode = Engine::UNSAT;
         printf( "unsat\n" );
 
-        _exitCode = Engine::UNSAT;
         return false;
     }
 
@@ -3015,7 +3014,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     }
     catch ( const InfeasibleQueryException & )
     {
-        _exitCode = IEngine::UNSAT;
+        _exitCode = Engine::UNSAT;
         return false;
     }
 
@@ -3038,12 +3037,12 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     {
         if ( allNonlinearConstraintsHold() )
         {
-            _exitCode = IEngine::SAT;
+            _exitCode = Engine::SAT;
             return true;
         }
         else
         {
-            _exitCode = IEngine::UNKNOWN;
+            _exitCode = Engine::UNKNOWN;
             return false;
         }
     }

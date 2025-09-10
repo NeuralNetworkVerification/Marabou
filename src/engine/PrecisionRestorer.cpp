@@ -176,6 +176,12 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
             ASSERT( plc->isActive() == plcStatusBefore.get( plc ).second() );
         }
 
+        EngineState currentEngineState;
+        engine.storeState( currentEngineState, TableauStateStorageLevel::STORE_NONE );
+
+        ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
+                targetEngineState._numPlConstraintsDisabledByValidSplits );
+
         tableau.verifyInvariants();
     } );
 }

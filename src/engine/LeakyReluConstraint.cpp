@@ -15,17 +15,14 @@
 #include "LeakyReluConstraint.h"
 
 #include "Debug.h"
-#include "DivideStrategy.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
-#include "InfeasibleQueryException.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Query.h"
-#include "SearchTreeHandler.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 

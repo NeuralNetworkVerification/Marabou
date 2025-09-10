@@ -68,7 +68,6 @@ class BoundManager;
 class ITableau;
 class Query;
 class String;
-class SearchTreeHandler;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 

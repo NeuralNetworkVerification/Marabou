@@ -157,6 +157,7 @@ void PiecewiseLinearConstraint::initializeDuplicateCDOs( PiecewiseLinearConstrai
         ASSERT( clone->_cdInfeasibleCases != nullptr );
         clone->_cdInfeasibleCases = nullptr;
         clone->initializeCDInfeasibleCases();
+        // Does not copy contents
     }
 }
 

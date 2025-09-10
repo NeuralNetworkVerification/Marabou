@@ -13,7 +13,7 @@ macro(engine_add_unit_test name)
     set(USE_MOCK_COMMON FALSE)
     set(USE_MOCK_ENGINE FALSE)
     marabou_add_test(${ENGINE_TESTS_DIR}/Test_${name} engine USE_MOCK_COMMON
-            USE_MOCK_ENGINE "unit")
+       USE_MOCK_ENGINE "unit")
 endmacro()
 
 engine_add_unit_test(AbsoluteValueConstraint)
@@ -51,4 +51,4 @@ engine_add_unit_test(BaBsrSplitting)
 
 if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-endif ()
+endif()

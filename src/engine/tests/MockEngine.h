@@ -15,6 +15,7 @@
 
 #ifndef __MockEngine_h__
 #define __MockEngine_h__
+#define __MockEngine_h__
 
 #include "IEngine.h"
 #include "List.h"
@@ -95,27 +96,23 @@ public:
         }
     }
 
-    void postContextPopHook() override
-    {
-    }
+    void postContextPopHook(){};
 
-    void preContextPushHook() override
-    {
-    }
+    void preContextPushHook(){};
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const override
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
     {
         lastStoredState = &state;
     }
 
     const EngineState *lastRestoredState;
-    void restoreState( const EngineState &state ) override
+    void restoreState( const EngineState &state )
     {
         lastRestoredState = &state;
     }
 
-    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ ) override
+    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
     {
     }
 
@@ -125,8 +122,8 @@ public:
     bool solve( double timeoutInSeconds ) override
     {
         if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = ExitCode::TIMEOUT;
-        return _exitCode == ExitCode::SAT;
+            _exitCode = IEngine::TIMEOUT;
+        return _exitCode == IEngine::SAT;
     }
 
     void setTimeToSolve( unsigned timeToSolve )
@@ -154,7 +151,7 @@ public:
         _inputVariables = inputVariables;
     }
 
-    List<unsigned> getInputVariables() const override
+    List<unsigned> getInputVariables() const
     {
         return _inputVariables;
     }
@@ -164,14 +161,14 @@ public:
     }
 
     mutable SearchTreeState *lastRestoredSearchTreeState;
-    bool restoreSearchTreeState( SearchTreeState &searchTreeState ) override
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState )
     {
         lastRestoredSearchTreeState = &searchTreeState;
         return true;
     }
 
     mutable SearchTreeState *lastStoredSearchTreeState;
-    void storeSearchTreeState( SearchTreeState &searchTreeState ) override
+    void storeSearchTreeState( SearchTreeState &searchTreeState )
     {
         lastStoredSearchTreeState = &searchTreeState;
     }
@@ -182,7 +179,7 @@ public:
         _constraintsToSplit.append( constraint );
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ ) override
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -194,7 +191,7 @@ public:
             return NULL;
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ ) override
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -209,103 +206,89 @@ public:
     bool _snc;
     CVC4::context::Context _context;
 
-    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ ) override
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ )
     {
         _snc = true;
         _context.push();
     }
 
-    bool inSnCMode() const override
+    bool inSnCMode() const
     {
         return _snc;
     }
 
-    void applyAllBoundTightenings() override
-    {
-    }
+    void applyAllBoundTightenings(){};
 
-    bool applyAllValidConstraintCaseSplits() override
+    bool applyAllValidConstraintCaseSplits()
     {
         return false;
     };
 
-    CVC4::context::Context &getContext() override
+    CVC4::context::Context &getContext()
     {
         return _context;
     }
 
-    bool consistentBounds() const override
+    bool consistentBounds() const
     {
         return true;
     }
 
-    double explainBound( unsigned /* var */, bool /* isUpper */ ) const override
+    double explainBound( unsigned /* var */, bool /* isUpper */ ) const
     {
         return 0.0;
     }
 
-    void updateGroundUpperBound( unsigned /* var */, double /* value */ )
-    {
-    }
+    void updateGroundUpperBound( unsigned /* var */, double /* value */ ){};
 
-    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ )
-    {
-    }
+    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ ){};
 
-    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const override
+    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
     {
         return 0;
     }
 
-    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const override
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
     {
         return NULL;
     }
 
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ ) override
-    {
-    }
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ ){};
 
-    const UnsatCertificateNode *getUNSATCertificateRoot() const override
+    const UnsatCertificateNode *getUNSATCertificateRoot() const
     {
         return NULL;
     }
 
-    bool certifyUNSATCertificate() override
+    bool certifyUNSATCertificate()
     {
         return true;
     }
 
-    void explainSimplexFailure() override
-    {
-    }
+    void explainSimplexFailure(){};
 
-    const BoundExplainer *getBoundExplainer() const override
+    const BoundExplainer *getBoundExplainer() const
     {
         return NULL;
     }
 
-    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ ) override
-    {
-    }
+    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ ){};
 
     void propagateBoundManagerTightenings()
     {
     }
 
-    bool shouldProduceProofs() const override
+    bool shouldProduceProofs() const
     {
         return true;
     }
 
-    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const
     {
         return NULL;
     }
 
-    void incNumOfLemmas() override
-    {
-    }
+    void incNumOfLemmas(){};
 };
 
 #endif // __MockEngine_h__

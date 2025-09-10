@@ -16,18 +16,15 @@
 #include "SearchTreeHandler.h"
 
 #include "Debug.h"
-#include "Engine.h"
 #include "EngineState.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
-#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PseudoImpactTracker.h"
-#include "TimeUtils.h"
 #include "UnsatCertificateNode.h"
 
 SearchTreeHandler::SearchTreeHandler( IEngine *engine )

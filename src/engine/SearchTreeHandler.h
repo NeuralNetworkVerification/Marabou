@@ -70,7 +70,7 @@ public:
     */
     inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint, double score )
     {
-        ASSERT( _scoreTracker != nullptr )
+        ASSERT( _scoreTracker != nullptr );
         _scoreTracker->updateScore( constraint, score );
     }
 

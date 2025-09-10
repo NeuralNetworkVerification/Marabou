@@ -25,7 +25,6 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Query.h"
-#include "SearchTreeHandler.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -1145,7 +1144,6 @@ void ReluConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constrai
     if ( constraintAuxVar == _aux )
         _tableauAuxVars.append( tableauAuxVar );
 }
-
 
 //
 // Local Variables:

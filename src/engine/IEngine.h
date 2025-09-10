@@ -18,12 +18,9 @@
 
 #include "BoundExplainer.h"
 #include "DivideStrategy.h"
-#include "LPSolverType.h"
 #include "List.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
-#include "SymbolicBoundTighteningType.h"
-#include "TableauState.h"
 #include "TableauStateStorageLevel.h"
 #include "Vector.h"
 #include "context/context.h"
@@ -39,7 +36,6 @@ class SearchTreeState;
 class String;
 class PiecewiseLinearConstraint;
 class PLCLemma;
-class Query;
 class UnsatCertificateNode;
 
 class IEngine
