@@ -24,7 +24,7 @@
 #include <cxxtest/TestSuite.h>
 #include <string.h>
 
-    class MockForSearchTreeHandler
+class MockForSearchTreeHandler
 {
 public:
 };
@@ -176,7 +176,6 @@ public:
         void addTableauAuxVar( unsigned /*tableauAuxVar*/, unsigned /*constraintAuxVar*/ )
         {
         }
-
     };
 
     void setUp()

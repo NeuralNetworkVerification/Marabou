@@ -95,7 +95,9 @@ public:
         }
     }
 
-    void postContextPopHook() {};
+    void postContextPopHook() override
+    {
+    }
 
     void preContextPushHook() override
     {

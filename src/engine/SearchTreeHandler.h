@@ -34,7 +34,7 @@
 #define SEARCH_TREE_LOG( x, ... )                                                                  \
     LOG( GlobalConfiguration::SEARCH_TREE_HANDLER_LOGGING, "SearchTreeHandler: %s\n", x )
 
-    class EngineState;
+class EngineState;
 class IEngine;
 class String;
 

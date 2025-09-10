@@ -558,7 +558,7 @@ protected:
       The gurobi object for solving the LPs during the search.
     */
     GurobiWrapper *_gurobi;
-    
+
     CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
 
     /*

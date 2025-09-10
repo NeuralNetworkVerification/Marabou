@@ -30,19 +30,19 @@
 #include "TimeUtils.h"
 #include "UnsatCertificateNode.h"
 
-    SearchTreeHandler::SearchTreeHandler( IEngine *engine )
+SearchTreeHandler::SearchTreeHandler( IEngine *engine )
     : _statistics( NULL )
-, _engine( engine )
-, _context( _engine->getContext() )
-, _needToSplit( false )
-, _constraintForSplitting( NULL )
-, _stateId( 0 )
-, _constraintViolationThreshold(
-      Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
-, _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
-, _branchingHeuristic( Options::get()->getDivideStrategy() )
-, _scoreTracker( nullptr )
-, _numRejectedPhasePatternProposal( 0 )
+    , _engine( engine )
+    , _context( _engine->getContext() )
+    , _needToSplit( false )
+    , _constraintForSplitting( NULL )
+    , _stateId( 0 )
+    , _constraintViolationThreshold(
+          Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+    , _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
+    , _branchingHeuristic( Options::get()->getDivideStrategy() )
+    , _scoreTracker( nullptr )
+    , _numRejectedPhasePatternProposal( 0 )
 {
 }
 
