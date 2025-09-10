@@ -3086,8 +3086,6 @@ bool Engine::performDeepSoILocalSearch()
         return false;
     }
 
-    if ( _lpSolverType == LPSolverType::NATIVE )
-        _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
     minimizeHeuristicCost( initialPhasePattern );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
@@ -3139,11 +3137,7 @@ bool Engine::performDeepSoILocalSearch()
                     return true;
                 }
             }
-            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern -
-                                          costOfProposedPhasePattern ) ) // TODO: check this fix
-                                                                         // with Andrew, and
-                                                                         // maybe PR into main
-                                                                         // branch of Marabou
+            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) )
             {
                 // Corner case: the SoI is minimal but there are still some PL
                 // constraints (those not in the SoI) unsatisfied.
