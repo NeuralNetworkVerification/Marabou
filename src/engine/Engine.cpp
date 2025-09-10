@@ -2085,7 +2085,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                  FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
             {
                 _boundManager.resetExplanation( variable, Tightening::LB );
-                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
+                updateGroundLowerBound( variable, bound._value );
                 _boundManager.tightenLowerBound( variable, bound._value );
             }
             else if ( !_produceUNSATProofs )
@@ -2099,7 +2099,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                  FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {
                 _boundManager.resetExplanation( variable, Tightening::UB );
-                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
+                updateGroundUpperBound( variable, bound._value );
                 _boundManager.tightenUpperBound( variable, bound._value );
             }
             else if ( !_produceUNSATProofs )
@@ -3551,9 +3551,9 @@ bool Engine::checkGroundBounds() const
 
     for ( unsigned i = 0; i < _tableau->getN(); ++i )
     {
-        if ( FloatUtils::gt( _groundBoundManager.getGroundBound( i, Tightening::UB ),
+        if ( FloatUtils::gt( _groundBoundManager.getLowerBound( i ),
                              _boundManager.getLowerBound( i ) ) ||
-             FloatUtils::lt( _groundBoundManager.getGroundBound( i, Tightening::LB ),
+             FloatUtils::lt( _groundBoundManager.getUpperBound( i ),
                              _boundManager.getUpperBound( i ) ) )
             return false;
     }

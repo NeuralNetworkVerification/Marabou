@@ -30,7 +30,6 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _score( FloatUtils::negativeInfinity() )
     , _statistics( NULL )
     , _gurobi( NULL )
-    , _cdPhaseFixingEntry( nullptr )
     , _tableauAuxVars()
 {
 }
@@ -48,7 +47,6 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _score( FloatUtils::negativeInfinity() )
     , _statistics( NULL )
     , _gurobi( NULL )
-    , _cdPhaseFixingEntry( nullptr )
     , _tableauAuxVars()
 {
 }
@@ -83,7 +81,6 @@ void PiecewiseLinearConstraint::initializeCDOs( CVC4::context::Context *context 
     initializeCDActiveStatus();
     initializeCDPhaseStatus();
     initializeCDInfeasibleCases();
-    initializeCDPhaseFixingEntry();
 }
 
 void PiecewiseLinearConstraint::initializeCDInfeasibleCases()
@@ -107,14 +104,6 @@ void PiecewiseLinearConstraint::initializeCDPhaseStatus()
     _cdPhaseStatus = new ( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
 }
 
-void PiecewiseLinearConstraint::initializeCDPhaseFixingEntry()
-{
-    ASSERT( _context != nullptr );
-    ASSERT( _cdPhaseFixingEntry == nullptr );
-    _cdPhaseFixingEntry = new ( true )
-        CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>>( _context );
-}
-
 void PiecewiseLinearConstraint::cdoCleanup()
 {
     if ( _cdConstraintActive != nullptr )
@@ -131,11 +120,6 @@ void PiecewiseLinearConstraint::cdoCleanup()
         _cdInfeasibleCases->deleteSelf();
 
     _cdInfeasibleCases = nullptr;
-
-    if ( _cdPhaseFixingEntry != nullptr )
-        _cdPhaseFixingEntry->deleteSelf();
-
-    _cdPhaseFixingEntry = nullptr;
 
     _context = nullptr;
 }
@@ -173,11 +157,6 @@ void PiecewiseLinearConstraint::initializeDuplicateCDOs( PiecewiseLinearConstrai
         ASSERT( clone->_cdInfeasibleCases != nullptr );
         clone->_cdInfeasibleCases = nullptr;
         clone->initializeCDInfeasibleCases();
-        // Does not copy contents
-
-        ASSERT( clone->_cdPhaseFixingEntry != nullptr )
-        clone->_cdPhaseFixingEntry = nullptr;
-        clone->initializeCDPhaseFixingEntry();
     }
 }
 

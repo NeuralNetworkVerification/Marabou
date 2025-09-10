@@ -48,7 +48,6 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "FloatUtils.h"
-#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IBoundManager.h"
 #include "ITableau.h"
@@ -504,17 +503,6 @@ public:
         return _tableauAuxVars;
     }
 
-    inline std::shared_ptr<GroundBoundManager::GroundBoundEntry> getPhaseFixingEntry() const
-    {
-        return _cdPhaseFixingEntry->get();
-    }
-
-    inline void setPhaseFixingEntry(
-        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &groundBoundEntry )
-    {
-        _cdPhaseFixingEntry->set( groundBoundEntry );
-    }
-
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -559,15 +547,12 @@ protected:
     */
     GurobiWrapper *_gurobi;
 
-    CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
-
     /*
       Initialize CDOs.
     */
     void initializeCDActiveStatus();
     void initializeCDPhaseStatus();
     void initializeCDInfeasibleCases();
-    void initializeCDPhaseFixingEntry();
 
     /*
        Method provided to allow safe copying of the context-dependent members,

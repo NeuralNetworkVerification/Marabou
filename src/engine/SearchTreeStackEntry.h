@@ -24,7 +24,7 @@
   the active split, the alternative splits (in case of backtrack),
   and also any implied splits that were discovered subsequently.
 */
-struct SmtStackEntry
+struct SearchTreeStackEntry
 {
 public:
     PiecewiseLinearCaseSplit _activeSplit;

@@ -256,12 +256,6 @@ public:
     {
         return 0;
     }
-    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    getGroundBoundEntry( unsigned /*var*/, bool /*isUpper*/ ) const override
-    {
-        return nullptr;
-    }
-
 
     UnsatCertificateNode *getUNSATCertificateCurrentPointer() const override
     {
@@ -302,13 +296,6 @@ public:
     bool shouldProduceProofs() const override
     {
         return true;
-    }
-
-    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
-    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
-                             bool /*isPhaseFixing*/ ) override
-    {
-        return nullptr;
     }
 
     const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override

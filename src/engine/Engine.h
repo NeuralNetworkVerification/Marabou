@@ -27,7 +27,6 @@
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
 #include "GlobalConfiguration.h"
-#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "IQuery.h"
@@ -220,6 +219,7 @@ public:
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
+    void resetExitCode();
     void resetSearchTreeHandler();
     void resetBoundTighteners();
 
