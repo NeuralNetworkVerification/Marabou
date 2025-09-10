@@ -18,7 +18,7 @@
 
 #include "EngineState.h"
 
-class SmtCore;
+class SearchTreeHandler;
 
 class PrecisionRestorer
 {
@@ -33,7 +33,7 @@ public:
 
     void restorePrecision( IEngine &engine,
                            ITableau &tableau,
-                           SmtCore &smtCore,
+                           SearchTreeHandler &searchTreeHandler,
                            RestoreBasics restoreBasics );
 
 private:

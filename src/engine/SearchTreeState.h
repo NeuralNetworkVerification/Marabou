@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SmtState.h
+/*! \file SearchTreeState.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Duligur Ibeling
@@ -11,17 +11,17 @@
  **
  ** [[ Add lengthier description here ]]
 
- **/
+**/
 
-#ifndef __SmtState_h__
-#define __SmtState_h__
+#ifndef __SearchTreeState_h__
+#define __SearchTreeState_h__
 
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SmtStackEntry.h"
+#include "SearchTreeStackEntry.h"
 
-class SmtState
+class SearchTreeState
 {
 public:
     /*
@@ -32,7 +32,7 @@ public:
     /*
       The stack.
     */
-    List<SmtStackEntry *> _stack;
+    List<SearchTreeStackEntry *> _stack;
 
     /*
       A unique ID allocated to every state that is stored, for
@@ -41,7 +41,7 @@ public:
     unsigned _stateId;
 };
 
-#endif // __SmtState_h__
+#endif // __SearchTreeState_h__
 
 //
 // Local Variables:

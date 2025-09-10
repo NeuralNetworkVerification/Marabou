@@ -27,6 +27,7 @@
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
 #include "GlobalConfiguration.h"
+#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "IQuery.h"
@@ -39,8 +40,8 @@
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "Query.h"
+#include "SearchTreeHandler.h"
 #include "SignalHandler.h"
-#include "SmtCore.h"
 #include "SmtLibWriter.h"
 #include "SnCDivideStrategy.h"
 #include "SparseUnsortedList.h"
@@ -194,15 +195,15 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      Apply the stack to the newly created SearchTreeHandler, returns false if UNSAT is
       found in this process.
     */
-    bool restoreSmtState( SmtState &smtState );
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState );
 
     /*
-      Store the current stack of the smtCore into smtState
+      Store the current stack of the searchTreeHandler into searchTreeState
     */
-    void storeSmtState( SmtState &smtState );
+    void storeSearchTreeState( SearchTreeState &searchTreeState );
 
     /*
       Pick the piecewise linear constraint for splitting
@@ -219,8 +220,7 @@ public:
       PSA: The following two methods are for DnC only and should be used very
       cautiously.
      */
-    void resetSmtCore();
-    void resetExitCode();
+    void resetSearchTreeHandler();
     void resetBoundTighteners();
 
     /*
@@ -303,7 +303,12 @@ public:
     /*
       Add lemma to the UNSAT Certificate
     */
-    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation );
+    void incNumOfLemmas() override;
+
+    /*
+     For debugging purpose
+    */
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override;
 
 private:
     enum BasisRestorationRequired {
@@ -327,7 +332,7 @@ private:
 
     /*
        Context is the central object that manages memory and back-tracking
-       across context-dependent components - SMTCore,
+       across context-dependent components - SearchTreeHandler,
        PiecewiseLinearConstraints, BoundManager, etc.
      */
     Context _context;
@@ -387,9 +392,9 @@ private:
     AutoRowBoundTightener _rowBoundTightener;
 
     /*
-      The SMT engine is in charge of case splitting.
+      The Search Tree engine is in charge of case splitting.
     */
-    SmtCore _smtCore;
+    SearchTreeHandler _searchTreeHandler;
 
     /*
       Number of pl constraints disabled by valid splits.
@@ -592,7 +597,7 @@ private:
     void selectViolatedPlConstraint();
 
     /*
-      Report the violated PL constraint to the SMT engine.
+      Report the violated PL constraint to the Search Tree engine.
     */
     void reportPlViolation();
 
@@ -823,7 +828,7 @@ private:
     }
 
     /*
-       Checks whether the current bounds are consistent. Exposed for the SmtCore.
+       Checks whether the current bounds are consistent. Exposed for the SearchTreeHandler.
      */
     bool consistentBounds() const;
 
@@ -834,7 +839,7 @@ private:
     void checkGurobiBoundConsistency() const;
 
     /*
-      Proof Production data structes
+      Proof Production data structures
      */
 
     bool _produceUNSATProofs;
@@ -904,7 +909,8 @@ private:
     /*
       Writes the details of a contradiction to the UNSAT certificate node
     */
-    void writeContradictionToCertificate( unsigned infeasibleVar ) const;
+    void writeContradictionToCertificate( const Vector<double> &contradiction,
+                                          unsigned infeasibleVar ) const;
 };
 
 #endif // __Engine_h__

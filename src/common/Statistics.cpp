@@ -24,7 +24,7 @@ Statistics::Statistics()
     _unsignedAttributes[NUM_PL_CONSTRAINTS] = 0;
     _unsignedAttributes[NUM_ACTIVE_PL_CONSTRAINTS] = 0;
     _unsignedAttributes[NUM_PL_VALID_SPLITS] = 0;
-    _unsignedAttributes[NUM_PL_SMT_ORIGINATED_SPLITS] = 0;
+    _unsignedAttributes[NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS] = 0;
     _unsignedAttributes[NUM_PRECISION_RESTORATIONS] = 0;
     _unsignedAttributes[CURRENT_DECISION_LEVEL] = 0;
     _unsignedAttributes[MAX_DECISION_LEVEL] = 0;
@@ -43,6 +43,7 @@ Statistics::Statistics()
     _unsignedAttributes[NUM_CERTIFIED_LEAVES] = 0;
     _unsignedAttributes[NUM_DELEGATED_LEAVES] = 0;
     _unsignedAttributes[NUM_LEMMAS] = 0;
+    _unsignedAttributes[NUM_LEMMAS_USED] = 0;
     _unsignedAttributes[CERTIFIED_UNSAT] = 0;
 
     _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
@@ -82,7 +83,7 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_PRECISION_RESTORATION] = 0;
     _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
     _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
-    _longAttributes[TOTAL_TIME_SMT_CORE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO] = 0;
     _longAttributes[TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO] = 0;
     _longAttributes[NUM_PROPOSED_PHASE_PATTERN_UPDATE] = 0;
     _longAttributes[NUM_ACCEPTED_PHASE_PATTERN_UPDATE] = 0;
@@ -208,11 +209,11 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n",
             printPercents( totalTimeApplyingStoredTighteningsMicro, timeMainLoopMicro ),
             totalTimeApplyingStoredTighteningsMicro / 1000 );
-    unsigned long long totalTimeSmtCoreMicro =
-        getLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO );
-    printf( "\t\t[%.2lf%%] SMT core: %llu milli\n",
-            printPercents( totalTimeSmtCoreMicro, timeMainLoopMicro ),
-            totalTimeSmtCoreMicro / 1000 );
+    unsigned long long totalTimeSearchTreeMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_SEARCH_TREE_HANDLER_MICRO );
+    printf( "\t\t[%.2lf%%] Search Tree Handler : %llu milli\n",
+            printPercents( totalTimeSearchTreeMicro, timeMainLoopMicro ),
+            totalTimeSearchTreeMicro / 1000 );
     unsigned long long totalTimePerformingSymbolicBoundTightening =
         getLongAttribute( Statistics::TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING );
     printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n",
@@ -234,7 +235,7 @@ void Statistics::print()
         totalTimePerformingValidCaseSplitsMicro + totalTimeHandlingStatisticsMicro +
         totalTimeExplicitBasisBoundTighteningMicro + totalTimeDegradationChecking +
         totalTimePrecisionRestoration + totalTimeConstraintMatrixBoundTighteningMicro +
-        totalTimeApplyingStoredTighteningsMicro + totalTimeSmtCoreMicro +
+        totalTimeApplyingStoredTighteningsMicro + totalTimeSearchTreeMicro +
         totalTimePerformingSymbolicBoundTightening;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n",
@@ -270,11 +271,11 @@ void Statistics::print()
         printAverage( timeConstraintFixingStepsMicro / 1000, numConstraintFixingSteps ) );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
-            "By SMT-originated splits: %u\n",
+            "By Search-Tree--originated splits: %u\n",
             getUnsignedAttribute( Statistics::NUM_ACTIVE_PL_CONSTRAINTS ),
             getUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS ),
             getUnsignedAttribute( Statistics::NUM_PL_VALID_SPLITS ),
-            getUnsignedAttribute( Statistics::NUM_PL_SMT_ORIGINATED_SPLITS ) );
+            getUnsignedAttribute( Statistics::NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS ) );
     printf( "\tLast reported degradation: %.10lf. Max degradation so far: %.10lf. "
             "Restorations so far: %u\n",
             getDoubleAttribute( Statistics::CURRENT_DEGRADATION ),
@@ -314,7 +315,7 @@ void Statistics::print()
             getUnsignedAttribute( Statistics::CURRENT_TABLEAU_M ),
             getUnsignedAttribute( Statistics::CURRENT_TABLEAU_N ) );
 
-    printf( "\t--- SMT Core Statistics ---\n" );
+    printf( "\t--- Search Tree Handler Statistics ---\n" );
     printf(
         "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n",
         getUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL ),
@@ -428,6 +429,8 @@ void Statistics::print()
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
     printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
+    printf( "\tNumber of lemmas used in proof minimization: %u\n",
+            getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const

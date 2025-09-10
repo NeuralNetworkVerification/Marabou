@@ -48,6 +48,7 @@
 #define __PiecewiseLinearConstraint_h__
 
 #include "FloatUtils.h"
+#include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IBoundManager.h"
 #include "ITableau.h"
@@ -68,6 +69,7 @@ class BoundManager;
 class ITableau;
 class Query;
 class String;
+class SearchTreeHandler;
 
 #define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
 
@@ -204,7 +206,7 @@ public:
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
       Transitioning from Valid to Implied with integration of
-      context-dependentSMTCore.
+      context-dependent SearchTreeHandler.
     */
     virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
@@ -248,7 +250,9 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( Query & ){};
+    virtual void transformToUseAuxVariables( Query & )
+    {
+    }
 
     void setStatistics( Statistics *statistics );
 
@@ -363,6 +367,7 @@ public:
     {
         _tableau = tableau;
     }
+
     /*
       Method to set PhaseStatus of the constraint. Encapsulates both context
       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
@@ -499,6 +504,17 @@ public:
         return _tableauAuxVars;
     }
 
+    inline std::shared_ptr<GroundBoundManager::GroundBoundEntry> getPhaseFixingEntry() const
+    {
+        return _cdPhaseFixingEntry->get();
+    }
+
+    inline void setPhaseFixingEntry(
+        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> &groundBoundEntry )
+    {
+        _cdPhaseFixingEntry->set( groundBoundEntry );
+    }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -509,7 +525,8 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+    ITableau *_tableau;           // Pointer to tableau which simulates CBT until we switch to
+                                  // CDSearchTreeHandler
 
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
@@ -541,6 +558,8 @@ protected:
       The gurobi object for solving the LPs during the search.
     */
     GurobiWrapper *_gurobi;
+    
+    CVC4::context::CDO<std::shared_ptr<GroundBoundManager::GroundBoundEntry>> *_cdPhaseFixingEntry;
 
     /*
       Initialize CDOs.
@@ -548,6 +567,7 @@ protected:
     void initializeCDActiveStatus();
     void initializeCDPhaseStatus();
     void initializeCDInfeasibleCases();
+    void initializeCDPhaseFixingEntry();
 
     /*
        Method provided to allow safe copying of the context-dependent members,

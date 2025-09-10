@@ -85,9 +85,9 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         String queryId = subQuery->_queryId;
         unsigned depth = subQuery->_depth;
         auto split = std::move( subQuery->_split );
-        std::unique_ptr<SmtState> smtState = nullptr;
-        if ( restoreTreeStates && subQuery->_smtState )
-            smtState = std::move( subQuery->_smtState );
+        std::unique_ptr<SearchTreeState> searchTreeState = nullptr;
+        if ( restoreTreeStates && subQuery->_searchTreeState )
+            searchTreeState = std::move( subQuery->_searchTreeState );
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
         // Reset the engine state
@@ -102,8 +102,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         _engine->applySnCSplit( *split, queryId );
 
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery
-        if ( restoreTreeStates && smtState )
-            fullSolveNeeded = _engine->restoreSmtState( *smtState );
+        if ( restoreTreeStates && searchTreeState )
+            fullSolveNeeded = _engine->restoreSearchTreeState( *searchTreeState );
         IEngine::ExitCode result = IEngine::NOT_DONE;
         if ( fullSolveNeeded )
         {
@@ -136,14 +136,15 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                                         ? 0
                                         : (unsigned)timeoutInSeconds * _timeoutFactor );
             unsigned numNewSubQueries = pow( 2, _onlineDivides );
-            std::vector<std::unique_ptr<SmtState>> newSmtStates;
+            std::vector<std::unique_ptr<SearchTreeState>> newSearchTreeStates;
             if ( restoreTreeStates )
             {
-                // create |numNewSubQueries| copies of the current SmtState
+                // create |numNewSubQueries| copies of the current SearchTreeState
                 for ( unsigned i = 0; i < numNewSubQueries; ++i )
                 {
-                    newSmtStates.push_back( std::unique_ptr<SmtState>( new SmtState() ) );
-                    _engine->storeSmtState( *( newSmtStates[i] ) );
+                    newSearchTreeStates.push_back(
+                        std::unique_ptr<SearchTreeState>( new SearchTreeState() ) );
+                    _engine->storeSearchTreeState( *( newSearchTreeStates[i] ) );
                 }
             }
 
@@ -153,10 +154,10 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
             unsigned i = 0;
             for ( auto &newSubQuery : subQueries )
             {
-                // Store the SmtCore state
+                // Store the SearchTreeHandler state
                 if ( restoreTreeStates )
                 {
-                    newSubQuery->_smtState = std::move( newSmtStates[i++] );
+                    newSubQuery->_searchTreeState = std::move( newSearchTreeStates[i++] );
                 }
 
                 if ( !_workload->push( std::move( newSubQuery ) ) )

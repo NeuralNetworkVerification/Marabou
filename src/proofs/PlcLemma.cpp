@@ -14,19 +14,24 @@
 
 #include "PlcLemma.h"
 
+#include "Debug.h"
+
 PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     unsigned affectedVar,
                     double bound,
                     Tightening::BoundType causingVarBound,
                     Tightening::BoundType affectedVarBound,
                     const Vector<SparseUnsortedList> &explanations,
-                    PiecewiseLinearFunctionType constraintType )
+                    PiecewiseLinearFunctionType constraintType,
+                    double minTargetBound )
     : _causingVars( causingVars )
     , _affectedVar( affectedVar )
     , _bound( bound )
     , _causingVarBound( causingVarBound )
     , _affectedVarBound( affectedVarBound )
     , _constraintType( constraintType )
+    , _toCheck( false )
+    , _minTargetBound( minTargetBound )
 {
     if ( explanations.empty() )
         _explanations = List<SparseUnsortedList>();
@@ -95,4 +100,19 @@ const List<SparseUnsortedList> &PLCLemma::getExplanations() const
 PiecewiseLinearFunctionType PLCLemma::getConstraintType() const
 {
     return _constraintType;
+}
+
+bool PLCLemma::getToCheck() const
+{
+    return _toCheck;
+}
+
+double PLCLemma::getMinTargetBound() const
+{
+    return _minTargetBound;
+}
+
+void PLCLemma::setToCheck()
+{
+    _toCheck = true;
 }

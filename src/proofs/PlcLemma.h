@@ -15,7 +15,6 @@
 #ifndef __PlcExplanation_h__
 #define __PlcExplanation_h__
 
-#include "PiecewiseLinearConstraint.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "SparseUnsortedList.h"
 #include "Tightening.h"
@@ -33,7 +32,8 @@ public:
               Tightening::BoundType causingVarBound,
               Tightening::BoundType affectedVarBound,
               const Vector<SparseUnsortedList> &explanation,
-              PiecewiseLinearFunctionType constraintType );
+              PiecewiseLinearFunctionType constraintType,
+              double minTargetBound );
 
     ~PLCLemma();
 
@@ -47,6 +47,10 @@ public:
     Tightening::BoundType getAffectedVarBound() const;
     const List<SparseUnsortedList> &getExplanations() const;
     PiecewiseLinearFunctionType getConstraintType() const;
+    bool getToCheck() const;
+    double getMinTargetBound() const;
+
+    void setToCheck();
 
 private:
     const List<unsigned> _causingVars;
@@ -56,6 +60,8 @@ private:
     Tightening::BoundType _affectedVarBound;
     List<SparseUnsortedList> _explanations;
     PiecewiseLinearFunctionType _constraintType;
+    bool _toCheck;
+    double _minTargetBound;
 };
 
 #endif //__PlcExplanation_h__

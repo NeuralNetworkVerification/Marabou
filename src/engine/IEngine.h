@@ -18,9 +18,13 @@
 
 #include "BoundExplainer.h"
 #include "DivideStrategy.h"
+#include "GroundBoundManager.h"
+#include "LPSolverType.h"
 #include "List.h"
 #include "PlcLemma.h"
 #include "SnCDivideStrategy.h"
+#include "SymbolicBoundTighteningType.h"
+#include "TableauState.h"
 #include "TableauStateStorageLevel.h"
 #include "Vector.h"
 #include "context/context.h"
@@ -32,16 +36,17 @@
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
-class PLCLemma;
-class SmtState;
+class SearchTreeState;
 class String;
 class PiecewiseLinearConstraint;
+class PLCLemma;
+class Query;
 class UnsatCertificateNode;
 
 class IEngine
 {
 public:
-    virtual ~IEngine(){};
+    virtual ~IEngine() {};
 
     enum ExitCode {
         UNSAT = 0,
@@ -79,15 +84,15 @@ public:
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
-      Store the current stack of the smtCore into smtState
+      Store the current stack of the searchTreeHandler into searchTreeState
     */
-    virtual void storeSmtState( SmtState &smtState ) = 0;
+    virtual void storeSearchTreeState( SearchTreeState &searchTreeState ) = 0;
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
+      Apply the stack to the newly created SearchTreeHandler, returns false if UNSAT is
       found in this process.
     */
-    virtual bool restoreSmtState( SmtState &smtState ) = 0;
+    virtual bool restoreSearchTreeState( SearchTreeState &searchTreeState ) = 0;
 
     /*
       Solve the encoded query.
@@ -121,12 +126,6 @@ public:
     */
     virtual double explainBound( unsigned var, bool isUpper ) const = 0;
 
-    /*
-     * Update the ground bounds
-     */
-    virtual void updateGroundUpperBound( unsigned var, double value ) = 0;
-    virtual void updateGroundLowerBound( unsigned var, double value ) = 0;
-
     virtual void applyAllBoundTightenings() = 0;
 
     virtual bool applyAllValidConstraintCaseSplits() = 0;
@@ -146,6 +145,8 @@ public:
       Get the ground bound of the variable
     */
     virtual double getGroundBound( unsigned var, bool isUpper ) const = 0;
+    virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    getGroundBoundEntry( unsigned var, bool isUpper ) const = 0;
 
     /*
       Get the current pointer in the UNSAT certificate node
@@ -190,7 +191,15 @@ public:
     /*
       Add lemma to the UNSAT Certificate
     */
-    virtual void addPLCLemma( std::shared_ptr<PLCLemma> &explanation ) = 0;
+    virtual void incNumOfLemmas() = 0;
+
+    /*
+      Add ground bound entry using a lemma
+    */
+    virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) = 0;
+
+    virtual const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const = 0;
 };
 
 #endif // __IEngine_h__

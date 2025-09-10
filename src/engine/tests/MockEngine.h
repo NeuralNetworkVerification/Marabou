@@ -20,7 +20,10 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "SearchTreeHandler.h"
 #include "context/context.h"
+
+#include <cxxtest/TestSuite.h>
 
 class String;
 
@@ -70,7 +73,7 @@ public:
     List<Bound> lastLowerBounds;
     List<Bound> lastUpperBounds;
     List<Equation> lastEquations;
-    void applySplit( const PiecewiseLinearCaseSplit &split )
+    void applySplit( const PiecewiseLinearCaseSplit &split ) override
     {
         List<Tightening> bounds = split.getBoundTightenings();
         auto equations = split.getEquations();
@@ -92,32 +95,36 @@ public:
         }
     }
 
-    void postContextPopHook(){};
-    void preContextPushHook(){};
+    void postContextPopHook() {};
+
+    void preContextPushHook() override
+    {
+    }
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const override
     {
         lastStoredState = &state;
     }
 
     const EngineState *lastRestoredState;
-    void restoreState( const EngineState &state )
+    void restoreState( const EngineState &state ) override
     {
         lastRestoredState = &state;
     }
 
-    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ )
+    void setNumPlConstraintsDisabledByValidSplits( unsigned /* numConstraints */ ) override
     {
     }
 
     unsigned _timeToSolve;
-    IEngine::ExitCode _exitCode;
-    bool solve( double timeoutInSeconds )
+    ExitCode _exitCode;
+
+    bool solve( double timeoutInSeconds ) override
     {
         if ( timeoutInSeconds >= _timeToSolve )
-            _exitCode = IEngine::TIMEOUT;
-        return _exitCode == IEngine::SAT;
+            _exitCode = ExitCode::TIMEOUT;
+        return _exitCode == ExitCode::SAT;
     }
 
     void setTimeToSolve( unsigned timeToSolve )
@@ -145,7 +152,7 @@ public:
         _inputVariables = inputVariables;
     }
 
-    List<unsigned> getInputVariables() const
+    List<unsigned> getInputVariables() const override
     {
         return _inputVariables;
     }
@@ -154,17 +161,17 @@ public:
     {
     }
 
-    mutable SmtState *lastRestoredSmtState;
-    bool restoreSmtState( SmtState &smtState )
+    mutable SearchTreeState *lastRestoredSearchTreeState;
+    bool restoreSearchTreeState( SearchTreeState &searchTreeState ) override
     {
-        lastRestoredSmtState = &smtState;
+        lastRestoredSearchTreeState = &searchTreeState;
         return true;
     }
 
-    mutable SmtState *lastStoredSmtState;
-    void storeSmtState( SmtState &smtState )
+    mutable SearchTreeState *lastStoredSearchTreeState;
+    void storeSearchTreeState( SearchTreeState &searchTreeState ) override
     {
-        lastStoredSmtState = &smtState;
+        lastStoredSearchTreeState = &searchTreeState;
     }
 
     List<PiecewiseLinearConstraint *> _constraintsToSplit;
@@ -173,7 +180,7 @@ public:
         _constraintsToSplit.append( constraint );
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ ) override
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -185,7 +192,7 @@ public:
             return NULL;
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ ) override
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -200,35 +207,37 @@ public:
     bool _snc;
     CVC4::context::Context _context;
 
-    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ )
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ ) override
     {
         _snc = true;
         _context.push();
     }
 
-    bool inSnCMode() const
+    bool inSnCMode() const override
     {
         return _snc;
     }
 
-    void applyAllBoundTightenings(){};
+    void applyAllBoundTightenings() override
+    {
+    }
 
-    bool applyAllValidConstraintCaseSplits()
+    bool applyAllValidConstraintCaseSplits() override
     {
         return false;
     };
 
-    CVC4::context::Context &getContext()
+    CVC4::context::Context &getContext() override
     {
         return _context;
     }
 
-    bool consistentBounds() const
+    bool consistentBounds() const override
     {
         return true;
     }
 
-    double explainBound( unsigned /* var */, bool /* isUpper */ ) const
+    double explainBound( unsigned /* var */, bool /* isUpper */ ) const override
     {
         return 0.0;
     }
@@ -241,40 +250,46 @@ public:
     {
     }
 
-    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
+    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const override
     {
         return 0;
     }
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    getGroundBoundEntry( unsigned /*var*/, bool /*isUpper*/ ) const override
+    {
+        return nullptr;
+    }
 
-    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
+
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const override
     {
         return NULL;
     }
 
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ )
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ ) override
     {
     }
 
-    const UnsatCertificateNode *getUNSATCertificateRoot() const
+    const UnsatCertificateNode *getUNSATCertificateRoot() const override
     {
         return NULL;
     }
 
-    bool certifyUNSATCertificate()
+    bool certifyUNSATCertificate() override
     {
         return true;
     }
 
-    void explainSimplexFailure()
+    void explainSimplexFailure() override
     {
     }
 
-    const BoundExplainer *getBoundExplainer() const
+    const BoundExplainer *getBoundExplainer() const override
     {
         return NULL;
     }
 
-    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )
+    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ ) override
     {
     }
 
@@ -282,12 +297,24 @@ public:
     {
     }
 
-    bool shouldProduceProofs() const
+    bool shouldProduceProofs() const override
     {
         return true;
     }
 
-    void addPLCLemma( std::shared_ptr<PLCLemma> & /*explanation*/ )
+    std::shared_ptr<GroundBoundManager::GroundBoundEntry>
+    setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> /*lemma*/,
+                             bool /*isPhaseFixing*/ ) override
+    {
+        return nullptr;
+    }
+
+    const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override
+    {
+        return NULL;
+    }
+
+    void incNumOfLemmas() override
     {
     }
 };

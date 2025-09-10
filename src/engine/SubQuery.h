@@ -19,7 +19,7 @@
 #include "List.h"
 #include "MString.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "SmtState.h"
+#include "SearchTreeState.h"
 
 #include <boost/lockfree/queue.hpp>
 #include <utility>
@@ -33,7 +33,7 @@ struct SubQuery
 
     String _queryId;
     std::unique_ptr<PiecewiseLinearCaseSplit> _split;
-    std::unique_ptr<SmtState> _smtState;
+    std::unique_ptr<SearchTreeState> _searchTreeState;
     unsigned _timeoutInSeconds;
     unsigned _depth;
 };

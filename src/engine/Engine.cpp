@@ -28,6 +28,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "Query.h"
+#include "SearchTreeHandler.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
 #include "VariableOutOfBoundDuringOptimizationException.h"
@@ -41,7 +42,7 @@ Engine::Engine()
     , _tableau( _boundManager )
     , _preprocessedQuery( nullptr )
     , _rowBoundTightener( *_tableau )
-    , _smtCore( this )
+    , _searchTreeHandler( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
@@ -73,7 +74,7 @@ Engine::Engine()
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
 {
-    _smtCore.setStatistics( &_statistics );
+    _searchTreeHandler.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
@@ -84,7 +85,6 @@ Engine::Engine()
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
 
     _boundManager.registerEngine( this );
-    _groundBoundManager.registerEngine( this );
     _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
                                      ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
                                      : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
@@ -137,7 +137,7 @@ void Engine::applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId )
     _sncSplit = sncSplit;
     _queryId = queryId;
     preContextPushHook();
-    _smtCore.pushContext();
+    _searchTreeHandler.pushContext();
     applySplit( sncSplit );
     _boundManager.propagateTightenings();
 }
@@ -289,7 +289,7 @@ bool Engine::solve( double timeoutInSeconds )
                 }
             }
 
-            // If true, we just entered a new subproblem
+            // If true, we just entered a new sub-problem
             if ( splitJustPerformed )
             {
                 performBoundTighteningAfterCaseSplit();
@@ -297,10 +297,9 @@ bool Engine::solve( double timeoutInSeconds )
                 splitJustPerformed = false;
             }
 
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( _searchTreeHandler.needToSplit() )
             {
-                _smtCore.performSplit();
+                _searchTreeHandler.performSplit();
                 splitJustPerformed = true;
                 continue;
             }
@@ -344,6 +343,7 @@ bool Engine::solve( double timeoutInSeconds )
                             ASSERT( _UNSATCertificateCurrentPointer );
                             ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
                         }
+
                         _exitCode = Engine::SAT;
                         return true;
                     }
@@ -363,8 +363,8 @@ bool Engine::solve( double timeoutInSeconds )
                     }
                     else
                     {
-                        while ( !_smtCore.needToSplit() )
-                            _smtCore.reportRejectedPhasePatternProposal();
+                        while ( !_searchTreeHandler.needToSplit() )
+                            _searchTreeHandler.reportRejectedPhasePatternProposal();
                         continue;
                     }
                 }
@@ -409,7 +409,7 @@ bool Engine::solve( double timeoutInSeconds )
             if ( _produceUNSATProofs )
                 explainSimplexFailure();
 
-            if ( !_smtCore.popSplit() )
+            if ( !_searchTreeHandler.popSplit() )
             {
                 mainLoopEnd = TimeUtils::sampleMicro();
                 _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -467,7 +467,7 @@ void Engine::mainLoopStatistics()
     _statistics.setUnsignedAttribute( Statistics::NUM_ACTIVE_PL_CONSTRAINTS, activeConstraints );
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_VALID_SPLITS,
                                       _numPlConstraintsDisabledByValidSplits );
-    _statistics.setUnsignedAttribute( Statistics::NUM_PL_SMT_ORIGINATED_SPLITS,
+    _statistics.setUnsignedAttribute( Statistics::NUM_PL_SEARCH_TREE_ORIGINATED_SPLITS,
                                       _plConstraints.size() - activeConstraints -
                                           _numPlConstraintsDisabledByValidSplits );
 
@@ -565,7 +565,7 @@ bool Engine::performPrecisionRestorationIfNeeded()
     // Restoration is not required
     _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
-    // Possible restoration due to preceision degradation
+    // Possible restoration due to precision degradation
     if ( shouldCheckDegradation() && highDegradation() )
     {
         performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
@@ -613,7 +613,7 @@ void Engine::performConstraintFixingStep()
     // Select a violated constraint as the target
     selectViolatedPlConstraint();
 
-    // Report the violated constraint to the SMT engine
+    // Report the violated constraint to the Search Tree engine
     reportPlViolation();
 
     // Attempt to fix the constraint
@@ -961,9 +961,9 @@ bool Engine::calculateBounds( const IQuery &inputQuery )
         _statistics.setLongAttribute( Statistics::CALCULATE_BOUNDS_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
-        _exitCode = Engine::UNSAT;
         printf( "unsat\n" );
 
+        _exitCode = Engine::UNSAT;
         return false;
     }
 
@@ -1114,7 +1114,7 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix,
     /*
       This method permutes rows and columns in the constraint matrix (prior
       to the addition of auxiliary variables), in order to obtain a set of
-      column that constitue a lower triangular matrix. The variables
+      column that constitute a lower triangular matrix. The variables
       corresponding to the columns of this matrix join the initial basis.
 
       (It is possible that not enough variables are obtained this way, in which
@@ -1339,7 +1339,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         ++equationIndex;
     }
 
-    // Populate constriant matrix
+    // Populate constraint matrix
     _tableau->setConstraintMatrix( constraintMatrix );
 
     _tableau->registerToWatchAllVariables( _rowBoundTightener );
@@ -1512,7 +1512,11 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
         }
 
         for ( const auto &constraint : _plConstraints )
+        {
             constraint->registerTableau( _tableau );
+            if ( !Options::get()->getBool( Options::DNC_MODE ) )
+                constraint->initializeCDOs( &_context );
+        }
         for ( const auto &constraint : _nlConstraints )
             constraint->registerTableau( _tableau );
 
@@ -1563,7 +1567,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
         }
     } );
 
-    _smtCore.storeDebuggingSolution( _preprocessedQuery->_debuggingSolution );
+    _searchTreeHandler.storeDebuggingSolution( _preprocessedQuery->_debuggingSolution );
     return true;
 }
 
@@ -1571,7 +1575,7 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
-        // Obtain from and store bounds into inputquery if it is not null.
+        // Obtain from and store bounds into inputQuery if it is not null.
         if ( inputQuery )
             _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
         else
@@ -1803,14 +1807,15 @@ void Engine::selectViolatedPlConstraint()
 {
     ASSERT( !_violatedPlConstraints.empty() );
 
-    _plConstraintToFix = _smtCore.chooseViolatedConstraintForFixing( _violatedPlConstraints );
+    _plConstraintToFix =
+        _searchTreeHandler.chooseViolatedConstraintForFixing( _violatedPlConstraints );
 
     ASSERT( _plConstraintToFix );
 }
 
 void Engine::reportPlViolation()
 {
-    _smtCore.reportViolatedConstraint( _plConstraintToFix );
+    _searchTreeHandler.reportViolatedConstraint( _plConstraintToFix );
 }
 
 void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) const
@@ -1819,7 +1824,8 @@ void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) co
     state._tableauStateStorageLevel = level;
 
     for ( const auto &constraint : _plConstraints )
-        state._plConstraintToState[constraint] = constraint->duplicateConstraint();
+        if ( !constraint->getContext() )
+            state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 }
@@ -1837,10 +1843,11 @@ void Engine::restoreState( const EngineState &state )
     ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )
     {
-        if ( !state._plConstraintToState.exists( constraint ) )
+        if ( !state._plConstraintToState.exists( constraint ) && !constraint->getContext() )
             throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
 
-        constraint->restoreState( state._plConstraintToState[constraint] );
+        if ( !constraint->getContext() )
+            constraint->restoreState( state._plConstraintToState[constraint] );
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
@@ -1854,8 +1861,8 @@ void Engine::restoreState( const EngineState &state )
         _costFunctionManager->initialize();
     }
 
-    // Reset the violation counts in the SMT core
-    _smtCore.resetSplitConditions();
+    // Reset the violation counts in the Search Tree handler
+    _searchTreeHandler.resetSplitConditions();
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
@@ -2078,7 +2085,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                  FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
             {
                 _boundManager.resetExplanation( variable, Tightening::LB );
-                updateGroundLowerBound( variable, bound._value );
+                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::LB, true );
                 _boundManager.tightenLowerBound( variable, bound._value );
             }
             else if ( !_produceUNSATProofs )
@@ -2092,7 +2099,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
                  FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {
                 _boundManager.resetExplanation( variable, Tightening::UB );
-                updateGroundUpperBound( variable, bound._value );
+                _groundBoundManager.addGroundBound( variable, bound._value, Tightening::UB, true );
                 _boundManager.tightenUpperBound( variable, bound._value );
             }
             else if ( !_produceUNSATProofs )
@@ -2172,7 +2179,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
-        _smtCore.recordImpliedValidSplit( validSplit );
+        _searchTreeHandler.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
 
         if ( _soiManager )
@@ -2221,7 +2228,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
-             GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY ==
+             GlobalConfiguration::BOUND_TIGHTENING_ON_CONSTRAINT_MATRIX_FREQUENCY ==
          0 )
     {
         _rowBoundTightener->examineConstraintMatrix( true );
@@ -2268,7 +2275,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     double before = _degradationChecker.computeDegradation( *_tableau );
     //
 
-    _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore, restoreBasics );
+    _precisionRestorer.restorePrecision( *this, *_tableau, _searchTreeHandler, restoreBasics );
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                   TimeUtils::timePassed( start, end ) );
@@ -2289,7 +2296,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         // Try again!
         start = TimeUtils::sampleMicro();
         _precisionRestorer.restorePrecision(
-            *this, *_tableau, _smtCore, PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+            *this, *_tableau, _searchTreeHandler, PrecisionRestorer::DO_NOT_RESTORE_BASICS );
         end = TimeUtils::sampleMicro();
         _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                       TimeUtils::timePassed( start, end ) );
@@ -2335,7 +2342,7 @@ Query *Engine::getQuery()
 
 void Engine::checkBoundCompliancyWithDebugSolution()
 {
-    if ( _smtCore.checkSkewFromDebuggingSolution() )
+    if ( _searchTreeHandler.checkSkewFromDebuggingSolution() )
     {
         // The stack is compliant, we should not have learned any non-compliant bounds
         for ( const auto &var : _preprocessedQuery->_debuggingSolution )
@@ -2430,7 +2437,7 @@ unsigned Engine::performSymbolicBoundTightening( Query *inputQuery )
     // Step 1: tell the NLR about the current bounds
     if ( inputQuery )
     {
-        // Obtain from and store bounds into inputquery if it is not null.
+        // Obtain from and store bounds into inputQuery if it is not null.
         _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
     }
     else
@@ -2541,16 +2548,15 @@ void Engine::reset()
     resetStatistics();
     _sncMode = false;
     clearViolatedPLConstraints();
-    resetSmtCore();
+    resetSearchTreeHandler();
     resetBoundTighteners();
-    resetExitCode();
 }
 
 void Engine::resetStatistics()
 {
     Statistics statistics;
     _statistics = statistics;
-    _smtCore.setStatistics( &_statistics );
+    _searchTreeHandler.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
@@ -2565,10 +2571,10 @@ void Engine::clearViolatedPLConstraints()
     _plConstraintToFix = NULL;
 }
 
-void Engine::resetSmtCore()
+void Engine::resetSearchTreeHandler()
 {
-    _smtCore.reset();
-    _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
+    _searchTreeHandler.reset();
+    _searchTreeHandler.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
 void Engine::resetExitCode()
@@ -2680,9 +2686,9 @@ void Engine::decideBranchingHeuristics()
              _preprocessedQuery->getInputVariables().size() <
                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
-            // NOTE: the benefit of input splitting is minimal with abstract intepretation disabled.
-            // Therefore, since the proof production mode does not currently support that, we do
-            // not perform input-splitting in proof production mode.
+            // NOTE: the benefit of input splitting is minimal with abstract interpretation
+            // disabled. Therefore, since the proof production mode does not currently support that,
+            // we do not perform input-splitting in proof production mode.
             divideStrategy = DivideStrategy::LargestInterval;
             if ( _verbosity >= 2 )
                 printf( "Branching heuristics set to LargestInterval\n" );
@@ -2704,8 +2710,8 @@ void Engine::decideBranchingHeuristics()
         }
     }
     ASSERT( divideStrategy != DivideStrategy::Auto );
-    _smtCore.setBranchingHeuristics( divideStrategy );
-    _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
+    _searchTreeHandler.setBranchingHeuristics( divideStrategy );
+    _searchTreeHandler.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnBaBsrHeuristic()
@@ -2877,8 +2883,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
     if ( strategy == DivideStrategy::PseudoImpact )
     {
-        if ( _smtCore.getStackDepth() > 3 )
-            candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
+        if ( _context.getLevel() > 3 )
+            candidatePLConstraint = _searchTreeHandler.getConstraintsWithHighestScore();
         else if ( !_preprocessedQuery->getInputVariables().empty() &&
                   _preprocessedQuery->getInputVariables().size() <
                       GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
@@ -2887,7 +2893,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
         {
             candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
             if ( candidatePLConstraint == NULL )
-                candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
+                candidatePLConstraint = _searchTreeHandler.getConstraintsWithHighestScore();
         }
     }
     else if ( strategy == DivideStrategy::BaBSR )
@@ -2897,8 +2903,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
-              ( ( _smtCore.getStackDepth() + 1 ) %
-                    GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
+              ( ( _context.getLevel() + 1 ) % GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY !=
                 0 ) )
     {
         // Conduct interval splitting periodically.
@@ -2927,17 +2932,17 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
     return candidatePLConstraint;
 }
 
-bool Engine::restoreSmtState( SmtState &smtState )
+bool Engine::restoreSearchTreeState( SearchTreeState &searchTreeState )
 {
     try
     {
-        ASSERT( _smtCore.getStackDepth() == 0 );
+        ASSERT( _searchTreeHandler.getStackDepth() == 0 );
 
         // Step 1: all implied valid splits at root
-        for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
+        for ( auto &validSplit : searchTreeState._impliedValidSplitsAtRoot )
         {
             applySplit( validSplit );
-            _smtCore.recordImpliedValidSplit( validSplit );
+            _searchTreeHandler.recordImpliedValidSplit( validSplit );
         }
 
         tightenBoundsOnConstraintMatrix();
@@ -2949,11 +2954,11 @@ bool Engine::restoreSmtState( SmtState &smtState )
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
-        for ( auto &stackEntry : smtState._stack )
+        for ( auto &stackEntry : searchTreeState._stack )
         {
-            _smtCore.replaySmtStackEntry( stackEntry );
+            _searchTreeHandler.replaySearchTreeStackEntry( stackEntry );
             // Do all the bound propagation, and set ReLU constraints to inactive (at
-            // least the one corresponding to the _activeSplit applied above.
+            // least the one corresponding to the _activeSplit applied above).
             tightenBoundsOnConstraintMatrix();
 
             // For debugging purposes
@@ -2971,7 +2976,7 @@ bool Engine::restoreSmtState( SmtState &smtState )
         if ( _produceUNSATProofs )
             explainSimplexFailure();
 
-        if ( !_smtCore.popSplit() )
+        if ( !_searchTreeHandler.popSplit() )
         {
             if ( _verbosity > 0 )
             {
@@ -2987,9 +2992,9 @@ bool Engine::restoreSmtState( SmtState &smtState )
     return true;
 }
 
-void Engine::storeSmtState( SmtState &smtState )
+void Engine::storeSearchTreeState( SearchTreeState &searchTreeState )
 {
-    _smtCore.storeSmtState( smtState );
+    _searchTreeHandler.storeSearchTreeState( searchTreeState );
 }
 
 bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
@@ -3010,7 +3015,7 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
     }
     catch ( const InfeasibleQueryException & )
     {
-        _exitCode = Engine::UNSAT;
+        _exitCode = IEngine::UNSAT;
         return false;
     }
 
@@ -3043,9 +3048,9 @@ bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
         }
     }
     else if ( _gurobi->infeasible() )
-        _exitCode = IEngine::UNSAT;
+        _exitCode = Engine::UNSAT;
     else if ( _gurobi->timeout() )
-        _exitCode = IEngine::TIMEOUT;
+        _exitCode = Engine::TIMEOUT;
     else
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
     return false;
@@ -3076,11 +3081,13 @@ bool Engine::performDeepSoILocalSearch()
     if ( initialPhasePattern.isZero() )
     {
         if ( hasBranchingCandidate() )
-            while ( !_smtCore.needToSplit() )
-                _smtCore.reportRejectedPhasePatternProposal();
+            while ( !_searchTreeHandler.needToSplit() )
+                _searchTreeHandler.reportRejectedPhasePatternProposal();
         return false;
     }
 
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        _costFunctionManager->computeCoreCostFunction(); // TODO ask Andrew
     minimizeHeuristicCost( initialPhasePattern );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
@@ -3091,7 +3098,7 @@ bool Engine::performDeepSoILocalSearch()
 
     double costOfProposedPhasePattern = FloatUtils::infinity();
     bool lastProposalAccepted = true;
-    while ( !_smtCore.needToSplit() )
+    while ( !_searchTreeHandler.needToSplit() )
     {
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.incLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO,
@@ -3132,7 +3139,11 @@ bool Engine::performDeepSoILocalSearch()
                     return true;
                 }
             }
-            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) )
+            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern -
+                                          costOfProposedPhasePattern ) ) // TODO: check this fix
+                                                                         // with Andrew, and
+                                                                         // maybe PR into main
+                                                                         // branch of Marabou
             {
                 // Corner case: the SoI is minimal but there are still some PL
                 // constraints (those not in the SoI) unsatisfied.
@@ -3140,8 +3151,8 @@ bool Engine::performDeepSoILocalSearch()
                 // the SoI with the hope to branch on them early.
                 bumpUpPseudoImpactOfPLConstraintsNotInSoI();
                 if ( hasBranchingCandidate() )
-                    while ( !_smtCore.needToSplit() )
-                        _smtCore.reportRejectedPhasePatternProposal();
+                    while ( !_searchTreeHandler.needToSplit() )
+                        _searchTreeHandler.reportRejectedPhasePatternProposal();
                 return false;
             }
         }
@@ -3170,7 +3181,7 @@ bool Engine::performDeepSoILocalSearch()
         }
         else
         {
-            _smtCore.reportRejectedPhasePatternProposal();
+            _searchTreeHandler.reportRejectedPhasePatternProposal();
             lastProposalAccepted = false;
         }
     }
@@ -3249,7 +3260,7 @@ void Engine::updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePatte
     ASSERT( constraintsUpdated.size() > 0 );
     // Update the Pseudo-Impact estimation.
     for ( const auto &constraint : constraintsUpdated )
-        _smtCore.updatePLConstraintScore( constraint, score );
+        _searchTreeHandler.updatePLConstraintScore( constraint, score );
 }
 
 void Engine::bumpUpPseudoImpactOfPLConstraintsNotInSoI()
@@ -3259,7 +3270,7 @@ void Engine::bumpUpPseudoImpactOfPLConstraintsNotInSoI()
     {
         if ( plConstraint->isActive() && !plConstraint->supportSoI() &&
              !plConstraint->phaseFixed() && !plConstraint->satisfied() )
-            _smtCore.updatePLConstraintScore(
+            _searchTreeHandler.updatePLConstraintScore(
                 plConstraint, GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI );
     }
 }
@@ -3395,7 +3406,7 @@ bool Engine::shouldProduceProofs() const
 
 void Engine::explainSimplexFailure()
 {
-    ASSERT( _produceUNSATProofs );
+    ASSERT( _produceUNSATProofs && _lpSolverType == LPSolverType::NATIVE );
 
     DEBUG( checkGroundBounds() );
 
@@ -3423,9 +3434,12 @@ void Engine::explainSimplexFailure()
     ASSERT( infeasibleVar < _tableau->getN() );
     ASSERT( _UNSATCertificateCurrentPointer &&
             !( **_UNSATCertificateCurrentPointer ).getContradiction() );
+
     _statistics.incUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
 
-    writeContradictionToCertificate( infeasibleVar );
+    Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
+
+    writeContradictionToCertificate( leafContradictionVec, infeasibleVar );
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
 }
@@ -3537,9 +3551,9 @@ bool Engine::checkGroundBounds() const
 
     for ( unsigned i = 0; i < _tableau->getN(); ++i )
     {
-        if ( FloatUtils::gt( _groundBoundManager.getLowerBound( i ),
+        if ( FloatUtils::gt( _groundBoundManager.getGroundBound( i, Tightening::UB ),
                              _boundManager.getLowerBound( i ) ) ||
-             FloatUtils::lt( _groundBoundManager.getUpperBound( i ),
+             FloatUtils::lt( _groundBoundManager.getGroundBound( i, Tightening::LB ),
                              _boundManager.getUpperBound( i ) ) )
             return false;
     }
@@ -3679,7 +3693,7 @@ const UnsatCertificateNode *Engine::getUNSATCertificateRoot() const
 
 bool Engine::certifyUNSATCertificate()
 {
-    ASSERT( _produceUNSATProofs && _UNSATCertificate && !_smtCore.getStackDepth() );
+    ASSERT( _produceUNSATProofs && _UNSATCertificate && !_searchTreeHandler.getStackDepth() );
 
     for ( auto &constraint : _plConstraints )
     {
@@ -3692,7 +3706,7 @@ bool Engine::certifyUNSATCertificate()
             return false;
         }
     }
-
+    _UNSATCertificateCurrentPointer->get()->deleteUnusedLemmas();
     struct timespec certificationStart = TimeUtils::sampleMicro();
     _precisionRestorer.restoreInitialEngineState( *this );
 
@@ -3764,7 +3778,7 @@ void Engine::markLeafToDelegate()
     // Mark leaf with toDelegate Flag
     UnsatCertificateNode *currentUnsatCertificateNode = _UNSATCertificateCurrentPointer->get();
     ASSERT( _UNSATCertificateCurrentPointer && !currentUnsatCertificateNode->getContradiction() );
-    currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_SAVE );
+    currentUnsatCertificateNode->setDelegationStatus( DelegationStatus::DELEGATE_DONT_SAVE );
     currentUnsatCertificateNode->deletePLCExplanations();
     _statistics.incUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES );
 
@@ -3802,15 +3816,13 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
     return contradiction;
 }
 
-void Engine::writeContradictionToCertificate( unsigned infeasibleVar ) const
+void Engine::writeContradictionToCertificate( const Vector<double> &contradiction,
+                                              unsigned infeasibleVar ) const
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> leafContradictionVec = computeContradiction( infeasibleVar );
-
-    Contradiction *leafContradiction = leafContradictionVec.empty()
-                                         ? new Contradiction( infeasibleVar )
-                                         : new Contradiction( leafContradictionVec );
+    Contradiction *leafContradiction = contradiction.empty() ? new Contradiction( infeasibleVar )
+                                                             : new Contradiction( contradiction );
     ( **_UNSATCertificateCurrentPointer ).setContradiction( leafContradiction );
 }
 
@@ -3871,12 +3883,16 @@ void Engine::extractBounds( IQuery &inputQuery )
     }
 }
 
-void Engine::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
+void Engine::incNumOfLemmas()
 {
     if ( !_produceUNSATProofs )
         return;
 
-    ASSERT( explanation && _UNSATCertificate && _UNSATCertificateCurrentPointer )
+    ASSERT( _UNSATCertificate && _UNSATCertificateCurrentPointer )
     _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS );
-    _UNSATCertificateCurrentPointer->get()->addPLCLemma( explanation );
+}
+
+const List<PiecewiseLinearConstraint *> *Engine::getPiecewiseLinearConstraints() const
+{
+    return &_plConstraints;
 }
