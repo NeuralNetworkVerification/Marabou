@@ -75,7 +75,9 @@ void Layer::allocateMemory()
 
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
     if ( Options::get()->getSymbolicBoundTighteningType() ==
-         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+             SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING ||
+         Options::get()->getMILPSolverBoundTighteningType() ==
+             MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX )
     {
         _symbolicLb = new double[_size * _inputLayerSize];
         _symbolicUb = new double[_size * _inputLayerSize];
@@ -1061,7 +1063,6 @@ void Layer::computeIntervalArithmeticBoundsForSigmoid()
     }
 }
 
-
 void Layer::computeIntervalArithmeticBoundsForRound()
 {
     for ( unsigned i = 0; i < _size; ++i )
@@ -1094,7 +1095,6 @@ void Layer::computeIntervalArithmeticBoundsForRound()
     }
 }
 
-
 void Layer::computeIntervalArithmeticBoundsForMax()
 {
     for ( unsigned i = 0; i < _size; ++i )
@@ -1104,7 +1104,6 @@ void Layer::computeIntervalArithmeticBoundsForMax()
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         List<NeuronIndex> sources = getActivationSources( i );
-        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
 
         NeuronIndex indexOfMaxLowerBound = *( sources.begin() );
         double maxLowerBound = FloatUtils::negativeInfinity();
@@ -1115,6 +1114,7 @@ void Layer::computeIntervalArithmeticBoundsForMax()
         unsigned counter = 0;
         for ( const auto &sourceIndex : sources )
         {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
             unsigned sourceNeuron = sourceIndex._neuron;
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
@@ -1196,14 +1196,12 @@ void Layer::computeIntervalArithmeticBoundsForSoftmax()
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         List<NeuronIndex> sources = getActivationSources( i );
-        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
-
-        ASSERT( sourceLayer->getSize() == _size );
 
         Vector<double> sourceLbs;
         Vector<double> sourceUbs;
         for ( const auto &sourceIndex : sources )
         {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
             unsigned sourceNeuron = sourceIndex._neuron;
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
@@ -1253,14 +1251,13 @@ void Layer::computeIntervalArithmeticBoundsForBilinear()
         List<NeuronIndex> sources = getActivationSources( i );
         ASSERT( sources.size() == 2 );
 
-        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
-
         Vector<double> sourceLbs;
         Vector<double> sourceUbs;
         Vector<double> sourceValues;
         bool allConstant = true;
         for ( const auto &sourceIndex : sources )
         {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
             unsigned sourceNeuron = sourceIndex._neuron;
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
@@ -1726,7 +1723,6 @@ void Layer::computeSymbolicBoundsForSign()
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                     _symbolicUb[j * _size + i] *= factor;
 
-
                 // Do the same for the bias, and then adjust
                 _symbolicUpperBias[i] *= factor;
                 _symbolicUpperBias[i] += 1;
@@ -2047,17 +2043,17 @@ void Layer::computeSymbolicBoundsForLeakyRelu()
             // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
             // Concrete upper bound: x_f <= ub_b
             double width = sourceUb - sourceLb;
-            double coeff = ( sourceUb - _alpha * sourceLb ) / width;
+            double weight = ( sourceUb - _alpha * sourceLb ) / width;
 
             if ( _alpha <= 1 )
             {
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
-                    _symbolicUb[j * _size + i] *= coeff;
+                    _symbolicUb[j * _size + i] *= weight;
                 }
 
                 // Do the same for the bias, and then adjust
-                _symbolicUpperBias[i] *= coeff;
+                _symbolicUpperBias[i] *= weight;
                 _symbolicUpperBias[i] += ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
 
 
@@ -2092,11 +2088,11 @@ void Layer::computeSymbolicBoundsForLeakyRelu()
             {
                 for ( unsigned j = 0; j < _inputLayerSize; ++j )
                 {
-                    _symbolicLb[j * _size + i] *= coeff;
+                    _symbolicLb[j * _size + i] *= weight;
                 }
 
                 // Do the same for the bias, and then adjust
-                _symbolicLowerBias[i] *= coeff;
+                _symbolicLowerBias[i] *= weight;
                 _symbolicLowerBias[i] += ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
 
                 if ( sourceUb > sourceLb )
@@ -2209,7 +2205,6 @@ void Layer::computeSymbolicBoundsForLeakyRelu()
     }
 }
 
-
 void Layer::computeSymbolicBoundsForSigmoid()
 {
     std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
@@ -2269,7 +2264,7 @@ void Layer::computeSymbolicBoundsForSigmoid()
         double sourceLbSigmoid = SigmoidConstraint::sigmoid( sourceLb );
 
         // Case when the Sigmoid constraint is fixed
-        if ( FloatUtils::areEqual( FloatUtils::round( sourceUb ), FloatUtils::round( sourceLb ) ) )
+        if ( FloatUtils::areEqual( sourceLb, sourceUb ) )
         {
             for ( unsigned j = 0; j < _inputLayerSize; ++j )
             {
@@ -2548,11 +2543,6 @@ void Layer::computeSymbolicBoundsForMax()
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         List<NeuronIndex> sources = getActivationSources( i );
-        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
-
-        unsigned sourceLayerSize = sourceLayer->getSize();
-        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
-        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
 
         NeuronIndex indexOfMaxLowerBound = *( sources.begin() );
         double maxLowerBound = FloatUtils::negativeInfinity();
@@ -2562,6 +2552,7 @@ void Layer::computeSymbolicBoundsForMax()
         Map<NeuronIndex, double> sourceUbs;
         for ( const auto &sourceIndex : sources )
         {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
             unsigned sourceNeuron = sourceIndex._neuron;
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
@@ -2592,6 +2583,11 @@ void Layer::computeSymbolicBoundsForMax()
                 break;
             }
         }
+
+        const Layer *sourceLayer = _layerOwner->getLayer( indexOfMaxLowerBound._layer );
+        unsigned sourceLayerSize = sourceLayer->getSize();
+        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
 
         if ( phaseFixed )
         {
@@ -2672,7 +2668,6 @@ void Layer::computeSymbolicBoundsForSoftmax()
     std::fill_n( _work, _size * _size, 0 );
 
     Set<unsigned> handledInputNeurons;
-    unsigned sourceLayerSize = _size;
     SoftmaxBoundType boundType = Options::get()->getSoftmaxBoundType();
 
     for ( unsigned i = 0; i < _size; ++i )
@@ -2696,19 +2691,15 @@ void Layer::computeSymbolicBoundsForSoftmax()
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         List<NeuronIndex> sources = getActivationSources( i );
-        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
-
-        sourceLayerSize = sourceLayer->getSize();
-        ASSERT( sourceLayerSize == _size );
 
         Vector<double> sourceLbs;
         Vector<double> sourceUbs;
         Vector<double> sourceMids;
         Vector<double> targetLbs;
         Vector<double> targetUbs;
-        unsigned len = 0;
         for ( const auto &sourceIndex : sources )
         {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
             unsigned sourceNeuron = sourceIndex._neuron;
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
@@ -2718,8 +2709,6 @@ void Layer::computeSymbolicBoundsForSoftmax()
             sourceMids.append( ( sourceLb + sourceUb ) / 2 );
             targetLbs.append( _lb[i] );
             targetUbs.append( _ub[i] );
-
-            ++len;
         }
 
         // Find the index of i in the softmax
@@ -2758,8 +2747,8 @@ void Layer::computeSymbolicBoundsForSoftmax()
             _symbolicUpperBias[i] = _ub[i];
             for ( const auto &sourceIndex : sources )
             {
-                symbolicLb[len * sourceIndex._neuron + i] = 0;
-                symbolicUb[len * sourceIndex._neuron + i] = 0;
+                symbolicLb[_size * sourceIndex._neuron + i] = 0;
+                symbolicUb[_size * sourceIndex._neuron + i] = 0;
             }
         }
         else
@@ -2782,7 +2771,7 @@ void Layer::computeSymbolicBoundsForSoftmax()
                     {
                         double dldj = softmaxdLSELowerBound(
                             sourceMids, sourceLbs, sourceUbs, index, inputIndex );
-                        symbolicLb[len * sourceIndex._neuron + i] = dldj;
+                        symbolicLb[_size * sourceIndex._neuron + i] = dldj;
                         _symbolicLowerBias[i] -= dldj * sourceMids[inputIndex];
                         ++inputIndex;
                     }
@@ -2795,7 +2784,7 @@ void Layer::computeSymbolicBoundsForSoftmax()
                     {
                         double dldj = softmaxdLSELowerBound2(
                             sourceMids, sourceLbs, sourceUbs, index, inputIndex );
-                        symbolicLb[len * sourceIndex._neuron + i] = dldj;
+                        symbolicLb[_size * sourceIndex._neuron + i] = dldj;
                         _symbolicLowerBias[i] -= dldj * sourceMids[inputIndex];
                         ++inputIndex;
                     }
@@ -2808,7 +2797,7 @@ void Layer::computeSymbolicBoundsForSoftmax()
                 {
                     double dudj = softmaxdLSEUpperbound(
                         sourceMids, targetLbs, targetUbs, index, inputIndex );
-                    symbolicUb[len * sourceIndex._neuron + i] = dudj;
+                    symbolicUb[_size * sourceIndex._neuron + i] = dudj;
                     _symbolicUpperBias[i] -= dudj * sourceMids[inputIndex];
                     ++inputIndex;
                 }
@@ -2822,7 +2811,7 @@ void Layer::computeSymbolicBoundsForSoftmax()
                 {
                     double dldj =
                         softmaxdERLowerBound( sourceMids, sourceLbs, sourceUbs, index, inputIndex );
-                    symbolicLb[len * sourceIndex._neuron + i] = dldj;
+                    symbolicLb[_size * sourceIndex._neuron + i] = dldj;
                     _symbolicLowerBias[i] -= dldj * sourceMids[inputIndex];
                     ++inputIndex;
                 }
@@ -2834,7 +2823,7 @@ void Layer::computeSymbolicBoundsForSoftmax()
                 {
                     double dudj =
                         softmaxdERUpperBound( sourceMids, targetLbs, targetUbs, index, inputIndex );
-                    symbolicUb[len * sourceIndex._neuron + i] = dudj;
+                    symbolicUb[_size * sourceIndex._neuron + i] = dudj;
                     _symbolicUpperBias[i] -= dudj * sourceMids[inputIndex];
                     ++inputIndex;
                 }
@@ -2845,6 +2834,7 @@ void Layer::computeSymbolicBoundsForSoftmax()
     for ( const auto &sourceLayerEntry : _sourceLayers )
     {
         const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
+        unsigned sourceLayerSize = sourceLayer->getSize();
 
         /*
           Perform the multiplication
@@ -3036,27 +3026,26 @@ void Layer::computeSymbolicBoundsForBilinear()
         List<NeuronIndex> sources = getActivationSources( i );
         ASSERT( sources.size() == 2 );
 
-        const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
-
-        unsigned sourceLayerSize = sourceLayer->getSize();
-        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
-        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
-
         Vector<double> sourceLbs;
         Vector<double> sourceUbs;
         Vector<double> sourceValues;
+        Vector<unsigned> sourceNeurons;
+        Vector<unsigned> sourceLayerSizes;
+        Vector<const Layer *> sourceLayers;
         bool allConstant = true;
-        unsigned indexA = 0;
-        unsigned indexB = 0;
-        unsigned counter = 0;
         for ( const auto &sourceIndex : sources )
         {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
             unsigned sourceNeuron = sourceIndex._neuron;
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
+            unsigned sourceLayerSize = sourceLayer->getSize();
 
+            sourceLayers.append( sourceLayer );
+            sourceNeurons.append( sourceNeuron );
             sourceLbs.append( sourceLb );
             sourceUbs.append( sourceUb );
+            sourceLayerSizes.append( sourceLayerSize );
 
             if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
             {
@@ -3067,16 +3056,6 @@ void Layer::computeSymbolicBoundsForBilinear()
                 double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
                 sourceValues.append( sourceValue );
             }
-
-            if ( counter == 0 )
-            {
-                indexA = sourceIndex._neuron;
-            }
-            else
-            {
-                indexB = sourceIndex._neuron;
-            }
-            ++counter;
         }
 
         if ( allConstant )
@@ -3106,47 +3085,75 @@ void Layer::computeSymbolicBoundsForBilinear()
         // Symbolic upper bound:
         // out <= alpha * x + beta * y + gamma
         // where alpha = ub_y, beta = lb_x, gamma = -lb_x * ub_y
-        for ( unsigned j = 0; j < _inputLayerSize; ++j )
-        {
-            if ( sourceLbs[1] >= 0 )
-            {
-                _symbolicLb[j * _size + i] +=
-                    sourceLbs[1] * sourceSymbolicLb[j * sourceLayerSize + indexA];
-            }
-            else
-            {
-                _symbolicLb[j * _size + i] +=
-                    sourceLbs[1] * sourceSymbolicUb[j * sourceLayerSize + indexA];
-            }
-
-            if ( sourceUbs[1] >= 0 )
-            {
-                _symbolicUb[j * _size + i] +=
-                    sourceUbs[1] * sourceSymbolicUb[j * sourceLayerSize + indexA];
-            }
-            else
-            {
-                _symbolicLb[j * _size + i] +=
-                    sourceUbs[1] * sourceSymbolicLb[j * sourceLayerSize + indexA];
-            }
-
-            if ( sourceLbs[0] >= 0 )
-            {
-                _symbolicLb[j * _size + i] +=
-                    sourceLbs[0] * sourceSymbolicLb[j * sourceLayerSize + indexB];
-                _symbolicUb[j * _size + i] +=
-                    sourceLbs[0] * sourceSymbolicUb[j * sourceLayerSize + indexB];
-            }
-            else
-            {
-                _symbolicLb[j * _size + i] +=
-                    sourceLbs[0] * sourceSymbolicUb[j * sourceLayerSize + indexB];
-                _symbolicUb[j * _size + i] +=
-                    sourceLbs[0] * sourceSymbolicLb[j * sourceLayerSize + indexB];
-            }
-        }
+        double aLower = sourceLbs[1];
+        double aUpper = sourceUbs[1];
+        double bLower = sourceLbs[0];
+        double bUpper = sourceLbs[0];
         _symbolicLowerBias[i] = -sourceLbs[0] * sourceLbs[1];
         _symbolicUpperBias[i] = -sourceLbs[0] * sourceUbs[1];
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            if ( aLower >= 0 )
+            {
+                _symbolicLb[j * _size + i] +=
+                    aLower * ( sourceLayers[0]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicLowerBias[i] += aLower * ( sourceLayers[0]->getSymbolicLowerBias() )[0];
+            }
+            else
+            {
+                _symbolicLb[j * _size + i] +=
+                    aLower * ( sourceLayers[0]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicLowerBias[i] += aLower * ( sourceLayers[0]->getSymbolicUpperBias() )[0];
+            }
+
+            if ( aUpper >= 0 )
+            {
+                _symbolicUb[j * _size + i] +=
+                    aUpper * ( sourceLayers[0]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicUpperBias[i] += aUpper * ( sourceLayers[0]->getSymbolicUpperBias() )[0];
+            }
+            else
+            {
+                _symbolicUb[j * _size + i] +=
+                    aUpper * ( sourceLayers[0]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicUpperBias[i] += aUpper * ( sourceLayers[0]->getSymbolicLowerBias() )[0];
+            }
+
+            if ( bLower >= 0 )
+            {
+                _symbolicLb[j * _size + i] +=
+                    bLower * ( sourceLayers[1]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bLower * ( sourceLayers[1]->getSymbolicLowerBias() )[1];
+            }
+            else
+            {
+                _symbolicLb[j * _size + i] +=
+                    bLower * ( sourceLayers[1]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bLower * ( sourceLayers[1]->getSymbolicUpperBias() )[1];
+            }
+
+            if ( bUpper >= 0 )
+            {
+                _symbolicUb[j * _size + i] +=
+                    bUpper * ( sourceLayers[1]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bUpper * ( sourceLayers[1]->getSymbolicUpperBias() )[1];
+            }
+            else
+            {
+                _symbolicUb[j * _size + i] +=
+                    bUpper * ( sourceLayers[1]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bUpper * ( sourceLayers[1]->getSymbolicLowerBias() )[1];
+            }
+        }
 
         double lb = FloatUtils::infinity();
         double ub = FloatUtils::negativeInfinity();
@@ -3327,7 +3334,6 @@ void Layer::computeSymbolicBoundsForWeightedSum()
         }
     }
 
-
     /*
       We now have the symbolic representation for the current
       layer. Next, we compute new lower and upper bounds for
@@ -3395,6 +3401,1128 @@ void Layer::computeSymbolicBoundsForWeightedSum()
                 Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
         }
     }
+}
+
+void Layer::computeParameterisedSymbolicBounds( const Vector<double> &coeffs, bool receive )
+{
+    switch ( _type )
+    {
+    case RELU:
+        computeParameterisedSymbolicBoundsForRelu( coeffs, receive );
+        break;
+
+    case SIGN:
+        computeParameterisedSymbolicBoundsForSign( coeffs, receive );
+        break;
+
+    case LEAKY_RELU:
+        computeParameterisedSymbolicBoundsForLeakyRelu( coeffs, receive );
+        break;
+
+    case BILINEAR:
+        computeParameterisedSymbolicBoundsForBilinear( coeffs, receive );
+        break;
+
+    default:
+        computeSymbolicBounds();
+        break;
+    }
+}
+
+void Layer::computeParameterisedSymbolicBoundsForRelu( const Vector<double> &coeffs, bool receive )
+{
+    ASSERT( coeffs.size() == 1 );
+
+    double coeff = coeffs[0];
+    ASSERT( coeff >= 0 && coeff <= 1 );
+
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+        }
+    }
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        /*
+          There are two ways we can determine that a ReLU has become fixed:
+
+          1. If the ReLU's variable has been externally fixed
+          2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
+        */
+        PhaseStatus reluPhase = PHASE_NOT_FIXED;
+
+        // Has the f variable been eliminated or fixed?
+        if ( FloatUtils::isPositive( _lb[i] ) )
+            reluPhase = RELU_PHASE_ACTIVE;
+        else if ( FloatUtils::isZero( _ub[i] ) )
+            reluPhase = RELU_PHASE_INACTIVE;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        /*
+          A ReLU initially "inherits" the symbolic bounds computed
+          for its input variable
+        */
+        unsigned sourceLayerSize = sourceLayer->getSize();
+        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            _symbolicLb[j * _size + i] =
+                sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
+            _symbolicUb[j * _size + i] =
+                sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
+        }
+        _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+        _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
+
+        double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
+        double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
+
+        _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+        _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+        _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+        _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
+        // Has the b variable been fixed?
+        if ( !FloatUtils::isNegative( sourceLb ) )
+        {
+            reluPhase = RELU_PHASE_ACTIVE;
+        }
+        else if ( !FloatUtils::isPositive( sourceUb ) )
+        {
+            reluPhase = RELU_PHASE_INACTIVE;
+        }
+
+        if ( reluPhase == PHASE_NOT_FIXED )
+        {
+            // If we got here, we know that lbLb < 0 and ubUb
+            // > 0 There are four possible cases, depending on
+            // whether ubLb and lbUb are negative or positive
+            // (see Neurify paper, page 14).
+
+            // Upper bound
+            if ( _symbolicLbOfUb[i] <= 0 )
+            {
+                // lbOfUb[i] < 0 < ubOfUb[i]
+                // Concretize the upper bound using the Ehler's-like approximation
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicUb[j * _size + i] = _symbolicUb[j * _size + i] * _symbolicUbOfUb[i] /
+                                                 ( _symbolicUbOfUb[i] - _symbolicLbOfUb[i] );
+
+                // Do the same for the bias, and then adjust
+                _symbolicUpperBias[i] = _symbolicUpperBias[i] * _symbolicUbOfUb[i] /
+                                        ( _symbolicUbOfUb[i] - _symbolicLbOfUb[i] );
+                _symbolicUpperBias[i] -= _symbolicLbOfUb[i] * _symbolicUbOfUb[i] /
+                                         ( _symbolicUbOfUb[i] - _symbolicLbOfUb[i] );
+            }
+
+            // Lower bound: y >= coeff * x  (varies continuously between y >= 0 and y >= alpha * x).
+            if ( _symbolicUbOfLb[i] <= 0 )
+            {
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicLb[j * _size + i] *= coeff;
+
+                _symbolicLowerBias[i] *= coeff;
+            }
+            else
+            {
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicLb[j * _size + i] = _symbolicLb[j * _size + i] * _symbolicUbOfLb[i] /
+                                                 ( _symbolicUbOfLb[i] - _symbolicLbOfLb[i] );
+
+                _symbolicLowerBias[i] = _symbolicLowerBias[i] * _symbolicUbOfLb[i] /
+                                        ( _symbolicUbOfLb[i] - _symbolicLbOfLb[i] );
+            }
+
+            _symbolicLbOfLb[i] = 0;
+        }
+        else
+        {
+            // The phase of this ReLU is fixed!
+            if ( reluPhase == RELU_PHASE_ACTIVE )
+            {
+                // Active ReLU, bounds are propagated as is
+            }
+            else
+            {
+                // Inactive ReLU, returns zero
+                _symbolicLbOfLb[i] = 0;
+                _symbolicUbOfLb[i] = 0;
+                _symbolicLbOfUb[i] = 0;
+                _symbolicUbOfUb[i] = 0;
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicUb[j * _size + i] = 0;
+                    _symbolicLb[j * _size + i] = 0;
+                }
+
+                _symbolicLowerBias[i] = 0;
+                _symbolicUpperBias[i] = 0;
+            }
+        }
+
+        if ( _symbolicLbOfUb[i] < 0 )
+            _symbolicLbOfUb[i] = 0;
+
+        /*
+          We now have the tightest bounds we can for the relu
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( receive )
+        {
+            if ( _lb[i] < _symbolicLbOfLb[i] )
+            {
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+void Layer::computeParameterisedSymbolicBoundsForSign( const Vector<double> &coeffs, bool receive )
+{
+    ASSERT( coeffs.size() == 2 );
+    ASSERT( coeffs[0] >= 0 && coeffs[0] <= 1 );
+    ASSERT( coeffs[1] >= 0 && coeffs[1] <= 1 );
+
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        // Eliminate neurons are skipped
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+
+            continue;
+        }
+
+        /*
+          There are two ways we can determine that a Sign has become fixed:
+
+          1. If the Sign's variable has been externally fixed
+          2. lbLb >= 0 (Positive) or ubUb < 0 (Negative)
+        */
+        PhaseStatus signPhase = PHASE_NOT_FIXED;
+
+        // Has the f variable been eliminated or fixed?
+        if ( !FloatUtils::isNegative( _lb[i] ) )
+            signPhase = SIGN_PHASE_POSITIVE;
+        else if ( FloatUtils::isNegative( _ub[i] ) )
+            signPhase = SIGN_PHASE_NEGATIVE;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        /*
+          A Sign initially "inherits" the symbolic bounds computed
+          for its input variable
+        */
+        unsigned sourceLayerSize = sourceLayer->getSize();
+        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            _symbolicLb[j * _size + i] =
+                sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
+            _symbolicUb[j * _size + i] =
+                sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
+        }
+        _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+        _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
+
+        double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
+        double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
+
+        _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+        _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+        _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+        _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
+        // Has the b variable been fixed?
+        if ( !FloatUtils::isNegative( sourceLb ) )
+        {
+            signPhase = SIGN_PHASE_POSITIVE;
+        }
+        else if ( FloatUtils::isNegative( sourceUb ) )
+        {
+            signPhase = SIGN_PHASE_NEGATIVE;
+        }
+
+        if ( signPhase == PHASE_NOT_FIXED )
+        {
+            PhaseStatus upperSignPhase = PHASE_NOT_FIXED;
+            PhaseStatus lowerSignPhase = PHASE_NOT_FIXED;
+
+            // If we got here, we know that lbLb < 0 and ubUb
+            // > 0
+
+            // Upper bound
+            if ( !FloatUtils::isNegative( _symbolicLbOfUb[i] ) )
+            {
+                // The upper bound is strictly positive - turns into
+                // the constant 1
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicUb[j * _size + i] = 0;
+
+                _symbolicUpperBias[i] = 1;
+
+                upperSignPhase = SIGN_PHASE_POSITIVE;
+            }
+            else
+            {
+                // The upper bound's phase is not fixed, use parameterised
+                // parallelogram approximation: y <= - 2 / l * coeffs[0] * x + 1
+                // (varies continuously between y <= 1 and y <= -2 / l * x + 1).
+                double factor = -2.0 / _symbolicLbOfLb[i] * coeffs[0];
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicUb[j * _size + i] *= factor;
+
+                // Do the same for the bias, and then adjust
+                _symbolicUpperBias[i] *= factor;
+                _symbolicUpperBias[i] += 1;
+            }
+
+            // Lower bound
+            if ( FloatUtils::isNegative( _symbolicUbOfLb[i] ) )
+            {
+                // The lower bound is strictly negative - turns into
+                // the constant -1
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicLb[j * _size + i] = 0;
+
+                _symbolicLowerBias[i] = -1;
+
+                lowerSignPhase = SIGN_PHASE_NEGATIVE;
+            }
+            else
+            {
+                // The lower bound's phase is not fixed, use parameterised
+                // parallelogram approximation: y >= 2 / u * coeffs[1] * x - 1
+                // (varies continuously between y >= -1 and y >= 2 / u * x - 1).
+                double factor = 2.0 / _symbolicUbOfUb[i] * coeffs[1];
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicLb[j * _size + i] *= factor;
+                }
+
+                // Do the same for the bias, and then adjust
+                _symbolicLowerBias[i] *= factor;
+                _symbolicLowerBias[i] -= 1;
+            }
+
+            if ( upperSignPhase == PHASE_NOT_FIXED )
+            {
+                _symbolicUbOfUb[i] = 1;
+                _symbolicLbOfUb[i] = -1;
+            }
+            else
+            {
+                _symbolicUbOfUb[i] = 1;
+                _symbolicLbOfUb[i] = 1;
+            }
+
+            if ( lowerSignPhase == PHASE_NOT_FIXED )
+            {
+                _symbolicUbOfLb[i] = 1;
+                _symbolicLbOfLb[i] = -1;
+            }
+            else
+            {
+                _symbolicUbOfLb[i] = -1;
+                _symbolicLbOfLb[i] = -1;
+            }
+        }
+        else
+        {
+            // The phase of this Sign is fixed!
+            double constant = ( signPhase == SIGN_PHASE_POSITIVE ) ? 1 : -1;
+
+            _symbolicLbOfLb[i] = constant;
+            _symbolicUbOfLb[i] = constant;
+            _symbolicLbOfUb[i] = constant;
+            _symbolicUbOfUb[i] = constant;
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                _symbolicUb[j * _size + i] = 0;
+                _symbolicLb[j * _size + i] = 0;
+            }
+
+            _symbolicLowerBias[i] = constant;
+            _symbolicUpperBias[i] = constant;
+        }
+
+        if ( _symbolicLbOfLb[i] < -1 )
+            _symbolicLbOfLb[i] = -1;
+        if ( _symbolicUbOfUb[i] > 1 )
+            _symbolicUbOfUb[i] = 1;
+
+        /*
+          We now have the tightest bounds we can for the sign
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( receive )
+        {
+            if ( _lb[i] < _symbolicLbOfLb[i] )
+            {
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+void Layer::computeParameterisedSymbolicBoundsForLeakyRelu( const Vector<double> &coeffs,
+                                                            bool receive )
+{
+    ASSERT( _alpha > 0 && _alpha < 1 );
+    ASSERT( coeffs.size() == 1 );
+    double coeff = coeffs[0];
+    ASSERT( coeff >= 0 && coeff <= 1 );
+
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+        }
+    }
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        /*
+          There are two ways we can determine that a LeakyReLU has become fixed:
+
+          1. If the LeakyReLU's variable has been externally fixed
+          2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
+        */
+        PhaseStatus leakyReluPhase = PHASE_NOT_FIXED;
+
+        // Has the f variable been eliminated or fixed?
+        if ( FloatUtils::isPositive( _lb[i] ) )
+            leakyReluPhase = RELU_PHASE_ACTIVE;
+        else if ( FloatUtils::isZero( _ub[i] ) )
+            leakyReluPhase = RELU_PHASE_INACTIVE;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        /*
+          A LeakyReLU initially "inherits" the symbolic bounds computed
+          for its input variable
+        */
+        unsigned sourceLayerSize = sourceLayer->getSize();
+        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            _symbolicLb[j * _size + i] =
+                sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
+            _symbolicUb[j * _size + i] =
+                sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
+        }
+        _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+        _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
+
+        double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
+        double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
+
+        _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+        _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+        _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+        _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
+        // Has the b variable been fixed?
+        if ( !FloatUtils::isNegative( sourceLb ) )
+        {
+            leakyReluPhase = RELU_PHASE_ACTIVE;
+        }
+        else if ( !FloatUtils::isPositive( sourceUb ) )
+        {
+            leakyReluPhase = RELU_PHASE_INACTIVE;
+        }
+
+        if ( leakyReluPhase == PHASE_NOT_FIXED )
+        {
+            // LeakyReLU not fixed
+            // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
+            // Concrete upper bound: x_f <= ub_b
+            double width = sourceUb - sourceLb;
+            double weight = ( sourceUb - _alpha * sourceLb ) / width;
+
+            if ( _alpha <= 1 )
+            {
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicUb[j * _size + i] *= weight;
+                }
+
+                // Do the same for the bias, and then adjust
+                _symbolicUpperBias[i] *= weight;
+                _symbolicUpperBias[i] += ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
+
+
+                // For the lower bound, in general, x_f >= lambda * x_b, where
+                // 0 <= lambda <= 1, would be a sound lower bound. We
+                // use the heuristic described in section 4.1 of
+                // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
+                // to set the value of lambda (either 0 or 1 is considered).
+
+                // lambda = ((1 - alpha) * coeff + alpha) (varies continuously between lambda =
+                // alpha and lambda = 1). Symbolic lower bound: x_f >= ((1 - alpha) * coeff +
+                // alpha) x_b Concrete lower bound: x_f >= 0
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicLb[j * _size + i] *= ( 1 - _alpha ) * coeff + _alpha;
+                }
+
+                _symbolicLowerBias[i] *= ( 1 - _alpha ) * coeff + _alpha;
+            }
+
+            else
+            {
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicLb[j * _size + i] *= weight;
+                }
+
+                // Do the same for the bias, and then adjust
+                _symbolicLowerBias[i] *= weight;
+                _symbolicLowerBias[i] += ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
+
+                // lambda = ((1 - alpha) * coeff + alpha) (varies continuously between lambda =
+                // alpha and lambda = 1). Symbolic lower bound: x_f >= ((1 - alpha) * coeff +
+                // alpha) x_b Concrete lower bound: x_f >= 0
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicUb[j * _size + i] *= ( 1 - _alpha ) * coeff + _alpha;
+                }
+
+                _symbolicUpperBias[i] *= ( 1 - _alpha ) * coeff + _alpha;
+            }
+
+            /*
+              We now have the symbolic representation for the current
+              layer. Next, we compute new lower and upper bounds for
+              it. For each of these bounds, we compute an upper bound and
+              a lower bound.
+            */
+            _symbolicLbOfLb[i] = _symbolicLowerBias[i];
+            _symbolicUbOfLb[i] = _symbolicLowerBias[i];
+            _symbolicLbOfUb[i] = _symbolicUpperBias[i];
+            _symbolicUbOfUb[i] = _symbolicUpperBias[i];
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                double inputLb = _layerOwner->getLayer( 0 )->getLb( j );
+                double inputUb = _layerOwner->getLayer( 0 )->getUb( j );
+
+                double entry = _symbolicLb[j * _size + i];
+
+                if ( entry >= 0 )
+                {
+                    _symbolicLbOfLb[i] += ( entry * inputLb );
+                    _symbolicUbOfLb[i] += ( entry * inputUb );
+                }
+                else
+                {
+                    _symbolicLbOfLb[i] += ( entry * inputUb );
+                    _symbolicUbOfLb[i] += ( entry * inputLb );
+                }
+
+                entry = _symbolicUb[j * _size + i];
+
+                if ( entry >= 0 )
+                {
+                    _symbolicLbOfUb[i] += ( entry * inputLb );
+                    _symbolicUbOfUb[i] += ( entry * inputUb );
+                }
+                else
+                {
+                    _symbolicLbOfUb[i] += ( entry * inputUb );
+                    _symbolicUbOfUb[i] += ( entry * inputLb );
+                }
+            }
+        }
+        else
+        {
+            // The phase of this LeakyReLU is fixed!
+            if ( leakyReluPhase == RELU_PHASE_ACTIVE )
+            {
+                // Positive LeakyReLU, bounds are propagated as is
+            }
+            else
+            {
+                // Negative LeakyReLU, bounds are multiplied by _alpha
+                _symbolicLbOfLb[i] *= _alpha;
+                _symbolicUbOfLb[i] *= _alpha;
+                _symbolicLbOfUb[i] *= _alpha;
+                _symbolicUbOfUb[i] *= _alpha;
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                {
+                    _symbolicUb[j * _size + i] *= _alpha;
+                    _symbolicLb[j * _size + i] *= _alpha;
+                }
+
+                _symbolicLowerBias[i] *= _alpha;
+                _symbolicUpperBias[i] *= _alpha;
+            }
+        }
+
+        if ( _symbolicUbOfUb[i] > sourceUb )
+            _symbolicUbOfUb[i] = sourceUb;
+        if ( _symbolicLbOfLb[i] < _alpha * sourceLb )
+            _symbolicLbOfLb[i] = _alpha * sourceLb;
+
+        /*
+          We now have the tightest bounds we can for the leakyRelu
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( receive )
+        {
+            if ( _lb[i] < _symbolicLbOfLb[i] )
+            {
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+void Layer::computeParameterisedSymbolicBoundsForBilinear( const Vector<double> &coeffs,
+                                                           bool receive )
+{
+    ASSERT( coeffs.size() == 2 );
+    ASSERT( coeffs[0] >= 0 && coeffs[0] <= 1 );
+    ASSERT( coeffs[1] >= 0 && coeffs[1] <= 1 );
+
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+        }
+    }
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        List<NeuronIndex> sources = getActivationSources( i );
+        ASSERT( sources.size() == 2 );
+
+        Vector<double> sourceLbs;
+        Vector<double> sourceUbs;
+        Vector<double> sourceValues;
+        Vector<unsigned> sourceNeurons;
+        Vector<unsigned> sourceLayerSizes;
+        Vector<const Layer *> sourceLayers;
+        bool allConstant = true;
+        for ( const auto &sourceIndex : sources )
+        {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+            unsigned sourceNeuron = sourceIndex._neuron;
+            double sourceLb = sourceLayer->getLb( sourceNeuron );
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+            unsigned sourceLayerSize = sourceLayer->getSize();
+
+            sourceLayers.append( sourceLayer );
+            sourceNeurons.append( sourceNeuron );
+            sourceLbs.append( sourceLb );
+            sourceUbs.append( sourceUb );
+            sourceLayerSizes.append( sourceLayerSize );
+
+            if ( !sourceLayer->neuronEliminated( sourceNeuron ) )
+            {
+                allConstant = false;
+            }
+            else
+            {
+                double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
+                sourceValues.append( sourceValue );
+            }
+        }
+
+        if ( allConstant )
+        {
+            // If the both source neurons have been eliminated, this neuron is constant
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                _symbolicUb[j * _size + i] = 0;
+                _symbolicLb[j * _size + i] = 0;
+            }
+
+            _symbolicUpperBias[i] = sourceValues[0] * sourceValues[1];
+            _symbolicLowerBias[i] = sourceValues[0] * sourceValues[1];
+            continue;
+        }
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            _symbolicUb[j * _size + i] = 0;
+            _symbolicLb[j * _size + i] = 0;
+        }
+
+        // Billinear linear relaxation (arXiv:2405.21063v2 [cs.LG])
+        // Lower bound: out >= aLower * x + bLower * y + c_l, where
+        // aLower = alpha1 * l_y + ( 1 - alpha1 ) * u_y
+        // bLower = alpha1 * l_x + ( 1 - alpha1 ) * u_x
+        // cLower = -alpha1 * l_x * l_y - ( 1 - alpha1 ) * u_x * u_y
+
+        // Upper bound: out <= aUpper * x + bUpper * y + c_u, where
+        // aUpper = alpha2 * u_y + ( 1 - alpha2 ) * l_y
+        // bUpper = alpha2 * l_x + ( 1 - alpha2 ) * u_x
+        // cUpper = -alpha2 * l_x * u_y - ( 1 - alpha2 ) * u_x * l_y
+
+        double aLower = coeffs[0] * sourceLbs[1] + ( 1 - coeffs[0] ) * sourceUbs[1];
+        double aUpper = coeffs[1] * sourceUbs[1] + ( 1 - coeffs[1] ) * sourceLbs[1];
+        double bLower = coeffs[0] * sourceLbs[0] + ( 1 - coeffs[0] ) * sourceUbs[0];
+        double bUpper = coeffs[1] * sourceLbs[0] + ( 1 - coeffs[1] ) * sourceUbs[0];
+
+        _symbolicLowerBias[i] = -coeffs[0] * sourceLbs[0] * sourceLbs[1] -
+                                ( 1 - coeffs[0] ) * sourceUbs[0] * sourceUbs[1];
+        _symbolicUpperBias[i] = -coeffs[1] * sourceLbs[0] * sourceUbs[1] -
+                                ( 1 - coeffs[1] ) * sourceUbs[0] * sourceLbs[1];
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            if ( aLower >= 0 )
+            {
+                _symbolicLb[j * _size + i] +=
+                    aLower * ( sourceLayers[0]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicLowerBias[i] += aLower * ( sourceLayers[0]->getSymbolicLowerBias() )[0];
+            }
+            else
+            {
+                _symbolicLb[j * _size + i] +=
+                    aLower * ( sourceLayers[0]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicLowerBias[i] += aLower * ( sourceLayers[0]->getSymbolicUpperBias() )[0];
+            }
+
+            if ( aUpper >= 0 )
+            {
+                _symbolicUb[j * _size + i] +=
+                    aUpper * ( sourceLayers[0]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicUpperBias[i] += aUpper * ( sourceLayers[0]->getSymbolicUpperBias() )[0];
+            }
+            else
+            {
+                _symbolicUb[j * _size + i] +=
+                    aUpper * ( sourceLayers[0]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[0] + sourceNeurons[0]];
+                _symbolicUpperBias[i] += aUpper * ( sourceLayers[0]->getSymbolicLowerBias() )[0];
+            }
+
+            if ( bLower >= 0 )
+            {
+                _symbolicLb[j * _size + i] +=
+                    bLower * ( sourceLayers[1]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bLower * ( sourceLayers[1]->getSymbolicLowerBias() )[1];
+            }
+            else
+            {
+                _symbolicLb[j * _size + i] +=
+                    bLower * ( sourceLayers[1]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bLower * ( sourceLayers[1]->getSymbolicUpperBias() )[1];
+            }
+
+            if ( bUpper >= 0 )
+            {
+                _symbolicUb[j * _size + i] +=
+                    bUpper * ( sourceLayers[1]
+                                   ->getSymbolicUb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bUpper * ( sourceLayers[1]->getSymbolicUpperBias() )[1];
+            }
+            else
+            {
+                _symbolicUb[j * _size + i] +=
+                    bUpper * ( sourceLayers[1]
+                                   ->getSymbolicLb() )[j * sourceLayerSizes[1] + sourceNeurons[1]];
+                _symbolicUpperBias[i] += bUpper * ( sourceLayers[1]->getSymbolicLowerBias() )[1];
+            }
+        }
+
+        double lb = FloatUtils::infinity();
+        double ub = FloatUtils::negativeInfinity();
+        List<double> values = { sourceLbs[0] * sourceLbs[1],
+                                sourceLbs[0] * sourceUbs[1],
+                                sourceUbs[0] * sourceLbs[1],
+                                sourceUbs[0] * sourceUbs[1] };
+        for ( const auto &v : values )
+        {
+            if ( v < lb )
+                lb = v;
+            if ( v > ub )
+                ub = v;
+        }
+
+        /*
+          We now have the symbolic representation for the current
+          layer. Next, we compute new lower and upper bounds for
+          it. For each of these bounds, we compute an upper bound and
+          a lower bound.
+        */
+        _symbolicLbOfLb[i] = _symbolicLowerBias[i];
+        _symbolicUbOfLb[i] = _symbolicLowerBias[i];
+        _symbolicLbOfUb[i] = _symbolicUpperBias[i];
+        _symbolicUbOfUb[i] = _symbolicUpperBias[i];
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            double inputLb = _layerOwner->getLayer( 0 )->getLb( j );
+            double inputUb = _layerOwner->getLayer( 0 )->getUb( j );
+
+            double entry = _symbolicLb[j * _size + i];
+
+            if ( entry >= 0 )
+            {
+                _symbolicLbOfLb[i] += ( entry * inputLb );
+                _symbolicUbOfLb[i] += ( entry * inputUb );
+            }
+            else
+            {
+                _symbolicLbOfLb[i] += ( entry * inputUb );
+                _symbolicUbOfLb[i] += ( entry * inputLb );
+            }
+
+            entry = _symbolicUb[j * _size + i];
+
+            if ( entry >= 0 )
+            {
+                _symbolicLbOfUb[i] += ( entry * inputLb );
+                _symbolicUbOfUb[i] += ( entry * inputUb );
+            }
+            else
+            {
+                _symbolicLbOfUb[i] += ( entry * inputUb );
+                _symbolicUbOfUb[i] += ( entry * inputLb );
+            }
+        }
+
+        /*
+          We now have the tightest bounds we can for the relu
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( receive )
+        {
+            if ( _lb[i] < _symbolicLbOfLb[i] )
+            {
+                _lb[i] = _symbolicLbOfLb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+            }
+
+            if ( _ub[i] > _symbolicUbOfUb[i] )
+            {
+                _ub[i] = _symbolicUbOfUb[i];
+                _layerOwner->receiveTighterBound(
+                    Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+            }
+        }
+    }
+}
+
+const Vector<double> Layer::OptimalParameterisedSymbolicBoundTightening()
+{
+    const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
+
+    // Search over coeffs in [0, 1]^number_of_parameters with projected grdient descent.
+    unsigned max_iterations =
+        GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
+    double step_size = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
+    double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    double weight_decay = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY;
+    double lr = GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+    unsigned dimension = getNumberOfParameters( layers );
+    bool maximize = false;
+    double sign = ( maximize ? 1 : -1 );
+
+    Vector<double> lower_bounds( dimension, 0 );
+    Vector<double> upper_bounds( dimension, 1 );
+
+    // Initialize initial guess uniformly.
+    Vector<double> guess( dimension );
+    std::mt19937_64 rng( GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED );
+    std::uniform_real_distribution<double> dis( 0, 1 );
+    for ( unsigned j = 0; j < dimension; ++j )
+    {
+        double lb = lower_bounds[j];
+        double ub = upper_bounds[j];
+        guess[j] = lb + dis( rng ) * ( ub - lb );
+    }
+
+    Vector<Vector<double>> candidates( dimension );
+    Vector<double> gradient( dimension );
+
+    for ( unsigned i = 0; i < max_iterations; ++i )
+    {
+        double current_cost = EstimateVolume( guess );
+        for ( unsigned j = 0; j < dimension; ++j )
+        {
+            candidates[j] = Vector<double>( guess );
+            candidates[j][j] += step_size;
+
+            if ( candidates[j][j] > upper_bounds[j] || candidates[j][j] < lower_bounds[j] )
+            {
+                gradient[j] = 0;
+                continue;
+            }
+
+            double cost = EstimateVolume( candidates[j] );
+            gradient[j] = ( cost - current_cost ) / step_size + weight_decay * guess[j];
+        }
+
+        bool gradient_is_zero = true;
+        for ( unsigned j = 0; j < dimension; ++j )
+        {
+            if ( FloatUtils::abs( gradient[j] ) > epsilon )
+            {
+                gradient_is_zero = false;
+            }
+        }
+        if ( gradient_is_zero )
+        {
+            break;
+        }
+
+        for ( unsigned j = 0; j < dimension; ++j )
+        {
+            guess[j] += sign * lr * gradient[j];
+
+            guess[j] = std::min( guess[j], upper_bounds[j] );
+            guess[j] = std::max( guess[j], lower_bounds[j] );
+        }
+    }
+
+    const Vector<double> optimal_coeffs( guess );
+    return optimal_coeffs;
+}
+
+double Layer::EstimateVolume( const Vector<double> &coeffs )
+{
+    // First, run parameterised symbolic bound propagation.
+    const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
+    Map<unsigned, Vector<double>> layerIndicesToParameters =
+        getParametersForLayers( layers, coeffs );
+    for ( unsigned i = 0; i < layers.size(); ++i )
+    {
+        ASSERT( layers.exists( i ) );
+        const Vector<double> &currentLayerCoeffs = layerIndicesToParameters[i];
+        layers[i]->computeParameterisedSymbolicBounds( currentLayerCoeffs );
+    }
+
+    std::mt19937_64 rng( GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED );
+    double log_box_volume = 0;
+    double sigmoid_sum = 0;
+
+    unsigned inputLayerIndex = 0;
+    unsigned outputLayerIndex = layers.size() - 1;
+    Layer *inputLayer = layers[inputLayerIndex];
+    Layer *outputLayer = layers[outputLayerIndex];
+
+    // Calculate volume of input variables' bounding box.
+    for ( unsigned index = 0; index < inputLayer->getSize(); ++index )
+    {
+        if ( inputLayer->neuronEliminated( index ) )
+            continue;
+
+        double lb = inputLayer->getLb( index );
+        double ub = inputLayer->getUb( index );
+
+        if ( lb == ub )
+            continue;
+
+        log_box_volume += std::log( ub - lb );
+    }
+
+    for ( unsigned i = 0; i < GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS; ++i )
+    {
+        // Sample input point from known bounds.
+        Map<unsigned, double> point;
+        for ( unsigned j = 0; j < inputLayer->getSize(); ++j )
+        {
+            if ( inputLayer->neuronEliminated( j ) )
+            {
+                point.insert( j, 0 );
+            }
+            else
+            {
+                double lb = inputLayer->getLb( j );
+                double ub = inputLayer->getUb( j );
+                std::uniform_real_distribution<> dis( lb, ub );
+                point.insert( j, dis( rng ) );
+            }
+        }
+
+        // Calculate sigmoid of maximum margin from output symbolic bounds.
+        double max_margin = 0;
+        for ( unsigned j = 0; j < outputLayer->getSize(); ++j )
+        {
+            if ( outputLayer->neuronEliminated( j ) )
+                continue;
+
+            double margin = outputLayer->calculateDifferenceFromSymbolic( point, j );
+            max_margin = std::max( max_margin, margin );
+        }
+        sigmoid_sum += SigmoidConstraint::sigmoid( max_margin );
+    }
+
+    return std::exp( log_box_volume + std::log( sigmoid_sum ) ) /
+           GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS;
+}
+
+double Layer::calculateDifferenceFromSymbolic( Map<unsigned, double> &point, unsigned i ) const
+{
+    double lowerSum = _symbolicLowerBias[i];
+    double upperSum = _symbolicUpperBias[i];
+
+    for ( unsigned j = 0; j < _inputLayerSize; ++j )
+    {
+        lowerSum += _symbolicLb[j * _size + i] * point[j];
+        upperSum += _symbolicUb[j * _size + i] * point[j];
+    }
+
+    return std::max( _ub[i] - upperSum, lowerSum - _lb[i] );
+}
+
+
+unsigned Layer::getNumberOfParametersPerType( Type t ) const
+{
+    if ( t == Layer::RELU || t == Layer::LEAKY_RELU )
+        return 1;
+
+    if ( t == Layer::SIGN || t == Layer::BILINEAR )
+        return 2;
+
+    return 0;
+}
+
+unsigned Layer::getNumberOfParameters( const Map<unsigned, Layer *> &layers ) const
+{
+    unsigned index = 0;
+    for ( auto pair : layers )
+    {
+        unsigned layerIndex = pair.first;
+        Layer *layer = layers[layerIndex];
+        index += getNumberOfParametersPerType( layer->getLayerType() );
+    }
+    return index;
+}
+
+Map<unsigned, Vector<double>> Layer::getParametersForLayers( const Map<unsigned, Layer *> &layers,
+                                                             const Vector<double> &coeffs ) const
+{
+    unsigned index = 0;
+    Map<unsigned, Vector<double>> layerIndicesToParameters;
+    for ( auto pair : layers )
+    {
+        unsigned layerIndex = pair.first;
+        Layer *layer = layers[layerIndex];
+        unsigned n_coeffs = getNumberOfParametersPerType( layer->getLayerType() );
+        Vector<double> current_coeffs( n_coeffs );
+        for ( unsigned i = 0; i < n_coeffs; i++ )
+        {
+            current_coeffs[i] = coeffs[index + i];
+        }
+        layerIndicesToParameters.insert( layerIndex, current_coeffs );
+        index += n_coeffs;
+    }
+    return layerIndicesToParameters;
 }
 
 double Layer::softmaxLSELowerBound( const Vector<double> &inputs,
@@ -3675,7 +4803,6 @@ double Layer::softmaxdERUpperBound( const Vector<double> &inputMids,
 {
     double li = outputLb[i];
     double ui = outputUb[i];
-
 
     if ( i == di )
     {
@@ -4005,7 +5132,6 @@ String Layer::typeToString( Type type )
     case BILINEAR:
         return "BILINEAR";
         break;
-
 
     default:
         return "UNKNOWN TYPE";

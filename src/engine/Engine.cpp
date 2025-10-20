@@ -1597,6 +1597,7 @@ void Engine::performMILPSolverBoundedTightening( Query *inputQuery )
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX:
             _networkLevelReasoner->lpRelaxationPropagation();
             break;
         case MILPSolverBoundTighteningType::MILP_ENCODING:
@@ -1661,6 +1662,15 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
                 printf( "Backward analysis tightened %u bounds\n", tightened );
         }
     }
+
+    if ( _milpSolverBoundTighteningType ==
+         MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX )
+    {
+        performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
+        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+        if ( _verbosity > 0 )
+            printf( "Backward analysis tightened %u bounds\n", tightened );
+    }
 }
 
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
@@ -1688,6 +1698,7 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
             return;
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
         case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PREIMAGE_APPROX:
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:
             return;
@@ -3699,6 +3710,7 @@ bool Engine::certifyUNSATCertificate()
             return false;
         }
     }
+
     _UNSATCertificateCurrentPointer->get()->deleteUnusedLemmas();
     struct timespec certificationStart = TimeUtils::sampleMicro();
     _precisionRestorer.restoreInitialEngineState( *this );
