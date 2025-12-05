@@ -18,7 +18,6 @@
 
 #include "DeepPolyAnalysis.h"
 #include "ITableau.h"
-#include "LPFormulator.h"
 #include "Layer.h"
 #include "LayerOwner.h"
 #include "Map.h"

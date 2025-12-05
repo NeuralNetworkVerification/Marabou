@@ -1676,15 +1676,17 @@ void Engine::performAdditionalBackwardAnalysisIfNeeded()
 
     if ( _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_PMNR )
     {
+        unsigned iter = 1;
         unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
         if ( _verbosity > 0 )
             printf( "Backward analysis tightened %u bounds\n", tightened );
-        while ( tightened && GlobalConfiguration::MAX_ROUNDS_OF_PMNR_BACKWARD_ANALYSIS )
+        while ( tightened && iter < GlobalConfiguration::MAX_ROUNDS_OF_PMNR_BACKWARD_ANALYSIS )
         {
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
             tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
             if ( _verbosity > 0 )
                 printf( "Backward analysis tightened %u bounds\n", tightened );
+            ++iter;
         }
     }
 }

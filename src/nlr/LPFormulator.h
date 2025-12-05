@@ -59,9 +59,6 @@ public:
                                         Map<unsigned, Vector<double>>(),
                                     const Vector<PolygonalTightening> &polygonalTightenings =
                                         Vector<PolygonalTightening>( {} ) );
-    void optimizeBoundsWithPreimageApproximation( Map<unsigned, Layer *> &layers );
-    void optimizeBoundsWithInvprop( Map<unsigned, Layer *> &layers );
-    void optimizeBoundsWithPMNR( Map<unsigned, Layer *> &layers );
     void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                                    unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
