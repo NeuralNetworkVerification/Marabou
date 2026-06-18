@@ -72,6 +72,7 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
+    , _proofWriter( NULL )
 {
     _searchTreeHandler.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -110,6 +111,12 @@ Engine::~Engine()
 
     if ( _produceUNSATProofs && _UNSATCertificateCurrentPointer )
         _UNSATCertificateCurrentPointer->deleteSelf();
+
+    if ( _proofWriter )
+    {
+        delete _proofWriter;
+        _proofWriter = NULL;
+    }
 }
 
 void Engine::setVerbosity( unsigned verbosity )
@@ -1438,14 +1445,23 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
                 if ( !UNSATCertificateUtils::getSupportedActivations().exists(
                          plConstraint->getType() ) )
                 {
-                    _produceUNSATProofs = false;
                     Options::get()->setBool( Options::PRODUCE_PROOFS, false );
                     String activationType =
                         plConstraint->serializeToString().tokenize( "," ).back();
-                    printf(
-                        "Turning off proof production since activation %s is not yet supported\n",
-                        activationType.ascii() );
-                    break;
+                    printf( "Activation %s is not yet supported in proof production\n",
+                            activationType.ascii() );
+                    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+                }
+                else if ( GlobalConfiguration::WRITE_ALETHE_PROOF &&
+                          !AletheProofWriter::getSupportedActivations().exists(
+                              plConstraint->getType() ) )
+                {
+                    String activationType =
+                        plConstraint->serializeToString().tokenize( "," ).back();
+                    printf( "Activation %s is not yet supported in proof production in Alethe\n"
+                            " Change configurations for regular proof production.\n",
+                            activationType.ascii() );
+                    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
                 }
             }
         }
@@ -1480,11 +1496,7 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
 
             if ( _produceUNSATProofs )
             {
-                _UNSATCertificate = new UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
-                _UNSATCertificateCurrentPointer->set( _UNSATCertificate );
-                _UNSATCertificate->setVisited();
                 _groundBoundManager.initialize( n );
-
                 for ( unsigned i = 0; i < n; ++i )
                 {
                     _groundBoundManager.addGroundBound(
@@ -1492,6 +1504,20 @@ bool Engine::processInputQuery( const IQuery &inputQuery, bool preprocess )
                     _groundBoundManager.addGroundBound(
                         i, _preprocessedQuery->getLowerBound( i ), Tightening::LB, false );
                 }
+
+                if ( _produceUNSATProofs && GlobalConfiguration::WRITE_ALETHE_PROOF )
+                    _proofWriter = new AletheProofWriter(
+                        _tableau->getM(),
+                        _groundBoundManager.getAllGroundBounds( Tightening::UB ),
+                        _groundBoundManager.getAllGroundBounds( Tightening::LB ),
+                        _groundBoundManager,
+                        _tableau->getSparseA(),
+                        _plConstraints );
+
+                _UNSATCertificate =
+                    new UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit(), 0, 0 );
+                _UNSATCertificateCurrentPointer->set( _UNSATCertificate );
+                _UNSATCertificate->setVisited();
             }
         }
         else
@@ -3430,17 +3456,22 @@ void Engine::explainSimplexFailure()
 
     ( **_UNSATCertificateCurrentPointer ).makeLeaf();
 
-    if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
+    SparseUnsortedList sparseContradictionToAnalyse = SparseUnsortedList();
+
+    // Proof writing requires analysis to avoid blowup
+    if ( _proofWriter || GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
     {
-        SparseUnsortedList sparseContradictionToAnalyse = SparseUnsortedList();
         leafContradictionVec.empty()
             ? sparseContradictionToAnalyse.initializeToEmpty()
             : sparseContradictionToAnalyse.initialize( leafContradictionVec.data(),
                                                        leafContradictionVec.size() );
-
         analyseExplanationDependencies(
             sparseContradictionToAnalyse, _groundBoundManager.getCounter(), -1, true, 0 );
     }
+
+    if ( _proofWriter )
+        _proofWriter->writeContradiction( sparseContradictionToAnalyse,
+                                          _UNSATCertificateCurrentPointer->get() );
 }
 
 bool Engine::certifyInfeasibility( unsigned var ) const
@@ -3706,6 +3737,9 @@ bool Engine::certifyUNSATCertificate()
         }
     }
     _UNSATCertificateCurrentPointer->get()->deleteUnusedLemmas();
+    if ( _proofWriter )
+        _proofWriter->writeChildrenConclusion( _UNSATCertificateCurrentPointer->get() );
+
     struct timespec certificationStart = TimeUtils::sampleMicro();
     _precisionRestorer.restoreInitialEngineState( *this );
 
@@ -3714,38 +3748,59 @@ bool Engine::certifyUNSATCertificate()
 
     for ( unsigned i = 0; i < _tableau->getN(); ++i )
     {
-        groundUpperBounds[i] = _groundBoundManager.getGroundBound( i, Tightening::UB );
-        groundLowerBounds[i] = _groundBoundManager.getGroundBound( i, Tightening::LB );
+        groundUpperBounds[i] = _preprocessedQuery->getUpperBound( i );
+        groundLowerBounds[i] = _preprocessedQuery->getLowerBound( i );
     }
+    bool certificationSucceeded = false;
 
-    if ( GlobalConfiguration::WRITE_JSON_PROOF )
+    if ( _proofWriter )
     {
-        File file( JsonWriter::PROOF_FILENAME );
-        JsonWriter::writeProofToJson( _UNSATCertificate,
-                                      _tableau->getM(),
-                                      _tableau->getSparseA(),
-                                      groundUpperBounds,
-                                      groundLowerBounds,
-                                      _plConstraints,
-                                      file );
+        String pref;
+        if ( Options::get()->getString( Options::INPUT_FILE_PATH ).length() > 0 )
+        {
+            pref = Options::get()->getString( Options::INPUT_FILE_PATH ).tokenize( "/" ).back() +
+                   Options::get()->getString( Options::PROPERTY_FILE_PATH ).tokenize( "/" ).back();
+        }
+        else
+        {
+            ASSERT( Options::get()->getString( Options::INPUT_QUERY_FILE_PATH ).length() > 0 );
+            pref =
+                Options::get()->getString( Options::INPUT_QUERY_FILE_PATH ).tokenize( "/" ).back();
+        }
+
+        File proofFile( pref + ".smt2.alethe" );
+        SmtLibWriter::writeToSmtLibFile( pref + ".smt2",
+                                         _tableau->getM(),
+                                         _tableau->getN(),
+                                         groundUpperBounds,
+                                         groundLowerBounds,
+                                         _tableau->getSparseA(),
+                                         List<Equation>(),
+                                         _plConstraints );
+
+
+        _proofWriter->writeInstanceToFile( proofFile );
+        printf( "proof written to Alethe format and needs to be certified separately\n" );
+        certificationSucceeded = true;
+    }
+    else
+    {
+        Checker unsatCertificateChecker( _UNSATCertificate,
+                                         _tableau->getM(),
+                                         _tableau->getSparseA(),
+                                         groundUpperBounds,
+                                         groundLowerBounds,
+                                         _plConstraints );
+        certificationSucceeded = unsatCertificateChecker.check();
+        _statistics.setLongAttribute(
+            Statistics::TOTAL_CERTIFICATION_TIME,
+            TimeUtils::timePassed( certificationStart, TimeUtils::sampleMicro() ) );
+        printf( "Certification time: " );
+        _statistics.printLongAttributeAsTime(
+            _statistics.getLongAttribute( Statistics::TOTAL_CERTIFICATION_TIME ) );
     }
 
-    Checker unsatCertificateChecker( _UNSATCertificate,
-                                     _tableau->getM(),
-                                     _tableau->getSparseA(),
-                                     groundUpperBounds,
-                                     groundLowerBounds,
-                                     _plConstraints );
-    bool certificationSucceeded = unsatCertificateChecker.check();
-
-    _statistics.setLongAttribute(
-        Statistics::TOTAL_CERTIFICATION_TIME,
-        TimeUtils::timePassed( certificationStart, TimeUtils::sampleMicro() ) );
-    printf( "Certification time: " );
-    _statistics.printLongAttributeAsTime(
-        _statistics.getLongAttribute( Statistics::TOTAL_CERTIFICATION_TIME ) );
-
-    if ( certificationSucceeded )
+    if ( certificationSucceeded && !_proofWriter )
     {
         printf( "Certified\n" );
         _statistics.incUnsignedAttribute( Statistics::CERTIFIED_UNSAT );
@@ -3753,7 +3808,7 @@ bool Engine::certifyUNSATCertificate()
             printf( "Some leaves were delegated and need to be certified separately by an SMT "
                     "solver\n" );
     }
-    else
+    else if ( !_proofWriter )
         printf( "Error certifying UNSAT certificate\n" );
 
     DEBUG( {
@@ -3783,6 +3838,9 @@ void Engine::markLeafToDelegate()
 
     if ( !currentUnsatCertificateNode->getChildren().empty() )
         currentUnsatCertificateNode->makeLeaf();
+
+    if ( _proofWriter )
+        _proofWriter->writeDelegatedLeaf( _UNSATCertificateCurrentPointer->get() );
 }
 
 const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) const
@@ -3930,6 +3988,9 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
                                             entry->lemma->getMinTargetBound() );
         }
 
+        if ( _proofWriter )
+            _proofWriter->writeLemma( entry );
+
         return { entry };
     }
 
@@ -3969,7 +4030,8 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
     // Iterate through all deduced bounds, check which participated in the explanation
     for ( unsigned var = 0; var < linearCombination.size(); ++var )
     {
-        if ( !FloatUtils::isZero( linearCombination[var] ) )
+        if ( !FloatUtils::isZero( linearCombination[var],
+                                  GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
         {
             Tightening::BoundType btype = ( ( linearCombination[var] > 0 ) && isUpper ) ||
                                                   ( ( linearCombination[var] < 0 ) && !isUpper )
@@ -4053,8 +4115,27 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
 
                 std::advance( it, 1 );
             }
+
+            if ( _proofWriter )
+                _proofWriter->writeLemma( entry );
         }
     }
 
     return entries;
+}
+
+IProofWriter *Engine::getProofWriter() const
+{
+    return _proofWriter;
+}
+
+unsigned Engine::getNumOfLemmas() const
+{
+    return _statistics.getUnsignedAttribute( Statistics::NUM_LEMMAS );
+}
+
+void Engine::deleteProofIfExists() const
+{
+    if ( _produceUNSATProofs && _proofWriter )
+        _proofWriter->deleteProof();
 }

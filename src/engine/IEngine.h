@@ -31,6 +31,7 @@
 #undef ERROR
 #endif
 
+class IProofWriter;
 class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
@@ -196,7 +197,25 @@ public:
     virtual std::shared_ptr<GroundBoundManager::GroundBoundEntry>
     setGroundBoundFromLemma( const std::shared_ptr<PLCLemma> lemma, bool isPhaseFixing ) = 0;
 
+    /*
+     Get the list of PLC registered in the engine
+    */
     virtual const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const = 0;
+
+    /*
+     Get the Alethe proof writer object
+    */
+    virtual IProofWriter *getProofWriter() const = 0;
+
+    /*
+     Delete the data stored in the Alethe proof
+    */
+    virtual void deleteProofIfExists() const = 0;
+
+    /*
+     Get the number of PLC lemmas learned so far
+    */
+    virtual unsigned getNumOfLemmas() const = 0;
 };
 
 #endif // __IEngine_h__

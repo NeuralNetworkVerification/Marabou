@@ -33,7 +33,8 @@ public:
               Tightening::BoundType affectedVarBound,
               const Vector<SparseUnsortedList> &explanation,
               PiecewiseLinearFunctionType constraintType,
-              double minTargetBound );
+              double minTargetBound,
+              unsigned id );
 
     ~PLCLemma();
 
@@ -49,6 +50,7 @@ public:
     PiecewiseLinearFunctionType getConstraintType() const;
     bool getToCheck() const;
     double getMinTargetBound() const;
+    unsigned getId() const;
 
     void setToCheck();
 
@@ -62,6 +64,7 @@ private:
     PiecewiseLinearFunctionType _constraintType;
     bool _toCheck;
     double _minTargetBound;
+    unsigned _id;
 };
 
 #endif //__PlcExplanation_h__

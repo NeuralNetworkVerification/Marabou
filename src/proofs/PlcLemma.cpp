@@ -23,7 +23,8 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     Tightening::BoundType affectedVarBound,
                     const Vector<SparseUnsortedList> &explanations,
                     PiecewiseLinearFunctionType constraintType,
-                    double minTargetBound )
+                    double minTargetBound,
+                    unsigned id )
     : _causingVars( causingVars )
     , _affectedVar( affectedVar )
     , _bound( bound )
@@ -32,6 +33,7 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
     , _constraintType( constraintType )
     , _toCheck( false )
     , _minTargetBound( minTargetBound )
+    , _id( id )
 {
     if ( explanations.empty() )
         _explanations = List<SparseUnsortedList>();
@@ -115,4 +117,9 @@ double PLCLemma::getMinTargetBound() const
 void PLCLemma::setToCheck()
 {
     _toCheck = true;
+}
+
+unsigned PLCLemma::getId() const
+{
+    return _id;
 }

@@ -257,6 +257,11 @@ private:
       current search state.
     */
     unsigned _numRejectedPhasePatternProposal;
+
+    /*
+     A unique id for poof tree nodes
+    */
+    unsigned _proofNodeId;
 };
 
 #endif // __SearchTreeHandler_h__

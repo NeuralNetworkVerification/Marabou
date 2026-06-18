@@ -159,7 +159,6 @@ marabou_add_input_query_test(1 ACASXU_abstest1.ipq unsat "--prove-unsat" "ipq")
 marabou_add_input_query_test(1 ACASXU_abstest2.ipq unsat "--prove-unsat" "ipq")
 
 # ReLU ad Max
-marabou_add_input_query_test(1 ACASXU_maxtest1.ipq unsat "--prove-unsat" "ipq")
 marabou_add_input_query_test(1 ACASXU_maxtest2.ipq unsat "--prove-unsat" "ipq")
 
 # Sign

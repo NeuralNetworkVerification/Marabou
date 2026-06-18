@@ -14,6 +14,7 @@ macro(proofs_add_unit_test name)
     marabou_add_test(${PROOFS_TESTS_DIR}/Test_${name} proofs USE_MOCK_COMMON USE_MOCK_ENGINE "unit")
 endmacro()
 
+proofs_add_unit_test(AletheProofWriter)
 proofs_add_unit_test(BoundExplainer)
 proofs_add_unit_test(Checker)
 proofs_add_unit_test(SmtLibWriter)

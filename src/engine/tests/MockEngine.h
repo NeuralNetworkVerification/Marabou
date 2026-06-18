@@ -298,6 +298,20 @@ public:
     }
 
     void incNumOfLemmas() override{};
+
+    IProofWriter *getProofWriter() const override
+    {
+        return NULL;
+    }
+
+    void deleteProofIfExists() const override
+    {
+    }
+
+    unsigned getNumOfLemmas() const override
+    {
+        return 0;
+    }
 };
 
 #endif // __MockEngine_h__

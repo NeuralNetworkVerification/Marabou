@@ -16,6 +16,7 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
+#include "AletheProofWriter.h"
 #include "AutoCostFunctionManager.h"
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
@@ -30,6 +31,7 @@
 #include "GroundBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
+#include "IProofWriter.h"
 #include "IQuery.h"
 #include "JsonWriter.h"
 #include "LPSolverType.h"
@@ -312,6 +314,22 @@ public:
      For debugging purpose
     */
     const List<PiecewiseLinearConstraint *> *getPiecewiseLinearConstraints() const override;
+
+    /*
+     Get the Alethe proof writer object
+    */
+    IProofWriter *getProofWriter() const override;
+
+    /*
+     Delete the data stored in the Alethe proof
+    */
+    void deleteProofIfExists() const override;
+
+    /*
+     Get the number of PLC lemmas learned so far
+    */
+    unsigned getNumOfLemmas() const override;
+
 
 private:
     enum BasisRestorationRequired {
@@ -849,6 +867,7 @@ private:
     GroundBoundManager _groundBoundManager;
     UnsatCertificateNode *_UNSATCertificate;
     CVC4::context::CDO<UnsatCertificateNode *> *_UNSATCertificateCurrentPointer;
+    IProofWriter *_proofWriter;
 
     /*
       Returns true iff there is a variable with bounds that can explain infeasibility of the tableau

@@ -429,8 +429,10 @@ void Statistics::print()
     printf( "\tNumber of leaves to delegate: %u\n",
             getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
     printf( "\tNumber of lemmas: %u\n", getUnsignedAttribute( Statistics::NUM_LEMMAS ) );
-    printf( "\tNumber of lemmas used in proof minimization: %u\n",
-            getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
+
+    if ( GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES )
+        printf( "\tNumber of lemmas used in proof minimization: %u\n",
+                getUnsignedAttribute( Statistics::NUM_LEMMAS_USED ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const

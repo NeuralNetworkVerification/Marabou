@@ -15,12 +15,16 @@
 #ifndef __SmtLibWriter_h__
 #define __SmtLibWriter_h__
 
+#include "DisjunctionConstraint.h"
 #include "File.h"
+#include "LeakyReluConstraint.h"
 #include "List.h"
 #include "MString.h"
+#include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
 #include "SparseUnsortedList.h"
 #include "Vector.h"
+#include "gmpxx.h"
 
 #include <iomanip>
 
@@ -123,8 +127,18 @@ public:
     static String signedValue( double val );
 
     /*
-      A wrapper function calling all previous functions
+      Wrapper functions calling all previous functions
     */
+    static List<String>
+    convertToSmtLib( unsigned numOfTableauRows,
+                     unsigned numOfVariables,
+                     const Vector<double> &upperBounds,
+                     const Vector<double> &lowerBounds,
+                     const SparseMatrix *tableau,
+                     const List<Equation> &additionalEquations,
+                     const List<PiecewiseLinearConstraint *> &problemConstraints );
+
+
     static void writeToSmtLibFile( const String &fileName,
                                    unsigned numOfTableauRows,
                                    unsigned numOfVariables,

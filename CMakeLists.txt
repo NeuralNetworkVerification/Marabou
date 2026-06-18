@@ -183,7 +183,7 @@ endif()
 ##############
 
 if (NOT MSVC AND ${ENABLE_OPENBLAS})
-  set(OPENBLAS_VERSION 0.3.19)
+  set(OPENBLAS_VERSION 0.3.33)
 
   set(OPENBLAS_LIB openblas)
   set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-${OPENBLAS_VERSION}")
@@ -208,6 +208,24 @@ if (NOT MSVC AND ${ENABLE_OPENBLAS})
   list(APPEND LIBS ${OPENBLAS_LIB})
   target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
 endif()
+
+#########
+## GMP ##
+#########
+
+find_library(GMP_DIR gmp)
+set(GMP_VERSION 6.3.0)
+
+if(NOT GMP_DIR)
+    message("Can't find GMP, installing. If GMP is installed please use the GMP_DIR parameter to pass the path")
+    set(GMP_DIR "${TOOLS_DIR}/GMP")
+    execute_process(COMMAND ${TOOLS_DIR}/download_gmp.sh ${GMP_VERSION})
+    find_library(GMP_DIR gmp)
+    if(NOT GMP_DIR)
+        message("Could not install GMP, try installing manually. If GMP is installed please use the GMP_DIR parameter to pass the path")
+    endif()
+endif()
+list(APPEND LIBS ${GMP_DIR})
 
 ###########
 ## Build ##
@@ -314,10 +332,9 @@ find_package(Threads REQUIRED)
 list(APPEND LIBS Threads::Threads)
 
 if (BUILD_STATIC_MARABOU)
-  # build a static library
-  target_link_libraries(${MARABOU_LIB} ${LIBS} -static)
+    target_link_libraries(${MARABOU_LIB} ${LIBS} -static)
 else()
-  target_link_libraries(${MARABOU_LIB} ${LIBS})
+    target_link_libraries(${MARABOU_LIB} ${LIBS})
 endif()
 
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})

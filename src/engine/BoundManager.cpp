@@ -464,15 +464,16 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
         else
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 
-        std::shared_ptr<PLCLemma> PLCExpl = std::make_shared<PLCLemma>( causingVars,
-                                                                        var,
-                                                                        value,
-                                                                        causingVarBound,
-                                                                        affectedVarBound,
-                                                                        allExplanations,
-                                                                        constraint.getType(),
-                                                                        minTargetBound );
-
+        std::shared_ptr<PLCLemma> PLCExpl =
+            std::make_shared<PLCLemma>( causingVars,
+                                        var,
+                                        value,
+                                        causingVarBound,
+                                        affectedVarBound,
+                                        allExplanations,
+                                        constraint.getType(),
+                                        minTargetBound,
+                                        _engine->getNumOfLemmas() + 1 );
 
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
 

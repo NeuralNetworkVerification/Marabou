@@ -16,14 +16,11 @@
 #define __JsonWriter_h__
 
 #include "Contradiction.h"
-#include "File.h"
+#include "IProofWriter.h"
 #include "List.h"
 #include "MString.h"
-#include "PiecewiseLinearConstraint.h"
 #include "PlcLemma.h"
-#include "SparseUnsortedList.h"
 #include "Tightening.h"
-#include "UnsatCertificateNode.h"
 #include "Vector.h"
 
 #include <iomanip>
@@ -31,7 +28,7 @@
 /*
   A class responsible for writing Marabou proof instances into JSON format
 */
-class JsonWriter
+class JsonWriter : public IProofWriter
 {
 public:
     /*
@@ -88,6 +85,16 @@ public:
     static const char VALUE[];
     static const char VARIABLE[];
     static const char VARIABLES[];
+
+    // Interface methods are redundant as proof is written statically in a single call
+    void writeInstanceToFile( IFile & /*file*/ ) override{};
+    void writeChildrenConclusion( const UnsatCertificateNode * /*node*/ ) override{};
+    void writeDelegatedLeaf( const UnsatCertificateNode * /*node*/ ) override{};
+    void writeLemma(
+        const std::shared_ptr<GroundBoundManager::GroundBoundEntry> & /*lemmaEntry*/ ) override{};
+    void writeContradiction( const SparseUnsortedList & /*contradiction*/,
+                             UnsatCertificateNode * /*node*/ ) override{};
+    void deleteProof() override{};
 
 private:
     /*

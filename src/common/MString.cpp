@@ -195,10 +195,10 @@ String String::trimZerosFromRight() const
         }
 
     if ( _super[lastNonZero] == '.' )
-        --lastNonZero;
+        ++lastNonZero;
 
     if ( lastNonZero < 0 )
-        return "0";
+        return "0.0";
 
     return substring( 0, lastNonZero + 1 );
 }

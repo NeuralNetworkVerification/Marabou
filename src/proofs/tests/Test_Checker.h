@@ -38,7 +38,7 @@ public:
         List<PiecewiseLinearConstraint *> constraintsList = { &relu1, &relu2 };
 
         // Set a complete tree of depth 3, using 2 ReLUs
-        auto *root = new UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
+        auto *root = new UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit(), 0, 0 );
 
         Checker checker(
             root, m, &initialTableau, groundUpperBounds, groundLowerBounds, constraintsList );
@@ -57,11 +57,11 @@ public:
         TS_ASSERT_EQUALS( split1_2.getBoundTightenings().size(), 2U );
 
         // Child with missing aux tightening
-        auto *child1 = new UnsatCertificateNode( root, split1_1 );
-        auto *child2 = new UnsatCertificateNode( root, split1_2 );
+        auto *child1 = new UnsatCertificateNode( root, split1_1, 0, 0 );
+        auto *child2 = new UnsatCertificateNode( root, split1_2, 0, 0 );
 
-        auto *child2_1 = new UnsatCertificateNode( child2, split2_1 );
-        auto *child2_2 = new UnsatCertificateNode( child2, split2_2 );
+        auto *child2_1 = new UnsatCertificateNode( child2, split2_1, 0, 0 );
+        auto *child2_2 = new UnsatCertificateNode( child2, split2_2, 0, 0 );
 
         root->setVisited();
         child2->setVisited();

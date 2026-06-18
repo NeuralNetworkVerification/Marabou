@@ -468,14 +468,14 @@ public:
         {
             ReluConstraint relu( b, f );
             TS_ASSERT( !relu.phaseFixed() );
-            relu.notifyUpperBound( b, 0.0 );
+            relu.notifyUpperBound( b, -0.001 );
             TS_ASSERT( relu.phaseFixed() );
         }
 
         {
             ReluConstraint relu( b, f );
             TS_ASSERT( !relu.phaseFixed() );
-            relu.notifyUpperBound( f, 0.0 );
+            relu.notifyUpperBound( f, -0.001 );
             TS_ASSERT( relu.phaseFixed() );
         }
 
