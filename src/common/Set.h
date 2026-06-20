@@ -36,11 +36,11 @@ public:
     typedef typename Super::const_iterator const_iterator;
     typedef typename Super::const_reverse_iterator const_reverse_iterator;
 
-    Set<Value>()
+    Set()
     {
     }
 
-    Set<Value>( const std::initializer_list<Value> &initializerList )
+    Set( const std::initializer_list<Value> &initializerList )
         : _container( initializerList )
     {
     }
@@ -50,7 +50,7 @@ public:
         _container.insert( value );
     }
 
-    void insert( const Set<Value> &other )
+    void insert( const Set &other )
     {
         for ( auto it = other.begin(); it != other.end(); ++it )
             _container.insert( *it );
@@ -62,43 +62,43 @@ public:
             _container.insert( *it );
     }
 
-    void operator+=( const Set<Value> &other )
+    void operator+=( const Set &other )
     {
         insert( other );
     }
 
-    Set<Value> operator+( const Set<Value> &other )
+    Set operator+( const Set &other )
     {
-        Set<Value> result = *this;
+        Set result = *this;
         result.insert( other );
         return result;
     }
 
-    bool operator==( const Set<Value> &other ) const
+    bool operator==( const Set &other ) const
     {
         return _container == other._container;
     }
 
-    bool operator!=( const Set<Value> &other ) const
+    bool operator!=( const Set &other ) const
     {
         return _container != other._container;
     }
 
-    bool operator<( const Set<Value> &other ) const
+    bool operator<( const Set &other ) const
     {
         return _container < other._container;
     }
 
-    static bool containedIn( const Set<Value> &one, const Set<Value> &two )
+    static bool containedIn( const Set &one, const Set &two )
     // Is one contained in two?
     {
-        return Set<Value>::difference( one, two ).empty();
+        return Set::difference( one, two ).empty();
     }
 
-    static Set<Value> difference( const Set<Value> &one, const Set<Value> &two )
+    static Set difference( const Set &one, const Set &two )
     // Elements that appear in one, but do not appear in two.
     {
-        Set<Value> difference;
+        Set difference;
         std::set_difference( one.begin(),
                              one.end(),
                              two.begin(),
@@ -107,9 +107,9 @@ public:
         return difference;
     }
 
-    static Set<Value> intersection( const Set<Value> &one, const Set<Value> &two )
+    static Set intersection( const Set &one, const Set &two )
     {
-        Set<Value> intersection;
+        Set intersection;
         std::set_intersection( one.begin(),
                                one.end(),
                                two.begin(),
