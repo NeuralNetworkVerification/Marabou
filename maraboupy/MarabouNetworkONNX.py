@@ -31,16 +31,33 @@ class MarabouNetworkONNX(MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None):
+    def __init__(self, filename, inputNames=None, outputNames=None, maxNumberOfLinearEquations=None):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames)
+        self.readONNX(filename, inputNames, outputNames, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
-    def readONNX(self, filename, inputNames=None, outputNames=None, preserveExistingConstraints=False):
+    def readONNX(self, filename, inputNames=None, outputNames=None, preserveExistingConstraints=False, maxNumberOfLinearEquations=None):
+        """Read an ONNX file and create a MarabouNetworkONNX object
+
+        Args:
+            filename: (str): Path to the ONNX file
+            inputNames: (list of str): List of node names corresponding to inputs
+            outputNames: (list of str): List of node names corresponding to outputs
+            preserveExistingConstraints (bool, optional): If True, preserve existing constraints in the network. Defaults to False.
+            maxNumberOfLinearEquations (int, optional): Threshold for the number of linear equations.
+                                                        If the number of linear equations is greater than this threshold,
+                                                        the network will be split into two networks. Defaults to None.
+        :meta private:
+        """
+
+
         if not preserveExistingConstraints:
             self.clear()
 
         self.filename = filename
         self.graph = onnx.load(filename).graph
+
+        if os.path.exists('post_split.onnx'):
+            os.remove('post_split.onnx')
 
         # Setup input node names
         if inputNames is not None:
@@ -71,7 +88,7 @@ class MarabouNetworkONNX(MarabouNetwork):
             initNames = [node.name for node in self.graph.initializer]
             self.outputNames = [out.name for out in self.graph.output if out.name not in initNames]
 
-        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames)
+        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
     def getNode(self, nodeName):
         """Find the node in the graph corresponding to the given name
