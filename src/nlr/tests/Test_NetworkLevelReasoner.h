@@ -1641,7 +1641,7 @@ public:
           x6 x7 x8 = softmax(x3, x4, x5)
 
           x9 = x6 + x7 + x8
-          x10 = x6 + x7 + x8
+          x10 = - x6 - x7 - x8
 
         */
 
@@ -6041,7 +6041,7 @@ public:
 
           Layer 2 (with residual from x0):
 
-          x3.lb = -1( 0.5x0 + 0.5 ) -x0 + 1 = -1.5x0 + 0.5 : [-1, 1]
+          x3.lb = -1( 0.5x0 + 0.5 ) -x0 + 1 = -1.5x0 + 0.5 : [-1, 2]
           x3.ub = -1( 0.5x0 ) -1x0 + 1 = -1.5x0 + 1 : [-0.5, 2.5]
           x3 range: [-1, 2.5]
 
@@ -6057,7 +6057,7 @@ public:
           x5.lb =  3 ( 0 ) + 3 ( x0 ) + 1 = 3x0 + 1 : [-2, 4]
           x5.ub =  3 ( -15/14 x0 + 20/14 ) + 3 ( x0 ) + 1 = -3/14 x0 + 74/14 : [71/14, 77/14 = 5.5]
 
-          x5 range: [-2, 4]
+          x5 range: [-2, 5.5]
         */
 
         List<Tightening> expectedBounds( {
@@ -6113,7 +6113,7 @@ public:
 
           Layer 2 (with residual from x0):
 
-          x3.lb = -1( 0.5x0 + 0.5 ) -x0 + 1 = -1.5x0 + 0.5 : [-1, 1]
+          x3.lb = -1( 0.5x0 + 0.5 ) -x0 + 1 = -1.5x0 + 0.5 : [-1, 2]
           x3.ub = -1( 0.5x0 ) -1x0 + 1 = -1.5x0 + 1 : [-0.5, 2.5]
           x3 range: [-1, 2.5]
 
@@ -7461,20 +7461,20 @@ public:
         */
 
         List<Tightening> expectedBounds(
-            { Tightening( 3, 2, Tightening::LB ),        Tightening( 3, 2, Tightening::UB ),
-              Tightening( 4, 3, Tightening::LB ),        Tightening( 4, 3, Tightening::UB ),
-              Tightening( 5, 0, Tightening::LB ),        Tightening( 5, 0, Tightening::UB ),
-              Tightening( 6, -1, Tightening::LB ),       Tightening( 6, -1, Tightening::UB ),
-              Tightening( 7, -2, Tightening::LB ),       Tightening( 7, -2, Tightening::UB ),
-              Tightening( 8, 0.8668, Tightening::LB ),   Tightening( 8, 0.8668, Tightening::UB ),
-              Tightening( 9, 0.9820, Tightening::LB ),   Tightening( 9, 0.9820, Tightening::UB ),
-              Tightening( 10, 0.1173, Tightening::LB ),  Tightening( 10, 0.1173, Tightening::UB ),
-              Tightening( 11, 0.0179, Tightening::LB ),  Tightening( 11, 0.0179, Tightening::UB ),
-              Tightening( 12, 0.0159, Tightening::LB ),  Tightening( 12, 0.0159, Tightening::UB ),
-              Tightening( 13, 0.9470, Tightening::LB ),  Tightening( 13, 0.9470, Tightening::UB ),
-              Tightening( 14, -0.9470, Tightening::LB ), Tightening( 14, -0.9470, Tightening::UB ),
-              Tightening( 15, 1.0253, Tightening::LB ),  Tightening( 15, 1.0253, Tightening::UB ),
-              Tightening( 16, -1.0253, Tightening::LB ), Tightening( 16, -1.0253, Tightening::UB )
+            { Tightening( 3, 2, Tightening::LB ),       Tightening( 3, 2, Tightening::UB ),
+              Tightening( 4, 3, Tightening::LB ),       Tightening( 4, 3, Tightening::UB ),
+              Tightening( 5, 0, Tightening::LB ),       Tightening( 5, 0, Tightening::UB ),
+              Tightening( 6, -1, Tightening::LB ),      Tightening( 6, -1, Tightening::UB ),
+              Tightening( 7, -2, Tightening::LB ),      Tightening( 7, -2, Tightening::UB ),
+              Tightening( 8, 0.8668, Tightening::LB ),  Tightening( 8, 0.8668, Tightening::UB ),
+              Tightening( 9, 0.9820, Tightening::LB ),  Tightening( 9, 0.9820, Tightening::UB ),
+              Tightening( 10, 0.1173, Tightening::LB ), Tightening( 10, 0.1173, Tightening::UB ),
+              Tightening( 11, 0.0179, Tightening::LB ), Tightening( 11, 0.0179, Tightening::UB ),
+              Tightening( 12, 0.0159, Tightening::LB ), Tightening( 12, 0.0159, Tightening::UB ),
+              Tightening( 13, 1, Tightening::LB ),      Tightening( 13, 1, Tightening::UB ),
+              Tightening( 14, -1, Tightening::LB ),     Tightening( 14, -1, Tightening::UB ),
+              Tightening( 15, 1, Tightening::LB ),      Tightening( 15, 1, Tightening::UB ),
+              Tightening( 16, -1, Tightening::LB ),     Tightening( 16, -1, Tightening::UB )
 
             } );
 
@@ -7577,9 +7577,9 @@ public:
 
           Layer 3:
 
-          x7.lb = -1 ( 2x0 - 5x1 + 3 ) = -2x0 + 7x1 - 3   : [-21, 0]
-          x7.ub = -1 ( -2x0 + 3x1 - 1 ) = 2x0 + x1 + 1   : [2, 7]
-          x4 range: [-21, 5]
+          x5.lb = -1 ( 2x0 - 5x1 + 3 ) = -2x0 + 7x1 - 3   : [-21, 0]
+          x5.ub = -1 ( -2x0 + 3x1 - 1 ) = 2x0 + x1 + 1   : [2, 7]
+          x5 range: [-21, 7]
         */
 
         List<Tightening> expectedBounds( { Tightening( 2, -1, Tightening::LB ),
