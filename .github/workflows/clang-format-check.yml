@@ -7,7 +7,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Check that all files in src/ follows the style defined in .clang-format
-      uses: jidicula/clang-format-action@v4.11.0
+      uses: jidicula/clang-format-action@v4.13.0
       with:
         clang-format-version: '14'
         check-path: 'src'
