@@ -16,9 +16,9 @@
 
 #include "MILPEncoder.h"
 
-#include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
+#include "Layer.h"
 #include "TimeUtils.h"
 
 MILPEncoder::MILPEncoder( const ITableau &tableau )
@@ -629,14 +629,14 @@ void MILPEncoder::encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstra
             }
             if ( !useLSE2 )
             {
-                symbolicLowerBias = NLR::DeepPolySoftmaxElement::LSELowerBound(
-                    sourceMids, sourceLbs, sourceUbs, i );
+                symbolicLowerBias =
+                    NLR::Layer::LSELowerBound( sourceMids, sourceLbs, sourceUbs, i );
                 if ( !FloatUtils::wellFormed( symbolicLowerBias ) )
                     wellFormed = false;
                 for ( unsigned j = 0; j < size; ++j )
                 {
-                    double dldj = NLR::DeepPolySoftmaxElement::dLSELowerBound(
-                        sourceMids, sourceLbs, sourceUbs, i, j );
+                    double dldj =
+                        NLR::Layer::dLSELowerBound( sourceMids, sourceLbs, sourceUbs, i, j );
                     if ( !FloatUtils::wellFormed( dldj ) )
                         wellFormed = false;
                     terms.append(
@@ -646,14 +646,14 @@ void MILPEncoder::encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstra
             }
             else
             {
-                symbolicLowerBias = NLR::DeepPolySoftmaxElement::LSELowerBound2(
-                    sourceMids, sourceLbs, sourceUbs, i );
+                symbolicLowerBias =
+                    NLR::Layer::LSELowerBound2( sourceMids, sourceLbs, sourceUbs, i );
                 if ( !FloatUtils::wellFormed( symbolicLowerBias ) )
                     wellFormed = false;
                 for ( unsigned j = 0; j < size; ++j )
                 {
-                    double dldj = NLR::DeepPolySoftmaxElement::dLSELowerBound2(
-                        sourceMids, sourceLbs, sourceUbs, i, j );
+                    double dldj =
+                        NLR::Layer::dLSELowerBound2( sourceMids, sourceLbs, sourceUbs, i, j );
                     if ( !FloatUtils::wellFormed( dldj ) )
                         wellFormed = false;
                     terms.append(
@@ -667,15 +667,14 @@ void MILPEncoder::encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstra
             // Upper-bound
             wellFormed = true;
             double symbolicUpperBias =
-                NLR::DeepPolySoftmaxElement::LSEUpperBound( sourceMids, targetLbs, targetUbs, i );
+                NLR::Layer::LSEUpperBound( sourceMids, targetLbs, targetUbs, i );
             if ( !FloatUtils::wellFormed( symbolicUpperBias ) )
                 wellFormed = false;
             terms.clear();
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariables[i] ) ) );
             for ( unsigned j = 0; j < size; ++j )
             {
-                double dudj = NLR::DeepPolySoftmaxElement::dLSEUpperbound(
-                    sourceMids, targetLbs, targetUbs, i, j );
+                double dudj = NLR::Layer::dLSEUpperbound( sourceMids, targetLbs, targetUbs, i, j );
                 if ( !FloatUtils::wellFormed( dudj ) )
                     wellFormed = false;
                 terms.append( GurobiWrapper::Term( -dudj, Stringf( "x%u", sourceVariables[j] ) ) );

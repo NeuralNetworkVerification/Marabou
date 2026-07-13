@@ -40,6 +40,8 @@ void DeepPolyMaxPoolElement::execute(
 
     // Update the symbolic and concrete upper- and lower- bounds
     // of each neuron
+    Vector<unsigned> maxLowerBoundIndices( _size );
+    Vector<double> maxUpperBounds( _size );
     for ( unsigned i = 0; i < _size; ++i )
     {
         log( Stringf( "Handling Neuron %u_%u...", _layerIndex, i ) );
@@ -83,6 +85,10 @@ void DeepPolyMaxPoolElement::execute(
             }
         }
 
+        _phaseFixed[i] = phaseFixed;
+        maxLowerBoundIndices[i] = indexOfMaxLowerBound._neuron;
+        maxUpperBounds[i] = maxUpperBound;
+
         if ( phaseFixed )
         {
             log( Stringf( "Neuron %u_%u fixed to Neuron %u_%u",
@@ -110,7 +116,36 @@ void DeepPolyMaxPoolElement::execute(
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
         log( Stringf( "Handling Neuron %u_%u - done", _layerIndex, i ) );
     }
+
+    if ( _storePredecessorSymbolicBounds )
+    {
+        storePredecessorSymbolicBounds( maxLowerBoundIndices, maxUpperBounds );
+    }
+
     log( "Executing - done" );
+}
+
+void DeepPolyMaxPoolElement::storePredecessorSymbolicBounds(
+    const Vector<unsigned> &indexOfMaxLowerBound,
+    const Vector<double> &maxUpperBound )
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _phaseFixed[i] )
+        {
+            ( *_predecessorSymbolicLb )[_layerIndex][_size * indexOfMaxLowerBound[i] + i] = 1;
+            ( *_predecessorSymbolicUb )[_layerIndex][_size * indexOfMaxLowerBound[i] + i] = 1;
+            ( *_predecessorSymbolicLowerBias )[_layerIndex][i] = 0;
+            ( *_predecessorSymbolicUpperBias )[_layerIndex][i] = 0;
+        }
+        else
+        {
+            ( *_predecessorSymbolicLb )[_layerIndex][_size * indexOfMaxLowerBound[i] + i] = 1;
+            ( *_predecessorSymbolicUb )[_layerIndex][_size * indexOfMaxLowerBound[i] + i] = 0;
+            ( *_predecessorSymbolicLowerBias )[_layerIndex][i] = 0;
+            ( *_predecessorSymbolicUpperBias )[_layerIndex][i] = maxUpperBound[i];
+        }
+    }
 }
 
 void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor(

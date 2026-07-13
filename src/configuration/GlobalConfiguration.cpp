@@ -68,6 +68,24 @@ const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
 const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 
+const unsigned GlobalConfiguration::VOLUME_ESTIMATION_RANDOM_SEED = 1;
+const unsigned GlobalConfiguration::VOLUME_ESTIMATION_ITERATIONS = 25000;
+const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED = 1;
+const unsigned GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS = 25;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE = 0.025;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE = 0.25;
+const double GlobalConfiguration::PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY = 0;
+
+const unsigned GlobalConfiguration::INVPROP_MAX_ITERATIONS = 10;
+const double GlobalConfiguration::INVPROP_STEP_SIZE = 0.025;
+const double GlobalConfiguration::INVPROP_LEARNING_RATE = 0.005;
+const double GlobalConfiguration::INVPROP_WEIGHT_DECAY = 0.5;
+const double GlobalConfiguration::INVPROP_INITIAL_GAMMA = 0.025;
+
+const unsigned GlobalConfiguration::PMNR_RANDOM_SEED = 1;
+const unsigned GlobalConfiguration::PMNR_SELECTED_NEURONS = 2;
+const unsigned GlobalConfiguration::PMNR_BBPS_BRANCHING_CANDIDATES = 100;
+
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
 const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000000001;
@@ -122,6 +140,7 @@ const bool GlobalConfiguration::DEDICATED_ALETHE_RULE = false;
 
 const unsigned GlobalConfiguration::BACKWARD_BOUND_PROPAGATION_DEPTH = 3;
 const unsigned GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS = 10;
+const unsigned GlobalConfiguration::MAX_ROUNDS_OF_PMNR_BACKWARD_ANALYSIS = 10;
 
 const bool GlobalConfiguration::ANALYZE_PROOF_DEPENDENCIES = true;
 const bool GlobalConfiguration::MINIMIZE_PROOF_DEPENDENCIES = true;

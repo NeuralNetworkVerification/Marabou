@@ -33,6 +33,9 @@ public:
     ~DeepPolySoftmaxElement();
 
     void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElements );
+
+    void storePredecessorSymbolicBounds();
+
     void symbolicBoundInTermsOfPredecessor( const double *symbolicLb,
                                             const double *symbolicUb,
                                             double *symbolicLowerBias,
@@ -41,61 +44,6 @@ public:
                                             double *symbolicUbInTermsOfPredecessor,
                                             unsigned targetLayerSize,
                                             DeepPolyElement *predecessor );
-
-    // The following methods compute concrete softmax output bounds
-    // using different linear approximation, as well as the coefficients
-    // of softmax inputs in the symbolic bounds
-    static double LSELowerBound( const Vector<double> &sourceMids,
-                                 const Vector<double> &inputLbs,
-                                 const Vector<double> &inputUbs,
-                                 unsigned outputIndex );
-    static double dLSELowerBound( const Vector<double> &sourceMids,
-                                  const Vector<double> &inputLbs,
-                                  const Vector<double> &inputUbs,
-                                  unsigned outputIndex,
-                                  unsigned inputIndex );
-    static double LSELowerBound2( const Vector<double> &sourceMids,
-                                  const Vector<double> &inputLbs,
-                                  const Vector<double> &inputUbs,
-                                  unsigned outputIndex );
-    static double dLSELowerBound2( const Vector<double> &sourceMids,
-                                   const Vector<double> &inputLbs,
-                                   const Vector<double> &inputUbs,
-                                   unsigned outputIndex,
-                                   unsigned inputIndex );
-    static double LSEUpperBound( const Vector<double> &sourceMids,
-                                 const Vector<double> &outputLb,
-                                 const Vector<double> &outputUb,
-                                 unsigned outputIndex );
-    static double dLSEUpperbound( const Vector<double> &sourceMids,
-                                  const Vector<double> &outputLb,
-                                  const Vector<double> &outputUb,
-                                  unsigned outputIndex,
-                                  unsigned inputIndex );
-    static double ERLowerBound( const Vector<double> &sourceMids,
-                                const Vector<double> &inputLbs,
-                                const Vector<double> &inputUbs,
-                                unsigned outputIndex );
-    static double dERLowerBound( const Vector<double> &sourceMids,
-                                 const Vector<double> &inputLbs,
-                                 const Vector<double> &inputUbs,
-                                 unsigned outputIndex,
-                                 unsigned inputIndex );
-    static double ERUpperBound( const Vector<double> &sourceMids,
-                                const Vector<double> &outputLbs,
-                                const Vector<double> &outputUbs,
-                                unsigned outputIndex );
-    static double dERUpperBound( const Vector<double> &sourceMids,
-                                 const Vector<double> &outputLbs,
-                                 const Vector<double> &outputUbs,
-                                 unsigned outputIndex,
-                                 unsigned inputIndex );
-    static double linearLowerBound( const Vector<double> &outputLbs,
-                                    const Vector<double> &outputUbs,
-                                    unsigned outputIndex );
-    static double linearUpperBound( const Vector<double> &outputLbs,
-                                    const Vector<double> &outputUbs,
-                                    unsigned outputIndex );
 
 private:
     SoftmaxBoundType _boundType;

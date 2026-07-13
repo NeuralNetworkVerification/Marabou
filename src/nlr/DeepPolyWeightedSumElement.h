@@ -77,6 +77,13 @@ private:
                                                 const double *symbolicUpperBias,
                                                 DeepPolyElement *sourceElement );
 
+    void
+    storeOutputSymbolicBounds( unsigned sourceLayerSize,
+                               Map<unsigned, double *> &residualLb,
+                               Map<unsigned, double *> &residualUb,
+                               Set<unsigned> &residualLayerIndices,
+                               const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore );
+
     void allocateMemoryForResidualsIfNeeded( unsigned residualLayerIndex,
                                              unsigned residualLayerSize );
     void allocateMemory();

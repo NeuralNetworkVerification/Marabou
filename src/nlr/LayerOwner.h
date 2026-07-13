@@ -17,6 +17,7 @@
 #define __LayerOwner_h__
 
 #include "ITableau.h"
+#include "PolygonalTightening.h"
 #include "Tightening.h"
 
 namespace NLR {
@@ -35,6 +36,7 @@ public:
     virtual const ITableau *getTableau() const = 0;
     virtual unsigned getNumberOfLayers() const = 0;
     virtual void receiveTighterBound( Tightening tightening ) = 0;
+    virtual void receivePolygonalTightening( PolygonalTightening &polygonalTightening ) = 0;
 };
 
 } // namespace NLR

@@ -151,6 +151,51 @@ public:
     // Random seed for generating simulation values.
     static const unsigned SIMULATION_RANDOM_SEED;
 
+    // Random seed for EstimateVolume procedure (PreimageApproximation).
+    static const unsigned VOLUME_ESTIMATION_RANDOM_SEED;
+
+    // Number of iterations for EstimateVolume procedure (PreimageApproximation).
+    static const unsigned VOLUME_ESTIMATION_ITERATIONS;
+
+    // Random seed for PreimageApproximation optimization.
+    static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_RANDOM_SEED;
+
+    // Maximum iterations for PreimageApproximation optimization.
+    static const unsigned PREIMAGE_APPROXIMATION_OPTIMIZATION_MAX_ITERATIONS;
+
+    // Step size for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_STEP_SIZE;
+
+    // Learning rate for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_LEARNING_RATE;
+
+    // Weight decay for PreimageApproximation optimization.
+    static const double PREIMAGE_APPROXIMATION_OPTIMIZATION_WEIGHT_DECAY;
+
+    // Maximum iterations for INVPROP optimization.
+    static const unsigned INVPROP_MAX_ITERATIONS;
+
+    // Step size for INVPROP optimization.
+    static const double INVPROP_STEP_SIZE;
+
+    // Learning rate for INVPROP optimization.
+    static const double INVPROP_LEARNING_RATE;
+
+    // Weight decay for INVPROP optimization.
+    static const double INVPROP_WEIGHT_DECAY;
+
+    // Initial gamma values for INVPROP optimization.
+    static const double INVPROP_INITIAL_GAMMA;
+
+    // Random seed for PMNR (with randomized hyperplanes).
+    static const unsigned PMNR_RANDOM_SEED;
+
+    // Number of selected neurons for PMNR (with heuristically selected hyperplanes).
+    static const unsigned PMNR_SELECTED_NEURONS;
+
+    // Number of candidates for PMNR-BBPS branching points.
+    static const unsigned PMNR_BBPS_BRANCHING_CANDIDATES;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
@@ -275,6 +320,10 @@ public:
      */
     static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
+    /* How many rounds of backward analysis to perform for PMNR algorithm?
+     */
+    static const unsigned MAX_ROUNDS_OF_PMNR_BACKWARD_ANALYSIS;
+
     /* Analyze lemma dependencies when producing proofs
      */
     static const bool ANALYZE_PROOF_DEPENDENCIES;
@@ -282,7 +331,6 @@ public:
     /* Minimize the number of lemma dependencies when producing proofs
      */
     static const bool MINIMIZE_PROOF_DEPENDENCIES;
-
 
 #ifdef ENABLE_GUROBI
     /*

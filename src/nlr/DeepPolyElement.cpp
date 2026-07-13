@@ -21,6 +21,11 @@ DeepPolyElement::DeepPolyElement()
     : _layer( NULL )
     , _size( 0 )
     , _layerIndex( 0 )
+    , _storeOutputSymbolicBounds( false )
+    , _storePredecessorSymbolicBounds( false )
+    , _useParameterisedSBT( false )
+    , _layerIndicesToParameters( NULL )
+    , _outputLayerSize( 0 )
     , _symbolicLb( NULL )
     , _symbolicUb( NULL )
     , _symbolicLowerBias( NULL )
@@ -38,7 +43,6 @@ unsigned DeepPolyElement::getSize() const
 {
     return _size;
 }
-
 unsigned DeepPolyElement::getLayerIndex() const
 {
     return _layerIndex;
@@ -90,6 +94,32 @@ double DeepPolyElement::getUpperBound( unsigned index ) const
 {
     ASSERT( index < getSize() );
     return _ub[index];
+}
+
+void DeepPolyElement::setStoreOutputSymbolicBounds( bool storeOutputSymbolicBounds )
+{
+    _storeOutputSymbolicBounds = storeOutputSymbolicBounds;
+}
+
+void DeepPolyElement::setStorePredecessorSymbolicBounds( bool storePredecessorSymbolicBounds )
+{
+    _storePredecessorSymbolicBounds = storePredecessorSymbolicBounds;
+}
+
+void DeepPolyElement::setUseParameterisedSBT( bool useParameterisedSBT )
+{
+    _useParameterisedSBT = useParameterisedSBT;
+}
+
+void DeepPolyElement::setLayerIndicesToParameters(
+    Map<unsigned, Vector<double>> *layerIndicesToParameters )
+{
+    _layerIndicesToParameters = layerIndicesToParameters;
+}
+
+void DeepPolyElement::setOutputLayerSize( unsigned outputLayerSize )
+{
+    _outputLayerSize = outputLayerSize;
 }
 
 double DeepPolyElement::getLowerBoundFromLayer( unsigned index ) const
@@ -154,6 +184,99 @@ void DeepPolyElement::setWorkingMemory( double *work1SymbolicLb,
     _work2SymbolicUb = work2SymbolicUb;
     _workSymbolicLowerBias = workSymbolicLowerBias;
     _workSymbolicUpperBias = workSymbolicUpperBias;
+}
+
+void DeepPolyElement::setSymbolicBoundsMemory(
+    Map<unsigned, Vector<double>> *outputSymbolicLb,
+    Map<unsigned, Vector<double>> *outputSymbolicUb,
+    Map<unsigned, Vector<double>> *outputSymbolicLowerBias,
+    Map<unsigned, Vector<double>> *outputSymbolicUpperBias,
+    Map<unsigned, Vector<double>> *predecessorSymbolicLb,
+    Map<unsigned, Vector<double>> *predecessorSymbolicUb,
+    Map<unsigned, Vector<double>> *predecessorSymbolicLowerBias,
+    Map<unsigned, Vector<double>> *predecessorSymbolicUpperBias )
+{
+    _outputSymbolicLb = outputSymbolicLb;
+    _outputSymbolicUb = outputSymbolicUb;
+    _outputSymbolicLowerBias = outputSymbolicLowerBias;
+    _outputSymbolicUpperBias = outputSymbolicUpperBias;
+    _predecessorSymbolicLb = predecessorSymbolicLb;
+    _predecessorSymbolicUb = predecessorSymbolicUb;
+    _predecessorSymbolicLowerBias = predecessorSymbolicLowerBias;
+    _predecessorSymbolicUpperBias = predecessorSymbolicUpperBias;
+}
+
+void DeepPolyElement::storeOutputSymbolicBounds(
+    double *work1SymbolicLb,
+    double *work1SymbolicUb,
+    double *workSymbolicLowerBias,
+    double *workSymbolicUpperBias,
+    Map<unsigned, double *> &residualLb,
+    Map<unsigned, double *> &residualUb,
+    Set<unsigned> &residualLayerIndices,
+    const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
+{
+    // Remove externally fixed neurons from symbolic bounds, replace them with their value.
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _layer->neuronEliminated( i ) )
+        {
+            double value = _layer->getEliminatedNeuronValue( i );
+            for ( unsigned j = 0; j < _outputLayerSize; ++j )
+            {
+                workSymbolicLowerBias[i] += work1SymbolicLb[i * _size + j] * value;
+                workSymbolicUpperBias[i] += work1SymbolicUb[i * _size + j] * value;
+                work1SymbolicLb[i * _size + j] = 0;
+                work1SymbolicUb[i * _size + j] = 0;
+            }
+        }
+    }
+
+    // Remove residual layers from symbolic bounds, concretize them instead.
+    Vector<double> symbolicLowerBiasConcretizedResiduals( _outputLayerSize, 0 );
+    Vector<double> symbolicUpperBiasConcretizedResiduals( _outputLayerSize, 0 );
+    for ( unsigned i = 0; i < _outputLayerSize; ++i )
+    {
+        symbolicLowerBiasConcretizedResiduals[i] = workSymbolicLowerBias[i];
+        symbolicUpperBiasConcretizedResiduals[i] = workSymbolicUpperBias[i];
+    }
+    for ( const auto &residualLayerIndex : residualLayerIndices )
+    {
+        DeepPolyElement *residualElement = deepPolyElementsBefore[residualLayerIndex];
+        double *currentResidualLb = residualLb[residualLayerIndex];
+        double *currentResidualUb = residualUb[residualLayerIndex];
+
+        // Get concrete bounds for residual neurons.
+        for ( unsigned i = 0; i < residualElement->getSize(); ++i )
+        {
+            double sourceLb = residualElement->getLowerBoundFromLayer( i ) -
+                              GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+            double sourceUb = residualElement->getUpperBoundFromLayer( i ) +
+                              GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+
+            for ( unsigned j = 0; j < _outputLayerSize; ++j )
+            {
+                double lowerWeight = currentResidualLb[i * _outputLayerSize + j];
+                double upperWeight = currentResidualUb[i * _outputLayerSize + j];
+                symbolicLowerBiasConcretizedResiduals[j] +=
+                    lowerWeight >= 0 ? lowerWeight * sourceLb : lowerWeight * sourceUb;
+                symbolicUpperBiasConcretizedResiduals[j] +=
+                    upperWeight >= 0 ? upperWeight * sourceUb : upperWeight * sourceLb;
+            }
+        }
+    }
+
+    // Store updated bounds.
+    for ( unsigned i = 0; i < _size * _outputLayerSize; ++i )
+    {
+        ( *_outputSymbolicLb )[_layerIndex][i] = work1SymbolicLb[i];
+        ( *_outputSymbolicUb )[_layerIndex][i] = work1SymbolicUb[i];
+    }
+    for ( unsigned i = 0; i < _outputLayerSize; ++i )
+    {
+        ( *_outputSymbolicLowerBias )[_layerIndex][i] = symbolicLowerBiasConcretizedResiduals[i];
+        ( *_outputSymbolicUpperBias )[_layerIndex][i] = symbolicUpperBiasConcretizedResiduals[i];
+    }
 }
 
 } // namespace NLR

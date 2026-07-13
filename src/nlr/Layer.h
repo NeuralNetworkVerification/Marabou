@@ -2,7 +2,7 @@
 /*! \file Layer.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Ido Shmuel
+ **   Guy Katz
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2024 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -136,8 +136,75 @@ public:
 
     void obtainCurrentBounds( const Query &inputQuery );
     void obtainCurrentBounds();
-    void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
+    void computeSymbolicBounds();
+    void computeParameterisedSymbolicBounds( const Vector<double> &coeffs, bool receive = false );
+
+    // Get all non-fixed neurons in a single layer.
+    const Vector<NeuronIndex> getNonfixedNeurons() const;
+
+    // Determine whether given non-linear activaton neuron has a non-fixed phase.
+    bool neuronNonfixed( unsigned neuron ) const;
+
+    const double *getSymbolicLb() const;
+    const double *getSymbolicUb() const;
+    const double *getSymbolicLowerBias() const;
+    const double *getSymbolicUpperBias() const;
+
+    // The following methods compute concrete softmax output bounds
+    // using different linear approximation, as well as the coefficients
+    // of softmax inputs in the symbolic bounds
+    static double LSELowerBound( const Vector<double> &sourceMids,
+                                 const Vector<double> &inputLbs,
+                                 const Vector<double> &inputUbs,
+                                 unsigned outputIndex );
+    static double dLSELowerBound( const Vector<double> &sourceMids,
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned outputIndex,
+                                  unsigned inputIndex );
+    static double LSELowerBound2( const Vector<double> &sourceMids,
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned outputIndex );
+    static double dLSELowerBound2( const Vector<double> &sourceMids,
+                                   const Vector<double> &inputLbs,
+                                   const Vector<double> &inputUbs,
+                                   unsigned outputIndex,
+                                   unsigned inputIndex );
+    static double LSEUpperBound( const Vector<double> &sourceMids,
+                                 const Vector<double> &outputLb,
+                                 const Vector<double> &outputUb,
+                                 unsigned outputIndex );
+    static double dLSEUpperbound( const Vector<double> &sourceMids,
+                                  const Vector<double> &outputLb,
+                                  const Vector<double> &outputUb,
+                                  unsigned outputIndex,
+                                  unsigned inputIndex );
+    static double ERLowerBound( const Vector<double> &sourceMids,
+                                const Vector<double> &inputLbs,
+                                const Vector<double> &inputUbs,
+                                unsigned outputIndex );
+    static double dERLowerBound( const Vector<double> &sourceMids,
+                                 const Vector<double> &inputLbs,
+                                 const Vector<double> &inputUbs,
+                                 unsigned outputIndex,
+                                 unsigned inputIndex );
+    static double ERUpperBound( const Vector<double> &sourceMids,
+                                const Vector<double> &outputLbs,
+                                const Vector<double> &outputUbs,
+                                unsigned outputIndex );
+    static double dERUpperBound( const Vector<double> &sourceMids,
+                                 const Vector<double> &outputLbs,
+                                 const Vector<double> &outputUbs,
+                                 unsigned outputIndex,
+                                 unsigned inputIndex );
+    static double linearLowerBound( const Vector<double> &outputLbs,
+                                    const Vector<double> &outputUbs,
+                                    unsigned outputIndex );
+    static double linearUpperBound( const Vector<double> &outputLbs,
+                                    const Vector<double> &outputUbs,
+                                    unsigned outputIndex );
 
     /*
       Preprocessing functionality: variable elimination and reindexing
@@ -209,74 +276,6 @@ private:
     void freeMemoryIfNeeded();
 
     /*
-       The following methods compute concrete softmax output bounds
-       using different linear approximation, as well as the coefficients
-       of softmax inputs in the symbolic bounds
-    */
-    double softmaxLSELowerBound( const Vector<double> &inputs,
-                                 const Vector<double> &inputLbs,
-                                 const Vector<double> &inputUbs,
-                                 unsigned i );
-
-    double softmaxdLSELowerBound( const Vector<double> &inputMids,
-                                  const Vector<double> &inputLbs,
-                                  const Vector<double> &inputUbs,
-                                  unsigned i,
-                                  unsigned di );
-
-    double softmaxLSELowerBound2( const Vector<double> &inputMids,
-                                  const Vector<double> &inputLbs,
-                                  const Vector<double> &inputUbs,
-                                  unsigned i );
-
-    double softmaxdLSELowerBound2( const Vector<double> &inputMids,
-                                   const Vector<double> &inputLbs,
-                                   const Vector<double> &inputUbs,
-                                   unsigned i,
-                                   unsigned di );
-
-    double softmaxLSEUpperBound( const Vector<double> &inputs,
-                                 const Vector<double> &outputLb,
-                                 const Vector<double> &outputUb,
-                                 unsigned i );
-
-    double softmaxdLSEUpperbound( const Vector<double> &inputMids,
-                                  const Vector<double> &outputLb,
-                                  const Vector<double> &outputUb,
-                                  unsigned i,
-                                  unsigned di );
-
-    double softmaxERLowerBound( const Vector<double> &inputs,
-                                const Vector<double> &inputLbs,
-                                const Vector<double> &inputUbs,
-                                unsigned i );
-
-    double softmaxdERLowerBound( const Vector<double> &inputMids,
-                                 const Vector<double> &inputLbs,
-                                 const Vector<double> &inputUbs,
-                                 unsigned i,
-                                 unsigned di );
-
-    double softmaxERUpperBound( const Vector<double> &inputs,
-                                const Vector<double> &outputLb,
-                                const Vector<double> &outputUb,
-                                unsigned i );
-
-    double softmaxdERUpperBound( const Vector<double> &inputMids,
-                                 const Vector<double> &outputLb,
-                                 const Vector<double> &outputUb,
-                                 unsigned i,
-                                 unsigned di );
-
-    double softmaxLinearLowerBound( const Vector<double> &inputLbs,
-                                    const Vector<double> &inputUbs,
-                                    unsigned i );
-
-    double softmaxLinearUpperBound( const Vector<double> &inputLbs,
-                                    const Vector<double> &inputUbs,
-                                    unsigned i );
-
-    /*
       Helper functions for symbolic bound tightening
     */
     void computeSymbolicBoundsForInput();
@@ -293,6 +292,16 @@ private:
     void computeSymbolicBoundsDefault();
 
     /*
+      Helper functions for parameterised symbolic bound tightening
+    */
+    void computeParameterisedSymbolicBoundsForRelu( const Vector<double> &coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForSign( const Vector<double> &coeffs, bool receive );
+    void computeParameterisedSymbolicBoundsForLeakyRelu( const Vector<double> &coeffs,
+                                                         bool receive );
+    void computeParameterisedSymbolicBoundsForBilinear( const Vector<double> &coeffs,
+                                                        bool receive );
+
+    /*
       Helper functions for interval bound tightening
     */
     void computeIntervalArithmeticBoundsForWeightedSum();
@@ -306,10 +315,16 @@ private:
     void computeIntervalArithmeticBoundsForSoftmax();
     void computeIntervalArithmeticBoundsForBilinear();
 
-    const double *getSymbolicLb() const;
-    const double *getSymbolicUb() const;
-    const double *getSymbolicLowerBias() const;
-    const double *getSymbolicUpperBias() const;
+    /*
+      Helper functions for determining whether given non-linear activaton has a non-fixed phase.
+    */
+    bool neuronNonfixedAtZero( unsigned neuron ) const;
+    bool neuronNonfixedSigmoid( unsigned neuron ) const;
+    bool neuronNonfixedRound( unsigned neuron ) const;
+    bool neuronNonfixedMax( unsigned neuron ) const;
+    bool neuronNonfixedSoftmax( unsigned neuron ) const;
+    bool neuronNonfixedBilinear( unsigned neuron ) const;
+
     double getSymbolicLbOfLb( unsigned neuron ) const;
     double getSymbolicUbOfLb( unsigned neuron ) const;
     double getSymbolicLbOfUb( unsigned neuron ) const;

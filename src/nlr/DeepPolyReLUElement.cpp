@@ -46,64 +46,117 @@ void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *> &deepP
         double sourceLb = predecessor->getLowerBound( sourceIndex._neuron );
         double sourceUb = predecessor->getUpperBound( sourceIndex._neuron );
 
-        if ( !FloatUtils::isNegative( sourceLb ) )
+        if ( !_useParameterisedSBT )
         {
-            // Phase active
-            // Symbolic bound: x_b <= x_f <= x_b
-            // Concrete bound: lb_b <= x_f <= ub_b
-            _symbolicUb[i] = 1;
-            _symbolicUpperBias[i] = 0;
-            _ub[i] = sourceUb;
-
-            _symbolicLb[i] = 1;
-            _symbolicLowerBias[i] = 0;
-            _lb[i] = sourceLb;
-        }
-        else if ( !FloatUtils::isPositive( sourceUb ) )
-        {
-            // Phase inactive
-            // Symbolic bound: 0 <= x_f <= 0
-            // Concrete bound: 0 <= x_f <= 0
-            _symbolicUb[i] = 0;
-            _symbolicUpperBias[i] = 0;
-            _ub[i] = 0;
-
-            _symbolicLb[i] = 0;
-            _symbolicLowerBias[i] = 0;
-            _lb[i] = 0;
-        }
-        else
-        {
-            // ReLU not fixed
-            // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
-            // Concrete upper bound: x_f <= ub_b
-            double coeff = sourceUb / ( sourceUb - sourceLb );
-            _symbolicUb[i] = coeff;
-            _symbolicUpperBias[i] = -sourceLb * coeff;
-            _ub[i] = sourceUb;
-
-            // For the lower bound, in general, x_f >= lambda * x_b, where
-            // 0 <= lambda <= 1, would be a sound lower bound. We
-            // use the heuristic described in section 4.1 of
-            // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
-            // to set the value of lambda (either 0 or 1 is considered).
-            if ( sourceUb > -sourceLb )
+            if ( !FloatUtils::isNegative( sourceLb ) )
             {
-                // lambda = 1
-                // Symbolic lower bound: x_f >= x_b
-                // Concrete lower bound: x_f >= sourceLb
+                // Phase active
+                // Symbolic bound: x_b <= x_f <= x_b
+                // Concrete bound: lb_b <= x_f <= ub_b
+                _symbolicUb[i] = 1;
+                _symbolicUpperBias[i] = 0;
+                _ub[i] = sourceUb;
+
                 _symbolicLb[i] = 1;
                 _symbolicLowerBias[i] = 0;
                 _lb[i] = sourceLb;
             }
-            else
+            else if ( !FloatUtils::isPositive( sourceUb ) )
             {
-                // lambda = 1
-                // Symbolic lower bound: x_f >= 0
-                // Concrete lower bound: x_f >= 0
+                // Phase inactive
+                // Symbolic bound: 0 <= x_f <= 0
+                // Concrete bound: 0 <= x_f <= 0
+                _symbolicUb[i] = 0;
+                _symbolicUpperBias[i] = 0;
+                _ub[i] = 0;
+
                 _symbolicLb[i] = 0;
                 _symbolicLowerBias[i] = 0;
                 _lb[i] = 0;
+            }
+            else
+            {
+                // ReLU not fixed
+                // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
+                // Concrete upper bound: x_f <= ub_b
+                double weight = sourceUb / ( sourceUb - sourceLb );
+                _symbolicUb[i] = weight;
+                _symbolicUpperBias[i] = -sourceLb * weight;
+                _ub[i] = sourceUb;
+
+                // For the lower bound, in general, x_f >= lambda * x_b, where
+                // 0 <= lambda <= 1, would be a sound lower bound. We
+                // use the heuristic described in section 4.1 of
+                // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
+                // to set the value of lambda (either 0 or 1 is considered).
+                if ( sourceUb > -sourceLb )
+                {
+                    // lambda = 1
+                    // Symbolic lower bound: x_f >= x_b
+                    // Concrete lower bound: x_f >= sourceLb
+                    _symbolicLb[i] = 1;
+                    _symbolicLowerBias[i] = 0;
+                    _lb[i] = sourceLb;
+                }
+                else
+                {
+                    // lambda = 1
+                    // Symbolic lower bound: x_f >= 0
+                    // Concrete lower bound: x_f >= 0
+                    _symbolicLb[i] = 0;
+                    _symbolicLowerBias[i] = 0;
+                    _lb[i] = 0;
+                }
+            }
+        }
+        else
+        {
+            Vector<double> coeffs = ( *_layerIndicesToParameters )[_layerIndex];
+            ASSERT( coeffs.size() == 1 );
+            double coeff = coeffs[0];
+            ASSERT( coeff >= 0 && coeff <= 1 );
+            if ( !FloatUtils::isNegative( sourceLb ) )
+            {
+                // Phase active
+                // Symbolic bound: x_b <= x_f <= x_b
+                // Concrete bound: lb_b <= x_f <= ub_b
+                _symbolicUb[i] = 1;
+                _symbolicUpperBias[i] = 0;
+                _ub[i] = sourceUb;
+
+                _symbolicLb[i] = 1;
+                _symbolicLowerBias[i] = 0;
+                _lb[i] = sourceLb;
+            }
+            else if ( !FloatUtils::isPositive( sourceUb ) )
+            {
+                // Phase inactive
+                // Symbolic bound: 0 <= x_f <= 0
+                // Concrete bound: 0 <= x_f <= 0
+                _symbolicUb[i] = 0;
+                _symbolicUpperBias[i] = 0;
+                _ub[i] = 0;
+
+                _symbolicLb[i] = 0;
+                _symbolicLowerBias[i] = 0;
+                _lb[i] = 0;
+            }
+            else
+            {
+                // ReLU not fixed
+                // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
+                // Concrete upper bound: x_f <= ub_b
+                double weight = sourceUb / ( sourceUb - sourceLb );
+                _symbolicUb[i] = weight;
+                _symbolicUpperBias[i] = -sourceLb * weight;
+                _ub[i] = sourceUb;
+
+                // For the lower bound, in general, x_f >= lambda * x_b, where
+                // 0 <= lambda <= 1, would be a sound lower bound. We use coeff
+                // to set the value of lambda.
+                _symbolicLb[i] = coeff;
+                _symbolicLowerBias[i] = 0;
+                _lb[i] = coeff * sourceLb;
             }
         }
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
@@ -114,7 +167,24 @@ void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *> &deepP
                       _symbolicUpperBias[i] ) );
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
+
+    if ( _storePredecessorSymbolicBounds )
+    {
+        storePredecessorSymbolicBounds();
+    }
+
     log( "Executing - done" );
+}
+
+void DeepPolyReLUElement::storePredecessorSymbolicBounds()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        ( *_predecessorSymbolicLb )[_layerIndex][i] = _symbolicLb[i];
+        ( *_predecessorSymbolicUb )[_layerIndex][i] = _symbolicUb[i];
+        ( *_predecessorSymbolicLowerBias )[_layerIndex][i] = _symbolicLowerBias[i];
+        ( *_predecessorSymbolicUpperBias )[_layerIndex][i] = _symbolicUpperBias[i];
+    }
 }
 
 void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor( const double *symbolicLb,

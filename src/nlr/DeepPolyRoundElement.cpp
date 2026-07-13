@@ -82,7 +82,24 @@ void DeepPolyRoundElement::execute( const Map<unsigned, DeepPolyElement *> &deep
                       _symbolicUpperBias[i] ) );
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
+
+    if ( _storePredecessorSymbolicBounds )
+    {
+        storePredecessorSymbolicBounds();
+    }
+
     log( "Executing - done" );
+}
+
+void DeepPolyRoundElement::storePredecessorSymbolicBounds()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        ( *_predecessorSymbolicLb )[_layerIndex][i] = _symbolicLb[i];
+        ( *_predecessorSymbolicUb )[_layerIndex][i] = _symbolicUb[i];
+        ( *_predecessorSymbolicLowerBias )[_layerIndex][i] = _symbolicLowerBias[i];
+        ( *_predecessorSymbolicUpperBias )[_layerIndex][i] = _symbolicUpperBias[i];
+    }
 }
 
 void DeepPolyRoundElement::symbolicBoundInTermsOfPredecessor(

@@ -33,6 +33,8 @@ public:
 
     void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore );
 
+    void storePredecessorSymbolicBounds();
+
     void symbolicBoundInTermsOfPredecessor( const double *symbolicLb,
                                             const double *symbolicUb,
                                             double *symbolicLowerBias,

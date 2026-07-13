@@ -69,12 +69,37 @@ public:
     double getLowerBound( unsigned index ) const;
     double getUpperBound( unsigned index ) const;
 
+    void setStoreOutputSymbolicBounds( bool storeOutputSymbolicBounds );
+    void setStorePredecessorSymbolicBounds( bool storePredecessorSymbolicBounds );
+    void setUseParameterisedSBT( bool useParameterisedSBT );
+    void setLayerIndicesToParameters( Map<unsigned, Vector<double>> *layerIndicesToParameters );
+    void setOutputLayerSize( unsigned outputLayerSize );
+
     void setWorkingMemory( double *work1SymbolicLb,
                            double *work1SymbolicUb,
                            double *work2SymbolicLb,
                            double *work2SymbolicUb,
                            double *workSymbolicLowerBias,
                            double *workSymbolicUpperBias );
+
+    void setSymbolicBoundsMemory( Map<unsigned, Vector<double>> *outputSymbolicLb,
+                                  Map<unsigned, Vector<double>> *outputSymbolicUb,
+                                  Map<unsigned, Vector<double>> *outputSymbolicLowerBias,
+                                  Map<unsigned, Vector<double>> *outputSymbolicUpperBias,
+                                  Map<unsigned, Vector<double>> *predecessorSymbolicLb,
+                                  Map<unsigned, Vector<double>> *predecessorSymbolicUb,
+                                  Map<unsigned, Vector<double>> *predecessorSymbolicLowerBias,
+                                  Map<unsigned, Vector<double>> *predecessorSymbolicUpperBias );
+
+    void
+    storeOutputSymbolicBounds( double *work1SymbolicLb,
+                               double *work1SymbolicUb,
+                               double *workSymbolicLowerBias,
+                               double *workSymbolicUpperBias,
+                               Map<unsigned, double *> &residualLb,
+                               Map<unsigned, double *> &residualUb,
+                               Set<unsigned> &residualLayerIndices,
+                               const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore );
 
     double getLowerBoundFromLayer( unsigned index ) const;
     double getUpperBoundFromLayer( unsigned index ) const;
@@ -83,6 +108,11 @@ protected:
     Layer *_layer;
     unsigned _size;
     unsigned _layerIndex;
+    bool _storeOutputSymbolicBounds;
+    bool _storePredecessorSymbolicBounds;
+    bool _useParameterisedSBT;
+    Map<unsigned, Vector<double>> *_layerIndicesToParameters;
+    unsigned _outputLayerSize;
 
     /*
       Abstract element described in
@@ -102,6 +132,16 @@ protected:
     double *_work2SymbolicUb;
     double *_workSymbolicLowerBias;
     double *_workSymbolicUpperBias;
+
+    Map<unsigned, Vector<double>> *_outputSymbolicLb;
+    Map<unsigned, Vector<double>> *_outputSymbolicUb;
+    Map<unsigned, Vector<double>> *_outputSymbolicLowerBias;
+    Map<unsigned, Vector<double>> *_outputSymbolicUpperBias;
+
+    Map<unsigned, Vector<double>> *_predecessorSymbolicLb;
+    Map<unsigned, Vector<double>> *_predecessorSymbolicUb;
+    Map<unsigned, Vector<double>> *_predecessorSymbolicLowerBias;
+    Map<unsigned, Vector<double>> *_predecessorSymbolicUpperBias;
 
     void allocateMemory();
     void freeMemoryIfNeeded();
