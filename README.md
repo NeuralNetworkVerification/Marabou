@@ -86,13 +86,26 @@ and [here](https://www.gurobi.com/documentation/11.0/quickstart_linux/software_i
 installation steps, there is a [compatibility issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-on-Linux)
 that should be addressed.
 A quick installation reference:
+
 ```bash
+# Linux.
 export INSTALL_DIR=/opt
 sudo tar xvfz gurobi11.0.3_linux64.tar.gz -C $INSTALL_DIR
 cd $INSTALL_DIR/gurobi1103/linux64/src/build
 sudo make
 sudo cp libgurobi_c++.a ../../lib/
+
+# macOS.
+export GUROBI_HOME="/Library/gurobi1102/macos_universal2"
+export PATH="${PATH}:${GUROBI_HOME}/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+export GRB_LICENSE_FILE=$HOME/gurobi.lic
+
+cd $GUROBI_HOME/src/build
+make
+cp libgurobi_c++.a ../../lib/
 ```
+
 Next, set the following environment variables (e.g., by adding the following to the `.bashrc` and invoke `source .bashrc`): 
 ```bash
 export GUROBI_HOME="/opt/gurobi1103/linux64"
