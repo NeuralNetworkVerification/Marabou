@@ -6,6 +6,8 @@ warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 import pytest
 from maraboupy import Marabou
 import numpy as np
+import onnx
+from onnx import TensorProto
 import os
 
 # Global settings
@@ -58,6 +60,85 @@ def test_sub():
 def test_dropout():
     filename =  "test_dropout.onnx"
     evaluateFile(filename)
+
+def test_clip(tmpdir):
+    filename = tmpdir.join("clip.onnx").strpath
+    makeClipNetwork(filename, minValue=-1.0, maxValue=1.0)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 8
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, -1.0], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
+    ])
+
+def test_clip_then_add(tmpdir):
+    filename = tmpdir.join("clip_then_add.onnx").strpath
+    makeClipNetwork(filename, minValue=-1.0, maxValue=1.0, addValue=0.5)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 8
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, -1.0], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
+    ])
+
+def test_clip_attributes_only(tmpdir):
+    filename = tmpdir.join("clip_attributes.onnx").strpath
+    makeClipNetwork(filename, minAttribute=-1.0, maxAttribute=1.0)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 8
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, -1.0], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
+    ])
+
+def test_clip_min_greater_than_max(tmpdir):
+    filename = tmpdir.join("clip_inverted_bounds.onnx").strpath
+    makeClipNetwork(filename, minValue=1.0, maxValue=-1.0)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 8
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, -1.0], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
+    ])
+
+def test_clip_min_only(tmpdir):
+    filename = tmpdir.join("clip_min.onnx").strpath
+    makeClipNetwork(filename, minValue=0.25)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 4
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, 0.25], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[-3.0, -0.5], [0.25, 4.0]], dtype=np.float32)],
+    ])
+
+def test_clip_max_only(tmpdir):
+    filename = tmpdir.join("clip_max.onnx").strpath
+    makeClipNetwork(filename, maxValue=0.75)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 4
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, 0.25], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[0.74, 0.75], [1.0, 3.0]], dtype=np.float32)],
+    ])
+
+def test_clip_mixed_bounds_rejected(tmpdir):
+    filename = tmpdir.join("clip_mixed_bounds.onnx").strpath
+    makeClipNetwork(filename, minValue=-1.0, maxValue=1.0, minAttribute=-1.0)
+
+    with pytest.raises(NotImplementedError, match=r"Clip does not support mixing bound inputs and attributes"):
+        Marabou.read_onnx(filename)
 
 def test_add_constant():
     filename =  "yizhak_net.onnx"
@@ -383,6 +464,58 @@ def evaluateFile(filename, inputNames = None, outputNames = None, testInputs = N
         err = network.findError(testInput, options=OPT, filename="")
         for i in range(len(err)):
             assert max(err[i].flatten()) < TOL
+
+def evaluateNetwork(network, testInputs = None, numPoints = NUM_RAND):
+    if not testInputs:
+        testInputs = [[np.random.random(inVars.shape) for inVars in network.inputVars] for _ in range(numPoints)]
+
+    for testInput in testInputs:
+        err = network.findError(testInput, options=OPT, filename="")
+        for i in range(len(err)):
+            assert max(err[i].flatten()) < TOL
+
+def makeClipNetwork(filename, minValue = None, maxValue = None, addValue = None, minAttribute = None, maxAttribute = None):
+    inputs = ["X"]
+    initializers = []
+
+    if minValue is not None:
+        inputs.append("min")
+        initializers.append(onnx.helper.make_tensor("min", TensorProto.FLOAT, [], [minValue]))
+    elif maxValue is not None:
+        # Clip's optional max input is positional, so omit min with an empty placeholder.
+        inputs.append("")
+
+    if maxValue is not None:
+        inputs.append("max")
+        initializers.append(onnx.helper.make_tensor("max", TensorProto.FLOAT, [], [maxValue]))
+
+    clipOutputName = "clip_output" if addValue is not None else "Y"
+    clipAttributes = {}
+    if minAttribute is not None:
+        clipAttributes["min"] = minAttribute
+    if maxAttribute is not None:
+        clipAttributes["max"] = maxAttribute
+    clipNode = onnx.helper.make_node("Clip", inputs=inputs, outputs=[clipOutputName], **clipAttributes)
+    nodes = [clipNode]
+
+    if addValue is not None:
+        initializers.append(onnx.helper.make_tensor("add_const", TensorProto.FLOAT, [], [addValue]))
+        nodes.append(onnx.helper.make_node("Add", inputs=[clipOutputName, "add_const"], outputs=["Y"]))
+
+    graph = onnx.helper.make_graph(
+        nodes,
+        "clip-test",
+        [onnx.helper.make_tensor_value_info("X", TensorProto.FLOAT, [2, 2])],
+        [onnx.helper.make_tensor_value_info("Y", TensorProto.FLOAT, [2, 2])],
+        initializer=initializers,
+    )
+
+    if minAttribute is not None or maxAttribute is not None:
+        model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 10)])
+    else:
+        model = onnx.helper.make_model(graph)
+
+    onnx.save(model, filename)
 
 def evaluateIntermediateLayers(filename, inputNames = None, outputNames = None, intermediateNames = None, testInputs = None, numPoints = None):
     """
