@@ -85,6 +85,18 @@ def test_clip_then_add(tmpdir):
         [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
     ])
 
+def test_clip_attributes_only(tmpdir):
+    filename = tmpdir.join("clip_attributes.onnx").strpath
+    makeClipNetwork(filename, minAttribute=-1.0, maxAttribute=1.0)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 8
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, -1.0], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
+    ])
+
 def test_clip_min_only(tmpdir):
     filename = tmpdir.join("clip_min.onnx").strpath
     makeClipNetwork(filename, minValue=0.25)

@@ -1269,6 +1269,13 @@ class ONNXParser:
         if not makeEquations:
             return
 
+        if lower is None and upper is None:
+            if inputName in self.constantMap:
+                self.constantMap[nodeName] = copy(np.broadcast_to(self.constantMap[inputName], outShape))
+            else:
+                self.varMap[nodeName] = copy(np.broadcast_to(self.varMap[inputName], outShape))
+            return
+
         if inputName in self.constantMap:
             clippedValue = np.broadcast_to(self.constantMap[inputName], outShape)
             if lower is not None:
@@ -1279,12 +1286,9 @@ class ONNXParser:
             return
 
         inputVars = np.broadcast_to(self.varMap[inputName], outShape).reshape(-1)
-
-        if lower is None and upper is None:
-            self.varMap[nodeName] = copy(np.broadcast_to(self.varMap[inputName], outShape))
-            return
-
-        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        outputVars = np.array([self.query.getNewVariable() for _ in range(int(np.prod(outShape)))]).reshape(outShape)
+        self.varMap[nodeName] = outputVars
+        outputVars = outputVars.reshape(-1)
 
         if lower is not None:
             lower = np.broadcast_to(lower, outShape).reshape(-1)
