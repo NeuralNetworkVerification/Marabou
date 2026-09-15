@@ -149,7 +149,7 @@ jobs:
   publish_release_binaries:
     name: Publish binary release assets
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs:
       - build_release_binaries
 
@@ -157,6 +157,15 @@ jobs:
       contents: write
 
     steps:
+      - name: Resolve release tag
+        id: release_target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "release_tag=${{ github.event.inputs.release_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download release assets
         uses: actions/download-artifact@v4
         with:
@@ -167,7 +176,7 @@ jobs:
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ steps.release_target.outputs.release_tag }}
           overwrite_files: true
           files: |
             dist/*.tar.gz
