@@ -91,10 +91,27 @@ jobs:
           cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
           cmake --build build --parallel 2
 
+      - name: Resolve release name
+        if: runner.os != 'Windows'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_NAME=${{ github.event.inputs.release_name }}" >> "$GITHUB_ENV"
+          else
+            echo "RELEASE_NAME=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Resolve release name
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_NAME=${{ github.event.inputs.release_name }}" >> "$GITHUB_ENV"
+          else
+            echo "RELEASE_NAME=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
+          fi
+
       - name: Package binary release
         if: runner.os != 'Windows'
-        env:
-          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.event.release.tag_name }}
         run: |
           ref_name="${RELEASE_NAME//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
@@ -106,8 +123,6 @@ jobs:
       - name: Package binary release
         if: runner.os == 'Windows'
         shell: msys2 {0}
-        env:
-          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.event.release.tag_name }}
         run: |
           ref_name="${RELEASE_NAME//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
@@ -153,6 +168,7 @@ jobs:
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           tag_name: ${{ github.event.release.tag_name }}
+          overwrite_files: true
           files: |
             dist/*.tar.gz
             dist/*.zip
