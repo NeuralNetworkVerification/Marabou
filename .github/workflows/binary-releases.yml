@@ -1,0 +1,144 @@
+name: Binary releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build_release_binaries:
+    name: Build ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: ubuntu-x86_64
+            archive_extension: tar.gz
+            executable_path: build/bin/Marabou
+            cmake_args: ""
+          - os: macos-latest
+            label: macos-x86_64
+            archive_extension: tar.gz
+            executable_path: build/bin/Marabou
+            cmake_args: ""
+          - os: windows-latest
+            label: windows-x86_64
+            archive_extension: zip
+            executable_path: build/bin/Marabou.exe
+            cmake_args: -DENABLE_OPENBLAS=OFF
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgmp-dev \
+            wget
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            cmake \
+            gmp \
+            wget
+
+      - name: Install Windows build dependencies
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            git
+            unzip
+            wget
+            zip
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gmp
+            mingw-w64-x86_64-make
+
+      - name: Configure and build binary release
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build -DBUILD_PYTHON=OFF ${{ matrix.cmake_args }}
+          cmake --build build --parallel 2
+
+      - name: Configure and build binary release
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF ${{ matrix.cmake_args }}
+          cmake --build build --parallel 2
+
+      - name: Package binary release
+        if: runner.os != 'Windows'
+        run: |
+          ref_name="${GITHUB_REF_NAME//\//-}"
+          asset_name="marabou-${ref_name}-${{ matrix.label }}"
+          mkdir -p dist/$asset_name
+          cp README.md COPYING dist/$asset_name/
+          cp "${{ matrix.executable_path }}" dist/$asset_name/
+          tar -C dist -czf "dist/${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
+
+      - name: Package binary release
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          ref_name="${GITHUB_REF_NAME//\//-}"
+          asset_name="marabou-${ref_name}-${{ matrix.label }}"
+          mkdir -p "dist/$asset_name"
+          cp README.md COPYING "dist/$asset_name/"
+          cp "${{ matrix.executable_path }}" "dist/$asset_name/"
+          cd dist
+          zip -r "${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os != 'Windows'
+        with:
+          name: binary-release-${{ matrix.label }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: binary-release-${{ matrix.label }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  publish_release_binaries:
+    name: Publish binary release assets
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build_release_binaries
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binary-release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+          fail_on_unmatched_files: true
