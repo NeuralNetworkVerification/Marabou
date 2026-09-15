@@ -79,14 +79,14 @@ jobs:
       - name: Configure and build binary release
         if: runner.os != 'Windows'
         run: |
-          cmake -S . -B build -DBUILD_PYTHON=OFF -DRUN_UNIT_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
+          cmake -S . -B build -DBUILD_PYTHON=OFF -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
           cmake --build build --parallel 2
 
       - name: Configure and build binary release
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF -DRUN_UNIT_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
+          cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
           cmake --build build --parallel 2
 
       - name: Package binary release
