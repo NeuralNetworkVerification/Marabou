@@ -5,6 +5,13 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      release_name:
+        description: Release name to use for manually built artifacts
+        required: true
+
+permissions:
+  contents: read
 
 jobs:
   build_release_binaries:
@@ -19,7 +26,7 @@ jobs:
             archive_extension: tar.gz
             executable_path: build/bin/Marabou
             cmake_args: ""
-          - os: macos-latest
+          - os: macos-13
             label: macos-x86_64
             archive_extension: tar.gz
             executable_path: build/bin/Marabou
@@ -83,8 +90,10 @@ jobs:
 
       - name: Package binary release
         if: runner.os != 'Windows'
+        env:
+          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.ref_name }}
         run: |
-          ref_name="${GITHUB_REF_NAME//\//-}"
+          ref_name="${RELEASE_NAME//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
           mkdir -p dist/$asset_name
           cp README.md COPYING dist/$asset_name/
@@ -94,8 +103,10 @@ jobs:
       - name: Package binary release
         if: runner.os == 'Windows'
         shell: msys2 {0}
+        env:
+          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.ref_name }}
         run: |
-          ref_name="${GITHUB_REF_NAME//\//-}"
+          ref_name="${RELEASE_NAME//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
           mkdir -p "dist/$asset_name"
           cp README.md COPYING "dist/$asset_name/"
