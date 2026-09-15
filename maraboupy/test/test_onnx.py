@@ -509,7 +509,13 @@ def makeClipNetwork(filename, minValue = None, maxValue = None, addValue = None,
         [onnx.helper.make_tensor_value_info("Y", TensorProto.FLOAT, [2, 2])],
         initializer=initializers,
     )
-    onnx.save(onnx.helper.make_model(graph), filename)
+
+    if minAttribute is not None or maxAttribute is not None:
+        model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 10)])
+    else:
+        model = onnx.helper.make_model(graph)
+
+    onnx.save(model, filename)
 
 def evaluateIntermediateLayers(filename, inputNames = None, outputNames = None, intermediateNames = None, testInputs = None, numPoints = None):
     """

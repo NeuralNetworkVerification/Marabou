@@ -40,7 +40,13 @@ class MarabouNetworkONNX(MarabouNetwork):
             self.clear()
 
         self.filename = filename
-        self.graph = onnx.load(filename).graph
+        model = onnx.load(filename)
+        self.graph = model.graph
+        self.opsetVersion = None
+        for opsetImport in model.opset_import:
+            if opsetImport.domain in ["", "ai.onnx"]:
+                self.opsetVersion = opsetImport.version
+                break
 
         # Setup input node names
         if inputNames is not None:
@@ -71,7 +77,7 @@ class MarabouNetworkONNX(MarabouNetwork):
             initNames = [node.name for node in self.graph.initializer]
             self.outputNames = [out.name for out in self.graph.output if out.name not in initNames]
 
-        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames)
+        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames, self.opsetVersion)
 
     def getNode(self, nodeName):
         """Find the node in the graph corresponding to the given name

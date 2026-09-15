@@ -32,7 +32,7 @@ class ONNXParser:
     """
 
     @staticmethod
-    def parse(query:InputQueryBuilder, graph, inputNames:List[str], outputNames:List[str]):
+    def parse(query:InputQueryBuilder, graph, inputNames:List[str], outputNames:List[str], opsetVersion=None):
         """
         Parses the provided ONNX graph into constraints which are stored in the query argument.
 
@@ -45,11 +45,11 @@ class ONNXParser:
         Returns:
             :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
         """
-        parser = ONNXParser(query, graph, inputNames, outputNames)
+        parser = ONNXParser(query, graph, inputNames, outputNames, opsetVersion)
         parser.parseGraph()
 
 
-    def __init__(self, query:InputQueryBuilder, graph, inputNames, outputNames):
+    def __init__(self, query:InputQueryBuilder, graph, inputNames, outputNames, opsetVersion=None):
         """
         Should not be called directly. Use `ONNXParser.parse` instead.
 
@@ -60,6 +60,7 @@ class ONNXParser:
         self.graph = graph
         self.inputNames = inputNames
         self.outputNames = outputNames
+        self.opsetVersion = opsetVersion
 
         self.madeGraphEquations = []
         self.varMap = dict()
@@ -1355,6 +1356,9 @@ class ONNXParser:
 
         if ( lower is not None or upper is not None ) and ( lowerAttr is not None or upperAttr is not None ):
             raise NotImplementedError("Clip does not support mixing bound inputs and attributes")
+
+        if ( lowerAttr is not None or upperAttr is not None ) and self.opsetVersion is not None and self.opsetVersion >= 11:
+            raise NotImplementedError("Clip attributes are only supported for legacy ONNX opsets")
 
         if lower is None:
             lower = lowerAttr
