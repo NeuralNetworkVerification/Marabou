@@ -82,6 +82,7 @@ def test_clip_min_only(tmpdir):
 
     evaluateNetwork(network, testInputs=[
         [np.array([[-2.0, 0.25], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[-3.0, -0.5], [0.25, 4.0]], dtype=np.float32)],
     ])
 
 def test_clip_max_only(tmpdir):
@@ -93,6 +94,7 @@ def test_clip_max_only(tmpdir):
 
     evaluateNetwork(network, testInputs=[
         [np.array([[-2.0, 0.25], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[0.74, 0.75], [1.0, 3.0]], dtype=np.float32)],
     ])
 
 def test_add_constant():

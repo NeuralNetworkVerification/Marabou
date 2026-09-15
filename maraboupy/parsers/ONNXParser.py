@@ -1305,11 +1305,11 @@ class ONNXParser:
                 self.query.setLowerBound(upperRelu[i], 0.0)
 
             if lower is not None and upper is not None:
-                self.query.addEquality([lowerRelu[i], upperRelu[i], outputVars[i]], [1.0, -1.0, -1.0], -lower[i])
+                self.query.addEquality([outputVars[i], lowerRelu[i], upperRelu[i]], [1.0, -1.0, 1.0], lower[i])
             elif lower is not None:
-                self.query.addEquality([lowerRelu[i], outputVars[i]], [1.0, -1.0], -lower[i])
+                self.query.addEquality([outputVars[i], lowerRelu[i]], [1.0, -1.0], lower[i])
             else:
-                self.query.addEquality([inputVars[i], upperRelu[i], outputVars[i]], [1.0, -1.0, -1.0], 0.0)
+                self.query.addEquality([outputVars[i], inputVars[i], upperRelu[i]], [1.0, -1.0, 1.0], 0.0)
 
         if lower is not None:
             for i, outputVar in enumerate(outputVars):
