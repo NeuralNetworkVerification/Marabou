@@ -6,8 +6,8 @@ on:
       - published
   workflow_dispatch:
     inputs:
-      release_name:
-        description: Release name to use for manually built artifacts
+      release_tag:
+        description: Existing Git tag or release tag to attach manually built artifacts to
         required: true
 
 permissions:
@@ -95,7 +95,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_NAME=${{ github.event.inputs.release_name }}" >> "$GITHUB_ENV"
+            echo "RELEASE_NAME=${{ github.event.inputs.release_tag }}" >> "$GITHUB_ENV"
           else
             echo "RELEASE_NAME=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
           fi
@@ -105,7 +105,7 @@ jobs:
         shell: msys2 {0}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_NAME=${{ github.event.inputs.release_name }}" >> "$GITHUB_ENV"
+            echo "RELEASE_NAME=${{ github.event.inputs.release_tag }}" >> "$GITHUB_ENV"
           else
             echo "RELEASE_NAME=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
           fi
@@ -161,7 +161,7 @@ jobs:
         id: release_target
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "release_tag=${{ github.event.inputs.release_name }}" >> "$GITHUB_OUTPUT"
+            echo "release_tag=${{ github.event.inputs.release_tag }}" >> "$GITHUB_OUTPUT"
           else
             echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
