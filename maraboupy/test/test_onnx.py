@@ -439,6 +439,7 @@ def makeClipNetwork(filename, minValue = None, maxValue = None):
         inputs.append("min")
         initializers.append(onnx.helper.make_tensor("min", TensorProto.FLOAT, [], [minValue]))
     elif maxValue is not None:
+        # Clip's optional max input is positional, so omit min with an empty placeholder.
         inputs.append("")
 
     if maxValue is not None:
