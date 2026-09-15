@@ -1236,7 +1236,7 @@ class ONNXParser:
 
         # Get variables
         inputVars = self.varMap[inputName].reshape(-1)
-        outputVars = self.makeNewVariables(nodeName)
+        outputVars = np.array([self.query.getNewVariable() for _ in range(int(np.prod(outShape)))]).reshape(outShape)
         self.varMap[nodeName] = outputVars
         outputVars = outputVars.reshape(-1)
         assert len(inputVars) == len(outputVars)
