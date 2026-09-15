@@ -1,9 +1,9 @@
 name: Binary releases
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types:
+      - published
   workflow_dispatch:
     inputs:
       release_name:
@@ -40,6 +40,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -92,7 +94,7 @@ jobs:
       - name: Package binary release
         if: runner.os != 'Windows'
         env:
-          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.ref_name }}
+          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.event.release.tag_name }}
         run: |
           ref_name="${RELEASE_NAME//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
@@ -105,7 +107,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: msys2 {0}
         env:
-          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.ref_name }}
+          RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_name || github.event.release.tag_name }}
         run: |
           ref_name="${RELEASE_NAME//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
@@ -132,7 +134,7 @@ jobs:
   publish_release_binaries:
     name: Publish binary release assets
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release'
     needs:
       - build_release_binaries
 
@@ -150,9 +152,7 @@ jobs:
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          generate_release_notes: true
+          tag_name: ${{ github.event.release.tag_name }}
           files: |
             dist/*.tar.gz
             dist/*.zip
