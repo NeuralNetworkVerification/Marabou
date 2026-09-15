@@ -197,6 +197,8 @@ class ONNXParser:
             self.mulEquations(node, makeEquations)
         elif node.op_type == 'Add':
             self.addEquations(node, makeEquations)
+        elif node.op_type == 'Clip':
+            self.clipEquations(node, makeEquations)
         elif node.op_type == 'Relu':
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
@@ -1242,6 +1244,101 @@ class ONNXParser:
             self.query.addRelu(inputVars[i], outputVars[i])
         for f in outputVars:
             self.query.setLowerBound(f, 0.0)
+
+    def clipEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to pointwise Clip
+
+        Args:
+            node (node): ONNX node representing the Clip operation
+            makeEquations (bool): True if we need to create new variables and add new Relus
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        lower, upper = self.getClipBounds(node)
+
+        outShape = self.shapeMap[inputName]
+        if lower is not None:
+            outShape = getBroadcastShape(outShape, list(lower.shape))
+        if upper is not None:
+            outShape = getBroadcastShape(outShape, list(upper.shape))
+        self.shapeMap[nodeName] = outShape
+        if not makeEquations:
+            return
+
+        if inputName in self.constantMap:
+            clippedValue = np.broadcast_to(self.constantMap[inputName], outShape)
+            if lower is not None:
+                clippedValue = np.maximum(clippedValue, np.broadcast_to(lower, outShape))
+            if upper is not None:
+                clippedValue = np.minimum(clippedValue, np.broadcast_to(upper, outShape))
+            self.constantMap[nodeName] = clippedValue
+            return
+
+        inputVars = np.broadcast_to(self.varMap[inputName], outShape).reshape(-1)
+
+        if lower is None and upper is None:
+            self.varMap[nodeName] = copy(np.broadcast_to(self.varMap[inputName], outShape))
+            return
+
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+
+        if lower is not None:
+            lower = np.broadcast_to(lower, outShape).reshape(-1)
+            lowerAffine = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
+            lowerRelu = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
+        if upper is not None:
+            upper = np.broadcast_to(upper, outShape).reshape(-1)
+            upperAffine = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
+            upperRelu = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
+
+        for i in range(len(inputVars)):
+            if lower is not None:
+                self.query.addEquality([inputVars[i], lowerAffine[i]], [1.0, -1.0], lower[i])
+                self.query.addRelu(lowerAffine[i], lowerRelu[i])
+                self.query.setLowerBound(lowerRelu[i], 0.0)
+
+            if upper is not None:
+                self.query.addEquality([inputVars[i], upperAffine[i]], [1.0, -1.0], upper[i])
+                self.query.addRelu(upperAffine[i], upperRelu[i])
+                self.query.setLowerBound(upperRelu[i], 0.0)
+
+            if lower is not None and upper is not None:
+                self.query.addEquality([lowerRelu[i], upperRelu[i], outputVars[i]], [1.0, -1.0, -1.0], -lower[i])
+            elif lower is not None:
+                self.query.addEquality([lowerRelu[i], outputVars[i]], [1.0, -1.0], -lower[i])
+            else:
+                self.query.addEquality([inputVars[i], upperRelu[i], outputVars[i]], [1.0, -1.0, -1.0], 0.0)
+
+        if lower is not None:
+            for i, outputVar in enumerate(outputVars):
+                self.query.setLowerBound(outputVar, lower[i])
+        if upper is not None:
+            for i, outputVar in enumerate(outputVars):
+                self.query.setUpperBound(outputVar, upper[i])
+
+    def getClipBounds(self, node):
+        lower = None
+        upper = None
+
+        if len(node.input) > 1 and node.input[1]:
+            if node.input[1] not in self.constantMap:
+                raise NotImplementedError("Clip only supports constant min bounds")
+            lower = np.array(self.constantMap[node.input[1]], dtype=float)
+
+        if len(node.input) > 2 and node.input[2]:
+            if node.input[2] not in self.constantMap:
+                raise NotImplementedError("Clip only supports constant max bounds")
+            upper = np.array(self.constantMap[node.input[2]], dtype=float)
+
+        for attr in node.attribute:
+            if attr.name == 'min' and lower is None:
+                lower = np.array(get_attribute_value(attr), dtype=float)
+            elif attr.name == 'max' and upper is None:
+                upper = np.array(get_attribute_value(attr), dtype=float)
+
+        return lower, upper
 
     def leakyReluEquations(self, node, makeEquations):
         """Function to generate equations corresponding to pointwise LeakyRelu
