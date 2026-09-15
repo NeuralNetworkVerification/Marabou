@@ -612,7 +612,7 @@ void AletheProofWriter::writeReluLemma(
         _proof.append( { laGeneric, res, proofRule, proofRuleRes } );
 }
 
-void AletheProofWriter::linearCombinationMpq( const std::vector<mpq_t> &explainedRow,
+void AletheProofWriter::linearCombinationMpq( std::vector<mpq_class> &explainedRow,
                                               const SparseUnsortedList &expl ) const
 {
     SparseUnsortedList tableauRow( _n );
@@ -634,8 +634,8 @@ void AletheProofWriter::linearCombinationMpq( const std::vector<mpq_t> &explaine
                 mpq_set_d( tempTableauEntry, tableauEntry._value );
                 mpq_set_d( tempEntry, entry._value );
                 mpq_mul( tempval, tempEntry, tempTableauEntry );
-                mpq_add( const_cast<mpq_ptr>( explainedRow[tableauEntry._index] ),
-                         explainedRow[tableauEntry._index],
+                mpq_add( explainedRow[tableauEntry._index].get_mpq_t(),
+                         explainedRow[tableauEntry._index].get_mpq_t(),
                          tempval );
                 mpq_clear( tempval );
                 mpq_clear( tempEntry );
@@ -655,9 +655,7 @@ void AletheProofWriter::farkasStrings( const SparseUnsortedList &expl,
                                        bool isUpper,
                                        UnsatCertificateNode *node )
 {
-    std::vector<mpq_t> explainedRow = std::vector<mpq_t>( _n );
-    for ( const auto num : explainedRow )
-        mpq_init( num );
+    std::vector<mpq_class> explainedRow( _n );
 
     linearCombinationMpq( explainedRow, expl );
     bool isLemma = explainedVar >= 0;
@@ -666,8 +664,9 @@ void AletheProofWriter::farkasStrings( const SparseUnsortedList &expl,
         mpq_t temp;
         mpq_init( temp );
         mpq_set_d( temp, 1 );
-        mpq_add(
-            const_cast<mpq_ptr>( explainedRow[explainedVar] ), explainedRow[explainedVar], temp );
+        mpq_add( explainedRow[explainedVar].get_mpq_t(),
+                 explainedRow[explainedVar].get_mpq_t(),
+                 temp );
         mpq_clear( temp );
     }
 
@@ -691,11 +690,11 @@ void AletheProofWriter::farkasStrings( const SparseUnsortedList &expl,
     {
         // Deduce the participating bounds, either derived from lemmas, splits, or from the input
         mpq_class temp( explainedRow[i] );
-        if ( mpq_sgn( explainedRow[i] ) == 0 )
+        if ( mpq_sgn( explainedRow[i].get_mpq_t() ) == 0 )
             continue;
 
-        bool useEntryUpperBound = ( mpq_sgn( explainedRow[i] ) > 0 && isUpper ) ||
-                                  ( mpq_sgn( explainedRow[i] ) < 0 && !isUpper );
+        bool useEntryUpperBound = ( mpq_sgn( explainedRow[i].get_mpq_t() ) > 0 && isUpper ) ||
+                                  ( mpq_sgn( explainedRow[i].get_mpq_t() ) < 0 && !isUpper );
 
         String boundString = useEntryUpperBound ? "u" : "l";
         Tightening::BoundType boundType = useEntryUpperBound ? Tightening::UB : Tightening::LB;
@@ -759,9 +758,6 @@ void AletheProofWriter::farkasStrings( const SparseUnsortedList &expl,
             }
         }
     }
-
-    for ( const auto num : explainedRow )
-        mpq_clear( num );
 
     // Add proof terms for all splits in node path, with 0 argument for those that are not
     // actually used Enables elaboration in Carcara

@@ -227,6 +227,22 @@ if(NOT GMP_DIR)
 endif()
 list(APPEND LIBS ${GMP_DIR})
 
+# The GMP C++ interface (gmpxx.h, libgmpxx) ships as a library separate from libgmp, and
+# is not necessarily on the default compiler search path -- on macOS, for instance, GMP
+# lives under the Homebrew prefix. Locate its header and library explicitly so that
+# find_library(gmp) succeeding is enough for the C++ sources that include gmpxx.h.
+# The header is added as a system include so that the project's -Werror does not fire on
+# warnings originating inside gmpxx.h.
+find_path(GMP_INCLUDE_DIR gmpxx.h)
+if(GMP_INCLUDE_DIR)
+    include_directories(SYSTEM ${GMP_INCLUDE_DIR})
+endif()
+
+find_library(GMPXX_LIB gmpxx)
+if(GMPXX_LIB)
+    list(APPEND LIBS ${GMPXX_LIB})
+endif()
+
 ###########
 ## Build ##
 ###########
