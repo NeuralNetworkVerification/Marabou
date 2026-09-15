@@ -1269,6 +1269,13 @@ class ONNXParser:
         if not makeEquations:
             return
 
+        if lower is not None:
+            lower = np.broadcast_to(lower, outShape)
+        if upper is not None:
+            upper = np.broadcast_to(upper, outShape)
+        if lower is not None and upper is not None:
+            lower = np.minimum(lower, upper)
+
         if lower is None and upper is None:
             if inputName in self.constantMap:
                 self.constantMap[nodeName] = copy(np.broadcast_to(self.constantMap[inputName], outShape))
@@ -1291,11 +1298,11 @@ class ONNXParser:
         outputVars = outputVars.reshape(-1)
 
         if lower is not None:
-            lower = np.broadcast_to(lower, outShape).reshape(-1)
+            lower = lower.reshape(-1)
             lowerAffine = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
             lowerRelu = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
         if upper is not None:
-            upper = np.broadcast_to(upper, outShape).reshape(-1)
+            upper = upper.reshape(-1)
             upperAffine = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
             upperRelu = np.array([self.query.getNewVariable() for _ in range(outputVars.size)])
 

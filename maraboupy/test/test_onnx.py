@@ -97,6 +97,18 @@ def test_clip_attributes_only(tmpdir):
         [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
     ])
 
+def test_clip_min_greater_than_max(tmpdir):
+    filename = tmpdir.join("clip_inverted_bounds.onnx").strpath
+    makeClipNetwork(filename, minValue=1.0, maxValue=-1.0)
+
+    network = Marabou.read_onnx(filename)
+    assert len(network.reluList) == 8
+
+    evaluateNetwork(network, testInputs=[
+        [np.array([[-2.0, -1.0], [0.5, 2.0]], dtype=np.float32)],
+        [np.array([[3.0, -3.0], [1.0, 0.0]], dtype=np.float32)],
+    ])
+
 def test_clip_min_only(tmpdir):
     filename = tmpdir.join("clip_min.onnx").strpath
     makeClipNetwork(filename, minValue=0.25)
