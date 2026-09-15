@@ -26,7 +26,8 @@ jobs:
             archive_extension: tar.gz
             executable_path: build/bin/Marabou
             cmake_args: ""
-          - os: macos-13
+          - # Pin an Intel runner so the published macos-x86_64 asset name matches the binary.
+            os: macos-13
             label: macos-x86_64
             archive_extension: tar.gz
             executable_path: build/bin/Marabou
@@ -149,6 +150,9 @@ jobs:
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
           files: |
             dist/*.tar.gz
             dist/*.zip
