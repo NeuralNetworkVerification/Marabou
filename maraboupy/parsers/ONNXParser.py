@@ -1307,11 +1307,11 @@ class ONNXParser:
                 self.query.setLowerBound(upperRelu[i], 0.0)
 
             if lower is not None and upper is not None:
-                self.query.addEquality([outputVars[i], lowerRelu[i], upperRelu[i]], [1.0, -1.0, 1.0], lower[i])
+                self.query.addEquality([lowerRelu[i], upperRelu[i], outputVars[i]], [1.0, -1.0, -1.0], -lower[i])
             elif lower is not None:
-                self.query.addEquality([outputVars[i], lowerRelu[i]], [1.0, -1.0], lower[i])
+                self.query.addEquality([lowerRelu[i], outputVars[i]], [1.0, -1.0], -lower[i])
             else:
-                self.query.addEquality([outputVars[i], inputVars[i], upperRelu[i]], [1.0, -1.0, 1.0], 0.0)
+                self.query.addEquality([inputVars[i], upperRelu[i], outputVars[i]], [1.0, -1.0, -1.0], 0.0)
 
         if lower is not None:
             for i, outputVar in enumerate(outputVars):
@@ -1323,6 +1323,8 @@ class ONNXParser:
     def getClipBounds(self, node):
         lower = None
         upper = None
+        lowerAttr = None
+        upperAttr = None
 
         if len(node.input) > 1 and node.input[1]:
             if node.input[1] not in self.constantMap:
@@ -1335,10 +1337,18 @@ class ONNXParser:
             upper = np.array(self.constantMap[node.input[2]], dtype=float)
 
         for attr in node.attribute:
-            if attr.name == 'min' and lower is None:
-                lower = np.array(get_attribute_value(attr), dtype=float)
-            elif attr.name == 'max' and upper is None:
-                upper = np.array(get_attribute_value(attr), dtype=float)
+            if attr.name == 'min':
+                lowerAttr = np.array(get_attribute_value(attr), dtype=float)
+            elif attr.name == 'max':
+                upperAttr = np.array(get_attribute_value(attr), dtype=float)
+
+        if ( lower is not None or upper is not None ) and ( lowerAttr is not None or upperAttr is not None ):
+            raise NotImplementedError("Clip does not support mixing bound inputs and attributes")
+
+        if lower is None:
+            lower = lowerAttr
+        if upper is None:
+            upper = upperAttr
 
         return lower, upper
 
