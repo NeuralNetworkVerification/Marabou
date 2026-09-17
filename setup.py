@@ -27,6 +27,7 @@ class cmake_build_ext(build_ext):
             f"cmake",
             f"-DCMAKE_BUILD_TYPE=Release",
             f"-DBUILD_PYTHON=ON",
+            f"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DPYTHON_LIBRARY_OUTPUT_DIRECTORY={build_temp}",
             path_to_source,
