@@ -13,13 +13,47 @@ on:
 permissions:
   contents: read
 
-env:
-  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
-
 jobs:
+  resolve_release_tag:
+    name: Resolve release tag
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release_tag.outputs.release_tag }}
+
+    steps:
+      - name: Resolve release tag
+        id: release_tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            release_tag="${{ github.event.inputs.release_tag }}"
+
+            case "$release_tag" in
+              ''|*[!A-Za-z0-9._-]*)
+                echo "::error::release_tag must contain only letters, numbers, dots, underscores, and hyphens."
+                exit 1
+                ;;
+            esac
+
+            curl --fail --silent --show-error \
+              -H "Authorization: ******" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$release_tag" \
+              > /dev/null
+          else
+            release_tag="${{ github.event.release.tag_name }}"
+          fi
+
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+
   build_release_binaries:
     name: Build ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
+    needs:
+      - resolve_release_tag
+    env:
+      RELEASE_TAG: ${{ needs.resolve_release_tag.outputs.release_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -42,28 +76,10 @@ jobs:
             cmake_args: -DENABLE_OPENBLAS=OFF
 
     steps:
-      - name: Validate workflow_dispatch release tag
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          case "$RELEASE_TAG" in
-            ''|*[!A-Za-z0-9._-]*)
-              echo "::error::release_tag must contain only letters, numbers, dots, underscores, and hyphens."
-              exit 1
-              ;;
-          esac
-
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
-            > /dev/null
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.resolve_release_tag.outputs.release_tag }}
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -152,7 +168,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs:
+      - resolve_release_tag
       - build_release_binaries
+
+    env:
+      RELEASE_TAG: ${{ needs.resolve_release_tag.outputs.release_tag }}
 
     permissions:
       contents: write
