@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing Git tag or release tag to attach manually built artifacts to
+        description: Existing GitHub release tag to attach manually built artifacts to
         required: true
 
 permissions:
@@ -37,7 +37,7 @@ jobs:
             esac
 
             curl --fail --silent --show-error \
-              -H "Authorization: ******" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$release_tag" \
               > /dev/null
