@@ -116,8 +116,7 @@ jobs:
       - name: Package binary release
         if: runner.os != 'Windows'
         run: |
-          ref_name="${RELEASE_TAG//\//-}"
-          asset_name="marabou-${ref_name}-${{ matrix.label }}"
+          asset_name="marabou-${RELEASE_TAG}-${{ matrix.label }}"
           mkdir -p dist/$asset_name
           cp README.md COPYING dist/$asset_name/
           cp "${{ matrix.executable_path }}" dist/$asset_name/
@@ -127,8 +126,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          ref_name="${RELEASE_TAG//\//-}"
-          asset_name="marabou-${ref_name}-${{ matrix.label }}"
+          asset_name="marabou-${RELEASE_TAG}-${{ matrix.label }}"
           mkdir -p "dist/$asset_name"
           cp README.md COPYING "dist/$asset_name/"
           cp "${{ matrix.executable_path }}" "dist/$asset_name/"

@@ -23,6 +23,11 @@ temp_extract_dir=$(mktemp -d)
 trap 'rm -rf -- "$temp_extract_dir"' EXIT
 tar xzvf "boost-$version.tar.gz" -C "$temp_extract_dir" >> /dev/null
 
+if [[ ! -d "$temp_extract_dir/boost_$underscore_version" ]]; then
+    echo "Expected extracted directory boost_$underscore_version was not found" >&2
+    exit 1
+fi
+
 rm -rf -- "boost-$version"
 mv "$temp_extract_dir/boost_$underscore_version" "boost-$version"
 trap - EXIT
