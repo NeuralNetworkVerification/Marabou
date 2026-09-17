@@ -160,23 +160,6 @@ jobs:
       contents: write
 
     steps:
-      - name: Validate workflow_dispatch release tag
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          case "$RELEASE_TAG" in
-            ''|*[!A-Za-z0-9._-]*)
-              echo "::error::release_tag must contain only letters, numbers, dots, underscores, and hyphens."
-              exit 1
-              ;;
-          esac
-
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
-            > /dev/null
 
       - name: Download release assets
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
