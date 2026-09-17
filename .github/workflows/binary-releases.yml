@@ -136,6 +136,11 @@ jobs:
           mkdir -p dist/$asset_name
           cp README.md COPYING dist/$asset_name/
           cp "${{ matrix.executable_path }}" dist/$asset_name/
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            ldd "${{ matrix.executable_path }}" > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
+          else
+            otool -L "${{ matrix.executable_path }}" > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
+          fi
           tar -C dist -czf "dist/${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
 
       - name: Package binary release
@@ -146,6 +151,7 @@ jobs:
           mkdir -p "dist/$asset_name"
           cp README.md COPYING "dist/$asset_name/"
           cp "${{ matrix.executable_path }}" "dist/$asset_name/"
+          objdump -p "${{ matrix.executable_path }}" | grep 'DLL Name' > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
           cd dist
           zip -r "${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
 
