@@ -5,19 +5,24 @@ curdir=$(pwd)
 mydir="${0%/*}"
 version=$1
 
+if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+    echo "Invalid boost version: $version" >&2
+    exit 1
+fi
+
 cd "$mydir"
 
 # TODO: add progress bar, -q is quite, if removing it the progress bar is in
 # multiple lines
 echo "Downloading boost"
 underscore_version=${version//./_}
-wget -q --tries=3 https://archives.boost.io/release/$version/source/boost_$underscore_version.tar.gz -O boost-$version.tar.gz
+wget -q --tries=3 "https://archives.boost.io/release/$version/source/boost_$underscore_version.tar.gz" -O "boost-$version.tar.gz"
 
 echo "Unzipping boost"
-rm -rf boost-$version boost_$underscore_version
-tar xzvf boost-$version.tar.gz >> /dev/null
+rm -rf -- "boost-$version" "boost_$underscore_version"
+tar xzvf "boost-$version.tar.gz" >> /dev/null
 
-mv boost_$underscore_version boost-$version
+mv "boost_$underscore_version" "boost-$version"
 
 echo "Installing boost"
 cd boost-$version;

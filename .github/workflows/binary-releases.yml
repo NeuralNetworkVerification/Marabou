@@ -39,7 +39,7 @@ jobs:
             cmake_args: -DENABLE_OPENBLAS=OFF
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
 
@@ -63,7 +63,7 @@ jobs:
 
       - name: Install Windows build dependencies
         if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
+        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884
         with:
           msystem: MINGW64
           update: true
@@ -132,14 +132,14 @@ jobs:
           cd dist
           zip -r "${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: runner.os != 'Windows'
         with:
           name: binary-release-${{ matrix.label }}
           path: dist/*.tar.gz
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: runner.os == 'Windows'
         with:
           name: binary-release-${{ matrix.label }}
@@ -167,7 +167,7 @@ jobs:
           fi
 
       - name: Download release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           pattern: binary-release-*
           path: dist
