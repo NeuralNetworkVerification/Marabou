@@ -192,6 +192,6 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           overwrite_files: true
           files: |
-            dist/*.tar.gz
-            dist/*.zip
+            dist/marabou-${{ env.RELEASE_TAG }}-*.tar.gz
+            dist/marabou-${{ env.RELEASE_TAG }}-*.zip
           fail_on_unmatched_files: true
