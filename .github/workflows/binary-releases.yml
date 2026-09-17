@@ -13,6 +13,9 @@ on:
 permissions:
   contents: read
 
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
+
 jobs:
   build_release_binaries:
     name: Build ${{ matrix.label }}
@@ -43,7 +46,6 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           case "$RELEASE_TAG" in
@@ -61,7 +63,7 @@ jobs:
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -111,29 +113,10 @@ jobs:
           cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
           cmake --build build --parallel 2
 
-      - name: Resolve release name
-        if: runner.os != 'Windows'
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_NAME=${{ github.event.inputs.release_tag }}" >> "$GITHUB_ENV"
-          else
-            echo "RELEASE_NAME=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
-          fi
-
-      - name: Resolve release name
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_NAME=${{ github.event.inputs.release_tag }}" >> "$GITHUB_ENV"
-          else
-            echo "RELEASE_NAME=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
-          fi
-
       - name: Package binary release
         if: runner.os != 'Windows'
         run: |
-          ref_name="${RELEASE_NAME//\//-}"
+          ref_name="${RELEASE_TAG//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
           mkdir -p dist/$asset_name
           cp README.md COPYING dist/$asset_name/
@@ -144,7 +127,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          ref_name="${RELEASE_NAME//\//-}"
+          ref_name="${RELEASE_TAG//\//-}"
           asset_name="marabou-${ref_name}-${{ matrix.label }}"
           mkdir -p "dist/$asset_name"
           cp README.md COPYING "dist/$asset_name/"
@@ -177,19 +160,9 @@ jobs:
       contents: write
 
     steps:
-      - name: Resolve release tag
-        id: release_target
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "release_tag=${{ github.event.inputs.release_tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Validate workflow_dispatch release tag
         if: github.event_name == 'workflow_dispatch'
         env:
-          RELEASE_TAG: ${{ steps.release_target.outputs.release_tag }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           case "$RELEASE_TAG" in
@@ -215,7 +188,7 @@ jobs:
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
-          tag_name: ${{ steps.release_target.outputs.release_tag }}
+          tag_name: ${{ env.RELEASE_TAG }}
           overwrite_files: true
           files: |
             dist/*.tar.gz

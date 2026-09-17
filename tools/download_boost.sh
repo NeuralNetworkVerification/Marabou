@@ -19,9 +19,10 @@ underscore_version=${version//./_}
 wget -q --tries=3 "https://archives.boost.io/release/$version/source/boost_$underscore_version.tar.gz" -O "boost-$version.tar.gz"
 
 echo "Unzipping boost"
-rm -rf -- "boost-$version" "boost_$underscore_version"
+rm -rf -- "boost_$underscore_version"
 tar xzvf "boost-$version.tar.gz" >> /dev/null
 
+rm -rf -- "boost-$version"
 mv "boost_$underscore_version" "boost-$version"
 
 echo "Installing boost"
