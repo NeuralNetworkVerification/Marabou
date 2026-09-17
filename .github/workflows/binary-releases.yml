@@ -39,6 +39,26 @@ jobs:
             cmake_args: -DENABLE_OPENBLAS=OFF
 
     steps:
+      - name: Validate workflow_dispatch release tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          case "$RELEASE_TAG" in
+            ''|*[!A-Za-z0-9._-]*)
+              echo "::error::release_tag must contain only letters, numbers, dots, underscores, and hyphens."
+              exit 1
+              ;;
+          esac
+
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+            > /dev/null
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
@@ -165,6 +185,25 @@ jobs:
           else
             echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Validate workflow_dispatch release tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ steps.release_target.outputs.release_tag }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          case "$RELEASE_TAG" in
+            ''|*[!A-Za-z0-9._-]*)
+              echo "::error::release_tag must contain only letters, numbers, dots, underscores, and hyphens."
+              exit 1
+              ;;
+          esac
+
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+            > /dev/null
 
       - name: Download release assets
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093

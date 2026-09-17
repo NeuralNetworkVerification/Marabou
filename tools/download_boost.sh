@@ -25,7 +25,7 @@ tar xzvf "boost-$version.tar.gz" >> /dev/null
 mv "boost_$underscore_version" "boost-$version"
 
 echo "Installing boost"
-cd boost-$version;
+cd "boost-$version";
 if [[ $OSTYPE == 'darwin'* ]]; then
     export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
 fi
