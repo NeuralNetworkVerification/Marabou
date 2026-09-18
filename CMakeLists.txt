@@ -439,7 +439,12 @@ target_link_libraries(${MARABOU_TEST_LIB} ${MARABOU_LIB} ${LIBS})
 target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES} )
 target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 
-add_custom_target(build-tests ALL)
+if (RUN_UNIT_TEST OR RUN_REGRESS_TEST OR RUN_SYSTEM_TEST OR RUN_MEMORY_TEST OR
+    (BUILD_PYTHON AND RUN_PYTHON_TEST))
+    add_custom_target(build-tests ALL)
+else()
+    add_custom_target(build-tests)
+endif()
 
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS

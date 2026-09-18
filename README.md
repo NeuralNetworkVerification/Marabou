@@ -36,6 +36,7 @@ The recommended way to install Marabou is via `pip` using the command
 pip install maraboupy
 ```
 which will install both the `Marabou` executable on your path and the Python bindings.
+Tagged `v*` releases also publish prebuilt command-line binaries for Ubuntu, macOS, and Windows on GitHub Releases.
 The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
 ### Building from source

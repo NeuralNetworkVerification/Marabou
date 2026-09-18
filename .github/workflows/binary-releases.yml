@@ -1,0 +1,203 @@
+name: Binary releases
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing GitHub release tag to attach manually built artifacts to
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  resolve_release_tag:
+    name: Resolve release tag
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release_tag.outputs.release_tag }}
+
+    steps:
+      - name: Resolve release tag
+        id: release_tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            release_tag="${{ github.event.inputs.release_tag }}"
+
+            case "$release_tag" in
+              ''|*[!A-Za-z0-9._-]*)
+                echo "::error::release_tag must contain only letters, numbers, dots, underscores, and hyphens."
+                exit 1
+                ;;
+            esac
+
+            curl --fail --silent --show-error \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$release_tag" \
+              > /dev/null
+          else
+            release_tag="${{ github.event.release.tag_name }}"
+          fi
+
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+
+  build_release_binaries:
+    name: Build ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    needs:
+      - resolve_release_tag
+    env:
+      RELEASE_TAG: ${{ needs.resolve_release_tag.outputs.release_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: ubuntu-x86_64
+            archive_extension: tar.gz
+            executable_path: build/bin/Marabou
+            cmake_args: ""
+          - # Pin an Intel runner so the published macos-x86_64 asset name matches the binary.
+            os: macos-13
+            label: macos-x86_64
+            archive_extension: tar.gz
+            executable_path: build/bin/Marabou
+            cmake_args: ""
+          - os: windows-latest
+            label: windows-x86_64
+            archive_extension: zip
+            executable_path: build/bin/Marabou.exe
+            cmake_args: -DENABLE_OPENBLAS=OFF
+
+    steps:
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ needs.resolve_release_tag.outputs.release_tag }}
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgmp-dev \
+            wget
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            cmake \
+            gmp \
+            wget
+
+      - name: Install Windows build dependencies
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            git
+            unzip
+            wget
+            zip
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gmp
+            mingw-w64-x86_64-make
+
+      - name: Configure and build binary release
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build -DBUILD_PYTHON=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
+          cmake --build build --parallel 2
+
+      - name: Configure and build binary release
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
+          cmake --build build --parallel 2
+
+      - name: Package binary release
+        if: runner.os != 'Windows'
+        run: |
+          asset_name="marabou-${RELEASE_TAG}-${{ matrix.label }}"
+          mkdir -p dist/$asset_name
+          cp README.md COPYING dist/$asset_name/
+          cp "${{ matrix.executable_path }}" dist/$asset_name/
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            ldd "${{ matrix.executable_path }}" > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
+          else
+            otool -L "${{ matrix.executable_path }}" > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
+          fi
+          tar -C dist -czf "dist/${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
+
+      - name: Package binary release
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          asset_name="marabou-${RELEASE_TAG}-${{ matrix.label }}"
+          mkdir -p "dist/$asset_name"
+          cp README.md COPYING "dist/$asset_name/"
+          cp "${{ matrix.executable_path }}" "dist/$asset_name/"
+          objdump -p "${{ matrix.executable_path }}" | grep 'DLL Name' > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
+          cd dist
+          zip -r "${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: runner.os != 'Windows'
+        with:
+          name: binary-release-${{ matrix.label }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: runner.os == 'Windows'
+        with:
+          name: binary-release-${{ matrix.label }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  publish_release_binaries:
+    name: Publish binary release assets
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    needs:
+      - resolve_release_tag
+      - build_release_binaries
+
+    env:
+      RELEASE_TAG: ${{ needs.resolve_release_tag.outputs.release_tag }}
+
+    permissions:
+      contents: write
+
+    steps:
+
+      - name: Download release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: binary-release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          overwrite_files: true
+          files: |
+            dist/marabou-${{ env.RELEASE_TAG }}-*.tar.gz
+            dist/marabou-${{ env.RELEASE_TAG }}-*.zip
+          fail_on_unmatched_files: true

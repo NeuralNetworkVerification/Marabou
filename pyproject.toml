@@ -61,9 +61,11 @@ test-extras = ["test"]
 test-skip = []
 
 [tool.cibuildwheel.linux]
-before-all = "yum install -y wget"
+before-all = "yum install -y wget gmp-devel"
 
 [tool.cibuildwheel.macos]
+before-all = "brew install gmp"
+environment = { CPPFLAGS = "-I/opt/homebrew/include -I/usr/local/include", LDFLAGS = "-L/opt/homebrew/lib -L/usr/local/lib" }
 test-skip = [
   # 2023-04-15: Skip trying to test arm64 builds on Intel Macs
   "*-macosx_arm64",
