@@ -162,6 +162,20 @@ jobs:
           cp README.md COPYING "dist/$asset_name/"
           cp "${{ matrix.executable_path }}" "dist/$asset_name/"
           objdump -p "${{ matrix.executable_path }}" | grep 'DLL Name' > "dist/$asset_name/RUNTIME_DEPENDENCIES.txt"
+          # Bundle MinGW runtime libraries, including transitive Boost dependencies.
+          pending=("${{ matrix.executable_path }}")
+          while (( ${#pending[@]} )); do
+            binary="${pending[0]}"
+            pending=("${pending[@]:1}")
+            while IFS= read -r dll; do
+              if [[ -f "/mingw64/bin/$dll" && ! -f "dist/$asset_name/$dll" ]]; then
+                cp "/mingw64/bin/$dll" "dist/$asset_name/"
+                pending+=("dist/$asset_name/$dll")
+              fi
+            done < <(objdump -p "$binary" | sed -n 's/^[[:space:]]*DLL Name: //p' | tr -d '\r')
+          done
+          # The packaged executable must start without the build toolchain on PATH.
+          PATH=/usr/bin:/bin "./dist/$asset_name/Marabou.exe" --help
           cd dist
           zip -r "${asset_name}.${{ matrix.archive_extension }}" "$asset_name"
 
