@@ -64,7 +64,10 @@ test-skip = []
 before-all = "yum install -y wget gmp-devel"
 
 [tool.cibuildwheel.macos]
-before-all = "brew install gmp"
+# Build GMP with cibuildwheel's MACOSX_DEPLOYMENT_TARGET. Homebrew bottles
+# require the runner's OS version, which can be newer than the wheel target.
+before-all = 'bash "{package}/tools/build_gmp_for_wheels.sh" /tmp/marabou-wheel-gmp'
+environment = { CMAKE_PREFIX_PATH = "/tmp/marabou-wheel-gmp" }
 test-skip = [
   # 2023-04-15: Skip trying to test arm64 builds on Intel Macs
   "*-macosx_arm64",
