@@ -74,7 +74,13 @@ def test_disjunction_constraint():
         network.setLowerBound(var, 0)
         network.setUpperBound(var, 1)
 
-    exitCode1, vals1, stats1 = network.solve()
+    # Branch on violated constraints directly for this disjunction API test.
+    # The default pseudo-impact search can spend hours on this binary-input
+    # network, depending on the solver state left by preceding tests.
+    options = Marabou.createOptions(verbosity=0, splittingStrategy="relu-violation",
+                                   timeoutInSeconds=60)
+    exitCode1, vals1, stats1 = network.solve(options=options)
+    assert exitCode1 == "sat"
 
     for var in network.inputVars[0][0]:
         assert(abs(vals1[var] - 1) < 0.0000001 or abs(vals1[var]) < 0.0000001)
