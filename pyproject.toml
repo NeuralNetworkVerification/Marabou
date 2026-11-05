@@ -62,6 +62,9 @@ test-skip = []
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y wget gmp-devel"
+# Newer ONNX releases need a newer glibc/compiler than manylinux2014.
+# Select the newest compatible wheel instead of attempting a source build.
+environment = { PIP_ONLY_BINARY = "onnx" }
 
 [tool.cibuildwheel.macos]
 # Build GMP with cibuildwheel's MACOSX_DEPLOYMENT_TARGET. Homebrew bottles
