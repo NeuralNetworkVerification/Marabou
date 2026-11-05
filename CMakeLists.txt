@@ -230,8 +230,13 @@ find_package_handle_standard_args(GMP REQUIRED_VARS GMP_DIR GMP_INCLUDE_DIR GMPX
 if(NOT GMP_FOUND)
     message(FATAL_ERROR "GMP development files are required. Install libgmp-dev (Debian/Ubuntu), gmp-devel (RPM), or gmp (Homebrew/MSYS2), or set CMAKE_PREFIX_PATH to the GMP installation.")
 endif()
-list(APPEND LIBS_INCLUDES ${GMP_INCLUDE_DIR} ${GMPXX_INCLUDE_DIR})
-list(APPEND LIBS ${GMP_DIR})
+# Keep external headers as transitive system includes. Adding Homebrew's
+# include root directly would shadow the bundled Protobuf headers.
+add_library(GMP::GMP UNKNOWN IMPORTED)
+set_target_properties(GMP::GMP PROPERTIES
+    IMPORTED_LOCATION "${GMP_DIR}"
+    INTERFACE_INCLUDE_DIRECTORIES "${GMP_INCLUDE_DIR};${GMPXX_INCLUDE_DIR}")
+list(APPEND LIBS GMP::GMP)
 
 ###########
 ## Build ##
