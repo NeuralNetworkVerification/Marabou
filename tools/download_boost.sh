@@ -4,6 +4,12 @@ set -euo pipefail
 curdir=$(pwd)
 mydir="${0%/*}"
 version=$1
+address_model=${2:-64}
+case "$address_model" in
+    64) install_dir=installed ;;
+    32) install_dir=installed32 ;;
+    *) echo "Invalid Boost address model: $address_model" >&2; exit 1 ;;
+esac
 
 if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
     echo "Invalid boost version: $version" >&2
@@ -41,11 +47,8 @@ cd "boost-$version";
 if [[ $OSTYPE == 'darwin'* ]]; then
     export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
 fi
-mkdir installed
-./bootstrap.sh --prefix=`pwd`/installed --with-libraries=program_options,timer,chrono,thread,regex >> /dev/null ;
-./b2 cxxflags=-fPIC link=static cxxflags=-std=c++11 install >> /dev/null
-mkdir installed32
-./bootstrap.sh --prefix=`pwd`/installed32 --with-libraries=program_options,timer,chrono,thread,regex >> /dev/null ;
-./b2 cxxflags=-fPIC link=static cxxflags=-std=c++11 install address-model=32 >> /dev/null
+mkdir "$install_dir"
+./bootstrap.sh --prefix="$(pwd)/$install_dir" --with-libraries=program_options,timer,chrono,thread,regex >> /dev/null
+./b2 cxxflags="-fPIC -std=c++11" link=static install address-model="$address_model" >> /dev/null
 
 cd "$curdir"
