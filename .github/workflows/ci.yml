@@ -65,7 +65,8 @@ jobs:
             cmake \
             cxxtest \
             protobuf-compiler \
-            libprotoc-dev
+            libprotoc-dev \
+            libgmp-dev
 
       - name: Install system packages
         if: runner.os == 'macOS'
@@ -74,7 +75,8 @@ jobs:
             ccache \
             cmake \
             cxxtest \
-            protobuf-c
+            protobuf-c \
+            gmp
 
       - name: Install Python packages
         run: |

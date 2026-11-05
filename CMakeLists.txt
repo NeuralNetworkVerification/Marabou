@@ -213,18 +213,17 @@ endif()
 ## GMP ##
 #########
 
-find_library(GMP_DIR gmp)
-set(GMP_VERSION 6.3.0)
-
-if(NOT GMP_DIR)
-    message("Can't find GMP, installing. If GMP is installed please use the GMP_DIR parameter to pass the path")
-    set(GMP_DIR "${TOOLS_DIR}/GMP")
-    execute_process(COMMAND ${TOOLS_DIR}/download_gmp.sh ${GMP_VERSION})
-    find_library(GMP_DIR gmp)
-    if(NOT GMP_DIR)
-        message("Could not install GMP, try installing manually. If GMP is installed please use the GMP_DIR parameter to pass the path")
-    endif()
+# GMP headers and libraries may live outside the compiler's default search path
+# (for example, Homebrew on Apple Silicon).
+find_path(GMP_INCLUDE_DIR NAMES gmp.h)
+find_path(GMPXX_INCLUDE_DIR NAMES gmpxx.h)
+find_library(GMP_DIR NAMES gmp)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(GMP REQUIRED_VARS GMP_DIR GMP_INCLUDE_DIR GMPXX_INCLUDE_DIR)
+if(NOT GMP_FOUND)
+    message(FATAL_ERROR "GMP development files are required. Install libgmp-dev (Debian/Ubuntu), gmp-devel (RPM), or gmp (Homebrew/MSYS2), or set CMAKE_PREFIX_PATH to the GMP installation.")
 endif()
+list(APPEND LIBS_INCLUDES ${GMP_INCLUDE_DIR} ${GMPXX_INCLUDE_DIR})
 list(APPEND LIBS ${GMP_DIR})
 
 ###########
