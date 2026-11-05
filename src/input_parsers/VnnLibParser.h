@@ -31,7 +31,7 @@ private:
     {
     public:
         enum TermType {
-            CONST,
+            CONSTANT,
             VARIABLE,
             ADD,
             SUB,

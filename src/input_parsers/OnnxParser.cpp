@@ -382,7 +382,7 @@ Vector<int> getIntsAttribute( onnx::NodeProto &node, String name, Vector<int> &d
 }
 
 Vector<unsigned int>
-getNonNegativeIntsAttribute( onnx::NodeProto &node, String name, Vector<uint> &defaultValue )
+getNonNegativeIntsAttribute( onnx::NodeProto &node, String name, Vector<unsigned> &defaultValue )
 {
     const onnx::AttributeProto *attr =
         findAttribute( node, name, onnx::AttributeProto_AttributeType_INTS );
@@ -397,7 +397,7 @@ getNonNegativeIntsAttribute( onnx::NodeProto &node, String name, Vector<uint> &d
         int value = attr->ints( i );
         if ( value >= 0 )
         {
-            result.append( (uint)value );
+            result.append( (unsigned)value );
         }
         else
         {
@@ -2208,7 +2208,7 @@ void OnnxParser::tanhEquations( onnx::NodeProto &node, bool makeEquations )
     ASSERT( inputVars.size() == outputVars.size() );
 
     // Generate equations
-    for ( uint i = 0; i < outputVars.size(); i++ )
+    for ( unsigned i = 0; i < outputVars.size(); i++ )
     {
         _query.addTanh( inputVars[i], outputVars[i] );
     }

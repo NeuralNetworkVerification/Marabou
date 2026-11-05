@@ -128,7 +128,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cmake -S . -B build -DBUILD_PYTHON=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
-          cmake --build build --parallel 2
+          cmake --build build --target Marabou --parallel 2
           ./build/bin/Marabou --help
 
       - name: Configure and build binary release
@@ -136,7 +136,7 @@ jobs:
         shell: msys2 {0}
         run: |
           cmake -S . -B build -G "MinGW Makefiles" -DBUILD_PYTHON=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRUN_UNIT_TEST=OFF -DRUN_REGRESS_TEST=OFF -DRUN_SYSTEM_TEST=OFF -DRUN_MEMORY_TEST=OFF ${{ matrix.cmake_args }}
-          cmake --build build --parallel 2
+          cmake --build build --target Marabou.exe --parallel 2
           ./build/bin/Marabou.exe --help
 
       - name: Package binary release
