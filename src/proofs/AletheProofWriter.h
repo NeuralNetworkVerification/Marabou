@@ -133,7 +133,7 @@ private:
     /*
      Compute linear combinations from proof vectors using GMP
     */
-    void linearCombinationMpq( const std::vector<mpq_t> &explainedRow,
+    void linearCombinationMpq( std::vector<mpq_class> &explainedRow,
                                const SparseUnsortedList &expl ) const;
 
     /*

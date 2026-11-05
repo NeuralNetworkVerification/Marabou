@@ -42,6 +42,50 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete context; );
     }
 
+    void test_fractional_farkas_coefficients()
+    {
+        Vector<double> ubs = { -1, 10, 2, 1 };
+        Vector<double> lbs = { -2, -10, 1, -1 };
+        Vector<double> rows = { 0.5, 1, -0.25, 0, 0.25, -0.5, -0.125, 0 };
+        GroundBoundManager gbm( *context );
+        gbm.initialize( 4 );
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            gbm.addGroundBound( i, ubs[i], Tightening::UB, false );
+            gbm.addGroundBound( i, lbs[i], Tightening::LB, false );
+        }
+
+        CSRMatrix matrix;
+        matrix.initialize( rows.data(), 2, 4 );
+        AletheProofWriter writer( 2, ubs, lbs, gbm, &matrix, {} );
+        SparseUnsortedList explanation( 2 );
+        explanation.append( 0, 0.5 );
+        explanation.append( 1, 1 );
+        UnsatCertificateNode node( nullptr, PiecewiseLinearCaseSplit(), 0, 1 );
+
+        // Half the first row plus the second is (1/2, 0, -1/4, 0).
+        // Its upper bound is negative using u0 and l2, proving a contradiction.
+        writer.writeContradiction( explanation, &node );
+        writer.writeInstanceToFile( *file );
+        bool foundCoefficients = false;
+        bool foundResolution = false;
+        for ( String line = file->readLine( '\n' ); line != ""; line = file->readLine( '\n' ) )
+        {
+            if ( line.contains( "(step t1 " ) )
+            {
+                TS_ASSERT( line.contains( ":args(-1/2 -1 1/2 -1/4 )" ) );
+                foundCoefficients = true;
+            }
+            if ( line.contains( "(step r1 " ) )
+            {
+                TS_ASSERT( line.contains( ":premises(t1 e0 e1 u0 l2 )" ) );
+                foundResolution = true;
+            }
+        }
+        TS_ASSERT( foundCoefficients );
+        TS_ASSERT( foundResolution );
+    }
+
     /*
       Tests the writing Alethe assumption in correct SMTLIB format
     */
