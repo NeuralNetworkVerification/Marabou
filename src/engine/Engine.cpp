@@ -4103,7 +4103,7 @@ Engine::analyseExplanationDependencies( const SparseUnsortedList &explanation,
             entry->lemma->setToCheck();
 
             _statistics.incUnsignedAttribute( Statistics::NUM_LEMMAS_USED );
-            std::_List_const_iterator<unsigned int> it = entry->lemma->getCausingVars().begin();
+            auto it = entry->lemma->getCausingVars().begin();
             for ( const auto &expl : entry->lemma->getExplanations() )
             {
                 analyseExplanationDependencies( expl,

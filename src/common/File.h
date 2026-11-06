@@ -22,7 +22,7 @@ class HeapData;
 #include "IFile.h"
 #include "MString.h"
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #include <io.h>
 #define S_ISDIR( mode ) ( ( (mode)&S_IFMT ) == S_IFDIR )
 

@@ -358,7 +358,7 @@ int VnnLibParser::parseTerm( int index, const Vector<String> &tokens, Term &term
     }
     else
     {
-        term._type = Term::TermType::CONST;
+        term._type = Term::TermType::CONSTANT;
         term._value = token;
     }
 
@@ -390,7 +390,7 @@ VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equation &eq
 
     for ( const auto &arg : term._args )
     {
-        if ( arg._type == Term::TermType::CONST )
+        if ( arg._type == Term::TermType::CONSTANT )
         {
             scalar -= coefficient * extractScalar( arg._value );
         }
@@ -408,7 +408,7 @@ VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equation &eq
             }
 
             const Term &subArg = arg._args.first();
-            if ( subArg._type == Term::TermType::CONST )
+            if ( subArg._type == Term::TermType::CONSTANT )
             {
                 scalar += coefficient * extractScalar( subArg._value );
             }
@@ -448,7 +448,7 @@ VnnLibParser::processSubConstraint( const VnnLibParser::Term &term, Equation &eq
 
     const Term &subArg2 = term._args.last();
 
-    if ( subArg2._type == Term::TermType::CONST )
+    if ( subArg2._type == Term::TermType::CONSTANT )
     {
         scalar -= coefficient * extractScalar( subArg2._value );
     }
@@ -466,7 +466,7 @@ VnnLibParser::processSubConstraint( const VnnLibParser::Term &term, Equation &eq
     {
         const Term &subArg1 = term._args.first();
 
-        if ( subArg1._type == Term::TermType::CONST )
+        if ( subArg1._type == Term::TermType::CONSTANT )
         {
             scalar += coefficient * extractScalar( subArg1._value );
         }
@@ -496,7 +496,7 @@ VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equation &eq
 
     for ( const Term &arg : term._args )
     {
-        if ( arg._type == Term::TermType::CONST )
+        if ( arg._type == Term::TermType::CONSTANT )
         {
             scalar *= extractScalar( arg._value );
         }
@@ -522,7 +522,7 @@ VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equation &eq
             }
 
             const Term &subArg = arg._args.first();
-            if ( subArg._type == Term::TermType::CONST )
+            if ( subArg._type == Term::TermType::CONSTANT )
             {
                 scalar *= ( -extractScalar( subArg._value ) );
             }
@@ -570,7 +570,7 @@ Equation VnnLibParser::processLeConstraint( const VnnLibParser::Term &arg1,
     double scalar = 0;
 
     // Handle lhs argument:
-    if ( arg1._type == Term::TermType::CONST )
+    if ( arg1._type == Term::TermType::CONSTANT )
     {
         scalar -= extractScalar( arg1._value );
     }
@@ -592,7 +592,7 @@ Equation VnnLibParser::processLeConstraint( const VnnLibParser::Term &arg1,
     }
 
     // Handle rhs argument:
-    if ( arg2._type == Term::TermType::CONST )
+    if ( arg2._type == Term::TermType::CONSTANT )
     {
         scalar += extractScalar( arg2._value );
     }

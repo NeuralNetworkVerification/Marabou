@@ -38,6 +38,15 @@ pip install maraboupy
 which will install both the `Marabou` executable on your path and the Python bindings.
 The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
+### Downloading prebuilt binaries
+
+Download the latest [Development build](https://github.com/NeuralNetworkVerification/Marabou/releases/tag/development) from its **Assets** section. This single rolling prerelease is updated after successful builds of the latest commit on the default branch (`master`).
+
+Extract the archive to use the `Marabou` executable. Each archive includes `RUNTIME_DEPENDENCIES.txt`; Ubuntu and macOS require the listed system libraries to be installed.
+
+The prebuilt binaries are built without Gurobi. For best performance, [build Marabou from source with Gurobi enabled](#compile-marabou-with-the-gurobi-optimizer-optional).
+
+
 ### Building from source
 
 #### Build dependencies

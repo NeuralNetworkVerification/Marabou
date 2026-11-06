@@ -65,6 +65,13 @@ else()
   set(SCRIPT_EXTENSION sh)
 endif()
 
+# Native Windows CMake cannot execute shebang scripts directly.
+if(WIN32 AND NOT MSVC)
+  find_program(BASH_EXECUTABLE bash REQUIRED)
+  set(SCRIPT_RUNNER "${BASH_EXECUTABLE}")
+endif()
+math(EXPR BOOST_ADDRESS_MODEL "${CMAKE_SIZEOF_VOID_P} * 8")
+
 ##########
 ## CVC4 ##
 ##########
@@ -97,7 +104,7 @@ set(Boost_USE_DEBUG_RUNTIME FALSE)
 find_package(Boost ${BOOST_VERSION} COMPONENTS program_options timer chrono thread)
 # Find boost
 if (NOT ${Boost_FOUND})
-  execute_process(COMMAND ${TOOLS_DIR}/download_boost.${SCRIPT_EXTENSION} ${BOOST_VERSION})
+  execute_process(COMMAND ${SCRIPT_RUNNER} ${TOOLS_DIR}/download_boost.${SCRIPT_EXTENSION} ${BOOST_VERSION} ${BOOST_ADDRESS_MODEL})
   find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS program_options timer chrono thread regex)
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
@@ -118,14 +125,14 @@ if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
     message("Can't find protobuf, installing. If protobuf is installed please use the PROTOBUF_DIR parameter to pass the path")
     if (${PROTOBUF_DIR} STREQUAL ${PROTOBUF_DEFAULT_DIR})
         message("installing protobuf")
-        execute_process(COMMAND ${TOOLS_DIR}/download_protobuf.sh ${PROTOBUF_VERSION})
+        execute_process(COMMAND ${SCRIPT_RUNNER} ${TOOLS_DIR}/download_protobuf.sh ${PROTOBUF_VERSION})
     else()
         message(FATAL_ERROR "Can't find protobuf in the supplied directory")
     endif()
 endif()
 
 set(PROTOBUF_LIB protobuf)
-add_library(${PROTOBUF_LIB} SHARED IMPORTED)
+add_library(${PROTOBUF_LIB} STATIC IMPORTED)
 set_property(TARGET ${PROTOBUF_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
 target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
@@ -141,7 +148,7 @@ set(ONNX_DIR "${TOOLS_DIR}/onnx-${ONNX_VERSION}")
 
 if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
     message("generating ONNX protobuf file")
-    execute_process(COMMAND ${TOOLS_DIR}/download_onnx.sh ${ONNX_VERSION} ${PROTOBUF_VERSION})
+    execute_process(COMMAND ${SCRIPT_RUNNER} ${TOOLS_DIR}/download_onnx.sh ${ONNX_VERSION} ${PROTOBUF_VERSION})
 endif()
 file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
 include_directories(SYSTEM ${ONNX_DIR})
@@ -197,13 +204,13 @@ if (NOT MSVC AND ${ENABLE_OPENBLAS})
     message("Can't find OpenBLAS, installing. If OpenBLAS is installed please use the OPENBLAS_DIR parameter to pass the path")
       if (${OPENBLAS_DIR} STREQUAL ${OPENBLAS_DEFAULT_DIR})
         message("Installing OpenBLAS")
-        execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh ${OPENBLAS_VERSION})
+        execute_process(COMMAND ${SCRIPT_RUNNER} ${TOOLS_DIR}/download_openBLAS.sh ${OPENBLAS_VERSION})
       else()
         message(FATAL_ERROR "Can't find OpenBLAS in the supplied directory")
       endif()
   endif()
 
-  add_library(${OPENBLAS_LIB} SHARED IMPORTED)
+  add_library(${OPENBLAS_LIB} STATIC IMPORTED)
   set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
   list(APPEND LIBS ${OPENBLAS_LIB})
   target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
@@ -213,19 +220,23 @@ endif()
 ## GMP ##
 #########
 
-find_library(GMP_DIR gmp)
-set(GMP_VERSION 6.3.0)
-
-if(NOT GMP_DIR)
-    message("Can't find GMP, installing. If GMP is installed please use the GMP_DIR parameter to pass the path")
-    set(GMP_DIR "${TOOLS_DIR}/GMP")
-    execute_process(COMMAND ${TOOLS_DIR}/download_gmp.sh ${GMP_VERSION})
-    find_library(GMP_DIR gmp)
-    if(NOT GMP_DIR)
-        message("Could not install GMP, try installing manually. If GMP is installed please use the GMP_DIR parameter to pass the path")
-    endif()
+# GMP headers and libraries may live outside the compiler's default search path
+# (for example, Homebrew on Apple Silicon).
+find_path(GMP_INCLUDE_DIR NAMES gmp.h)
+find_path(GMPXX_INCLUDE_DIR NAMES gmpxx.h)
+find_library(GMP_DIR NAMES gmp)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(GMP REQUIRED_VARS GMP_DIR GMP_INCLUDE_DIR GMPXX_INCLUDE_DIR)
+if(NOT GMP_FOUND)
+    message(FATAL_ERROR "GMP development files are required. Install libgmp-dev (Debian/Ubuntu), gmp-devel (RPM), or gmp (Homebrew/MSYS2), or set CMAKE_PREFIX_PATH to the GMP installation.")
 endif()
-list(APPEND LIBS ${GMP_DIR})
+# Keep external headers as transitive system includes. Adding Homebrew's
+# include root directly would shadow the bundled Protobuf headers.
+add_library(GMP::GMP UNKNOWN IMPORTED)
+set_target_properties(GMP::GMP PROPERTIES
+    IMPORTED_LOCATION "${GMP_DIR}"
+    INTERFACE_INCLUDE_DIRECTORIES "${GMP_INCLUDE_DIR};${GMPXX_INCLUDE_DIR}")
+list(APPEND LIBS GMP::GMP)
 
 ###########
 ## Build ##
@@ -400,7 +411,7 @@ if (${BUILD_PYTHON})
 
     if (NOT EXISTS ${PYBIND11_DIR})
         message("didnt find pybind, getting it")
-	execute_process(COMMAND ${TOOLS_DIR}/download_pybind11.${SCRIPT_EXTENSION} ${PYBIND11_VERSION})
+	execute_process(COMMAND ${SCRIPT_RUNNER} ${TOOLS_DIR}/download_pybind11.${SCRIPT_EXTENSION} ${PYBIND11_VERSION})
     endif()
     add_subdirectory(${PYBIND11_DIR})
 
@@ -439,7 +450,12 @@ target_link_libraries(${MARABOU_TEST_LIB} ${MARABOU_LIB} ${LIBS})
 target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES} )
 target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 
-add_custom_target(build-tests ALL)
+if (RUN_UNIT_TEST OR RUN_REGRESS_TEST OR RUN_SYSTEM_TEST OR RUN_MEMORY_TEST OR
+    (BUILD_PYTHON AND RUN_PYTHON_TEST))
+    add_custom_target(build-tests ALL)
+else()
+    add_custom_target(build-tests)
+endif()
 
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS

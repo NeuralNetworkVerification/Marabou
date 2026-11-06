@@ -39,7 +39,7 @@
 
 #include "base/exception.h"
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define __PRETTY_FUNCTION__ __FUNCSIG__
 #endif
 

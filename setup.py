@@ -27,17 +27,18 @@ class cmake_build_ext(build_ext):
             f"cmake",
             f"-DCMAKE_BUILD_TYPE=Release",
             f"-DBUILD_PYTHON=ON",
+            f"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DPYTHON_LIBRARY_OUTPUT_DIRECTORY={build_temp}",
             path_to_source,
         ]
         print(" ".join(args))
-        subprocess.call(args, cwd=build_temp)
+        subprocess.check_call(args, cwd=build_temp)
 
-        # Call make
-        args = ["make", "-j2"]
+        # Build the Python extension; standalone executables and tests run in CI.
+        args = ["cmake", "--build", ".", "--target", "MarabouCore", "--parallel", "2"]
         print(" ".join(args))
-        subprocess.call(args, cwd=build_temp)
+        subprocess.check_call(args, cwd=build_temp)
 
         # Copy library
         ext_fullpath = self.get_ext_fullpath(ext.name)
