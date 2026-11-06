@@ -44,7 +44,7 @@ Download the latest [Development build](https://github.com/NeuralNetworkVerifica
 
 Extract the archive to use the `Marabou` executable. Each archive includes `RUNTIME_DEPENDENCIES.txt`; Ubuntu and macOS require the listed system libraries to be installed.
 
-The prebuilt binaries are built without Gurobi. For best performance, [build Marabou from source with Gurobi enabled](#compile-marabou-with-the-gurobi-optimizer-optional) (`-DENABLE_GUROBI=ON`).
+The prebuilt binaries are built without Gurobi. For best performance, [build Marabou from source with Gurobi enabled](#compile-marabou-with-the-gurobi-optimizer-optional).
 
 
 ### Building from source
