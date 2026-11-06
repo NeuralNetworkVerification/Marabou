@@ -40,21 +40,12 @@ The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
 ### Downloading prebuilt binaries
 
-Download the latest [Development build](https://github.com/NeuralNetworkVerification/Marabou/releases/tag/development) from its **Assets** section. This single rolling prerelease is updated after successful builds of the latest commit on the default branch (`master`). Development builds may be unstable; the release notes identify the exact commit used.
+Download the latest [Development build](https://github.com/NeuralNetworkVerification/Marabou/releases/tag/development) from its **Assets** section. This single rolling prerelease is updated after successful builds of the latest commit on the default branch (`master`).
 
-| Platform | Archive |
-| --- | --- |
-| Ubuntu x86_64 | `marabou-development-ubuntu-x86_64.tar.gz` |
-| macOS Intel x86_64 | `marabou-development-macos-x86_64.tar.gz` |
-| Windows x86_64 | `marabou-development-windows-x86_64.zip` |
+Extract the archive to use the `Marabou` executable. Each archive includes `RUNTIME_DEPENDENCIES.txt`; Ubuntu and macOS require the listed system libraries to be installed.
 
-Extract the archive to use the `Marabou` executable (`Marabou.exe` on Windows). Each archive includes `RUNTIME_DEPENDENCIES.txt`; Ubuntu and macOS require the listed system libraries to be installed.
+The prebuilt binaries are built without Gurobi. For best performance, [build Marabou from source with Gurobi enabled](#compile-marabou-with-the-gurobi-optimizer-optional) (`-DENABLE_GUROBI=ON`).
 
-**The prebuilt binaries are built without Gurobi. For best performance, [build Marabou from source with Gurobi enabled](#compile-marabou-with-the-gurobi-optimizer-optional) (`-DENABLE_GUROBI=ON`).**
-
-Tagged releases publish versioned binary archives on [GitHub Releases](https://github.com/NeuralNetworkVerification/Marabou/releases).
-
-For binaries from a specific branch push, open [Actions → Binary releases](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/binary-releases.yml), select the run matching the branch and commit, and download the appropriate `binary-release-<platform>` item under **Artifacts**. Sign in to GitHub to download Actions artifacts. Branch-build archives include the commit SHA in their filenames; default-branch builds use the development archive names above. Artifacts expire according to the repository's retention policy.
 
 ### Building from source
 
