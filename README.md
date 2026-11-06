@@ -39,6 +39,8 @@ which will install both the `Marabou` executable on your path and the Python bin
 Tagged `v*` releases also publish prebuilt command-line binaries for Ubuntu, macOS, and Windows on GitHub Releases.
 The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
+Every push to a branch also builds binaries for the pushed commit. Download them from the **Artifacts** section of the corresponding [Binary releases workflow run](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/binary-releases.yml). These archives are named `marabou-commit-<12-character-SHA>-<platform>` with a `.tar.gz` extension for Ubuntu/macOS or `.zip` for Windows.
+
 ### Building from source
 
 #### Build dependencies
